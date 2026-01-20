@@ -3,1143 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BASTION - MCF Risk Management</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- TradingView Lightweight Charts -->
+    <title>BASTION - Risk Management</title>
+    <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --bg: #0a0a0a;
-            --surface: #111;
-            --surface-2: #1a1a1a;
-            --border: #2a2a2a;
-            --text: #e0e0e0;
-            --dim: #666;
-            --accent: #dc143c;
-            --green: #00c853;
-            --red: #dc143c;
-            --gold: #ffd700;
-            --blue: #2196f3;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-        
-        .dashboard {
-            display: grid;
-            grid-template-columns: 300px 1fr 280px;
-            min-height: 100vh;
-            gap: 1px;
-            background: var(--border);
-        }
-        
-        .panel {
-            background: var(--bg);
-            padding: 16px;
-            overflow-y: auto;
-        }
-        
-        .panel-title {
-            font-size: 0.65rem;
-            color: var(--dim);
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        /* Left Panel - Setup */
-        .setup-form {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .form-group label {
-            display: block;
-            font-size: 0.7rem;
-            color: var(--dim);
-            margin-bottom: 4px;
-        }
-        
-        .form-input {
-            width: 100%;
-            padding: 10px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        
-        .direction-btns {
-            display: flex;
-            gap: 6px;
-        }
-        
-        .dir-btn {
-            flex: 1;
-            padding: 10px;
-            background: var(--surface);
-            border: 2px solid var(--border);
-            border-radius: 6px;
-            color: var(--dim);
-            font-weight: 600;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .dir-btn.long.active {
-            background: rgba(0, 200, 83, 0.15);
-            border-color: var(--green);
-            color: var(--green);
-        }
-        
-        .dir-btn.short.active {
-            background: rgba(220, 20, 60, 0.15);
-            border-color: var(--red);
-            color: var(--red);
-        }
-        
-        .calculate-btn {
-            padding: 14px;
-            background: var(--accent);
-            border: none;
-            border-radius: 6px;
-            color: white;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            margin-top: 4px;
-        }
-        
-        .calculate-btn:hover {
-            opacity: 0.9;
-        }
-        
-        /* Risk Budget Meter */
-        .budget-section {
-            margin-top: 16px;
-            padding: 12px;
-            background: var(--surface);
-            border-radius: 8px;
-        }
-        
-        .budget-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        
-        .budget-title {
-            font-size: 0.7rem;
-            color: var(--dim);
-        }
-        
-        .budget-amount {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--gold);
-        }
-        
-        .budget-bar {
-            height: 20px;
-            background: var(--surface-2);
-            border-radius: 4px;
-            overflow: hidden;
-            display: flex;
-        }
-        
-        .budget-segment {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: white;
-        }
-        
-        .budget-segment.shot1 { background: var(--accent); flex: 50; }
-        .budget-segment.shot2 { background: #ff6b6b; flex: 30; }
-        .budget-segment.shot3 { background: #ffa726; flex: 20; }
-        
-        .budget-legend {
-            display: flex;
-            gap: 8px;
-            margin-top: 6px;
-            font-size: 0.65rem;
-            color: var(--dim);
-        }
-        
-        /* Shots Table */
-        .shots-table {
-            width: 100%;
-            font-size: 0.75rem;
-            margin-top: 12px;
-        }
-        
-        .shots-table th {
-            text-align: left;
-            padding: 6px 4px;
-            color: var(--dim);
-            font-weight: 500;
-            font-size: 0.65rem;
-            text-transform: uppercase;
-        }
-        
-        .shots-table td {
-            padding: 6px 4px;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        
-        .shot-status {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 4px;
-        }
-        
-        .shot-status.pending { background: var(--dim); }
-        .shot-status.active { background: var(--green); }
-        
-        /* Center Panel - Chart */
-        .center-panel {
-            display: flex;
-            flex-direction: column;
-            background: var(--bg);
-        }
-        
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .symbol-price {
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
-        }
-        
-        .symbol {
-            font-size: 1.1rem;
-            font-weight: 700;
-        }
-        
-        .live-price {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-        
-        .live-price.up { color: var(--green); }
-        .live-price.down { color: var(--red); }
-        
-        .timeframe-btns {
-            display: flex;
-            gap: 4px;
-        }
-        
-        .tf-btn {
-            padding: 6px 12px;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--dim);
-            font-size: 0.75rem;
-            cursor: pointer;
-        }
-        
-        .tf-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
-        }
-        
-        .phase-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .phase-badge {
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        
-        .phase-badge.phase1 {
-            background: rgba(255, 215, 0, 0.2);
-            color: var(--gold);
-        }
-        
-        .phase-badge.phase2 {
-            background: rgba(0, 200, 83, 0.2);
-            color: var(--green);
-        }
-        
-        .bar-count {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            color: var(--dim);
-        }
-        
-        /* Chart Container */
-        .chart-container {
-            flex: 1;
-            position: relative;
-            min-height: 500px;
-        }
-        
-        #tradingChart {
-            width: 100%;
-            height: 100%;
-        }
-        
-        /* Chart Legend */
-        .chart-legend {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(17, 17, 17, 0.9);
-            padding: 10px 14px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            z-index: 10;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.7rem;
-            margin-bottom: 4px;
-        }
-        
-        .legend-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        .legend-line {
-            width: 20px;
-            height: 2px;
-        }
-        
-        .legend-line.entry { background: var(--gold); }
-        .legend-line.structural { background: var(--red); }
-        .legend-line.guarding { background: var(--blue); border-style: dashed; }
-        .legend-line.target { background: var(--green); }
-        .legend-line.safety { background: #ff5722; }
-        
-        /* Right Panel - Info */
-        .info-section {
-            background: var(--surface);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-        }
-        
-        .info-title {
-            font-size: 0.65rem;
-            color: var(--dim);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 10px;
-        }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        
-        .info-item {
-            text-align: center;
-            padding: 10px 8px;
-            background: var(--bg);
-            border-radius: 6px;
-        }
-        
-        .info-label {
-            font-size: 0.6rem;
-            color: var(--dim);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-        
-        .info-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        
-        .info-value.green { color: var(--green); }
-        .info-value.gold { color: var(--gold); }
-        .info-value.red { color: var(--red); }
-        
-        /* 3-Tier Stop Visual */
-        .stops-visual {
-            position: relative;
-            padding-left: 16px;
-        }
-        
-        .stops-line {
-            position: absolute;
-            left: 6px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: linear-gradient(to bottom, var(--red), #ff5722);
-            border-radius: 2px;
-        }
-        
-        .stop-tier {
-            padding: 8px 0 8px 12px;
-            margin-bottom: 6px;
-        }
-        
-        .stop-tier.active {
-            background: rgba(220, 20, 60, 0.1);
-            border-radius: 0 6px 6px 0;
-        }
-        
-        .tier-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2px;
-        }
-        
-        .tier-name {
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        
-        .tier-price {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-        }
-        
-        .tier-desc {
-            font-size: 0.6rem;
-            color: var(--dim);
-        }
-        
-        .tier-name.structural { color: var(--red); }
-        .tier-name.guarding { color: var(--blue); }
-        .tier-name.safety { color: #ff5722; }
-        
-        /* Exit Priority */
-        .exit-list {
-            list-style: none;
-        }
-        
-        .exit-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.7rem;
-        }
-        
-        .exit-item:last-child {
-            border-bottom: none;
-        }
-        
-        .exit-num {
-            width: 16px;
-            height: 16px;
-            background: var(--surface-2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.6rem;
-            font-weight: 600;
-        }
-        
-        .exit-text {
-            flex: 1;
-        }
-        
-        .exit-action {
-            font-size: 0.6rem;
-            color: var(--dim);
-        }
-        
-        /* Market Context */
-        .context-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        
-        .context-item {
-            text-align: center;
-            padding: 8px;
-            background: var(--bg);
-            border-radius: 6px;
-        }
-        
-        .context-label {
-            font-size: 0.55rem;
-            color: var(--dim);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-        
-        .context-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        /* Session Link */
-        .session-link {
-            display: block;
-            text-align: center;
-            padding: 12px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            text-decoration: none;
-            font-size: 0.8rem;
-            margin-top: 12px;
-        }
-        
-        .session-link:hover {
-            border-color: var(--accent);
-        }
-        
-        /* Responsive */
-        @media (max-width: 1100px) {
-            .dashboard {
-                grid-template-columns: 260px 1fr 240px;
-            }
-        }
-        
-        @media (max-width: 900px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-            .panel {
-                border-bottom: 1px solid var(--border);
-            }
-            .chart-container {
-                min-height: 400px;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="dashboard">
-        <!-- Left Panel: Setup -->
-        <div class="panel">
-            <div class="panel-title">Trade Setup</div>
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">BASTION</div>
             
-            <div class="setup-form">
+            <div class="symbol-display">
+                <span class="symbol-name" id="symbolName">BTCUSDT</span>
+                <span class="symbol-price" id="symbolPrice">--</span>
+                <span class="symbol-change" id="symbolChange">--%</span>
+            </div>
+            
+            <div class="header-controls">
+                <button class="timeframe-btn" data-tf="15m">15m</button>
+                <button class="timeframe-btn" data-tf="1h">1H</button>
+                <button class="timeframe-btn active" data-tf="4h">4H</button>
+                <button class="timeframe-btn" data-tf="1d">1D</button>
+            </div>
+            
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span>Live</span>
+            </div>
+        </header>
+        
+        <!-- Chart -->
+        <div class="chart-container">
+            <div id="chart"></div>
+        </div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Setup Form -->
+            <section class="sidebar-section">
+                <div class="section-title">Trade Setup</div>
+                
                 <div class="form-group">
-                    <label>Symbol</label>
-                    <select class="form-input" id="symbol" onchange="symbolChanged()">
-                        <option value="BTCUSDT">BTC/USDT</option>
-                        <option value="ETHUSDT">ETH/USDT</option>
-                        <option value="SOLUSDT">SOL/USDT</option>
+                    <label class="form-label">Symbol</label>
+                    <select class="form-input" id="inputSymbol">
+                        <option value="BTCUSDT">BTCUSDT</option>
+                        <option value="ETHUSDT">ETHUSDT</option>
+                        <option value="SOLUSDT">SOLUSDT</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label>Direction</label>
-                    <div class="direction-btns">
-                        <button class="dir-btn long active" onclick="setDir('long')">LONG</button>
-                        <button class="dir-btn short" onclick="setDir('short')">SHORT</button>
+                    <label class="form-label">Direction</label>
+                    <div class="direction-toggle">
+                        <button class="direction-btn long active" id="btnLong">LONG</button>
+                        <button class="direction-btn short" id="btnShort">SHORT</button>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label>Structural Support (Grade 3-4)</label>
-                    <input type="number" class="form-input" id="support" placeholder="e.g. 93200">
+                    <label class="form-label">Entry Price</label>
+                    <input type="number" class="form-input" id="inputEntry" placeholder="Market price">
                 </div>
                 
                 <div class="form-group">
-                    <label>Account Balance</label>
-                    <input type="number" class="form-input" id="account" value="100000">
+                    <label class="form-label">Account Balance</label>
+                    <input type="number" class="form-input" id="inputBalance" value="100000">
                 </div>
                 
                 <div class="form-group">
-                    <label>Risk Cap %</label>
-                    <input type="number" class="form-input" id="riskCap" value="2.0" step="0.1">
+                    <label class="form-label">Risk %</label>
+                    <input type="number" class="form-input" id="inputRisk" value="2" step="0.5" min="0.5" max="5">
                 </div>
                 
-                <button class="calculate-btn" onclick="analyze()">Analyze Setup</button>
-            </div>
+                <button class="btn btn-primary" id="btnCalculate">Calculate Risk</button>
+            </section>
             
-            <!-- Risk Budget Meter -->
-            <div class="budget-section">
-                <div class="budget-header">
-                    <span class="budget-title">Risk Budget</span>
-                    <span class="budget-amount" id="budgetTotal">$2,000</span>
-                </div>
-                <div class="budget-bar">
-                    <div class="budget-segment shot1">50%</div>
-                    <div class="budget-segment shot2">30%</div>
-                    <div class="budget-segment shot3">20%</div>
-                </div>
-                <div class="budget-legend">
-                    <span>Shot 1: $1,000</span>
-                    <span>Shot 2: $600</span>
-                    <span>Shot 3: $400</span>
-                </div>
-            </div>
-            
-            <!-- Multi-Shot Table -->
-            <table class="shots-table">
-                <thead>
-                    <tr>
-                        <th>Shot</th>
-                        <th>Entry</th>
-                        <th>Size</th>
-                        <th>Risk</th>
-                    </tr>
-                </thead>
-                <tbody id="shotsTable">
-                    <tr>
-                        <td><span class="shot-status pending"></span>1</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>$1,000</td>
-                    </tr>
-                    <tr>
-                        <td><span class="shot-status pending"></span>2</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>$600</td>
-                    </tr>
-                    <tr>
-                        <td><span class="shot-status pending"></span>3</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>$400</td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            <a href="trade-manager.html" class="session-link" style="background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(0, 255, 136, 0.05)); border-color: #00d9ff;">🛡️ Open Dynamic Trade Manager →</a>
-            
-            <a href="session.html" class="session-link">Session Tracker →</a>
-        </div>
-        
-        <!-- Center Panel: Chart -->
-        <div class="panel center-panel">
-            <div class="chart-header">
-                <div class="symbol-price">
-                    <span class="symbol" id="displaySymbol">BTCUSDT</span>
-                    <span class="live-price" id="livePrice">$--,---</span>
-                </div>
+            <!-- Position Info (shown after calculation) -->
+            <section class="sidebar-section" id="positionSection" style="display: none;">
+                <div class="section-title">Position</div>
                 
-                <div class="timeframe-btns">
-                    <button class="tf-btn" data-tf="15m">15m</button>
-                    <button class="tf-btn" data-tf="1h">1H</button>
-                    <button class="tf-btn active" data-tf="4h">4H</button>
-                    <button class="tf-btn" data-tf="1d">1D</button>
+                <div class="data-grid">
+                    <div class="data-item">
+                        <span class="data-label">Size</span>
+                        <span class="data-value" id="positionSize">--</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Risk $</span>
+                        <span class="data-value negative" id="positionRisk">--</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">R-Multiple</span>
+                        <span class="data-value" id="positionR">0R</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="data-label">Unrealized</span>
+                        <span class="data-value" id="positionPnl">$0</span>
+                    </div>
                 </div>
-                
-                <div class="phase-indicator">
-                    <span class="phase-badge phase1" id="phaseBadge">Phase 1</span>
-                    <span class="bar-count">Bar <span id="barCount">0</span>/10</span>
-                </div>
-            </div>
+            </section>
             
-            <div class="chart-container">
-                <div id="tradingChart"></div>
-                
-                <div class="chart-legend">
-                    <div class="legend-item">
-                        <div class="legend-line entry"></div>
-                        <span>Entry Zone</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-line structural"></div>
-                        <span>Structural Stop</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-line guarding" style="border-top: 2px dashed #2196f3; height: 0;"></div>
-                        <span>Guarding Line</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-line target"></div>
-                        <span>Targets</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-line safety"></div>
-                        <span>Safety Net (5%)</span>
+            <!-- Stops -->
+            <section class="sidebar-section" id="stopsSection" style="display: none;">
+                <div class="section-title">Stop Levels</div>
+                <div class="level-list" id="stopsList"></div>
+            </section>
+            
+            <!-- Targets -->
+            <section class="sidebar-section" id="targetsSection" style="display: none;">
+                <div class="section-title">Targets</div>
+                <div class="level-list" id="targetsList"></div>
+            </section>
+            
+            <!-- Guarding -->
+            <section class="sidebar-section" id="guardingSection" style="display: none;">
+                <div class="section-title">Trailing Guard</div>
+                <div class="guarding-status" id="guardingStatus">
+                    <div class="guarding-indicator"></div>
+                    <div class="guarding-info">
+                        <div class="guarding-label">Guard Level</div>
+                        <div class="guarding-value" id="guardingValue">--</div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Right Panel: Trade Info -->
-        <div class="panel">
-            <div class="panel-title">Position Summary</div>
-            
-            <div class="info-section">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Avg Entry</div>
-                        <div class="info-value" id="avgEntry">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Total Size</div>
-                        <div class="info-value" id="totalSize">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Risk Used</div>
-                        <div class="info-value gold" id="riskUsed">$0</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">R:R Ratio</div>
-                        <div class="info-value green" id="rrRatio">-</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 3-Tier Stop System -->
-            <div class="info-section">
-                <div class="info-title">3-Tier Stop System</div>
-                <div class="stops-visual">
-                    <div class="stops-line"></div>
-                    
-                    <div class="stop-tier active">
-                        <div class="tier-header">
-                            <span class="tier-name structural">1. Structural</span>
-                            <span class="tier-price" id="structuralPrice">-</span>
-                        </div>
-                        <div class="tier-desc">Grade 3-4 + 20% ATR buffer</div>
-                    </div>
-                    
-                    <div class="stop-tier">
-                        <div class="tier-header">
-                            <span class="tier-name guarding">2. Guarding</span>
-                            <span class="tier-price" id="guardingPrice">Bar 11+</span>
-                        </div>
-                        <div class="tier-desc">Trails swing lows • Never down</div>
-                    </div>
-                    
-                    <div class="stop-tier">
-                        <div class="tier-header">
-                            <span class="tier-name safety">3. Safety Net</span>
-                            <span class="tier-price" id="safetyPrice">-</span>
-                        </div>
-                        <div class="tier-desc">5% max loss • Emergency</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Exit Priority -->
-            <div class="info-section">
-                <div class="info-title">Exit Priority</div>
-                <ul class="exit-list">
-                    <li class="exit-item">
-                        <span class="exit-num">1</span>
-                        <span class="exit-text">Opposite MCF signal</span>
-                        <span class="exit-action">100%</span>
-                    </li>
-                    <li class="exit-item">
-                        <span class="exit-num">2</span>
-                        <span class="exit-text">Guarding broken</span>
-                        <span class="exit-action">100%</span>
-                    </li>
-                    <li class="exit-item">
-                        <span class="exit-num">3</span>
-                        <span class="exit-text">Structure broken</span>
-                        <span class="exit-action">100%</span>
-                    </li>
-                    <li class="exit-item">
-                        <span class="exit-num">4</span>
-                        <span class="exit-text">Momentum exhaust</span>
-                        <span class="exit-action">33%</span>
-                    </li>
-                    <li class="exit-item">
-                        <span class="exit-num">5</span>
-                        <span class="exit-text">Volume climax</span>
-                        <span class="exit-action">TP</span>
-                    </li>
-                </ul>
-            </div>
-            
-            <!-- Market Context -->
-            <div class="info-section">
-                <div class="info-title">Market Context</div>
-                <div class="context-grid">
-                    <div class="context-item">
-                        <div class="context-label">Structure</div>
-                        <div class="context-value" id="ctxStructure">-</div>
-                    </div>
-                    <div class="context-item">
-                        <div class="context-label">Volume</div>
-                        <div class="context-value" id="ctxVolume">-</div>
-                    </div>
-                    <div class="context-item">
-                        <div class="context-label">Order Flow</div>
-                        <div class="context-value" id="ctxFlow">-</div>
-                    </div>
-                    <div class="context-item">
-                        <div class="context-label">MTF Align</div>
-                        <div class="context-value" id="ctxMTF">-</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                <button class="btn" id="btnActivateGuard" style="margin-top: 12px;">
+                    Activate Guard
+                </button>
+            </section>
+        </aside>
     </div>
     
+    <script src="chart.js"></script>
+    <script src="api-client.js"></script>
     <script>
-        const API = 'http://localhost:8001';
-        let direction = 'long';
-        let currentData = null;
+        // State
+        let state = {
+            symbol: 'BTCUSDT',
+            timeframe: '4h',
+            direction: 'long',
+            entryPrice: 0,
+            currentPrice: 0,
+            balance: 100000,
+            riskPct: 2,
+            positionSize: 0,
+            riskAmount: 0,
+            stops: [],
+            targets: [],
+            guardingActive: false,
+            guardingLevel: 0,
+        };
+        
         let chart = null;
-        let candleSeries = null;
-        let currentTimeframe = '4h';
-        let priceLines = [];
         
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
-            initChart();
+            // Create chart
+            chart = new BastionChart('chart');
+            
+            // Load initial data
             await loadChartData();
-            updateBudgetDisplay();
-            setInterval(updatePrice, 5000);
+            
+            // Start price polling
+            api.startPricePolling(state.symbol, 3000);
+            api.onPriceUpdate(handlePriceUpdate);
+            
+            // Setup event listeners
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            // Direction toggle
+            document.getElementById('btnLong').addEventListener('click', () => setDirection('long'));
+            document.getElementById('btnShort').addEventListener('click', () => setDirection('short'));
+            
+            // Symbol change
+            document.getElementById('inputSymbol').addEventListener('change', async (e) => {
+                state.symbol = e.target.value;
+                document.getElementById('symbolName').textContent = state.symbol;
+                api.stopPricePolling();
+                await loadChartData();
+                api.startPricePolling(state.symbol, 3000);
+            });
             
             // Timeframe buttons
-            document.querySelectorAll('.tf-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentTimeframe = btn.dataset.tf;
+            document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.timeframe = e.target.dataset.tf;
                     await loadChartData();
                 });
             });
-        });
+            
+            // Calculate button
+            document.getElementById('btnCalculate').addEventListener('click', calculateRisk);
+            
+            // Activate guard
+            document.getElementById('btnActivateGuard').addEventListener('click', activateGuard);
+            
+            // Balance/risk input changes
+            document.getElementById('inputBalance').addEventListener('change', (e) => {
+                state.balance = parseFloat(e.target.value) || 100000;
+            });
+            
+            document.getElementById('inputRisk').addEventListener('change', (e) => {
+                state.riskPct = parseFloat(e.target.value) || 2;
+            });
+        }
         
-        function initChart() {
-            const container = document.getElementById('tradingChart');
-            
-            chart = LightweightCharts.createChart(container, {
-                layout: {
-                    background: { type: 'solid', color: '#0a0a0a' },
-                    textColor: '#666',
-                },
-                grid: {
-                    vertLines: { color: '#1a1a1a' },
-                    horzLines: { color: '#1a1a1a' },
-                },
-                crosshair: {
-                    mode: LightweightCharts.CrosshairMode.Normal,
-                },
-                rightPriceScale: {
-                    borderColor: '#2a2a2a',
-                    scaleMargins: { top: 0.1, bottom: 0.1 },
-                },
-                timeScale: {
-                    borderColor: '#2a2a2a',
-                    timeVisible: true,
-                    secondsVisible: false,
-                },
-            });
-            
-            candleSeries = chart.addCandlestickSeries({
-                upColor: '#00c853',
-                downColor: '#dc143c',
-                borderUpColor: '#00c853',
-                borderDownColor: '#dc143c',
-                wickUpColor: '#00c853',
-                wickDownColor: '#dc143c',
-            });
-            
-            // Handle resize
-            new ResizeObserver(() => {
-                chart.applyOptions({ 
-                    width: container.clientWidth,
-                    height: container.clientHeight 
-                });
-            }).observe(container);
+        function setDirection(dir) {
+            state.direction = dir;
+            document.getElementById('btnLong').classList.toggle('active', dir === 'long');
+            document.getElementById('btnShort').classList.toggle('active', dir === 'short');
+            document.getElementById('btnLong').classList.toggle('long', dir === 'long');
+            document.getElementById('btnShort').classList.toggle('short', dir === 'short');
         }
         
         async function loadChartData() {
-            try {
-                const symbol = document.getElementById('symbol').value;
-                console.log(`Loading chart data for ${symbol} ${currentTimeframe}`);
-                
-                const res = await fetch(`${API}/bars/${symbol}?timeframe=${currentTimeframe}&limit=200`);
-                
-                if (!res.ok) {
-                    console.error('Failed to load bars:', res.status);
-                    return;
-                }
-                
-                const data = await res.json();
-                console.log(`Received ${data.bars?.length || 0} bars`);
-                
-                if (data.bars && data.bars.length > 0) {
-                    const candles = data.bars.map(bar => {
-                        // Handle both Unix ms and ISO string timestamps
-                        let time;
-                        if (typeof bar.timestamp === 'string') {
-                            time = Math.floor(new Date(bar.timestamp).getTime() / 1000);
-                        } else if (bar.timestamp > 1e12) {
-                            // Milliseconds
-                            time = Math.floor(bar.timestamp / 1000);
-                        } else {
-                            // Already seconds
-                            time = bar.timestamp;
-                        }
-                        return {
-                            time,
-                            open: parseFloat(bar.open),
-                            high: parseFloat(bar.high),
-                            low: parseFloat(bar.low),
-                            close: parseFloat(bar.close),
-                        };
-                    });
-                    
-                    // Sort by time ascending (required by Lightweight Charts)
-                    candles.sort((a, b) => a.time - b.time);
-                    
-                    // Remove duplicates
-                    const uniqueCandles = candles.filter((c, i, arr) => 
-                        i === 0 || c.time !== arr[i-1].time
-                    );
-                    
-                    console.log(`Setting ${uniqueCandles.length} candles, first: ${new Date(uniqueCandles[0].time * 1000).toISOString()}, last: ${new Date(uniqueCandles[uniqueCandles.length-1].time * 1000).toISOString()}`);
-                    
-                    candleSeries.setData(uniqueCandles);
-                    
-                    // Update live price
-                    const lastCandle = uniqueCandles[uniqueCandles.length - 1];
-                    updatePriceDisplay(lastCandle.close);
-                    
-                    // Auto-fill support if empty
-                    const supportInput = document.getElementById('support');
-                    if (!supportInput.value) {
-                        const lows = uniqueCandles.slice(-20).map(c => c.low);
-                        const recentLow = Math.min(...lows);
-                        supportInput.value = Math.round(recentLow * 0.99);
-                    }
-                    
-                    chart.timeScale().fitContent();
-                }
-            } catch (e) {
-                console.error('Chart data error:', e);
+            const bars = await chart.loadData(state.symbol, state.timeframe, 200);
+            if (bars.length > 0) {
+                const lastBar = bars[bars.length - 1];
+                state.currentPrice = lastBar.close;
+                updatePriceDisplay(state.currentPrice, 0);
             }
         }
         
-        async function updatePrice() {
-            try {
-                const symbol = document.getElementById('symbol').value;
-                const res = await fetch(`${API}/price/${symbol}`);
-                const data = await res.json();
-                if (data.price) {
-                    updatePriceDisplay(data.price);
-                }
-            } catch (e) {
-                console.error('Price update error:', e);
-            }
+        function handlePriceUpdate(data) {
+            state.currentPrice = data.price;
+            updatePriceDisplay(data.price, data.change_24h_pct);
+            updatePositionPnl();
         }
         
-        function updatePriceDisplay(price) {
-            const el = document.getElementById('livePrice');
-            const oldPrice = parseFloat(el.textContent.replace(/[$,]/g, '')) || 0;
-            el.textContent = formatPrice(price);
-            el.className = 'live-price ' + (price >= oldPrice ? 'up' : 'down');
-        }
-        
-        function setDir(dir) {
-            direction = dir;
-            document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.dir-btn.${dir}`).classList.add('active');
-        }
-        
-        function symbolChanged() {
-            loadChartData();
-            document.getElementById('displaySymbol').textContent = document.getElementById('symbol').value;
-            document.getElementById('support').value = '';
-        }
-        
-        function updateBudgetDisplay() {
-            const account = parseFloat(document.getElementById('account').value) || 100000;
-            const riskPct = parseFloat(document.getElementById('riskCap').value) || 2.0;
-            const budget = account * (riskPct / 100);
-            document.getElementById('budgetTotal').textContent = `$${budget.toLocaleString()}`;
-        }
-        
-        document.getElementById('account').addEventListener('input', updateBudgetDisplay);
-        document.getElementById('riskCap').addEventListener('input', updateBudgetDisplay);
-        
-        async function analyze() {
-            const symbol = document.getElementById('symbol').value;
-            const support = parseFloat(document.getElementById('support').value);
-            const account = parseFloat(document.getElementById('account').value) || 100000;
-            const riskPct = parseFloat(document.getElementById('riskCap').value) || 2.0;
+        function updatePriceDisplay(price, changePct) {
+            document.getElementById('symbolPrice').textContent = formatPrice(price);
             
-            if (!support) {
-                alert('Enter the structural support level');
+            const changeEl = document.getElementById('symbolChange');
+            changeEl.textContent = `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`;
+            changeEl.className = `symbol-change ${changePct >= 0 ? 'positive' : 'negative'}`;
+        }
+        
+        async function calculateRisk() {
+            const entryInput = document.getElementById('inputEntry').value;
+            state.entryPrice = entryInput ? parseFloat(entryInput) : state.currentPrice;
+            
+            if (!state.entryPrice) {
+                alert('Waiting for price data...');
                 return;
             }
             
             try {
-                const entryPrice = support * (direction === 'long' ? 1.015 : 0.985);
-                
-                const res = await fetch(`${API}/calculate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        symbol,
-                        entry_price: entryPrice,
-                        direction,
-                        timeframe: currentTimeframe,
-                        account_balance: account,
-                        risk_per_trade_pct: riskPct
-                    })
+                const response = await api.calculate({
+                    symbol: state.symbol,
+                    entry_price: state.entryPrice,
+                    direction: state.direction,
+                    timeframe: state.timeframe,
+                    account_balance: state.balance,
+                    risk_per_trade_pct: state.riskPct,
                 });
                 
-                currentData = await res.json();
-                currentData.structural_support = support;
+                if (response.error) {
+                    alert(response.error);
+                    return;
+                }
                 
-                updateSummary(currentData);
-                updateStops(currentData, support);
-                updateContext(currentData);
-                drawPriceLines(currentData, support);
+                // Update state
+                state.positionSize = response.position_size || 0;
+                state.riskAmount = response.risk_amount || (state.balance * state.riskPct / 100);
+                state.stops = response.stops || [];
+                state.targets = response.targets || [];
+                
+                // Draw levels on chart
+                chart.drawRiskLevels(response, state.entryPrice);
+                
+                // Update UI
+                updatePositionDisplay();
+                updateStopsDisplay();
+                updateTargetsDisplay();
+                
+                // Show sections
+                document.getElementById('positionSection').style.display = 'block';
+                document.getElementById('stopsSection').style.display = 'block';
+                document.getElementById('targetsSection').style.display = 'block';
+                document.getElementById('guardingSection').style.display = 'block';
                 
             } catch (e) {
-                alert('Analysis failed: ' + e.message);
+                console.error('Calculate failed:', e);
+                alert('Calculation failed');
             }
         }
         
-        function drawPriceLines(data, support) {
-            // Remove old price lines
-            priceLines.forEach(line => candleSeries.removePriceLine(line));
-            priceLines = [];
+        function updatePositionDisplay() {
+            document.getElementById('positionSize').textContent = state.positionSize.toFixed(4);
+            document.getElementById('positionRisk').textContent = `-$${state.riskAmount.toFixed(0)}`;
+            updatePositionPnl();
+        }
+        
+        function updatePositionPnl() {
+            if (!state.entryPrice || !state.positionSize) return;
             
-            const entry = data.entry_price;
-            const atr = (entry - support) * 0.2;
+            const pnl = state.direction === 'long'
+                ? (state.currentPrice - state.entryPrice) * state.positionSize
+                : (state.entryPrice - state.currentPrice) * state.positionSize;
             
-            // Entry line
-            priceLines.push(candleSeries.createPriceLine({
-                price: entry,
-                color: '#ffd700',
-                lineWidth: 2,
-                lineStyle: LightweightCharts.LineStyle.Solid,
-                axisLabelVisible: true,
-                title: 'Entry',
-            }));
+            const rMultiple = state.riskAmount > 0 ? pnl / state.riskAmount : 0;
             
-            // Structural stop
-            const structuralStop = direction === 'long' ? support - atr : support + atr;
-            priceLines.push(candleSeries.createPriceLine({
-                price: structuralStop,
-                color: '#dc143c',
-                lineWidth: 2,
-                lineStyle: LightweightCharts.LineStyle.Solid,
-                axisLabelVisible: true,
-                title: 'Structural',
-            }));
+            const pnlEl = document.getElementById('positionPnl');
+            pnlEl.textContent = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(0)}`;
+            pnlEl.className = `data-value ${pnl >= 0 ? 'positive' : 'negative'}`;
             
-            // Safety net
-            const safetyNet = direction === 'long' ? entry * 0.95 : entry * 1.05;
-            priceLines.push(candleSeries.createPriceLine({
-                price: safetyNet,
-                color: '#ff5722',
-                lineWidth: 1,
-                lineStyle: LightweightCharts.LineStyle.Dashed,
-                axisLabelVisible: true,
-                title: '5% Max',
-            }));
+            const rEl = document.getElementById('positionR');
+            rEl.textContent = `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(1)}R`;
+            rEl.className = `data-value ${rMultiple >= 0 ? 'positive' : 'negative'}`;
+        }
+        
+        function updateStopsDisplay() {
+            const container = document.getElementById('stopsList');
             
-            // Guarding line (estimated)
-            const guardingLine = direction === 'long' ? entry * 0.99 : entry * 1.01;
-            priceLines.push(candleSeries.createPriceLine({
-                price: guardingLine,
-                color: '#2196f3',
-                lineWidth: 1,
-                lineStyle: LightweightCharts.LineStyle.Dotted,
-                axisLabelVisible: true,
-                title: 'Guarding',
-            }));
+            // Entry
+            let html = `
+                <div class="level-item entry">
+                    <div class="level-info">
+                        <span class="level-type">Entry</span>
+                        <span class="level-price">${formatPrice(state.entryPrice)}</span>
+                    </div>
+                </div>
+            `;
             
-            // Targets
-            data.targets.forEach((t, i) => {
-                priceLines.push(candleSeries.createPriceLine({
-                    price: t.price,
-                    color: '#00c853',
-                    lineWidth: 1,
-                    lineStyle: LightweightCharts.LineStyle.Solid,
-                    axisLabelVisible: true,
-                    title: `T${i+1} (${t.exit_percentage}%)`,
-                }));
+            // Stops
+            state.stops.forEach(stop => {
+                const dist = ((stop.price - state.entryPrice) / state.entryPrice * 100).toFixed(2);
+                const type = stop.type || 'stop';
+                html += `
+                    <div class="level-item ${type === 'safety_net' ? 'safety' : 'stop'}">
+                        <div class="level-info">
+                            <span class="level-type">${stop.type || 'Stop'}</span>
+                            <span class="level-price">${formatPrice(stop.price)}</span>
+                        </div>
+                        <span class="level-distance">${dist}%</span>
+                    </div>
+                `;
             });
+            
+            container.innerHTML = html;
         }
         
-        function updateSummary(data) {
-            document.getElementById('avgEntry').textContent = formatPrice(data.entry_price);
-            document.getElementById('totalSize').textContent = data.position_size.toFixed(4);
-            document.getElementById('riskUsed').textContent = `$${data.risk_amount.toLocaleString()}`;
-            document.getElementById('rrRatio').textContent = `${data.risk_reward_ratio.toFixed(1)}R`;
+        function updateTargetsDisplay() {
+            const container = document.getElementById('targetsList');
+            
+            let html = '';
+            state.targets.forEach((target, i) => {
+                const dist = ((target.price - state.entryPrice) / state.entryPrice * 100).toFixed(2);
+                html += `
+                    <div class="level-item target">
+                        <div class="level-info">
+                            <span class="level-type">T${i + 1} (${target.exit_percentage || 33}%)</span>
+                            <span class="level-price">${formatPrice(target.price)}</span>
+                        </div>
+                        <span class="level-distance">+${dist}%</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html || '<div class="empty-state"><span class="empty-state-desc">No targets</span></div>';
         }
         
-        function updateStops(data, support) {
-            const entry = data.entry_price;
-            const atr = (entry - support) * 0.2;
+        function activateGuard() {
+            if (state.guardingActive) return;
             
-            document.getElementById('structuralPrice').textContent = formatPrice(support - atr);
-            document.getElementById('safetyPrice').textContent = formatPrice(entry * 0.95);
-            document.getElementById('guardingPrice').textContent = 'Bar 11+';
-        }
-        
-        function updateContext(data) {
-            const ctx = data.market_context || {};
+            state.guardingActive = true;
+            state.guardingLevel = state.direction === 'long'
+                ? state.currentPrice * 0.98
+                : state.currentPrice * 1.02;
             
-            const struct = ctx.structure_quality || 0;
-            document.getElementById('ctxStructure').textContent = struct.toFixed(1);
-            document.getElementById('ctxStructure').style.color = struct >= 7 ? 'var(--green)' : struct >= 4 ? 'var(--gold)' : 'var(--red)';
+            chart.drawGuarding(state.guardingLevel, true);
             
-            const vol = ctx.volume_profile_score || 0;
-            document.getElementById('ctxVolume').textContent = vol.toFixed(1);
-            document.getElementById('ctxVolume').style.color = vol >= 7 ? 'var(--green)' : vol >= 4 ? 'var(--gold)' : 'var(--red)';
+            const statusEl = document.getElementById('guardingStatus');
+            statusEl.classList.add('active');
             
-            const flow = ctx.orderflow_bias || 'neutral';
-            document.getElementById('ctxFlow').textContent = flow.charAt(0).toUpperCase() + flow.slice(1);
-            document.getElementById('ctxFlow').style.color = flow === 'bullish' ? 'var(--green)' : flow === 'bearish' ? 'var(--red)' : 'var(--dim)';
-            
-            const mtf = (ctx.mtf_alignment || 0) * 10;
-            document.getElementById('ctxMTF').textContent = mtf.toFixed(1);
-            document.getElementById('ctxMTF').style.color = mtf >= 7 ? 'var(--green)' : mtf >= 4 ? 'var(--gold)' : 'var(--red)';
+            document.getElementById('guardingValue').textContent = formatPrice(state.guardingLevel);
+            document.getElementById('btnActivateGuard').textContent = 'Guard Active';
+            document.getElementById('btnActivateGuard').disabled = true;
         }
         
         function formatPrice(price) {
-            if (!price) return '-';
-            if (price >= 1000) {
-                return '$' + price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
-            return '$' + price.toFixed(2);
+            if (!price) return '--';
+            return price >= 1000
+                ? price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : price.toFixed(2);
         }
     </script>
 </body>
