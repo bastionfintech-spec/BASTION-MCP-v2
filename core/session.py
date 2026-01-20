@@ -88,7 +88,7 @@ class SessionEntry:
     stop_price: float             # Stop at time of entry
     entry_bar: int                # Bar number at entry
     entry_time: datetime = field(default_factory=datetime.utcnow)
-    status: ShotStatus = ShotStatus.OPEN
+    status: ShotStatus = ShotStatus.ACTIVE
     exit_price: Optional[float] = None
     exit_time: Optional[datetime] = None
     exit_reason: Optional[ExitReason] = None
@@ -484,8 +484,8 @@ class SessionManager:
         session.risk_remaining -= shot_risk
         
         # Recalculate average entry
-        total_value = sum(e.entry_price * e.size for e in session.entries if e.status == ShotStatus.OPEN)
-        total_size = sum(e.size for e in session.entries if e.status == ShotStatus.OPEN)
+        total_value = sum(e.entry_price * e.size for e in session.entries if e.status == ShotStatus.ACTIVE)
+        total_size = sum(e.size for e in session.entries if e.status == ShotStatus.ACTIVE)
         session.average_entry = total_value / total_size if total_size > 0 else entry_price
         
         # Update status
@@ -793,8 +793,8 @@ class SessionManager:
         # Update entries
         if exit_percentage >= 99.9:  # Full exit
             for entry in session.entries:
-                if entry.status == ShotStatus.OPEN:
-                    entry.status = ShotStatus.CLOSED
+                if entry.status == ShotStatus.ACTIVE:
+                    entry.status = ShotStatus.FULL_EXIT
                     entry.exit_price = exit_price
                     entry.exit_time = datetime.utcnow()
                     entry.exit_reason = exit_reason
