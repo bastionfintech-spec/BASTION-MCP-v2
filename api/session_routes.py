@@ -23,11 +23,13 @@ from core.session import (
     SessionManager, SessionState, SessionEntry,
     SessionUpdate, SessionStatus, ExitReason, TradePhase
 )
+from data.live_feed import LiveFeed
 
 router = APIRouter(prefix="/session", tags=["Sessions"])
 
-# Global session manager (initialized in server.py)
+# Global instances (initialized in server.py)
 session_manager: SessionManager = None
+live_feed: LiveFeed = None
 
 
 def get_manager() -> SessionManager:
@@ -36,6 +38,11 @@ def get_manager() -> SessionManager:
     if session_manager is None:
         session_manager = SessionManager()
     return session_manager
+
+
+def get_feed() -> LiveFeed:
+    """Get the live feed instance."""
+    return live_feed
 
 
 # =============================================================================
@@ -223,8 +230,10 @@ async def create_session(request: CreateSessionRequest):
     - Risk budget tracking (default 2% total cap)
     - Target levels for partial exits
     - Structural stop configuration
+    - Auto-subscribes to live price feed
     """
     manager = get_manager()
+    feed = get_feed()
     
     session = manager.create_session(
         symbol=request.symbol,
@@ -237,6 +246,10 @@ async def create_session(request: CreateSessionRequest):
         max_shots=request.max_shots,
         timeout_hours=request.timeout_hours,
     )
+    
+    # Auto-subscribe to live feed for this symbol
+    if feed:
+        await feed.subscribe(request.symbol, timeframes=[request.timeframe])
     
     return SessionResponse(**session.to_dict())
 

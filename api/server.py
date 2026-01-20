@@ -34,6 +34,7 @@ from api import session_routes
 from core.risk_engine import RiskEngine
 from core.session import SessionManager
 from data.fetcher import LiveDataFetcher
+from data.live_feed import LiveFeed, SessionAutoUpdater
 
 import logging
 
@@ -44,30 +45,41 @@ logger = logging.getLogger(__name__)
 risk_engine: RiskEngine = None
 data_fetcher: LiveDataFetcher = None
 session_manager: SessionManager = None
+live_feed: LiveFeed = None
+session_updater: SessionAutoUpdater = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
-    global risk_engine, data_fetcher, session_manager
+    global risk_engine, data_fetcher, session_manager, live_feed, session_updater
     
     # Startup
     logger.info("BASTION API starting up...")
     risk_engine = RiskEngine()
     data_fetcher = LiveDataFetcher()
     session_manager = SessionManager()
+    live_feed = LiveFeed(poll_interval=2.0, bar_check_interval=10.0)
+    session_updater = SessionAutoUpdater(live_feed, session_manager)
     
     # Wire session manager to routes
     session_routes.session_manager = session_manager
+    session_routes.live_feed = live_feed
+    
+    # Start live feed
+    await live_feed.start()
+    await session_updater.start()
     
     logger.info("Risk engine initialized (Advanced Mode)")
     logger.info("Session manager initialized (Multi-Shot + Guarding)")
-    logger.info("Data fetcher ready")
+    logger.info("Live feed connected (Helsinki VM)")
+    logger.info("Session auto-updater active")
     
     yield
     
     # Shutdown
     logger.info("BASTION API shutting down...")
+    await live_feed.stop()
     await data_fetcher.close()
     await risk_engine.close()
 
@@ -112,17 +124,99 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def root():
     """Root endpoint."""
     active_sessions = len(session_manager.get_active_sessions()) if session_manager else 0
+    feed_status = live_feed.status.value if live_feed else "disconnected"
+    subscribed = live_feed.subscribed_symbols if live_feed else []
+    
     return {
         "service": "BASTION API",
-        "version": "2.1.0",
-        "mode": "Advanced (VPVR + Structure + MTF + OrderFlow + Sessions)",
+        "version": "2.2.0",
+        "mode": "Advanced (VPVR + Structure + MTF + OrderFlow + Live Sessions)",
+        "live_feed": {
+            "status": feed_status,
+            "subscribed_symbols": subscribed,
+        },
         "active_sessions": active_sessions,
         "docs": "/docs",
         "endpoints": {
             "health": "/health",
             "calculate": "/calculate",
             "sessions": "/session/",
+            "price": "/price/{symbol}",
+            "bars": "/bars/{symbol}",
         }
+    }
+
+
+@app.get("/price/{symbol}", tags=["Live Data"])
+async def get_live_price(symbol: str = "BTCUSDT"):
+    """Get current live price for a symbol."""
+    if not live_feed:
+        raise HTTPException(status_code=503, detail="Live feed not available")
+    
+    price = await live_feed.get_price(symbol)
+    update = await live_feed.get_price_update(symbol)
+    
+    return {
+        "symbol": symbol,
+        "price": price,
+        "bid": update.bid if update else 0,
+        "ask": update.ask if update else 0,
+        "volume_24h": update.volume_24h if update else 0,
+        "change_24h_pct": update.change_24h_pct if update else 0,
+        "timestamp": update.timestamp.isoformat() if update else None,
+        "source": "helsinki_vm" if live_feed.status.value == "connected" else "binance",
+    }
+
+
+@app.get("/bars/{symbol}", tags=["Live Data"])
+async def get_bars(symbol: str = "BTCUSDT", timeframe: str = "4h", limit: int = 100):
+    """Get OHLCV bars for a symbol."""
+    if not live_feed:
+        raise HTTPException(status_code=503, detail="Live feed not available")
+    
+    df = await live_feed.get_bars(symbol, timeframe, limit)
+    
+    if df.empty:
+        raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+    
+    return {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "bars": [
+            {
+                "timestamp": ts.isoformat(),
+                "open": row['open'],
+                "high": row['high'],
+                "low": row['low'],
+                "close": row['close'],
+                "volume": row['volume'],
+            }
+            for ts, row in df.iterrows()
+        ][-limit:],
+        "count": len(df),
+    }
+
+
+@app.get("/orderflow/{symbol}", tags=["Live Data"])
+async def get_orderflow(symbol: str = "BTCUSDT"):
+    """Get order flow data from Helsinki Quant."""
+    if not live_feed:
+        raise HTTPException(status_code=503, detail="Live feed not available")
+    
+    update = await live_feed.get_orderflow(symbol)
+    
+    return {
+        "symbol": symbol,
+        "cvd": update.cvd,
+        "buy_volume": update.buy_volume,
+        "sell_volume": update.sell_volume,
+        "large_buys": update.large_buys,
+        "large_sells": update.large_sells,
+        "imbalance": update.imbalance,
+        "funding_rate": update.funding_rate,
+        "open_interest": update.open_interest,
+        "oi_change_pct": update.oi_change_pct,
+        "timestamp": update.timestamp.isoformat(),
     }
 
 
@@ -132,7 +226,7 @@ async def health_check():
     return HealthResponse(
         status="ok",
         service="BASTION",
-        version="2.1.0"
+        version="2.2.0"
     )
 
 
