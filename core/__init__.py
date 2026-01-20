@@ -28,6 +28,12 @@ from .orderflow_detector import OrderFlowDetector, OrderFlowAnalysis, FlowDirect
 # Multi-shot entry system (separate feature)
 from .adaptive_budget import AdaptiveRiskBudget, TradeBudget, Shot, ShotStatus
 
+# Session Management (live position tracking)
+from .session import (
+    SessionManager, SessionState, SessionEntry, SessionUpdate,
+    SessionStatus, ExitReason, TradePhase, PartialExit
+)
+
 __all__ = [
     # Main Engine
     "RiskEngine",
@@ -61,4 +67,13 @@ __all__ = [
     "TradeBudget",
     "Shot",
     "ShotStatus",
+    # Session Management
+    "SessionManager",
+    "SessionState",
+    "SessionEntry",
+    "SessionUpdate",
+    "SessionStatus",
+    "ExitReason",
+    "TradePhase",
+    "PartialExit",
 ]

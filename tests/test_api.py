@@ -50,7 +50,7 @@ class TestHealthEndpoint:
         response = client.get("/health")
         data = response.json()
         assert "version" in data
-        assert data["version"] == "2.0.0"
+        assert data["version"] == "2.1.0"
 
 
 class TestRootEndpoint:
@@ -317,6 +317,167 @@ class TestAdaptiveBudget:
         assert shot.entry_price == 95000
         assert shot.size > 0
         assert budget.risk_used > 0
+
+
+class TestSessionManager:
+    """Tests for session management."""
+    
+    def test_session_manager_import(self):
+        """SessionManager should be importable."""
+        from core.session import SessionManager
+        manager = SessionManager()
+        assert manager is not None
+    
+    def test_create_session(self):
+        """Should create a trading session."""
+        from core.session import SessionManager, SessionStatus
+        
+        manager = SessionManager()
+        session = manager.create_session(
+            symbol="BTCUSDT",
+            direction="long",
+            timeframe="4h",
+            account_balance=100000,
+            structural_support=93200,
+            targets=[
+                {"price": 97500, "exit_percentage": 33, "reason": "T1"},
+                {"price": 99800, "exit_percentage": 33, "reason": "T2"},
+            ],
+        )
+        
+        assert session.id is not None
+        assert session.symbol == "BTCUSDT"
+        assert session.direction == "long"
+        assert session.status == SessionStatus.PENDING
+        assert session.structural_stop == 93200
+    
+    def test_take_shot(self):
+        """Should take a shot in session."""
+        from core.session import SessionManager, SessionStatus
+        
+        manager = SessionManager()
+        session = manager.create_session(
+            symbol="BTCUSDT",
+            direction="long",
+            timeframe="4h",
+            account_balance=100000,
+            structural_support=93200,
+            targets=[],
+        )
+        
+        entry = manager.take_shot(
+            session_id=session.id,
+            entry_price=94500,
+            current_atr=600,
+        )
+        
+        assert entry is not None
+        assert entry.shot_number == 1
+        assert entry.entry_price == 94500
+        assert entry.size > 0
+        assert session.status == SessionStatus.ACTIVE
+    
+    def test_multi_shot_allocation(self):
+        """Multi-shot should allocate 50% -> 30% -> 20%."""
+        from core.session import SessionManager
+        
+        manager = SessionManager()
+        session = manager.create_session(
+            symbol="BTCUSDT",
+            direction="long",
+            timeframe="4h",
+            account_balance=100000,
+            structural_support=93200,
+            targets=[],
+        )
+        
+        # Shot 1: 50% of $2000 = $1000
+        shot1 = manager.take_shot(session.id, 94500, 600)
+        # Shot 2: 30% of $2000 = $600
+        shot2 = manager.take_shot(session.id, 93850, 600)
+        # Shot 3: 20% of $2000 = $400
+        shot3 = manager.take_shot(session.id, 95200, 600)
+        
+        assert shot1.risk_amount == 1000  # 50%
+        assert shot2.risk_amount == 600   # 30%
+        assert shot3.risk_amount == 400   # 20%
+        assert session.shots_taken == 3
+    
+    def test_phase_transition(self):
+        """Should transition from Phase 1 to Phase 2 at bar 10."""
+        from core.session import SessionManager, TradePhase
+        
+        manager = SessionManager()
+        session = manager.create_session(
+            symbol="BTCUSDT",
+            direction="long",
+            timeframe="4h",
+            account_balance=100000,
+            structural_support=93200,
+            targets=[],
+        )
+        
+        manager.take_shot(session.id, 94500, 600)
+        
+        # Update at bar 5 (Phase 1)
+        update = manager.update_session(session.id, 95000, 5)
+        assert update.phase == TradePhase.PHASE_1
+        
+        # Update at bar 11 (Phase 2)
+        update = manager.update_session(
+            session.id, 96000, 11,
+            recent_lows=[94000, 94200, 94100, 94300, 94500]
+        )
+        assert update.phase == TradePhase.PHASE_2
+        assert update.guarding_level is not None
+    
+    def test_exit_on_structure_break(self):
+        """Should signal exit when structure breaks."""
+        from core.session import SessionManager, ExitReason
+        
+        manager = SessionManager()
+        session = manager.create_session(
+            symbol="BTCUSDT",
+            direction="long",
+            timeframe="4h",
+            account_balance=100000,
+            structural_support=93200,
+            targets=[],
+        )
+        
+        manager.take_shot(session.id, 94500, 600)
+        
+        # Price breaks below structural support
+        update = manager.update_session(session.id, 93000, 5)
+        
+        assert update.exit_signal == True
+        assert update.exit_reason == ExitReason.STRUCTURE_BROKEN
+        assert update.exit_percentage == 100.0
+    
+    def test_exit_on_target_hit(self):
+        """Should signal exit when target hit."""
+        from core.session import SessionManager, ExitReason
+        
+        manager = SessionManager()
+        session = manager.create_session(
+            symbol="BTCUSDT",
+            direction="long",
+            timeframe="4h",
+            account_balance=100000,
+            structural_support=93200,
+            targets=[
+                {"price": 97500, "exit_percentage": 33, "reason": "T1"},
+            ],
+        )
+        
+        manager.take_shot(session.id, 94500, 600)
+        
+        # Price hits target
+        update = manager.update_session(session.id, 97600, 8)
+        
+        assert update.exit_signal == True
+        assert update.exit_reason == ExitReason.TARGET_HIT
+        assert update.exit_percentage == 33
 
 
 class TestDetectionSystems:

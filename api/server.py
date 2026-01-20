@@ -30,7 +30,9 @@ from api.models import (
     TargetLevelResponse,
     MarketContextResponse
 )
+from api import session_routes
 from core.risk_engine import RiskEngine
+from core.session import SessionManager
 from data.fetcher import LiveDataFetcher
 
 import logging
@@ -41,18 +43,25 @@ logger = logging.getLogger(__name__)
 # Global instances
 risk_engine: RiskEngine = None
 data_fetcher: LiveDataFetcher = None
+session_manager: SessionManager = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
-    global risk_engine, data_fetcher
+    global risk_engine, data_fetcher, session_manager
     
     # Startup
     logger.info("BASTION API starting up...")
     risk_engine = RiskEngine()
     data_fetcher = LiveDataFetcher()
+    session_manager = SessionManager()
+    
+    # Wire session manager to routes
+    session_routes.session_manager = session_manager
+    
     logger.info("Risk engine initialized (Advanced Mode)")
+    logger.info("Session manager initialized (Multi-Shot + Guarding)")
     logger.info("Data fetcher ready")
     
     yield
@@ -66,12 +75,15 @@ async def lifespan(app: FastAPI):
 # Initialize FastAPI with lifespan
 app = FastAPI(
     title="BASTION API",
-    description="Strategy-Agnostic Risk Management Infrastructure",
-    version="2.0.0",
+    description="Strategy-Agnostic Risk Management Infrastructure with Live Session Tracking",
+    version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
 )
+
+# Include session routes
+app.include_router(session_routes.router)
 
 # CORS Middleware
 app.add_middleware(
@@ -99,13 +111,18 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/", include_in_schema=False)
 async def root():
     """Root endpoint."""
+    active_sessions = len(session_manager.get_active_sessions()) if session_manager else 0
     return {
         "service": "BASTION API",
-        "version": "2.0.0",
-        "mode": "Advanced (VPVR + Structure + MTF + OrderFlow)",
+        "version": "2.1.0",
+        "mode": "Advanced (VPVR + Structure + MTF + OrderFlow + Sessions)",
+        "active_sessions": active_sessions,
         "docs": "/docs",
-        "health": "/health",
-        "calculate": "/calculate"
+        "endpoints": {
+            "health": "/health",
+            "calculate": "/calculate",
+            "sessions": "/session/",
+        }
     }
 
 
@@ -115,7 +132,7 @@ async def health_check():
     return HealthResponse(
         status="ok",
         service="BASTION",
-        version="2.0.0"
+        version="2.1.0"
     )
 
 
