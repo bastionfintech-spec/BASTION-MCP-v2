@@ -2,49 +2,61 @@
 BASTION Core Module
 ===================
 
-Risk management engine and supporting components.
+Strategy-agnostic risk management engine with advanced detection systems.
 """
 
-from .models import (
+# Main Risk Engine (the only engine you need)
+from .risk_engine import (
+    RiskEngine,
+    RiskEngineConfig,
+    RiskLevels,
+    RiskUpdate,
+    TradeSetup,
+    PositionUpdate,
     StopType,
     TargetType,
-    Direction,
-    StopLevel,
-    TargetLevel,
-    RiskLevels,
-    TradeSetup,
-    MarketContext,
-    PositionUpdate,
-    RiskUpdate
+    StructureHealth,
+    GuardingLineManager,
 )
 
-from .engine import RiskEngine, RiskEngineConfig
-from .living_tp import LivingTakeProfit, StructureHealth, StructuralTarget
-from .guarding_line import GuardingLine
+# Detection Systems
+from .structure_detector import StructureDetector, StructureAnalysis, StructureGrade
+from .vpvr_analyzer import VPVRAnalyzer, VPVRAnalysis, VolumeNode, ValueArea
+from .mtf_structure import MTFStructureAnalyzer, MTFAlignment
+from .orderflow_detector import OrderFlowDetector, OrderFlowAnalysis, FlowDirection
+
+# Multi-shot entry system (separate feature)
 from .adaptive_budget import AdaptiveRiskBudget, TradeBudget, Shot, ShotStatus
 
 __all__ = [
-    # Models
-    "StopType",
-    "TargetType", 
-    "Direction",
-    "StopLevel",
-    "TargetLevel",
-    "RiskLevels",
-    "TradeSetup",
-    "MarketContext",
-    "PositionUpdate",
-    "RiskUpdate",
-    # Engine
+    # Main Engine
     "RiskEngine",
     "RiskEngineConfig",
-    # Living Take-Profit
-    "LivingTakeProfit",
+    "RiskLevels",
+    "RiskUpdate",
+    "TradeSetup",
+    "PositionUpdate",
+    "StopType",
+    "TargetType",
     "StructureHealth",
-    "StructuralTarget",
-    # Guarding Line
-    "GuardingLine",
-    # Adaptive Budget
+    "GuardingLineManager",
+    # Structure Detection
+    "StructureDetector",
+    "StructureAnalysis",
+    "StructureGrade",
+    # Volume Profile
+    "VPVRAnalyzer",
+    "VPVRAnalysis",
+    "VolumeNode",
+    "ValueArea",
+    # Multi-Timeframe
+    "MTFStructureAnalyzer",
+    "MTFAlignment",
+    # Order Flow
+    "OrderFlowDetector",
+    "OrderFlowAnalysis",
+    "FlowDirection",
+    # Multi-Shot
     "AdaptiveRiskBudget",
     "TradeBudget",
     "Shot",

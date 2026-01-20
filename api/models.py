@@ -6,7 +6,7 @@ Pydantic models for request/response validation.
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 
@@ -43,8 +43,8 @@ class CalculateRiskRequest(BaseModel):
         description="Risk percentage per trade (0.1 - 10%)"
     )
     
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "symbol": "BTCUSDT",
                 "entry_price": 95000,
@@ -54,12 +54,13 @@ class CalculateRiskRequest(BaseModel):
                 "risk_per_trade_pct": 1.0
             }
         }
+    }
 
 
 class StopLevelResponse(BaseModel):
     """Stop-loss level in response."""
     
-    type: str = Field(description="Stop type: primary, secondary, safety_net")
+    type: str = Field(description="Stop type: structural, atr, secondary, safety_net")
     price: float = Field(description="Stop price level")
     distance_pct: float = Field(description="Distance from entry as percentage")
     reason: str = Field(description="Reason for this stop level")
@@ -70,10 +71,32 @@ class TargetLevelResponse(BaseModel):
     """Take-profit target in response."""
     
     price: float = Field(description="Target price level")
+    type: str = Field(default="structural", description="Target type: structural, vpvr, extension")
     exit_percentage: float = Field(description="Percentage of position to exit")
     distance_pct: float = Field(description="Distance from entry as percentage")
     reason: str = Field(description="Reason for this target")
     confidence: float = Field(description="Confidence score (0-1)")
+
+
+class MarketContextResponse(BaseModel):
+    """Market context (informational, not judgmental)."""
+    
+    structure_quality: float = Field(
+        default=0.0,
+        description="Structure quality score (0-10) from trendline analysis"
+    )
+    volume_profile_score: float = Field(
+        default=0.0,
+        description="Volume profile score (0-10) from VPVR analysis"
+    )
+    orderflow_bias: str = Field(
+        default="neutral",
+        description="Order flow bias: bullish, bearish, or neutral"
+    )
+    mtf_alignment: float = Field(
+        default=0.0,
+        description="Multi-timeframe alignment (0-1)"
+    )
 
 
 class RiskLevelsResponse(BaseModel):
@@ -93,18 +116,21 @@ class RiskLevelsResponse(BaseModel):
     
     risk_reward_ratio: float = Field(description="R:R to first target")
     max_risk_reward_ratio: float = Field(description="R:R to final target")
-    win_probability: float = Field(description="Estimated win probability")
-    expected_value: float = Field(description="Expected value in R")
     
-    guarding_line: Optional[dict] = Field(
+    guarding_line: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Guarding line parameters for swing trades"
     )
     
+    market_context: Optional[MarketContextResponse] = Field(
+        default=None,
+        description="Market context scores (informational only)"
+    )
+    
     calculated_at: datetime = Field(default_factory=datetime.utcnow)
     
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "symbol": "BTCUSDT",
                 "entry_price": 95000,
@@ -112,20 +138,21 @@ class RiskLevelsResponse(BaseModel):
                 "current_price": 94328,
                 "stops": [
                     {
-                        "type": "primary",
+                        "type": "structural",
                         "price": 92500,
                         "distance_pct": 2.6,
-                        "reason": "Below support at 92800",
+                        "reason": "Below structural support at 92800",
                         "confidence": 0.8
                     }
                 ],
                 "targets": [
                     {
                         "price": 98000,
+                        "type": "vpvr",
                         "exit_percentage": 33,
                         "distance_pct": 3.2,
-                        "reason": "Resistance level (R:R 2.5)",
-                        "confidence": 0.7
+                        "reason": "HVN mountain (vol z=2.1)",
+                        "confidence": 0.75
                     }
                 ],
                 "position_size": 0.421,
@@ -133,11 +160,20 @@ class RiskLevelsResponse(BaseModel):
                 "risk_amount": 1000,
                 "risk_reward_ratio": 2.5,
                 "max_risk_reward_ratio": 6.5,
-                "win_probability": 0.52,
-                "expected_value": 0.8,
-                "guarding_line": None
+                "guarding_line": {
+                    "slope": 50.0,
+                    "intercept": 92000,
+                    "activation_bar": 10
+                },
+                "market_context": {
+                    "structure_quality": 7.5,
+                    "volume_profile_score": 8.2,
+                    "orderflow_bias": "bullish",
+                    "mtf_alignment": 0.78
+                }
             }
         }
+    }
 
 
 class ErrorResponse(BaseModel):
@@ -153,6 +189,5 @@ class HealthResponse(BaseModel):
     
     status: str = Field(default="ok")
     service: str = Field(default="BASTION")
-    version: str = Field(default="1.0.0-MVP")
+    version: str = Field(default="2.0.0")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-
