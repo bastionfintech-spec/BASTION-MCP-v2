@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASTION - Session Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="session.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BASTION</h1>
+            <p class="tagline">Live Session Tracker</p>
+            <nav class="nav-tabs">
+                <a href="index.html" class="nav-tab">Calculator</a>
+                <a href="session.html" class="nav-tab active">Sessions</a>
+            </nav>
+        </header>
+
+        <div class="calculator">
+            <!-- Session Creation Form -->
+            <div id="createSessionForm" class="session-form">
+                <h2>Create New Session</h2>
+                <form id="newSessionForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="symbol">Symbol</label>
+                            <input type="text" id="symbol" name="symbol" value="BTCUSDT" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="direction">Direction</label>
+                            <select id="direction" name="direction" required>
+                                <option value="long">LONG</option>
+                                <option value="short">SHORT</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="structural_support">Structural Support</label>
+                            <input type="number" id="structural_support" name="structural_support" step="0.01" required placeholder="Grade 3-4 trendline">
+                        </div>
+                        <div class="form-group">
+                            <label for="timeframe">Timeframe</label>
+                            <select id="timeframe" name="timeframe">
+                                <option value="15m">15m</option>
+                                <option value="1h">1H</option>
+                                <option value="4h" selected>4H</option>
+                                <option value="1d">1D</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="account_balance">Account Balance</label>
+                            <input type="number" id="account_balance" name="account_balance" value="100000" step="1000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="risk_cap">Risk Cap %</label>
+                            <input type="number" id="risk_cap" name="risk_cap" value="2.0" step="0.1" min="0.1" max="10" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group targets-group">
+                        <label>Targets</label>
+                        <div id="targetsContainer">
+                            <div class="target-row">
+                                <input type="number" placeholder="Price" class="target-price">
+                                <input type="number" placeholder="Exit %" value="33" class="target-exit">
+                                <input type="text" placeholder="Reason" class="target-reason">
+                            </div>
+                        </div>
+                        <button type="button" class="btn-add-target" onclick="addTarget()">+ Add Target</button>
+                    </div>
+
+                    <button type="submit" class="btn-calculate">Create Session</button>
+                </form>
+            </div>
+
+            <!-- Active Sessions -->
+            <div id="activeSessions" class="active-sessions">
+                <h2>Active Sessions</h2>
+                <div id="sessionsList"></div>
+            </div>
+
+            <!-- Session Detail -->
+            <div id="sessionDetail" class="session-detail" style="display: none;">
+                <div class="session-header">
+                    <h2 id="sessionTitle"></h2>
+                    <div class="session-badges">
+                        <span id="sessionPhase" class="badge"></span>
+                        <span id="sessionStatus" class="badge"></span>
+                    </div>
+                </div>
+
+                <!-- Position Summary -->
+                <div class="position-summary">
+                    <div class="summary-item">
+                        <span class="label">Shots</span>
+                        <span id="shotsTaken" class="value">0/3</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Avg Entry</span>
+                        <span id="avgEntry" class="value">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Position</span>
+                        <span id="totalSize" class="value">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">P&L</span>
+                        <span id="sessionPnl" class="value">-</span>
+                    </div>
+                </div>
+
+                <!-- Entries -->
+                <div class="entries-section">
+                    <h3>Entries (Shots)</h3>
+                    <div id="entriesList"></div>
+                    
+                    <!-- Take Shot Form -->
+                    <div id="takeShotForm" class="take-shot-form">
+                        <input type="number" id="shotEntryPrice" placeholder="Entry Price" step="0.01">
+                        <input type="number" id="shotATR" placeholder="ATR" step="0.01">
+                        <button onclick="takeShot()" class="btn-shot">Take Shot</button>
+                    </div>
+                </div>
+
+                <!-- Stops -->
+                <div class="stops-section">
+                    <h3>Stop Levels</h3>
+                    <div class="stop-levels">
+                        <div class="stop-level">
+                            <span class="stop-type">Structural</span>
+                            <span id="structuralStop" class="stop-price">-</span>
+                        </div>
+                        <div class="stop-level">
+                            <span class="stop-type">Current</span>
+                            <span id="currentStop" class="stop-price">-</span>
+                        </div>
+                        <div class="stop-level guarding">
+                            <span class="stop-type">Guarding</span>
+                            <span id="guardingLevel" class="stop-price">-</span>
+                            <span id="guardingStatus" class="guarding-status">Inactive</span>
+                        </div>
+                        <div class="stop-level safety">
+                            <span class="stop-type">Safety Net</span>
+                            <span id="safetyStop" class="stop-price">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Targets -->
+                <div class="targets-section">
+                    <h3>Targets</h3>
+                    <div id="targetsList"></div>
+                </div>
+
+                <!-- Update Form -->
+                <div class="update-section">
+                    <h3>Update Session</h3>
+                    <div class="update-form">
+                        <input type="number" id="updatePrice" placeholder="Current Price" step="0.01">
+                        <input type="number" id="updateBar" placeholder="Bar #" value="1">
+                        <button onclick="updateSession()" class="btn-update">Update</button>
+                    </div>
+                    <div class="signal-checkboxes">
+                        <label><input type="checkbox" id="opposingSignal"> Opposing Signal</label>
+                        <label><input type="checkbox" id="momentumExhaustion"> Momentum Exhaustion</label>
+                        <label><input type="checkbox" id="volumeClimax"> Volume Climax</label>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div id="alertsSection" class="alerts-section">
+                    <h3>Alerts</h3>
+                    <div id="alertsList"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="session-actions">
+                    <button onclick="closeSessionDetail()" class="btn-back">Back</button>
+                    <button onclick="closeSession()" class="btn-close-session">Close Session</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="session.js"></script>
+</body>
+</html>
+
