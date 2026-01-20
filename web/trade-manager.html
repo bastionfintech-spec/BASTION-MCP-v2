@@ -6,22 +6,24 @@
     <title>BASTION - Dynamic Trade Manager</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="volume-profile.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
-            --bg: #0a0a0a;
-            --surface: #111;
-            --surface-2: #1a1a1a;
-            --border: #2a2a2a;
-            --text: #e0e0e0;
-            --dim: #666;
-            --accent: #dc143c;
-            --green: #00c853;
-            --red: #dc143c;
-            --gold: #ffd700;
-            --blue: #2196f3;
-            --orange: #ff9800;
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface-2: #21262d;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --dim: #8b949e;
+            --accent: #da3633;
+            --green: #238636;
+            --red: #da3633;
+            --gold: #bb8009;
+            --blue: #388bfd;
+            --orange: #bd5d12;
+            --cyan: #79c0ff;
         }
         
         body {
@@ -48,27 +50,38 @@
         }
         
         .logo {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .nav-link {
-            padding: 6px 12px;
-            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
             color: var(--dim);
-            text-decoration: none;
-            font-size: 0.8rem;
         }
         
-        .nav-link:hover, .nav-link.active {
+        .timeframe-selector {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .tf-btn {
+            padding: 4px 8px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: var(--dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        
+        .tf-btn:hover {
             color: var(--text);
             background: var(--surface-2);
+        }
+        
+        .tf-btn.active {
+            color: var(--text);
+            background: var(--surface-2);
+            border-color: var(--border);
         }
         
         .live-indicator {
@@ -884,10 +897,12 @@
     <div class="header">
         <div class="header-left">
             <div class="logo">BASTION</div>
-            <nav class="nav-links">
-                <a href="index.html" class="nav-link">Calculator</a>
-                <a href="trade-manager.html" class="nav-link active">Trade Manager</a>
-            </nav>
+            <div class="timeframe-selector">
+                <button class="tf-btn" data-tf="15m">15m</button>
+                <button class="tf-btn" data-tf="1h">1H</button>
+                <button class="tf-btn active" data-tf="4h">4H</button>
+                <button class="tf-btn" data-tf="1d">1D</button>
+            </div>
         </div>
         <div class="live-indicator">
             <div class="live-dot"></div>
@@ -1207,6 +1222,7 @@
         let state = {
             active: false,
             symbol: 'BTCUSDT',
+            timeframe: '4h',
             direction: 'long',
             account: 100000,
             currentPrice: 0,
@@ -1219,12 +1235,24 @@
             totalSize: 0,
             guardingActive: false,
             guardingLevel: 0,
+            guardingSlope: 0,
             unrealizedPnl: 0,
             realizedPnl: 0,
-            targetsHit: 0
+            targetsHit: 0,
+            vpvrData: null,
         };
         
         let chart, candleSeries, priceLines = [];
+        let guardingLineSeries = null;
+        let volumeProfile = null;
+        let lastBarTime = 0;
+        
+        const TIMEFRAME_SECONDS = {
+            '15m': 900,
+            '1h': 3600,
+            '4h': 14400,
+            '1d': 86400,
+        };
         let guardingLineSeries, primaryStopSeries, secondaryStopSeries, safetyNetSeries;
         let entryMarker;
         let simInterval;
@@ -1232,9 +1260,13 @@
         let tradeStartTime = 0;
         
         // Init
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             initChart();
-            loadMarketData();
+            
+            // Check for saved session before loading market data
+            const restored = checkSavedSession();
+            
+            await loadMarketData();
             setupEventListeners();
         });
         
@@ -1243,6 +1275,16 @@
             document.getElementById('shortBtn').addEventListener('click', () => setDir('short'));
             document.getElementById('startBtn').addEventListener('click', startSession);
             document.getElementById('exitBtn').addEventListener('click', exitSession);
+            
+            // Timeframe buttons
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.timeframe = e.target.dataset.tf;
+                    await loadMarketData();
+                });
+            });
             document.getElementById('symbol').addEventListener('change', loadMarketData);
             document.getElementById('account').addEventListener('change', updateBudgetDisplay);
             document.getElementById('entryInput').addEventListener('input', updateStopPreview);
@@ -1286,7 +1328,7 @@
                 state.currentPrice = priceData.price || 0;
                 
                 // Get bars to find support
-                const barsRes = await fetch(`${API}/bars/${state.symbol}?timeframe=4h&limit=50`);
+                const barsRes = await fetch(`${API}/bars/${state.symbol}?timeframe=${state.timeframe}&limit=100`);
                 const barsData = await barsRes.json();
                 
                 if (barsData.bars && barsData.bars.length > 0) {
@@ -1321,34 +1363,42 @@
             
             chart = LightweightCharts.createChart(container, {
                 layout: {
-                    background: { type: 'solid', color: '#0a0a0a' },
-                    textColor: '#666',
+                    background: { type: 'solid', color: '#0d1117' },
+                    textColor: '#8b949e',
+                    fontFamily: "JetBrains Mono, monospace",
                 },
                 grid: {
-                    vertLines: { color: '#1a1a1a' },
-                    horzLines: { color: '#1a1a1a' },
+                    vertLines: { color: '#21262d' },
+                    horzLines: { color: '#21262d' },
                 },
-                rightPriceScale: { borderColor: '#2a2a2a' },
-                timeScale: { borderColor: '#2a2a2a', timeVisible: true },
+                rightPriceScale: { borderColor: '#30363d' },
+                timeScale: { borderColor: '#30363d', timeVisible: true },
                 crosshair: {
                     mode: LightweightCharts.CrosshairMode.Normal,
                 },
             });
             
             candleSeries = chart.addCandlestickSeries({
-                upColor: '#00c853',
-                downColor: '#dc143c',
-                borderUpColor: '#00c853',
-                borderDownColor: '#dc143c',
-                wickUpColor: '#00c853',
-                wickDownColor: '#dc143c',
+                upColor: '#238636',
+                downColor: '#da3633',
+                borderUpColor: '#238636',
+                borderDownColor: '#da3633',
+                wickUpColor: '#238636',
+                wickDownColor: '#da3633',
             });
             
-            // Hidden line series (kept for compatibility but not used)
-            safetyNetSeries = chart.addLineSeries({ visible: false });
-            secondaryStopSeries = chart.addLineSeries({ visible: false });
-            primaryStopSeries = chart.addLineSeries({ visible: false });
-            guardingLineSeries = chart.addLineSeries({ visible: false });
+            // Angled guarding line series
+            guardingLineSeries = chart.addLineSeries({
+                color: '#388bfd',
+                lineWidth: 2,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                priceLineVisible: false,
+                lastValueVisible: true,
+                crosshairMarkerVisible: false,
+            });
+            
+            // Volume profile overlay
+            volumeProfile = new VolumeProfileOverlay(container);
             
             new ResizeObserver(() => {
                 chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
@@ -1373,8 +1423,13 @@
             }).sort((a, b) => a.time - b.time);
             
             const unique = candles.filter((c, i, arr) => i === 0 || c.time !== arr[i-1].time);
-            chartBars = unique; // Store for angled line calculations
             candleSeries.setData(unique);
+            
+            // Track last bar time for angled guarding line
+            if (unique.length > 0) {
+                lastBarTime = unique[unique.length - 1].time;
+            }
+            
             chart.timeScale().fitContent();
         }
         
@@ -1440,6 +1495,12 @@
             updateStops();
             setPhase(2);
             drawRiskLevels();
+            
+            // Draw projected guarding line (inactive)
+            drawProjectedGuardingLine();
+            
+            // Save session to localStorage
+            saveSession();
             
             // Start live price polling (real data, not simulation)
             simInterval = setInterval(pollLivePrice, 3000);
@@ -1579,28 +1640,27 @@
             state.guardingLevel = state.direction === 'long' ?
                 state.currentPrice * 0.98 : state.currentPrice * 1.02; // 2% trailing buffer
             
-            // Add guarding line to chart
-            priceLines.push(candleSeries.createPriceLine({
-                price: state.guardingLevel,
-                color: '#00c853',
-                lineWidth: 2,
-                lineStyle: LightweightCharts.LineStyle.Solid,
-                axisLabelVisible: true,
-                title: 'Guard',
-            }));
+            // Calculate slope (price increase per bar)
+            state.guardingSlope = state.avgEntry * 0.001; // 0.1% per bar
+            
+            // Draw ANGLED guarding line using LineSeries
+            drawAngledGuardingLine(state.guardingLevel, state.guardingSlope, true);
             
             // Flash animation effect
             const panel = document.getElementById('guardingPanel');
-            panel.style.boxShadow = '0 0 30px rgba(0, 200, 83, 0.5)';
+            panel.style.boxShadow = '0 0 20px rgba(56, 139, 253, 0.4)';
             setTimeout(() => { panel.style.boxShadow = 'none'; }, 1000);
             
             document.getElementById('guardingStatus').textContent = 'ACTIVE';
             document.getElementById('guardingStatus').className = 'guarding-status active';
-            document.getElementById('guardingStatus').style.background = 'var(--green)';
+            document.getElementById('guardingStatus').style.background = 'var(--blue)';
             document.getElementById('guardingLevel').textContent = formatPrice(state.guardingLevel);
             document.getElementById('guardingStopPrice').textContent = formatPrice(state.guardingLevel);
             document.getElementById('stopStructural').classList.remove('active');
             document.getElementById('stopGuarding').classList.add('guarding-active');
+            
+            // Save session
+            saveSession();
             document.getElementById('activateGuardBtn').style.display = 'none';
             document.getElementById('coneInfo').innerHTML = '<small>✅ Guard active - will exit if price closes below ' + formatPrice(state.guardingLevel) + '</small>';
             
@@ -1801,6 +1861,112 @@
             
             alert(`Session closed.\nTotal P&L: $${state.realizedPnl.toFixed(2)}`);
             location.reload();
+        }
+        
+        // Draw angled guarding line using LineSeries
+        function drawAngledGuardingLine(startPrice, slope, active = false) {
+            if (!lastBarTime) {
+                console.warn('No bar data, cannot draw angled line');
+                return;
+            }
+            
+            const data = [];
+            const slopeDir = state.direction === 'long' ? 1 : -1;
+            const tfSeconds = TIMEFRAME_SECONDS[state.timeframe] || 14400;
+            const barsToProject = 30;
+            
+            for (let i = 0; i <= barsToProject; i++) {
+                const time = lastBarTime + (i * tfSeconds);
+                const price = startPrice + (slope * slopeDir * i);
+                data.push({ time, value: price });
+            }
+            
+            guardingLineSeries.applyOptions({
+                color: active ? '#388bfd' : 'rgba(56, 139, 253, 0.4)',
+                lineWidth: active ? 2 : 1,
+                lineStyle: active ? LightweightCharts.LineStyle.Solid : LightweightCharts.LineStyle.Dashed,
+            });
+            
+            guardingLineSeries.setData(data);
+        }
+        
+        // Draw projected (inactive) guarding line
+        function drawProjectedGuardingLine() {
+            if (!state.avgEntry || !lastBarTime) return;
+            
+            const startPrice = state.direction === 'long' ?
+                state.avgEntry * 0.98 : state.avgEntry * 1.02;
+            const slope = state.avgEntry * 0.001;
+            
+            drawAngledGuardingLine(startPrice, slope, false);
+        }
+        
+        // Session persistence
+        function saveSession() {
+            try {
+                const toSave = {
+                    ...state,
+                    timestamp: Date.now(),
+                };
+                localStorage.setItem('bastion_trade_session', JSON.stringify(toSave));
+            } catch (e) {
+                console.warn('Failed to save session:', e);
+            }
+        }
+        
+        function checkSavedSession() {
+            try {
+                const saved = localStorage.getItem('bastion_trade_session');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.active && Date.now() - parsed.timestamp < 86400000) {
+                        if (confirm('Resume previous trading session?')) {
+                            Object.assign(state, parsed);
+                            restoreSession();
+                            return true;
+                        } else {
+                            localStorage.removeItem('bastion_trade_session');
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to restore session:', e);
+            }
+            return false;
+        }
+        
+        function restoreSession() {
+            // Restore UI from saved state
+            document.getElementById('symbol').value = state.symbol;
+            document.getElementById('account').value = state.account;
+            
+            if (state.active) {
+                // Show session UI
+                document.getElementById('noSession').style.display = 'none';
+                document.getElementById('entrySection').style.display = 'none';
+                document.getElementById('budgetSection').style.display = 'block';
+                document.getElementById('shotsSection').style.display = 'block';
+                document.getElementById('chartHeader').style.display = 'flex';
+                document.getElementById('metricsBar').style.display = 'grid';
+                document.getElementById('guardingPanel').style.display = 'block';
+                document.getElementById('targetSection').style.display = 'block';
+                document.getElementById('stopsSection').style.display = 'block';
+                document.getElementById('exitBtnSection').style.display = 'block';
+                
+                renderShots();
+                updateMetrics();
+                updateStops();
+                drawRiskLevels();
+                
+                if (state.guardingActive) {
+                    drawAngledGuardingLine(state.guardingLevel, state.guardingSlope, true);
+                } else {
+                    drawProjectedGuardingLine();
+                }
+                
+                // Resume price polling
+                simInterval = setInterval(pollLivePrice, 3000);
+            }
         }
         
         function formatPrice(price) {
