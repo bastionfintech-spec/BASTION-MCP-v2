@@ -1,3 +1,5 @@
+<img width="2145" height="1310" alt="Mask group (14)" src="https://github.com/user-attachments/assets/878d4b09-22de-4b1d-b92e-e90189bbac3b" />
+
 # 🏰 BASTION
 
 **Proactive Risk Management Infrastructure**
