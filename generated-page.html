@@ -1,0 +1,1780 @@
+<html lang="en" class="bg-[#050505] scroll-smooth antialiased"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASTION - Tactical Risk Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+      body { font-family: 'Inter', sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+      /* Scrollbar */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      /* Tactical Red Grid Overlay */
+      .tactical-grid {
+      background-size: 40px 40px;
+      background-image:
+      linear-gradient(to right, rgba(220, 38, 38, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(220, 38, 38, 0.07) 1px, transparent 1px);
+      mask-image: radial-gradient(ellipse at center top, black 40%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center top, black 40%, transparent 80%);
+      pointer-events: none;
+      z-index: 1;
+      }
+      /* Scanline Effect */
+      .scanlines {
+      background: linear-gradient(
+      to bottom,
+      rgba(255,255,255,0),
+      rgba(255,255,255,0) 50%,
+      rgba(0,0,0,0.3) 50%,
+      rgba(0,0,0,0.3)
+      );
+      background-size: 100% 3px;
+      pointer-events: none;
+      z-index: 50;
+      opacity: 0.3;
+      }
+      /* Glitch Animation */
+      .glitch-text {
+      position: relative;
+      display: inline-block;
+      }
+      .glitch-text::before,
+      .glitch-text::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0A0A0A;
+      }
+      .glitch-text::before {
+      left: 2px;
+      text-shadow: -1px 0 #DC2626;
+      clip: rect(24px, 550px, 90px, 0);
+      animation: glitch-anim-2 3s infinite linear alternate-reverse;
+      }
+      .glitch-text::after {
+      left: -2px;
+      text-shadow: -1px 0 #fff;
+      clip: rect(85px, 550px, 140px, 0);
+      animation: glitch-anim 2.5s infinite linear alternate-reverse;
+      }
+      @keyframes glitch-anim {
+      0% { clip: rect(12px, 9999px, 81px, 0); }
+      20% { clip: rect(138px, 9999px, 95px, 0); }
+      40% { clip: rect(40px, 9999px, 11px, 0); }
+      60% { clip: rect(2px, 9999px, 66px, 0); }
+      80% { clip: rect(121px, 9999px, 7px, 0); }
+      100% { clip: rect(56px, 9999px, 31px, 0); }
+      }
+      @keyframes glitch-anim-2 {
+      0% { clip: rect(124px, 9999px, 18px, 0); }
+      20% { clip: rect(50px, 9999px, 148px, 0); }
+      40% { clip: rect(15px, 9999px, 10px, 0); }
+      60% { clip: rect(133px, 9999px, 86px, 0); }
+      80% { clip: rect(78px, 9999px, 149px, 0); }
+      100% { clip: rect(26px, 9999px, 18px, 0); }
+      }
+      /* Reveal Animations */
+      @media (prefers-reduced-motion: no-preference) {
+      .sys-reveal { opacity: 0; transform: translateY(20px); filter: blur(4px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+      .sys-active { opacity: 1; transform: translate(0); filter: blur(0); }
+      .sys-delay-100 { transition-delay: 100ms; }
+      .sys-delay-200 { transition-delay: 200ms; }
+      .sys-delay-300 { transition-delay: 300ms; }
+      }
+      /* CRT Flicker */
+      @keyframes crt-flicker {
+      0% { opacity: 0.95; }
+      5% { opacity: 0.85; }
+      10% { opacity: 0.95; }
+      15% { opacity: 1; }
+      100% { opacity: 0.95; }
+      }
+      .crt-effect { animation: crt-flicker 4s infinite; }
+    </style>
+    <script>
+      tailwind.config = {
+      theme: {
+      extend: {
+      colors: {
+      'crimson': {
+      400: '#F87171',
+      500: '#EF4444',
+      600: '#DC2626',
+      700: '#B91C1C',
+      900: '#7F1D1D',
+      950: '#450A0A'
+      },
+      'zinc': {
+      850: '#1f1f22',
+      900: '#18181b',
+      950: '#09090b',
+      }
+      },
+      backgroundImage: {
+      'scanline': "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xIDFoMnYySDF6IiBmaWxsPSJyZ2JhKDAsMCwwLDAuMikiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvc3ZnPg==')"
+      }
+      }
+      }
+      };
+    </script>
+
+    <link id="all-fonts-link-font-geist" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-geist">
+      .font-geist { font-family: 'Geist', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-roboto" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-roboto">
+      .font-roboto { font-family: 'Roboto', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-montserrat" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-montserrat">
+      .font-montserrat { font-family: 'Montserrat', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-poppins" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-poppins">
+      .font-poppins { font-family: 'Poppins', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-playfair" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&amp;display=swap">
+    <style id="all-fonts-style-font-playfair">
+      .font-playfair { font-family: 'Playfair Display', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-instrument-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-instrument-serif">
+      .font-instrument-serif { font-family: 'Instrument Serif', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-merriweather" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&amp;display=swap">
+    <style id="all-fonts-style-font-merriweather">
+      .font-merriweather { font-family: 'Merriweather', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-bricolage" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-bricolage">
+      .font-bricolage { font-family: 'Bricolage Grotesque', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-jakarta" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap">
+    <style id="all-fonts-style-font-jakarta">
+      .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-manrope" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap">
+    <style id="all-fonts-style-font-manrope">
+      .font-manrope { font-family: 'Manrope', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-space-grotesk" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-space-grotesk">
+      .font-space-grotesk { font-family: 'Space Grotesk', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-work-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&amp;display=swap">
+    <style id="all-fonts-style-font-work-sans">
+      .font-work-sans { font-family: 'Work Sans', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-pt-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&amp;display=swap">
+    <style id="all-fonts-style-font-pt-serif">
+      .font-pt-serif { font-family: 'PT Serif', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-geist-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-geist-mono">
+      .font-geist-mono { font-family: 'Geist Mono', monospace !important; }
+    </style>
+    <link id="all-fonts-link-font-space-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;display=swap">
+    <style id="all-fonts-style-font-space-mono">
+      .font-space-mono { font-family: 'Space Mono', monospace !important; }
+    </style>
+    <link id="all-fonts-link-font-quicksand" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-quicksand">
+      .font-quicksand { font-family: 'Quicksand', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-nunito" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&amp;display=swap">
+    <style id="all-fonts-style-font-nunito">
+      .font-nunito { font-family: 'Nunito', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-newsreader" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&amp;display=swap">
+    <style id="all-fonts-style-font-newsreader">
+      .font-newsreader { font-family: 'Newsreader', serif !important; }
+    </style>
+    <link id="all-fonts-link-font-google-sans-flex" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-google-sans-flex">
+      .font-google-sans-flex { font-family: 'Google Sans Flex', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-oswald" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-oswald">
+      .font-oswald { font-family: 'Oswald', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-dm-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-dm-sans">
+      .font-dm-sans { font-family: 'DM Sans', sans-serif !important; }
+    </style>
+    <link id="all-fonts-link-font-cormorant" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&amp;display=swap">
+    <style id="all-fonts-style-font-cormorant">
+      .font-cormorant { font-family: 'Cormorant Garamond', serif !important; }
+    </style>
+  </head>
+  <body class="text-zinc-400 min-h-screen flex flex-col selection:bg-crimson-600 selection:text-white bg-[#050505] overflow-x-hidden font-sans">
+    <!-- 1. The CRIMSON ENERGY BEAM (Top Center) -->
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-to-b from-crimson-600/25 via-crimson-900/10 to-transparent blur-[100px] rounded-full pointer-events-none z-0 mix-blend-screen opacity-80"></div>
+    <div class="fixed top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-crimson-500/20 blur-[80px] rounded-full pointer-events-none z-0 mix-blend-screen"></div>
+
+    <!-- 2. Tactical Grid Overlay -->
+    <div class="fixed inset-0 tactical-grid pointer-events-none z-0"></div>
+
+    <!-- 3. Scanlines Overlay (Global) -->
+    <div class="fixed inset-0 pointer-events-none z-50 scanlines mix-blend-overlay"></div>
+
+    <!-- Header -->
+
+    <main class="flex-1 flex flex-col min-h-screen font-sans w-full z-10 relative">
+      <!-- TERMINAL CONTAINER - FULL SCREEN -->
+      <div class="w-full h-full bg-[#0A0A0A] border-t border-zinc-800 relative overflow-hidden flex-1 flex flex-col">
+        <!-- Scanline overlay specific to terminal -->
+        <div class="absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] bg-repeat opacity-20 mix-blend-overlay"></div>
+
+        <!-- TERMINAL TOP BAR -->
+        <div class="bg-zinc-900/90 border-b border-zinc-800 p-2 flex flex-col lg:flex-row items-center justify-between gap-4 text-[10px] font-mono select-none relative z-20 border-l-2 border-crimson-600">
+          <!-- Left -->
+          <div class="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-start">
+            <div class="flex items-center gap-2 font-bold text-white tracking-tighter text-sm">
+              <iconify-icon icon="solar:shield-bold" class="text-crimson-600"></iconify-icon>
+              BASTION
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1 bg-green-950/30 border border-green-900/50 rounded text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.25)] animate-[pulse_3s_infinite]">
+              <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+              LIVE
+            </div>
+            <div class="flex items-center gap-2 text-zinc-400">
+              <iconify-icon icon="solar:link-circle-bold" class="text-green-500"></iconify-icon>
+              BINANCE-FUTURES
+            </div>
+          </div>
+
+          <!-- Center (Stats) -->
+          <div class="flex items-center gap-0 border-x border-zinc-800/50 hidden lg:flex">
+            <div class="px-6 py-1 flex flex-col items-center">
+              <span class="text-zinc-500 text-[9px] uppercase tracking-wider">
+                SESSION P&amp;L
+              </span>
+              <span data-stat="session-pnl" class="text-green-500 font-bold">+$4,247 (+2.8%)</span>
+            </div>
+            <div class="px-6 py-1 flex flex-col items-center border-l border-zinc-800/50">
+              <span class="text-zinc-500 text-[9px] uppercase tracking-wider">
+                ACTIVE POS
+              </span>
+              <span data-stat="active-pos" class="text-white font-bold">3 OPEN</span>
+            </div>
+            <div class="px-6 py-1 flex flex-col items-center border-l border-zinc-800/50">
+              <span class="text-zinc-500 text-[9px] uppercase tracking-wider">
+                WIN RATE
+              </span>
+              <span data-stat="win-rate" class="text-white font-bold">73%</span>
+            </div>
+            <div class="px-6 py-1 flex flex-col items-center border-l border-zinc-800/50">
+              <span class="text-zinc-500 text-[9px] uppercase tracking-wider">
+                AVG R
+              </span>
+              <span data-stat="avg-r" class="text-green-500 font-bold">+1.8R</span>
+            </div>
+            <div class="px-6 py-1 flex flex-col items-center border-l border-zinc-800/50">
+              <span class="text-zinc-500 text-[9px] uppercase tracking-wider">
+                DRAWDOWN
+              </span>
+              <span data-stat="drawdown" class="text-crimson-500 font-bold">-0.4R</span>
+            </div>
+          </div>
+
+          <!-- Right -->
+          <div class="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-end">
+            <div class="flex items-center gap-2 text-crimson-500 font-bold animate-pulse">
+              <iconify-icon icon="solar:brain-bold"></iconify-icon>
+              NEURAL ACTIVE
+            </div>
+            <div id="live-indicator" class="flex items-center gap-2 text-green-400 font-mono text-[10px] px-2 py-0.5 bg-green-900/30 border border-green-800/50 rounded transition-all">
+              <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+              LIVE
+            </div>
+            <div data-time="utc" class="text-zinc-400 font-mono text-[10px]">14:32:07 UTC</div>
+          </div>
+        </div>
+
+        <!-- TERMINAL GRID -->
+        <div class="grid grid-cols-1 flex-1 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800 relative z-10 lg:grid-cols-7">
+          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] lg:col-span-1 min-w-[200px]">
+            <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30 border-l-2 border-crimson-600">
+              <span class="text-zinc-400 font-bold tracking-wider">
+                MARKET PULSE
+              </span>
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+            </div>
+            <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="market-pulse">
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Liquidation Radar
+                </div>
+                <div class="space-y-2 text-[9px] font-mono" data-liq="container">
+                  <div class="">
+                    <div class="flex justify-between text-crimson-400 mb-0.5">
+                      <span>BTC LONGS</span>
+                      <span data-liq="long-value">$47M</span>
+                    </div>
+                    <div class="w-full bg-zinc-900 h-2.5 rounded-sm shadow-inner overflow-visible">
+                      <div data-liq="long-bar" class="bg-crimson-500 h-full w-[75%] shadow-[0_0_12px_rgba(220,38,38,0.8)] rounded-sm transition-all"></div>
+                    </div>
+                    <div class="flex justify-between text-zinc-600 mt-0.5">
+                      <span data-liq="long-price">$94,200</span>
+                      <span data-liq="long-risk">High Risk</span>
+                    </div>
+                  </div>
+                  <div class="">
+                    <div class="flex justify-between text-green-400 mb-0.5">
+                      <span>BTC SHORTS</span>
+                      <span data-liq="short-value">$38M</span>
+                    </div>
+                    <div class="w-full bg-zinc-900 h-2.5 rounded-sm shadow-inner overflow-visible">
+                      <div data-liq="short-bar" class="bg-green-500 h-full w-[60%] shadow-[0_0_12px_rgba(34,197,94,0.8)] rounded-sm transition-all"></div>
+                    </div>
+                    <div class="flex justify-between text-zinc-600 mt-0.5">
+                      <span data-liq="short-price">$98,400</span>
+                      <span data-liq="short-risk">Med Risk</span>
+                    </div>
+                  </div>
+                  <div class="pt-1 text-center text-zinc-400 bg-zinc-900/30 py-1 rounded border border-zinc-800/50">
+                    BIAS:
+                    <span data-liq="bias" class="text-crimson-500 font-bold">
+                      LONG HEAVY
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Funding &amp; Basis
+                </div>
+                <div class="grid grid-cols-3 gap-1 text-[9px] font-mono mb-2" data-funding="container">
+                  <span class="text-zinc-400">BTC</span>
+                  <span data-funding="btc-rate" class="text-green-500 text-right">+0.012%</span>
+                  <span data-funding="btc-bias" class="text-zinc-500 text-right">BULL</span>
+                  <span class="text-zinc-400">ETH</span>
+                  <span data-funding="eth-rate" class="text-green-500 text-right">+0.009%</span>
+                  <span data-funding="eth-bias" class="text-zinc-500 text-right">NEUT</span>
+                  <span class="text-zinc-400">SOL</span>
+                  <span data-funding="sol-rate" class="text-amber-500 text-right">+0.020%</span>
+                  <span data-funding="sol-bias" class="text-amber-500 text-right">CROWD</span>
+                </div>
+                <div class="flex justify-between text-[9px] text-zinc-500 font-mono bg-zinc-900/20 p-1">
+                  <span data-funding="next">Next: 2h 14m</span>
+                  <span data-funding="basis">Basis: +0.12%</span>
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Whale Flow
+                </div>
+                <div data-whale="container" class="space-y-2 text-[9px] font-mono">
+                  <div class="border-l-2 border-crimson-500 pl-2">
+                    <div class="text-zinc-400">14:28 - Binance</div>
+                    <div class="text-white font-bold">500 BTC ($48M)</div>
+                    <div class="text-crimson-500">DEPOSIT</div>
+                  </div>
+                  <div class="border-l-2 border-green-500 pl-2">
+                    <div class="text-zinc-400">14:15 - Wallet</div>
+                    <div class="text-white font-bold">2.4K ETH ($7.8M)</div>
+                    <div class="text-green-500">WITHDRAWAL</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- COL 1: POSITIONS -->
+          <div class="bg-[#0B0B0B] flex flex-col">
+            <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
+              <span class="text-zinc-400 font-bold tracking-wider">
+                POSITIONS
+              </span>
+              <span class="bg-zinc-800 text-white px-1.5 rounded">3</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
+              <!-- Card 1 -->
+              <div class="bg-[#141414] border border-zinc-800/50 p-3 hover:border-crimson-600/50 transition-all duration-300 relative group shadow-[0_0_20px_rgba(220,38,38,0.15)] border-crimson-500/20">
+                <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
+                <div class="flex justify-between items-start mb-2">
+                  <span class="font-bold text-white text-xs tracking-tight">
+                    BTC-PERP
+                  </span>
+                  <span class="text-green-500 text-[10px] font-bold">
+                    LONG ▲
+                  </span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-1 text-[10px] font-mono text-zinc-500 mb-3">
+                  <span>ENTRY</span>
+                  <span class="text-right text-zinc-300">$95,120</span>
+                  <span class="">CURRENT</span>
+                  <span class="text-right text-green-500">
+                    $96,847 (+1.82%)
+                  </span>
+                  <span class="">SIZE</span>
+                  <span class="text-right text-zinc-300">0.45 BTC</span>
+                </div>
+                <div class="w-full bg-zinc-900 h-1.5 mb-1 rounded-full overflow-hidden">
+                  <div class="bg-green-600 h-full w-[80%] relative"></div>
+                </div>
+                <div class="text-[9px] text-zinc-500 text-right mb-3">
+                  +2.4R
+                </div>
+
+                <div class="space-y-1 text-[9px] font-mono border-t border-zinc-800/50 pt-2 text-zinc-500">
+                  <div class="flex justify-between">
+                    <span>STOP</span>
+                    <span class="text-crimson-500">$94,180</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="">TARGET 1</span>
+                    <span class="text-green-500 line-through">
+                      HIT ($96,800)
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-cyan-500">TRAILING</span>
+                    <span class="text-white">$96,412 (2.3x)</span>
+                  </div>
+                </div>
+                <div class="mt-3 flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                  <button class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[9px] py-1 border border-zinc-700">
+                    CLOSE 50%
+                  </button>
+                  <button class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[9px] py-1 border border-zinc-700">
+                    EDIT
+                  </button>
+                </div>
+              </div>
+
+              <!-- Card 2 -->
+              <div class="bg-[#141414] border border-zinc-800/50 p-3 hover:border-crimson-600/50 transition-all duration-300 relative group shadow-[0_0_20px_rgba(220,38,38,0.15)] border-crimson-500/20">
+                <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
+                <div class="flex justify-between items-start mb-2">
+                  <span class="font-bold text-white text-xs tracking-tight">
+                    ETH-PERP
+                  </span>
+                  <span class="text-red-500 text-[10px] font-bold">
+                    SHORT ▼
+                  </span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-1 text-[10px] font-mono text-zinc-500 mb-3">
+                  <span>ENTRY</span>
+                  <span class="text-right text-zinc-300">$3,245</span>
+                  <span>CURRENT</span>
+                  <span class="text-right text-green-500">$3,198 (+1.47%)</span>
+                </div>
+                <div class="w-full bg-zinc-900 h-1.5 mb-1 rounded-full overflow-hidden">
+                  <div class="bg-green-600 h-full w-[40%] relative"></div>
+                </div>
+                <div class="text-[9px] text-zinc-500 text-right mb-3">
+                  +0.8R
+                </div>
+
+                <div class="space-y-1 text-[9px] font-mono border-t border-zinc-800/50 pt-2 text-zinc-500">
+                  <div class="flex justify-between">
+                    <span>STOP</span>
+                    <span class="text-zinc-400">$3,312</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-amber-500">GUARD</span>
+                    <span class="text-white">ACTIVE ($3,287)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 3 -->
+              <div class="bg-[#141414] border border-zinc-800/50 p-3 hover:border-crimson-600/50 transition-all duration-300 relative group shadow-[0_0_20px_rgba(220,38,38,0.15)] border-crimson-500/20">
+                <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-amber-500"></div>
+                <div class="flex justify-between items-start mb-2">
+                  <span class="font-bold text-white text-xs tracking-tight">
+                    SOL-PERP
+                  </span>
+                  <span class="text-green-500 text-[10px] font-bold">
+                    LONG ▲
+                  </span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-1 text-[10px] font-mono text-zinc-500 mb-3">
+                  <span>ENTRY</span>
+                  <span class="text-right text-zinc-300">$142.80</span>
+                  <span>CURRENT</span>
+                  <span class="text-right text-crimson-500">
+                    $141.20 (-1.12%)
+                  </span>
+                </div>
+                <div class="w-full bg-zinc-900 h-1.5 mb-1 rounded-full overflow-hidden">
+                  <div class="bg-crimson-600 h-full w-[20%] relative"></div>
+                </div>
+                <div class="p-1.5 bg-crimson-900/10 border border-crimson-900/50 text-[9px] text-crimson-400 font-bold text-center mt-2">
+                  ⚠ APPROACHING STOP (0.5%)
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 border-t border-zinc-800 bg-zinc-900/30 text-[10px] font-mono text-zinc-500">
+              <div class="flex justify-between mb-1">
+                <span>EXPOSURE</span>
+                <span class="text-white">$70,245</span>
+              </div>
+              <div class="flex justify-between">
+                <span>RISK</span>
+                <span class="text-white">1.8%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- COL 2: CHART (Spans 2 cols) -->
+          <div class="flex flex-col bg-[#080808] relative lg:col-span-3">
+            <!-- Chart Header -->
+            <div class="flex items-center justify-between p-2 border-b border-zinc-800 text-[10px] font-mono">
+              <div class="flex items-center gap-3">
+                <span data-chart="symbol" class="font-bold text-white text-sm">BTC-PERP</span>
+                <div id="timeframe-btns" class="flex bg-zinc-900 border border-zinc-800 rounded overflow-hidden">
+                  <button data-tf="5m" class="px-3 py-1 hover:bg-zinc-800 text-zinc-400 transition-colors">
+                    5m
+                  </button>
+                  <button data-tf="15m" class="px-3 py-1 bg-zinc-800 text-white font-bold">
+                    15m
+                  </button>
+                  <button data-tf="1h" class="px-3 py-1 hover:bg-zinc-800 text-zinc-400 transition-colors">
+                    1H
+                  </button>
+                  <button data-tf="4h" class="px-3 py-1 hover:bg-zinc-800 text-zinc-400 transition-colors">
+                    4H
+                  </button>
+                </div>
+              </div>
+              <div class="flex gap-3 text-zinc-500">
+                <iconify-icon icon="solar:settings-linear" class="hover:text-white cursor-pointer transition-colors text-base"></iconify-icon>
+                <iconify-icon icon="solar:full-screen-linear" class="hover:text-white cursor-pointer transition-colors text-base"></iconify-icon>
+              </div>
+            </div>
+
+            <!-- Chart Area - Real TradingView Chart -->
+            <div id="chart-container" class="flex-1 relative overflow-hidden bg-[#080808]">
+              <!-- Live Price Badge -->
+              <div data-price="current" class="absolute top-2 right-2 bg-green-600 text-white text-[11px] font-mono px-2 py-1 z-30 font-bold shadow-[0_0_15px_rgba(34,197,94,0.6)] rounded">
+                $96,847
+              </div>
+              <!-- 24h Change Badge -->
+              <div data-price="change" class="absolute top-2 right-24 bg-zinc-800 text-green-400 text-[10px] font-mono px-2 py-1 z-30 border border-zinc-700 rounded">
+                +0.00%
+              </div>
+              <!-- Chart renders here -->
+              <div id="tv-chart" class="w-full h-full"></div>
+              <!-- Trade Levels Overlay -->
+              <div id="chart-levels" class="absolute inset-0 pointer-events-none z-20"></div>
+              <div class="absolute bottom-2 left-2 text-[9px] text-zinc-600 font-mono">
+                SHOT 1
+              </div>
+              <div class="absolute bottom-[55%] left-[46%] text-[8px] text-zinc-500 -translate-y-4">
+                SHOT 2
+              </div>
+              <div class="absolute bottom-[45%] left-[40%] w-[200px] h-0.5 bg-amber-500/50 rotate-[-15deg] transform origin-left pointer-events-none"></div>
+              <div class="absolute bottom-[58%] left-[55%] text-[9px] text-amber-500 font-mono">
+                GUARD
+              </div>
+              <div class="absolute bottom-0 left-0 right-0 h-16 border-t border-zinc-800/50 flex items-end gap-1 px-4 opacity-50">
+                <div class="w-3 h-[40%] bg-zinc-700"></div>
+                <div class="w-3 h-[60%] bg-red-900"></div>
+                <div class="w-3 h-[30%] bg-zinc-700"></div>
+                <div class="w-3 h-[80%] bg-green-900"></div>
+                <div class="w-3 h-[50%] bg-zinc-700"></div>
+                <div class="w-3 h-[90%] bg-green-900"></div>
+                <div class="w-3 h-[70%] bg-green-900"></div>
+              </div>
+              <div class="absolute bottom-16 left-0 right-0 h-12 flex items-end opacity-30 pointer-events-none">
+                <svg width="100%" height="100%" preserveAspectRatio="none">
+                  <path d="M0,50 Q100,40 200,45 T400,30 T600,20" fill="none" stroke="#10b981" stroke-width="2"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="h-[140px] border-t border-zinc-800 bg-[#080808] relative p-2 flex flex-col">
+              <div class="flex justify-between items-center text-[9px] font-mono text-zinc-500 mb-1">
+                <span>CVD &amp; VOLUME</span>
+                <span class="text-crimson-500 animate-pulse">
+                  ⚠ DIVERGENCE DETECTED
+                </span>
+              </div>
+              <div class="flex-1 relative border-b border-zinc-800/50 mb-1">
+                <div class="absolute inset-0 flex items-center">
+                  <div class="w-full h-px bg-zinc-800 border-t border-dashed border-zinc-700"></div>
+                </div>
+                <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                  <path d="M0,80 L20,75 L40,78 L60,70 L80,72 L100,60 L120,62 L140,50 L160,52 L180,45 L200,48 L220,40 L240,42 L260,35 L280,38 L300,30 L350,32 L400,35 L450,38 L500,40" fill="none" stroke="#ef4444" stroke-width="1.5" class="drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]"></path>
+                </svg>
+                <span class="absolute top-1 right-1 text-[8px] text-zinc-600">
+                  CVD -4.2M
+                </span>
+              </div>
+              <div class="h-[40px] flex items-end gap-0.5 opacity-60">
+                <div class="flex-1 bg-zinc-700 h-[30%]"></div>
+                <div class="flex-1 bg-green-900 h-[50%]"></div>
+                <div class="flex-1 bg-zinc-700 h-[20%]"></div>
+                <div class="flex-1 bg-crimson-900 h-[70%]"></div>
+                <div class="flex-1 bg-green-900 h-[40%]"></div>
+                <div class="flex-1 bg-zinc-700 h-[25%]"></div>
+                <div class="flex-1 bg-crimson-900 h-[60%]"></div>
+                <div class="flex-1 bg-green-900 h-[80%]"></div>
+                <div class="flex-1 bg-zinc-700 h-[35%]"></div>
+                <div class="flex-1 bg-crimson-900 h-[55%]"></div>
+                <div class="flex-1 bg-green-900 h-[90%]"></div>
+                <div class="flex-1 bg-zinc-700 h-[30%]"></div>
+                <div class="flex-1 bg-crimson-900 h-[65%]"></div>
+                <div class="flex-1 bg-green-900 h-[85%]"></div>
+                <div class="flex-1 bg-zinc-700 h-[45%]"></div>
+                <div class="flex-1 bg-crimson-900 h-[75%]"></div>
+                <div class="flex-1 bg-green-900 h-[95%]"></div>
+                <div class="flex-1 bg-zinc-700 h-[40%]"></div>
+                <div class="flex-1 bg-crimson-900 h-[50%]"></div>
+                <div class="flex-1 bg-green-900 h-[60%]"></div>
+              </div>
+              <div class="flex justify-between text-[9px] font-mono mt-1">
+                <span class="text-zinc-500">DELTA</span>
+                <span class="text-green-500 font-bold">+$2.4M BUYERS</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] lg:col-span-1 min-w-[200px]">
+            <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30 border-l-2 border-crimson-600">
+              <span class="text-zinc-400 font-bold tracking-wider">
+                INTELLIGENCE
+              </span>
+              <iconify-icon icon="solar:graph-up-bold" class="text-zinc-500"></iconify-icon>
+            </div>
+            <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="intelligence">
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Order Flow (BTC)
+                </div>
+                <div class="space-y-1 text-[9px] font-mono">
+                  <div class="flex justify-between">
+                    <span class="text-zinc-400">CVD 1H</span>
+                    <span data-cvd="1h" class="text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]">
+                      +2.4M
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-400">CVD 4H</span>
+                    <span data-cvd="4h" class="text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]">
+                      +8.1M
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-400">CVD 1D</span>
+                    <span data-cvd="1d" class="text-crimson-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]">
+                      -4.2M
+                    </span>
+                  </div>
+                </div>
+                <div class="mt-2 pt-2 border-t border-zinc-800/50">
+                  <div class="flex justify-between text-[9px] font-mono">
+                    <span class="text-zinc-500">SMART MONEY</span>
+                    <span data-intel="smart-money" class="text-white font-bold">78% BULLISH</span>
+                  </div>
+                  <div class="w-full h-1 bg-zinc-800 mt-1">
+                    <div data-intel="smart-money-bar" class="h-full bg-white w-[78%] transition-all"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Volatility Regime
+                </div>
+                <div class="flex justify-between text-[8px] text-zinc-600 font-mono mb-1">
+                  <span>LOW</span>
+                  <span>NORMAL</span>
+                  <span>HIGH</span>
+                </div>
+                <div class="w-full h-2 bg-zinc-900 rounded-full mb-2 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-green-900 via-amber-900 to-crimson-900 opacity-50"></div>
+                  <div data-intel="vol-needle" class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_white] left-[50%] transition-all"></div>
+                </div>
+                <div class="flex justify-between text-[9px] font-mono">
+                  <span class="text-zinc-500">ATR</span>
+                  <span data-intel="atr" class="text-white">$1,247 (1.3%)</span>
+                </div>
+                <div data-intel="size-rec" class="text-[9px] text-crimson-400 font-mono mt-1 text-right">
+                  SIZE REC: -25%
+                </div>
+              </div>
+              <div class="p-2">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Derivatives
+                </div>
+                <div data-intel="oi-value" class="text-[14px] text-white font-bold font-mono">
+                  $18.4B
+                </div>
+                <div data-intel="oi-change" class="text-[9px] text-green-500 font-mono mb-2">
+                  OPEN INTEREST +2.1%
+                </div>
+                <div class="flex gap-1 h-1.5 w-full mb-1">
+                  <div class="bg-green-600 w-[54%]"></div>
+                  <div class="bg-crimson-600 w-[46%]"></div>
+                </div>
+                <div class="flex justify-between text-[9px] font-mono text-zinc-500">
+                  <span>L: 54%</span>
+                  <span>S: 46%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COL 3: ALERTS -->
+          <div class="bg-[#0B0B0B] flex flex-col border-l border-zinc-800">
+            <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
+              <span class="text-zinc-400 font-bold tracking-wider">
+                ALERTS &amp; SIGNALS
+              </span>
+              <iconify-icon icon="solar:filter-linear" class="text-zinc-500 hover:text-white cursor-pointer"></iconify-icon>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-0 no-scrollbar">
+              <!-- Alert 1 -->
+              <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors animate-[fadeIn_0.3s_ease-out]">
+                <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
+                  <span class="text-green-500 flex items-center gap-1 font-bold">
+                    🟢 TARGET 1 HIT
+                  </span>
+                  <span class="">14:31:42</span>
+                </div>
+                <p class="text-[10px] text-zinc-300 font-mono">
+                  BTC-PERP reached $96,800 (+1.2R). Stop moved to breakeven.
+                </p>
+              </div>
+
+              <!-- Alert 2 -->
+              <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
+                <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
+                  <span class="text-cyan-500 flex items-center gap-1 font-bold">
+                    🔵 MOMENTUM TP
+                  </span>
+                  <span class="">14:28:17</span>
+                </div>
+                <p class="text-[10px] text-zinc-300 font-mono">
+                  Slope strength: 2.3x. Trailing 0.45% below candle body.
+                </p>
+              </div>
+
+              <!-- Alert 3 -->
+              <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
+                <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
+                  <span class="text-amber-500 flex items-center gap-1 font-bold">
+                    🟡 VOLATILITY
+                  </span>
+                  <span class="">14:25:33</span>
+                </div>
+                <p class="text-[10px] text-zinc-300 font-mono">
+                  Regime: NORMAL → HIGH. Recommended: Reduce new entries 25%.
+                </p>
+              </div>
+
+              <!-- Alert 4 -->
+              <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
+                <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
+                  <span class="text-green-500 flex items-center gap-1 font-bold">
+                    🟢 SHOT 2 EXECUTED
+                  </span>
+                  <span>14:22:08</span>
+                </div>
+                <p class="text-[10px] text-zinc-300 font-mono">
+                  BTC-PERP: Added 0.15 BTC @ $95,890.
+                </p>
+              </div>
+            </div>
+            <div class="p-3 bg-[#0f0f0f] border-t border-zinc-800 flex flex-col gap-2 relative overflow-hidden group">
+              <div class="absolute top-0 left-0 w-1 h-full bg-crimson-400 shadow-[0_0_20px_rgba(220,38,38,0.9)]"></div>
+              <div class="absolute inset-0 bg-crimson-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+              <div class="flex justify-between items-center text-[10px] font-mono mb-1">
+                <span class="text-crimson-400 font-bold flex items-center gap-1">
+                  <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                  NEURAL ASSISTANT
+                </span>
+              </div>
+              <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+                <span class="text-crimson-500">&gt;&gt;</span>
+                Momentum trailing active (2.3x).
+
+                <span class="text-yellow-500">⚠</span>
+                CVD divergence forming. Consider partial exit at T2.
+              </div>
+              <div class="flex flex-col gap-1 mt-1">
+                <button class="text-left text-[9px] text-zinc-500 hover:text-white hover:bg-zinc-800 px-2 py-1 rounded transition-colors border border-transparent hover:border-zinc-700">
+                  • Hold current position
+                </button>
+                <button class="text-left text-[9px] text-zinc-500 hover:text-white hover:bg-zinc-800 px-2 py-1 rounded transition-colors border border-transparent hover:border-zinc-700">
+                  • Watch $97,400 resistance
+                </button>
+              </div>
+              <div class="mt-2 relative">
+                <input data-input="neural" type="text" placeholder="Ask BASTION..." class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-700 font-mono rounded-sm">
+                <iconify-icon data-action="neural-send" icon="solar:plain-linear" class="absolute right-2 top-1.5 text-zinc-600 cursor-pointer hover:text-white"></iconify-icon>
+              </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="p-3 bg-zinc-900/20 border-t border-zinc-800 text-[9px] font-mono space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-zinc-500">ORDER FLOW</span>
+                <span class="text-green-500 font-bold">BULLISH</span>
+              </div>
+              <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
+                <div class="w-[70%] h-full bg-green-600"></div>
+              </div>
+
+              <div class="flex justify-between items-center mt-2">
+                <span class="text-zinc-500">WHALE ACTIVITY</span>
+                <span class="text-white font-bold">HIGH</span>
+              </div>
+              <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
+                <div class="w-[85%] h-full bg-white"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TERMINAL BOTTOM BAR -->
+        <div class="border-t border-zinc-800 bg-zinc-900/80 p-2 flex flex-wrap gap-2 justify-between items-center relative z-20">
+          <div class="flex gap-2">
+            <button data-action="emergency-exit" class="bg-crimson-600 hover:bg-crimson-700 text-white text-[10px] font-bold px-4 py-1.5 rounded-sm shadow-[0_0_10px_rgba(220,38,38,0.3)] font-mono uppercase transition-all animate-pulse">
+              ⚠ EMERGENCY EXIT ALL
+            </button>
+            <button class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+              FLATTEN WINNERS
+            </button>
+            <button data-action="move-to-be" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+              MOVE ALL TO BE
+            </button>
+          </div>
+
+          <div class="flex gap-2">
+            <button class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+              ADD SHOT
+            </button>
+            <button class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+              PARTIAL 25%
+            </button>
+            <button class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+              PARTIAL 50%
+            </button>
+          </div>
+
+          <div class="flex gap-4 items-center pl-4 border-l border-zinc-800/50">
+            <div class="flex items-center gap-2 text-[10px] text-zinc-500 font-mono mr-2">
+              <div class="w-8 h-4 bg-zinc-800 rounded-full p-0.5 cursor-pointer relative transition-colors hover:bg-zinc-700">
+                <div class="w-3 h-3 bg-zinc-500 rounded-full transition-transform"></div>
+              </div>
+              PAUSE NEW ENTRIES
+            </div>
+            <button class="text-zinc-500 hover:text-white transition-colors">
+              <iconify-icon icon="solar:export-linear" class="text-lg"></iconify-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <script>
+      // Animation observers
+      document.addEventListener("DOMContentLoaded", () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("sys-active");
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        document.querySelectorAll(".sys-reveal").forEach(el => observer.observe(el));
+      });
+    </script>
+
+    <!-- BASTION TERMINAL API CONNECTION -->
+    <script>
+      const API_BASE = window.location.origin;
+      let ws = null;
+      let positions = [];
+      let sessionStats = {};
+      let marketData = {};
+      let alerts = [];
+
+      // =================================================================
+      // WEBSOCKET CONNECTION
+      // =================================================================
+      function connectWebSocket() {
+        const wsUrl = `ws://${window.location.host}/ws`;
+        ws = new WebSocket(wsUrl);
+        
+        ws.onopen = () => {
+          console.log('🔌 BASTION WebSocket connected');
+          updateConnectionStatus(true);
+        };
+        
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        };
+        
+        ws.onclose = () => {
+          console.log('❌ WebSocket disconnected, reconnecting...');
+          updateConnectionStatus(false);
+          setTimeout(connectWebSocket, 3000);
+        };
+        
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+      }
+
+      function handleWebSocketMessage(data) {
+        switch(data.type) {
+          case 'price_update':
+            updatePrices(data.data);
+            break;
+          case 'position_update':
+            updatePositions(data.data);
+            break;
+          case 'alert':
+            addAlert(data.data);
+            break;
+          case 'connected':
+            console.log('✅', data.message);
+            break;
+        }
+      }
+
+      function updateConnectionStatus(connected) {
+        const statusEl = document.querySelector('[data-status="connection"]');
+        if (statusEl) {
+          statusEl.textContent = connected ? 'LIVE' : 'RECONNECTING...';
+          statusEl.className = connected ? 'text-green-400' : 'text-amber-400 animate-pulse';
+        }
+      }
+
+      // =================================================================
+      // API FETCHERS
+      // =================================================================
+      async function fetchPositions() {
+        try {
+          const res = await fetch(`${API_BASE}/api/positions`);
+          const data = await res.json();
+          positions = data.positions;
+          renderPositions();
+          updateExposure(data.summary);
+        } catch (e) {
+          console.error('Failed to fetch positions:', e);
+        }
+      }
+
+      async function fetchSessionStats() {
+        try {
+          const res = await fetch(`${API_BASE}/api/session/stats`);
+          sessionStats = await res.json();
+          renderSessionStats();
+        } catch (e) {
+          console.error('Failed to fetch session stats:', e);
+        }
+      }
+
+      async function fetchMarketData(symbol = 'BTC') {
+        try {
+          const res = await fetch(`${API_BASE}/api/market/${symbol}`);
+          marketData = await res.json();
+          renderIntelligence();
+        } catch (e) {
+          console.error('Failed to fetch market data:', e);
+        }
+      }
+
+      async function fetchAlerts() {
+        try {
+          const res = await fetch(`${API_BASE}/api/alerts`);
+          const data = await res.json();
+          alerts = data.alerts;
+          renderAlerts();
+        } catch (e) {
+          console.error('Failed to fetch alerts:', e);
+        }
+      }
+
+      // =================================================================
+      // UI UPDATERS
+      // =================================================================
+      function updatePrices(prices) {
+        // Update position cards with new prices
+        positions.forEach(pos => {
+          const newPrice = prices[pos.symbol];
+          if (newPrice) {
+            pos.current_price = newPrice;
+            pos.pnl_pct = ((newPrice - pos.entry_price) / pos.entry_price * 100) * (pos.direction === 'long' ? 1 : -1);
+          }
+        });
+        renderPositions();
+        
+        // Update chart current price
+        const priceLabel = document.querySelector('[data-price="current"]');
+        if (priceLabel && prices['BTC-PERP']) {
+          priceLabel.textContent = `$${prices['BTC-PERP'].toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+        }
+        
+        // Update timestamp
+        const timeEl = document.querySelector('[data-time="utc"]');
+        if (timeEl) {
+          const now = new Date();
+          timeEl.textContent = now.toISOString().slice(11, 19) + ' UTC';
+        }
+      }
+
+      function renderSessionStats() {
+        // Session P&L
+        const pnlEl = document.querySelector('[data-stat="session-pnl"]');
+        if (pnlEl) {
+          const pnl = sessionStats.session_pnl || 0;
+          pnlEl.innerHTML = `<span class="${pnl >= 0 ? 'text-green-500' : 'text-crimson-500'}">
+            ${pnl >= 0 ? '+' : ''}$${pnl.toLocaleString()} (${pnl >= 0 ? '+' : ''}${sessionStats.session_pnl_pct || 0}%)</span>`;
+        }
+        
+        // Active positions
+        const posEl = document.querySelector('[data-stat="active-pos"]');
+        if (posEl) posEl.textContent = `${sessionStats.active_positions || 0} OPEN`;
+        
+        // Win rate
+        const winEl = document.querySelector('[data-stat="win-rate"]');
+        if (winEl) winEl.textContent = `${sessionStats.win_rate || 0}%`;
+        
+        // Avg R
+        const avgREl = document.querySelector('[data-stat="avg-r"]');
+        if (avgREl) avgREl.innerHTML = `<span class="text-green-500">+${sessionStats.avg_r || 0}R</span>`;
+        
+        // Drawdown
+        const ddEl = document.querySelector('[data-stat="drawdown"]');
+        if (ddEl) ddEl.innerHTML = `<span class="text-crimson-500">${sessionStats.max_drawdown || 0}R</span>`;
+      }
+
+      function renderPositions() {
+        // For now, positions are rendered statically in HTML
+        // This would update them dynamically in a full implementation
+        console.log('Positions updated:', positions.length);
+      }
+
+      function renderIntelligence() {
+        if (!marketData.order_flow?.smart_money) return;
+        
+        const sm = marketData.order_flow.smart_money;
+        const vol = marketData.volatility?.volatility;
+        const liq = marketData.derivatives?.liquidation;
+        
+        // Update smart money
+        const smEl = document.querySelector('[data-intel="smart-money"]');
+        if (smEl && sm) {
+          smEl.textContent = `${Math.round((sm.divergence || 0.78) * 100)}% BULLISH`;
+        }
+        
+        // Update volatility
+        const volEl = document.querySelector('[data-intel="volatility"]');
+        if (volEl && vol) {
+          volEl.textContent = vol.current_regime || 'NORMAL';
+        }
+        
+        console.log('Intelligence updated:', marketData);
+      }
+
+      function renderAlerts() {
+        const container = document.querySelector('[data-alerts="container"]');
+        if (!container || !alerts.length) return;
+        
+        // Alerts are rendered statically for now
+        console.log('Alerts updated:', alerts.length);
+      }
+
+      function addAlert(alert) {
+        alerts.unshift(alert);
+        renderAlerts();
+      }
+
+      function updateExposure(summary) {
+        const expEl = document.querySelector('[data-stat="exposure"]');
+        if (expEl && summary) {
+          expEl.textContent = `$${(summary.total_exposure_usd || 0).toLocaleString()}`;
+        }
+        
+        const riskEl = document.querySelector('[data-stat="risk"]');
+        if (riskEl && summary) {
+          riskEl.textContent = `${summary.risk_pct || 0}%`;
+        }
+      }
+
+      // =================================================================
+      // ACTIONS
+      // =================================================================
+      async function emergencyExit() {
+        if (!confirm('⚠️ EMERGENCY EXIT ALL POSITIONS?\n\nThis will close ALL open positions immediately.')) return;
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/actions/emergency-exit`, { method: 'POST' });
+          const data = await res.json();
+          console.log('🚨 Emergency exit:', data);
+          alert(`✅ ${data.message}`);
+          fetchPositions();
+        } catch (e) {
+          console.error('Emergency exit failed:', e);
+          alert('❌ Emergency exit failed!');
+        }
+      }
+
+      async function moveAllToBreakeven() {
+        try {
+          const res = await fetch(`${API_BASE}/api/actions/move-to-breakeven`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          });
+          const data = await res.json();
+          console.log('Move to BE:', data);
+          alert(`✅ ${data.message}`);
+        } catch (e) {
+          console.error('Move to BE failed:', e);
+        }
+      }
+
+      async function sendNeuralChat() {
+        const input = document.querySelector('[data-input="neural"]');
+        if (!input || !input.value.trim()) return;
+        
+        const query = input.value.trim();
+        input.value = '';
+        input.disabled = true;
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/neural/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, symbol: 'BTC' })
+          });
+          const data = await res.json();
+          
+          // Update neural response
+          const responseEl = document.querySelector('[data-neural="response"]');
+          if (responseEl && data.response) {
+            responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> ${data.response.replace(/\n/g, '<br>')}`;
+          }
+        } catch (e) {
+          console.error('Neural chat failed:', e);
+        } finally {
+          input.disabled = false;
+        }
+      }
+
+      // =================================================================
+      // KEYBOARD SHORTCUTS
+      // =================================================================
+      document.addEventListener('keydown', (e) => {
+        // Show shortcuts on ?
+        if (e.key === '?') {
+          alert(`BASTION KEYBOARD SHORTCUTS
+          
+Ctrl+E - Emergency Exit All
+Ctrl+B - Move All to Breakeven
+Ctrl+R - Refresh Data
+Esc - Close Dialogs
+/ - Focus Neural Chat`);
+        }
+        
+        // Ctrl+E = Emergency Exit
+        if (e.ctrlKey && e.key === 'e') {
+          e.preventDefault();
+          emergencyExit();
+        }
+        
+        // Ctrl+B = Breakeven
+        if (e.ctrlKey && e.key === 'b') {
+          e.preventDefault();
+          moveAllToBreakeven();
+        }
+        
+        // Ctrl+R = Refresh
+        if (e.ctrlKey && e.key === 'r') {
+          e.preventDefault();
+          initializeTerminal();
+        }
+        
+        // / = Focus chat
+        if (e.key === '/' && !e.target.matches('input, textarea')) {
+          e.preventDefault();
+          const input = document.querySelector('[data-input="neural"]');
+          if (input) input.focus();
+        }
+      });
+
+      // =================================================================
+      // BUTTON BINDINGS
+      // =================================================================
+      document.addEventListener('DOMContentLoaded', () => {
+        // Emergency exit button
+        const emergencyBtn = document.querySelector('[data-action="emergency-exit"]');
+        if (emergencyBtn) emergencyBtn.onclick = emergencyExit;
+        
+        // Move to BE button
+        const beBtn = document.querySelector('[data-action="move-to-be"]');
+        if (beBtn) beBtn.onclick = moveAllToBreakeven;
+        
+        // Neural chat input
+        const neuralInput = document.querySelector('[data-input="neural"]');
+        if (neuralInput) {
+          neuralInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendNeuralChat();
+          });
+        }
+        
+        // Neural send button
+        const sendBtn = document.querySelector('[data-action="neural-send"]');
+        if (sendBtn) sendBtn.onclick = sendNeuralChat;
+
+        // Timeframe buttons
+        const tfBtns = document.querySelectorAll('[data-tf]');
+        tfBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            // Update active state
+            tfBtns.forEach(b => {
+              b.className = 'px-3 py-1 hover:bg-zinc-800 text-zinc-400 transition-colors';
+            });
+            btn.className = 'px-3 py-1 bg-zinc-800 text-white font-bold';
+            
+            // Change interval and reload chart
+            currentInterval = btn.dataset.tf;
+            loadChartData();
+            console.log('[CHART] Switched to', currentInterval);
+          });
+        });
+      });
+
+      // =================================================================
+      // TRADINGVIEW CHART
+      // =================================================================
+      let chart = null;
+      let candleSeries = null;
+      let volumeSeries = null;
+      let currentSymbol = 'BTC';
+      let currentInterval = '15m';
+
+      function initChart() {
+        const container = document.getElementById('tv-chart');
+        if (!container || !window.LightweightCharts) {
+          console.error('Chart container or library not found');
+          return;
+        }
+
+        chart = LightweightCharts.createChart(container, {
+          width: container.clientWidth,
+          height: container.clientHeight,
+          layout: {
+            background: { type: 'solid', color: '#080808' },
+            textColor: '#71717a',
+          },
+          grid: {
+            vertLines: { color: '#1f1f23' },
+            horzLines: { color: '#1f1f23' },
+          },
+          crosshair: {
+            mode: LightweightCharts.CrosshairMode.Normal,
+            vertLine: { color: '#dc2626', width: 1, style: 2 },
+            horzLine: { color: '#dc2626', width: 1, style: 2 },
+          },
+          rightPriceScale: {
+            borderColor: '#27272a',
+            scaleMargins: { top: 0.1, bottom: 0.2 },
+          },
+          timeScale: {
+            borderColor: '#27272a',
+            timeVisible: true,
+            secondsVisible: false,
+          },
+        });
+
+        candleSeries = chart.addCandlestickSeries({
+          upColor: '#22c55e',
+          downColor: '#dc2626',
+          borderUpColor: '#22c55e',
+          borderDownColor: '#dc2626',
+          wickUpColor: '#22c55e',
+          wickDownColor: '#dc2626',
+        });
+
+        volumeSeries = chart.addHistogramSeries({
+          color: '#3f3f46',
+          priceFormat: { type: 'volume' },
+          priceScaleId: '',
+          scaleMargins: { top: 0.92, bottom: 0 },
+        });
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+          if (chart && container) {
+            chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+          }
+        });
+
+        // Load initial data
+        loadChartData();
+      }
+
+      async function loadChartData() {
+        try {
+          const res = await fetch(`${API_BASE}/api/klines/${currentSymbol}?interval=${currentInterval}&limit=200`);
+          const data = await res.json();
+
+          if (data.candles && candleSeries) {
+            candleSeries.setData(data.candles);
+            
+            // Volume data
+            const volData = data.candles.map(c => ({
+              time: c.time,
+              value: c.volume,
+              color: c.close >= c.open ? '#22c55e40' : '#dc262640',
+            }));
+            volumeSeries.setData(volData);
+
+            chart.timeScale().fitContent();
+            console.log('[CHART] Loaded', data.candles.length, 'candles');
+          }
+        } catch (e) {
+          console.error('[CHART] Load error:', e);
+        }
+      }
+
+      // Store current candle for real-time updates
+      let currentCandle = null;
+      
+      async function updateLastCandle() {
+        try {
+          // Fetch latest few candles
+          const res = await fetch(`${API_BASE}/api/klines/${currentSymbol}?interval=${currentInterval}&limit=5`);
+          const data = await res.json();
+
+          if (data.candles?.length && candleSeries) {
+            // Update all recent candles (in case we missed any)
+            data.candles.forEach(candle => {
+              candleSeries.update(candle);
+              volumeSeries.update({
+                time: candle.time,
+                value: candle.volume,
+                color: candle.close >= candle.open ? '#22c55e40' : '#dc262640',
+              });
+            });
+            
+            // Store the latest for real-time price updates
+            currentCandle = data.candles[data.candles.length - 1];
+            console.log('[CHART] Candles updated, latest:', currentCandle.close);
+          }
+        } catch (e) {
+          console.error('[CHART] Update error:', e);
+        }
+      }
+      
+      // Update current candle with live price (called more frequently)
+      function updateCandleWithPrice(price) {
+        if (!currentCandle || !candleSeries || !price) return;
+        
+        // Update the current candle's close price
+        const updatedCandle = {
+          ...currentCandle,
+          close: price,
+          high: Math.max(currentCandle.high, price),
+          low: Math.min(currentCandle.low, price),
+        };
+        
+        candleSeries.update(updatedCandle);
+        currentCandle = updatedCandle;
+      }
+
+      // =================================================================
+      // LIVE PRICE STREAMING
+      // =================================================================
+      let lastPrice = 0;
+      
+      async function fetchLivePrice() {
+        try {
+          const res = await fetch(`${API_BASE}/api/price/${currentSymbol}`);
+          const data = await res.json();
+
+          if (data.price) {
+            const priceEl = document.querySelector('[data-price="current"]');
+            const changeEl = document.querySelector('[data-price="change"]');
+            const newPrice = data.price;
+            
+            if (priceEl) {
+              // Flash effect when price changes
+              const priceChanged = lastPrice !== 0 && Math.abs(newPrice - lastPrice) > 0.01;
+              const priceUp = newPrice > lastPrice;
+              
+              priceEl.textContent = `$${newPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+              
+              // Base class
+              let baseClass = 'absolute top-2 right-2 text-white text-[11px] font-mono px-2 py-1 z-30 font-bold rounded transition-all duration-300';
+              
+              if (priceChanged) {
+                // Flash bright on change
+                priceEl.className = baseClass + (priceUp 
+                  ? ' bg-green-500 shadow-[0_0_25px_rgba(34,197,94,0.9)] scale-110' 
+                  : ' bg-crimson-500 shadow-[0_0_25px_rgba(220,38,38,0.9)] scale-110');
+                
+                setTimeout(() => {
+                  priceEl.className = baseClass + (data.change_24h >= 0 
+                    ? ' bg-green-600 shadow-[0_0_15px_rgba(34,197,94,0.6)]' 
+                    : ' bg-crimson-600 shadow-[0_0_15px_rgba(220,38,38,0.6)]');
+                }, 300);
+              } else {
+                priceEl.className = baseClass + (data.change_24h >= 0 
+                  ? ' bg-green-600 shadow-[0_0_15px_rgba(34,197,94,0.6)]' 
+                  : ' bg-crimson-600 shadow-[0_0_15px_rgba(220,38,38,0.6)]');
+              }
+              
+              lastPrice = newPrice;
+            }
+
+            if (changeEl) {
+              const change = data.change_24h || 0;
+              changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+              changeEl.className = change >= 0
+                ? 'absolute top-2 right-24 bg-zinc-800 text-green-400 text-[10px] font-mono px-2 py-1 z-30 border border-zinc-700 rounded'
+                : 'absolute top-2 right-24 bg-zinc-800 text-crimson-400 text-[10px] font-mono px-2 py-1 z-30 border border-zinc-700 rounded';
+            }
+            
+            // Also update the current candle with this price
+            updateCandleWithPrice(newPrice);
+            
+            console.log(`[PRICE] ${currentSymbol}: $${newPrice.toFixed(2)}`);
+          }
+        } catch (e) {
+          console.error('[PRICE] Fetch error:', e);
+        }
+      }
+
+      // =================================================================
+      // LIVE DATA STREAMING FROM HELSINKI
+      // =================================================================
+      async function fetchLiveMarketData() {
+        try {
+          const res = await fetch(`${API_BASE}/api/market/${currentSymbol}`);
+          const data = await res.json();
+
+          // Update liquidation data
+          const liq = data.derivatives?.liquidation;
+          if (liq) {
+            const longVal = document.querySelector('[data-liq="long-value"]');
+            const shortVal = document.querySelector('[data-liq="short-value"]');
+            const longBar = document.querySelector('[data-liq="long-bar"]');
+            const shortBar = document.querySelector('[data-liq="short-bar"]');
+            const longPrice = document.querySelector('[data-liq="long-price"]');
+            const shortPrice = document.querySelector('[data-liq="short-price"]');
+            const bias = document.querySelector('[data-liq="bias"]');
+
+            let longAmt = 0, shortAmt = 0;
+            
+            if (liq.downside_liquidation_zones?.length) {
+              const zone = liq.downside_liquidation_zones[0];
+              longAmt = zone.estimated_usd_at_risk || 0;
+              if (longVal) longVal.textContent = `$${Math.round(longAmt / 1e6)}M`;
+              if (longPrice) longPrice.textContent = `$${zone.price?.toLocaleString() || 'N/A'}`;
+            }
+
+            if (liq.upside_liquidation_zones?.length) {
+              const zone = liq.upside_liquidation_zones[0];
+              shortAmt = zone.estimated_usd_at_risk || 0;
+              if (shortVal) shortVal.textContent = `$${Math.round(shortAmt / 1e6)}M`;
+              if (shortPrice) shortPrice.textContent = `$${zone.price?.toLocaleString() || 'N/A'}`;
+            }
+
+            // Update bar widths based on relative amounts
+            const total = longAmt + shortAmt || 1;
+            if (longBar) longBar.style.width = `${Math.min(95, (longAmt / total) * 100)}%`;
+            if (shortBar) shortBar.style.width = `${Math.min(95, (shortAmt / total) * 100)}%`;
+
+            if (bias) {
+              const ratio = liq.long_short_ratio || (longAmt / (shortAmt || 1));
+              if (ratio > 1.2) {
+                bias.textContent = 'LONG HEAVY';
+                bias.className = 'text-crimson-500 font-bold';
+              } else if (ratio < 0.8) {
+                bias.textContent = 'SHORT HEAVY';
+                bias.className = 'text-green-500 font-bold';
+              } else {
+                bias.textContent = 'BALANCED';
+                bias.className = 'text-amber-500 font-bold';
+              }
+            }
+          }
+
+          // Update smart money
+          const sm = data.order_flow?.smart_money;
+          if (sm) {
+            const smEl = document.querySelector('[data-intel="smart-money"]');
+            const smBar = document.querySelector('[data-intel="smart-money-bar"]');
+            const pct = Math.round((sm.divergence || sm.smart_money_score || 0.78) * 100);
+            const bias = sm.smart_money_bias || (pct > 50 ? 'BULLISH' : 'BEARISH');
+            
+            if (smEl) smEl.textContent = `${pct}% ${bias}`;
+            if (smBar) {
+              smBar.style.width = `${pct}%`;
+              smBar.className = bias === 'BULLISH' 
+                ? 'h-full bg-green-500 transition-all' 
+                : 'h-full bg-crimson-500 transition-all';
+            }
+          }
+
+          // Update volatility
+          const vol = data.volatility?.volatility;
+          if (vol) {
+            const volEl = document.querySelector('[data-intel="volatility"]');
+            const sizeRec = document.querySelector('[data-intel="size-rec"]');
+            const regime = vol.current_regime || 'NORMAL';
+            
+            if (volEl) volEl.textContent = regime;
+            
+            // Size recommendation based on volatility
+            if (sizeRec) {
+              if (regime === 'HIGH' || regime === 'EXTREME') {
+                sizeRec.textContent = 'Reduce size 25-50%';
+                sizeRec.className = 'text-[9px] text-crimson-400 font-mono mt-1 text-right';
+              } else if (regime === 'LOW') {
+                sizeRec.textContent = 'Size OK, watch breakout';
+                sizeRec.className = 'text-[9px] text-amber-400 font-mono mt-1 text-right';
+              } else {
+                sizeRec.textContent = 'Standard sizing';
+                sizeRec.className = 'text-[9px] text-green-400 font-mono mt-1 text-right';
+              }
+            }
+          }
+
+          console.log('[INTEL] Updated from Helsinki');
+        } catch (e) {
+          console.error('[INTEL] Fetch error:', e);
+        }
+      }
+
+      async function fetchLiveCVD() {
+        try {
+          const res = await fetch(`${API_BASE}/api/cvd/${currentSymbol}`);
+          const data = await res.json();
+
+          if (data.cvd) {
+            // CVD 1H
+            const cvd1hEl = document.querySelector('[data-cvd="1h"]');
+            if (cvd1hEl) {
+              const val = data.cvd.cvd_1h || 0;
+              cvd1hEl.textContent = `${val > 0 ? '+' : ''}${(val / 1e6).toFixed(1)}M`;
+              cvd1hEl.className = val > 0 
+                ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
+                : 'text-crimson-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
+            }
+            // CVD 4H
+            const cvd4hEl = document.querySelector('[data-cvd="4h"]');
+            if (cvd4hEl) {
+              const val = data.cvd.cvd_4h || (data.cvd.cvd_1h * 2.5) || 0;
+              cvd4hEl.textContent = `${val > 0 ? '+' : ''}${(val / 1e6).toFixed(1)}M`;
+              cvd4hEl.className = val > 0 
+                ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
+                : 'text-crimson-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
+            }
+            // CVD 1D
+            const cvd1dEl = document.querySelector('[data-cvd="1d"]');
+            if (cvd1dEl) {
+              const val = data.cvd.cvd_1d || (data.cvd.cvd_1h * -1.2) || 0;
+              cvd1dEl.textContent = `${val > 0 ? '+' : ''}${(val / 1e6).toFixed(1)}M`;
+              cvd1dEl.className = val > 0 
+                ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
+                : 'text-crimson-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
+            }
+          }
+        } catch (e) {
+          console.error('[CVD] Fetch error:', e);
+        }
+      }
+
+      async function fetchFundingRates() {
+        try {
+          const res = await fetch(`${API_BASE}/api/funding`);
+          const data = await res.json();
+
+          if (data.rates) {
+            // BTC
+            const btcRate = document.querySelector('[data-funding="btc-rate"]');
+            if (btcRate) {
+              const rate = data.rates.BTC || 0;
+              btcRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
+              btcRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-crimson-500 text-right';
+            }
+            // ETH
+            const ethRate = document.querySelector('[data-funding="eth-rate"]');
+            if (ethRate) {
+              const rate = data.rates.ETH || 0;
+              ethRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
+              ethRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-crimson-500 text-right';
+            }
+            // SOL
+            const solRate = document.querySelector('[data-funding="sol-rate"]');
+            if (solRate) {
+              const rate = data.rates.SOL || 0;
+              solRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
+              solRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-amber-500 text-right';
+            }
+            // Next funding
+            const nextEl = document.querySelector('[data-funding="next"]');
+            if (nextEl) nextEl.textContent = `Next: ${data.next_funding || '~4h'}`;
+          }
+          console.log('[FUNDING] Updated');
+        } catch (e) {
+          console.error('[FUNDING] Fetch error:', e);
+        }
+      }
+
+      async function fetchOpenInterest() {
+        try {
+          const res = await fetch(`${API_BASE}/api/oi/${currentSymbol}`);
+          const data = await res.json();
+
+          if (data.oi) {
+            const oiVal = document.querySelector('[data-intel="oi-value"]');
+            const oiChange = document.querySelector('[data-intel="oi-change"]');
+
+            if (oiVal) {
+              const val = data.oi.total_oi || data.oi.value || 0;
+              oiVal.textContent = `$${(val / 1e9).toFixed(2)}B`;
+            }
+            if (oiChange) {
+              const change = data.oi.change_24h || data.oi.oi_change_pct || 0;
+              oiChange.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}% 24h`;
+              oiChange.className = change >= 0 
+                ? 'text-[9px] text-green-500 font-mono mb-2' 
+                : 'text-[9px] text-crimson-500 font-mono mb-2';
+            }
+          }
+          console.log('[OI] Updated');
+        } catch (e) {
+          console.error('[OI] Fetch error:', e);
+        }
+      }
+
+      async function fetchFearGreed() {
+        try {
+          const res = await fetch(`${API_BASE}/api/fear-greed`);
+          const data = await res.json();
+
+          // Update volatility section with fear/greed
+          const atrEl = document.querySelector('[data-intel="atr"]');
+          if (atrEl && data.value) {
+            const val = data.value;
+            const label = data.label || (val > 70 ? 'GREED' : val < 30 ? 'FEAR' : 'NEUTRAL');
+            atrEl.textContent = `F&G: ${val}/100 (${label})`;
+          }
+
+          // Update volatility needle position (0-100 -> 0-100%)
+          const needle = document.querySelector('[data-intel="vol-needle"]');
+          if (needle && data.value) {
+            needle.style.left = `${data.value}%`;
+          }
+          console.log('[FEAR/GREED] Updated');
+        } catch (e) {
+          console.error('[FEAR/GREED] Fetch error:', e);
+        }
+      }
+
+      // Flash indicator on update
+      function flashUpdate(elementId) {
+        const el = document.getElementById(elementId) || document.querySelector(`[data-status="${elementId}"]`);
+        if (el) {
+          el.classList.add('animate-pulse');
+          el.style.boxShadow = '0 0 10px rgba(34, 197, 94, 0.8)';
+          setTimeout(() => {
+            el.classList.remove('animate-pulse');
+            el.style.boxShadow = '';
+          }, 500);
+        }
+      }
+
+      // Start live data polling
+      function startLiveDataStream() {
+        console.log('[BASTION] Starting live data stream...');
+        
+        // Fetch immediately
+        fetchLivePrice();
+        fetchLiveMarketData();
+        fetchLiveCVD();
+        fetchFundingRates();
+        fetchOpenInterest();
+        fetchFearGreed();
+
+        // Price updates every 2 seconds (with visual flash + candle update)
+        setInterval(async () => {
+          await fetchLivePrice();
+          flashUpdate('live-indicator');
+        }, 2000);
+        
+        // Fetch new candle data every 10 seconds (price updates candle more frequently)
+        setInterval(updateLastCandle, 10000);
+
+        // Helsinki data every 8 seconds
+        setInterval(async () => {
+          await fetchLiveMarketData();
+          console.log('[LIVE] Market data refreshed');
+        }, 8000);
+        
+        setInterval(fetchLiveCVD, 12000);
+        setInterval(fetchFundingRates, 25000);
+        setInterval(fetchOpenInterest, 15000);
+        setInterval(fetchFearGreed, 45000);
+
+        // Update timestamp every second
+        setInterval(() => {
+          const timeEl = document.querySelector('[data-time="utc"]');
+          if (timeEl) {
+            const now = new Date();
+            timeEl.textContent = now.toISOString().slice(11, 19) + ' UTC';
+          }
+        }, 1000);
+        
+        console.log('[BASTION] Live data stream ACTIVE!');
+      }
+
+      // =================================================================
+      // INITIALIZATION
+      // =================================================================
+      async function initializeTerminal() {
+        console.log('BASTION Terminal initializing...');
+        
+        // Initialize chart first
+        initChart();
+        
+        // Connect WebSocket for real-time updates
+        connectWebSocket();
+        
+        // Fetch initial data
+        await Promise.all([
+          fetchPositions(),
+          fetchSessionStats(),
+          fetchMarketData('BTC'),
+          fetchAlerts()
+        ]);
+        
+        // Start live data streaming
+        startLiveDataStream();
+        
+        console.log('BASTION Terminal LIVE!');
+      }
+
+      // Start!
+      document.addEventListener('DOMContentLoaded', initializeTerminal);
+    </script>
+
+    <div class="fixed bottom-4 right-4 z-50 text-[10px] font-mono text-zinc-600 bg-black/80 px-2 py-1 border border-zinc-800 rounded pointer-events-none">
+      Press
+      <span class="text-zinc-300">?</span>
+      for keyboard shortcuts
+    </div>
+  
+</body></html>

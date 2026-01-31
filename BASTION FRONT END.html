@@ -1,0 +1,1679 @@
+<html lang="en" class="bg-[#050505] scroll-smooth scroll-pt-24"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASTION - Institutional Crypto Risk Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+      body { font-family: 'Inter', sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+      /* Hard edges, no smoothing on scroll */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      /* Grid overlay pattern - Red Tinted */
+      .bg-grid {
+      background-size: 40px 40px;
+      background-image: linear-gradient(to right, #27272a 1px, transparent 1px),
+      linear-gradient(to bottom, #27272a 1px, transparent 1px);
+      }
+      /* HUD Scanline Effect */
+      .bg-scanline {
+      background: linear-gradient(to bottom, rgba(220, 38, 38, 0), rgba(220, 38, 38, 0) 50%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.2));
+      background-size: 100% 4px;
+      pointer-events: none;
+      }
+      /* Smooth/slow animation helpers */
+      @keyframes spinSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      .animate-spin-slow { animation: spinSlow 6s linear infinite; }
+    </style>
+    <style>
+      @media (prefers-reduced-motion: no-preference) {
+      .sys-reveal { opacity: 0; transform: translateY(20px); filter: blur(4px); transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.8s cubic-bezier(0.16, 1, 0.3, 1), filter 1.8s ease-out; will-change: opacity, transform; }
+      .sys-rise { transform: translateY(34px); }
+      .sys-slide-l { transform: translateX(-34px); }
+      .sys-slide-r { transform: translateX(34px); }
+      .sys-scale { transform: scale(0.92); }
+      .sys-active { opacity: 1; transform: translate(0) scale(1); filter: blur(0); }
+      .sys-delay-100 { transition-delay: 160ms; }
+      .sys-delay-200 { transition-delay: 320ms; }
+      .sys-delay-300 { transition-delay: 480ms; }
+      .sys-delay-400 { transition-delay: 640ms; }
+      .sys-delay-500 { transition-delay: 800ms; }
+      @keyframes sys-flicker { 0% { opacity: 0.08; } 6% { opacity: 1; } 12% { opacity: 0.08; } 18% { opacity: 1; } 100% { opacity: 1; } }
+      .sys-flicker-anim { animation: sys-flicker 2.4s linear forwards; opacity: 0; }
+      .sys-active.sys-flicker-anim { opacity: 1; }
+      .sys-bar-fill { transition: width 2.4s cubic-bezier(0.22, 1, 0.36, 1); width: 0 !important; }
+      .sys-active .sys-bar-fill, .sys-bar-fill.sys-active { width: var(--sys-width) !important; }
+      }
+    </style>
+    <script>
+      // Configure Tailwind to include our custom 3D transform utilities
+      tailwind.config = {
+      theme: {
+      extend: {
+      colors: {
+      'red': {
+      500: '#EF4444',
+      600: '#DC2626', // Primary Brand Color
+      700: '#B91C1C',
+      900: '#7F1D1D',
+      }
+      }
+      }
+      },
+      plugins: [
+      function({ addUtilities }) {
+      const rotateXUtilities = {};
+      const rotateYUtilities = {};
+      const rotateZUtilities = {};
+      const rotateValues = [0, 5, 10, 15, 20, 30, 45, 75];
+      // Generate rotate-x utilities
+      rotateValues.forEach((value) => {
+      rotateXUtilities[`.rotate-x-${value}`] = {
+      '--tw-rotate-x': `${value}deg`,
+      transform: `
+      translate3d(var(--tw-translate-x, 0), var(--tw-translate-y, 0), var(--tw-translate-z, 0))
+      rotateX(var(--tw-rotate-x, 0))
+      rotateY(var(--tw-rotate-y, 0))
+      rotateZ(var(--tw-rotate-z, 0))
+      skewX(var(--tw-skew-x, 0))
+      skewY(var(--tw-skew-y, 0))
+      scaleX(var(--tw-scale-x, 1))
+      scaleY(var(--tw-scale-y, 1))
+      `.replace(/\\s+/g, ' ').trim(),
+      };
+      if (value !== 0) {
+      rotateXUtilities[`.-rotate-x-${value}`] = {
+      '--tw-rotate-x': `-${value}deg`,
+      transform: `
+      translate3d(var(--tw-translate-x, 0), var(--tw-translate-y, 0), var(--tw-translate-z, 0))
+      rotateX(var(--tw-rotate-x, 0))
+      rotateY(var(--tw-rotate-y, 0))
+      rotateZ(var(--tw-rotate-z, 0))
+      skewX(var(--tw-skew-x, 0))
+      skewY(var(--tw-skew-y, 0))
+      scaleX(var(--tw-scale-x, 1))
+      scaleY(var(--tw-scale-y, 1))
+      `.replace(/\\s+/g, ' ').trim(),
+      };
+      }
+      });
+      // Generate rotate-y utilities
+      rotateValues.forEach((value) => {
+      rotateYUtilities[`.rotate-y-${value}`] = {
+      '--tw-rotate-y': `${value}deg`,
+      transform: `
+      translate3d(var(--tw-translate-x, 0), var(--tw-translate-y, 0), var(--tw-translate-z, 0))
+      rotateX(var(--tw-rotate-x, 0))
+      rotateY(var(--tw-rotate-y, 0))
+      rotateZ(var(--tw-rotate-z, 0))
+      skewX(var(--tw-skew-x, 0))
+      skewY(var(--tw-skew-y, 0))
+      scaleX(var(--tw-scale-x, 1))
+      scaleY(var(--tw-scale-y, 1))
+      `.replace(/\\s+/g, ' ').trim(),
+      };
+      if (value !== 0) {
+      rotateYUtilities[`.-rotate-y-${value}`] = {
+      '--tw-rotate-y': `-${value}deg`,
+      transform: `
+      translate3d(var(--tw-translate-x, 0), var(--tw-translate-y, 0), var(--tw-translate-z, 0))
+      rotateX(var(--tw-rotate-x, 0))
+      rotateY(var(--tw-rotate-y, 0))
+      rotateZ(var(--tw-rotate-z, 0))
+      skewX(var(--tw-skew-x, 0))
+      skewY(var(--tw-skew-y, 0))
+      scaleX(var(--tw-scale-x, 1))
+      scaleY(var(--tw-scale-y, 1))
+      `.replace(/\\s+/g, ' ').trim(),
+      };
+      }
+      });
+      // Generate rotate-z utilities
+      rotateValues.forEach((value) => {
+      rotateZUtilities[`.rotate-z-${value}`] = {
+      '--tw-rotate-z': `${value}deg`,
+      transform: `
+      translate3d(var(--tw-translate-x, 0), var(--tw-translate-y, 0), var(--tw-translate-z, 0))
+      rotateX(var(--tw-rotate-x, 0))
+      rotateY(var(--tw-rotate-y, 0))
+      rotateZ(var(--tw-rotate-z, 0))
+      skewX(var(--tw-skew-x, 0))
+      skewY(var(--tw-skew-y, 0))
+      scaleX(var(--tw-scale-x, 1))
+      scaleY(var(--tw-scale-y, 1))
+      `.replace(/\\s+/g, ' ').trim(),
+      };
+      if (value !== 0) {
+      rotateZUtilities[`.-rotate-z-${value}`] = {
+      '--tw-rotate-z': `-${value}deg`,
+      transform: `
+      translate3d(var(--tw-translate-x, 0), var(--tw-translate-y, 0), var(--tw-translate-z, 0))
+      rotateX(var(--tw-rotate-x, 0))
+      rotateY(var(--tw-rotate-y, 0))
+      rotateZ(var(--tw-rotate-z, 0))
+      skewX(var(--tw-skew-x, 0))
+      skewY(var(--tw-skew-y, 0))
+      scaleX(var(--tw-scale-x, 1))
+      scaleY(var(--tw-scale-y, 1))
+      `.replace(/\\s+/g, ' ').trim(),
+      };
+      }
+      });
+      // Perspective utilities
+      const perspectiveUtilities = {
+      ".perspective-none": { perspective: "none" },
+      ".perspective-dramatic": { perspective: "100px" },
+      ".perspective-near": { perspective: "300px" },
+      ".perspective-normal": { perspective: "500px" },
+      ".perspective-midrange": { perspective: "800px" },
+      ".perspective-distant": { perspective: "1200px" },
+      };
+      // Transform style utilities
+      const transformStyleUtilities = {
+      ".transform-style-preserve-3d": { "transform-style": "preserve-3d" },
+      ".transform-style-flat": { "transform-style": "flat" },
+      };
+      addUtilities({
+      ...rotateXUtilities,
+      ...rotateYUtilities,
+      ...rotateZUtilities,
+      ...perspectiveUtilities,
+      ...transformStyleUtilities,
+      });
+      }
+      ]
+      };
+    </script>
+    <script src="https://www.aura.build/FxFilter.js"></script>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <style>
+      @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      @keyframes orbit-rev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+      @keyframes pulse-scale { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.85); opacity: 0.6; } }
+      @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.4); opacity: 0; } }
+      @keyframes flow-dash { to { stroke-dashoffset: -24; } }
+      @keyframes scan-v { 0% { transform: translateY(-20%); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(120%); opacity: 0; } }
+      .anim-orbit { animation: orbit 8s linear infinite; }
+      .anim-orbit-slow { animation: orbit 12s linear infinite; }
+      .anim-orbit-rev { animation: orbit-rev 10s linear infinite; }
+      .anim-pulse { animation: pulse-scale 3s ease-in-out infinite; }
+      .anim-pulse-ring { animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+      .anim-flow { animation: flow-dash 1s linear infinite; }
+      .anim-scan-v { animation: scan-v 3s linear infinite; }
+      .origin-center { transform-box: fill-box; transform-origin: center; }
+    </style>
+  <link id="all-fonts-link-font-geist" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-geist">
+.font-geist { font-family: 'Geist', sans-serif !important; }
+</style><link id="all-fonts-link-font-roboto" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-roboto">
+.font-roboto { font-family: 'Roboto', sans-serif !important; }
+</style><link id="all-fonts-link-font-montserrat" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-montserrat">
+.font-montserrat { font-family: 'Montserrat', sans-serif !important; }
+</style><link id="all-fonts-link-font-poppins" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-poppins">
+.font-poppins { font-family: 'Poppins', sans-serif !important; }
+</style><link id="all-fonts-link-font-playfair" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&amp;display=swap"><style id="all-fonts-style-font-playfair">
+.font-playfair { font-family: 'Playfair Display', serif !important; }
+</style><link id="all-fonts-link-font-instrument-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-instrument-serif">
+.font-instrument-serif { font-family: 'Instrument Serif', serif !important; }
+</style><link id="all-fonts-link-font-merriweather" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&amp;display=swap"><style id="all-fonts-style-font-merriweather">
+.font-merriweather { font-family: 'Merriweather', serif !important; }
+</style><link id="all-fonts-link-font-bricolage" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-bricolage">
+.font-bricolage { font-family: 'Bricolage Grotesque', sans-serif !important; }
+</style><link id="all-fonts-link-font-jakarta" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-jakarta">
+.font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }
+</style><link id="all-fonts-link-font-manrope" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-manrope">
+.font-manrope { font-family: 'Manrope', sans-serif !important; }
+</style><link id="all-fonts-link-font-space-grotesk" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-space-grotesk">
+.font-space-grotesk { font-family: 'Space Grotesk', sans-serif !important; }
+</style><link id="all-fonts-link-font-work-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-work-sans">
+.font-work-sans { font-family: 'Work Sans', sans-serif !important; }
+</style><link id="all-fonts-link-font-pt-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&amp;display=swap"><style id="all-fonts-style-font-pt-serif">
+.font-pt-serif { font-family: 'PT Serif', serif !important; }
+</style><link id="all-fonts-link-font-geist-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-geist-mono">
+.font-geist-mono { font-family: 'Geist Mono', monospace !important; }
+</style><link id="all-fonts-link-font-space-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;display=swap"><style id="all-fonts-style-font-space-mono">
+.font-space-mono { font-family: 'Space Mono', monospace !important; }
+</style><link id="all-fonts-link-font-quicksand" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-quicksand">
+.font-quicksand { font-family: 'Quicksand', sans-serif !important; }
+</style><link id="all-fonts-link-font-nunito" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-nunito">
+.font-nunito { font-family: 'Nunito', sans-serif !important; }
+</style><link id="all-fonts-link-font-newsreader" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&amp;display=swap"><style id="all-fonts-style-font-newsreader">
+.font-newsreader { font-family: 'Newsreader', serif !important; }
+</style><link id="all-fonts-link-font-google-sans-flex" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-google-sans-flex">
+.font-google-sans-flex { font-family: 'Google Sans Flex', sans-serif !important; }
+</style><link id="all-fonts-link-font-oswald" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-oswald">
+.font-oswald { font-family: 'Oswald', sans-serif !important; }
+</style><link id="all-fonts-link-font-dm-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-dm-sans">
+.font-dm-sans { font-family: 'DM Sans', sans-serif !important; }
+</style><link id="all-fonts-link-font-cormorant" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-cormorant">
+.font-cormorant { font-family: 'Cormorant Garamond', serif !important; }
+</style></head>
+  <body class="text-zinc-400 min-h-screen flex flex-col selection:bg-red-600 selection:text-white bg-[#050505]">
+    <!-- Fixed Grid Background (Subtle Red Tint) -->
+    <div class="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-grid" style="filter: sepia(1) hue-rotate(320deg) saturate(2);"></div>
+
+    <!-- Header / Control Bar -->
+    <header class="relative z-50 h-16 border-b border-zinc-800 bg-[#050505]/95 backdrop-blur-sm flex items-center justify-between sticky top-0">
+      <!-- Left: Logo & Status -->
+      <div class="flex items-center h-full pl-6 pr-8 border-r border-zinc-800 bg-[#050505]">
+        <a href="#" class="flex items-center gap-3 group">
+          <iconify-icon icon="solar:shield-bold" class="text-red-600 text-2xl group-hover:scale-110 transition-transform"></iconify-icon>
+          <span class="text-xl tracking-tighter text-white font-mono group-hover:text-red-600 transition-colors font-semibold">
+            BASTION
+          </span>
+        </a>
+        <button id="tablet-menu-btn" class="hidden md:flex lg:hidden ml-6 w-10 h-10 border border-zinc-800 bg-zinc-900/30 items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-1 focus:ring-red-600" aria-label="Toggle Tablet Navigation">
+          <iconify-icon icon="solar:hamburger-menu-linear" width="20"></iconify-icon>
+        </button>
+        <div class="hidden lg:flex items-center ml-6 px-3 py-1 border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm rounded-sm gap-2">
+          <span class="text-[10px] font-mono text-zinc-600 leading-none">
+            [
+          </span>
+          <span class="relative flex h-1.5 w-1.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+          </span>
+          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">
+            ENV: LIVE
+          </span>
+          <span class="text-[10px] font-mono text-zinc-600 leading-none">
+            ]
+          </span>
+        </div>
+      </div>
+
+      <!-- Center: Navigation Links -->
+      <nav class="hidden lg:flex items-center h-full flex-1 justify-center">
+        <div class="flex h-full items-center border-x border-zinc-800/50">
+          <a href="#" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">
+            Risk Engine
+            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+          </a>
+          <a href="#" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">
+            Sessions
+            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+          </a>
+          <a href="#" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">
+            Analytics
+            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+          </a>
+          <a href="#" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">
+            Alerts
+            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+          </a>
+          <a href="#" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">
+            Docs
+            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Right: Actions -->
+      <div class="hidden md:flex items-center h-full border-l border-zinc-800 bg-[#050505]">
+        <button class="h-full px-8 bg-red-600 text-white text-[10px] font-mono uppercase tracking-widest hover:bg-red-500 transition-all flex items-center gap-2 group shadow-[inset_0_0_20px_rgba(0,0,0,0.4)]">
+          Connect Exchange
+          <iconify-icon icon="solar:link-circle-bold" width="14" class="group-hover:rotate-45 transition-transform"></iconify-icon>
+        </button>
+      </div>
+
+      <!-- Mobile Toggle -->
+      <button id="mobile-menu-btn" class="md:hidden p-0 w-16 h-full text-zinc-400 hover:text-white border-l border-zinc-800 bg-[#050505] flex items-center justify-center transition-colors hover:bg-zinc-900">
+        <iconify-icon icon="solar:hamburger-menu-linear" width="24"></iconify-icon>
+      </button>
+
+      <!-- Tablet Menu -->
+      <div id="tablet-menu" class="hidden lg:hidden absolute top-full left-0 right-0 bg-[#050505] border-b border-zinc-800 z-40 flex-col shadow-2xl">
+        <div class="absolute inset-0 bg-grid opacity-[0.05] pointer-events-none"></div>
+        <div class="flex items-center justify-between px-8 py-3 border-b border-zinc-800 bg-zinc-900/20 relative z-10">
+          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">
+            Tactical_Nav
+          </span>
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+            <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">
+              LIVE FEED
+            </span>
+          </div>
+        </div>
+        <div class="flex flex-col relative z-10">
+          <a href="#" class="group flex items-center px-8 py-4 border-b border-zinc-800 hover:bg-zinc-900 transition-colors">
+            <span class="text-[10px] font-mono text-zinc-600 group-hover:text-red-600 w-8 transition-colors">
+              01.
+            </span>
+            <span class="text-xs font-mono font-medium text-zinc-300 group-hover:text-white uppercase tracking-wider">
+              Risk Engine
+            </span>
+          </a>
+          <!-- Other items... -->
+        </div>
+      </div>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="fixed inset-x-0 top-16 bottom-0 z-40 bg-[#050505] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col border-t border-zinc-800 overflow-y-auto">
+      <div class="flex flex-col p-6 space-y-4">
+        <button class="w-full py-4 bg-red-600 text-white text-xs font-mono uppercase tracking-widest hover:bg-red-500 flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-900/20 font-bold">
+          Connect Exchange
+          <iconify-icon icon="solar:link-circle-bold" width="16"></iconify-icon>
+        </button>
+        <div class="flex flex-col border border-zinc-800 bg-zinc-900/20">
+          <a href="#" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">
+            Risk Engine
+            <iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon>
+          </a>
+          <a href="#" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">
+            Sessions
+            <iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon>
+          </a>
+          <!-- ... -->
+        </div>
+      </div>
+      <div class="mt-auto p-6 border-t border-zinc-800">
+        <div class="flex items-center gap-2 text-[10px] font-mono text-zinc-600 uppercase">
+          <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+          Protection Operational
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <main class="relative z-10 flex-1 flex flex-col md:flex-row">
+      <!-- Left Sidebar / Vertical Track -->
+      <aside class="hidden md:flex flex-col w-16 border-r border-zinc-800 bg-[#050505] shrink-0 relative z-40">
+        <div class="sticky top-16 h-[calc(100vh-4rem)] flex flex-col items-center py-12 w-full">
+          <!-- Vertical Track -->
+          <div class="absolute top-0 bottom-0 left-1/2 w-px bg-zinc-900 -translate-x-1/2 z-0"></div>
+
+          <!-- Nav Items -->
+          <nav class="flex flex-col gap-10 relative z-10 w-full items-center">
+            <a href="#hero" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300">
+              01
+              <div class="absolute left-full ml-4 px-2 py-1 bg-zinc-900 border border-zinc-800 text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
+                Terminal
+              </div>
+            </a>
+            <a href="#features" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300">
+              02
+              <div class="absolute left-full ml-4 px-2 py-1 bg-zinc-900 border border-zinc-800 text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
+                Capabilities
+              </div>
+            </a>
+            <!-- Additional nav dots... -->
+          </nav>
+
+          <!-- Bottom Decor -->
+          <div class="mt-auto mb-12 flex flex-col items-center gap-4">
+            <div class="w-px h-12 bg-gradient-to-b from-zinc-800 to-transparent"></div>
+            <div class="text-[8px] font-mono text-zinc-700 -rotate-90 whitespace-nowrap tracking-widest uppercase">
+              HUD_v2.0
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Content Area -->
+      <div class="flex-1 flex flex-col min-w-0 relative z-0">
+        <!-- Hero Grid Row -->
+        <div id="hero" class="relative w-full min-h-[750px] flex items-center border-b border-zinc-800 overflow-hidden bg-[#050505]">
+          <!-- Background Layer (Full Width) -->
+          <div class="absolute inset-0 z-0">
+            <!-- Unicorn Studio Script Container -->
+            <div class="aura-background-component w-full h-full absolute inset-0">
+              <div data-us-project="hRFfUymDGOHwtFe7evR2" class="absolute w-full h-full left-0 top-0 opacity-40 mix-blend-screen" style="filter: hue-rotate(320deg) saturate(2);"></div>
+              <script type="text/javascript">
+                !function(){if(!window.UnicornStudio){window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.29/dist/unicornStudio.umd.js",i.onload=function(){window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)},(document.head || document.body).appendChild(i)}}();
+              </script>
+            </div>
+            <!-- Soft Dark Gradient Overlay for Contrast -->
+            <div class="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/25 to-[#050505]/20 z-10 pointer-events-none"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#050505] z-10 pointer-events-none"></div>
+            <!-- Scanlines -->
+            <div class="absolute inset-0 bg-scanline opacity-20 z-10"></div>
+          </div>
+
+          <!-- Content Container -->
+          <div class="container lg:px-12 grid grid-cols-1 lg:grid-cols-2 md:pt-32 md:pb-44 h-full z-20 mr-auto ml-auto pt-24 pr-6 pb-32 pl-6 relative gap-x-12 gap-y-12 items-center">
+            <!-- Left Content Column -->
+            <div class="flex flex-col justify-center max-w-2xl">
+              <!-- Status Indicator -->
+              <div class="flex items-center gap-3 mb-8 sys-reveal sys-rise">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                </span>
+                <span class="text-[10px] uppercase text-zinc-400 tracking-widest font-mono">
+                  RISK ENGINE: ACTIVE
+                  <span class="text-zinc-600 mx-2">//</span>
+                  PROTECTION ENABLED
+                </span>
+              </div>
+
+              <!-- Headline -->
+              <h1 class="md:text-7xl lg:text-8xl uppercase leading-[0.9] sys-reveal sys-rise sys-delay-100 text-5xl font-medium text-white pt-8 pb-8 tracking-tight">
+                risk
+                <span class="inline-block min-w-[11ch] whitespace-nowrap text-red-600 text-left" id="hero-typewriter">ENGINEERED</span>
+              </h1>
+
+              <!-- Subheading -->
+              <p class="text-base md:text-lg text-zinc-500 font-mono leading-relaxed mb-10 max-w-md border-l-2 border-red-600 pl-4 sys-reveal sys-rise sys-delay-200">
+                Institutional-grade risk management for retail traders.
+                Multi-shot entries, dynamic stops, and momentum-capturing exits.
+              </p>
+
+              <!-- Value Highlights -->
+              <div class="flex flex-col gap-3 mb-10 sys-reveal sys-rise sys-delay-300">
+                <div class="flex items-center gap-3">
+                  <span class="w-1.5 h-1.5 bg-red-600"></span>
+                  <span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">
+                    Strategy-agnostic risk shield
+                  </span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="w-1.5 h-1.5 bg-red-600"></span>
+                  <span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">
+                    Real-time position management
+                  </span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="w-1.5 h-1.5 bg-red-600"></span>
+                  <span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">
+                    Intelligent profit protection
+                  </span>
+                </div>
+              </div>
+
+              <!-- CTA Cluster -->
+              <div class="flex flex-col sm:flex-row gap-4 mb-8 sys-reveal sys-rise sys-delay-400">
+                <button class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">
+                  Launch Terminal
+                  <iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
+                </button>
+                <button class="group bg-transparent border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 font-medium">
+                  View Documentation
+                  <iconify-icon icon="solar:document-text-linear" width="16"></iconify-icon>
+                </button>
+              </div>
+
+              <!-- Micro Trust -->
+              <div class="flex items-center gap-4 text-[10px] font-mono text-zinc-600 uppercase tracking-wide pl-1 sys-reveal sys-rise sys-delay-500">
+                <span>Bybit / Binance / OKX</span>
+                <span class="w-1 h-1 bg-zinc-800 rounded-full"></span>
+                <span>Low Latency Execution</span>
+              </div>
+            </div>
+
+            <!-- Right Column: Active System Cards -->
+            <div class="hidden lg:flex flex-col items-end justify-center relative h-full pointer-events-none select-none">
+              <!-- Cards Container -->
+              <div class="relative w-full max-w-sm perspective-1000 mt-12 mr-8">
+                <!-- Card 1: Active Positions (Top Right) -->
+                <div class="absolute -top-32 right-0 w-64 bg-[#050505]/90 backdrop-blur-sm border border-zinc-800 p-5 z-10 sys-reveal sys-slide-l sys-delay-300 border-l-2 border-l-red-600">
+                  <div class="flex justify-between items-center mb-3 border-b border-zinc-800 pb-2">
+                    <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">
+                      ACTIVE_POSITIONS
+                    </span>
+                    <div class="flex gap-1">
+                      <div class="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex justify-between text-[10px] font-mono text-zinc-400">
+                      <span>BTC-PERP</span>
+                      <span class="text-green-500 bg-green-500/10 px-1 rounded-sm">
+                        LONG
+                      </span>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-mono text-zinc-400">
+                      <span>ETH-PERP</span>
+                      <span class="text-red-500 bg-red-500/10 px-1 rounded-sm">
+                        SHORT
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 2: Position Health (Main Center) -->
+                <div class="relative w-80 bg-[#080808] border border-zinc-800 p-6 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 group hover:border-red-600/30 transition-colors pointer-events-auto">
+                  <div class="absolute -left-px top-6 bottom-6 w-0.5 bg-red-600"></div>
+                  <div class="flex justify-between items-start mb-6">
+                    <div class="">
+                      <div class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">
+                        CURRENT P&amp;L
+                      </div>
+                      <div class="text-3xl font-medium text-green-500 tracking-tight">
+                        +2.4R
+                      </div>
+                    </div>
+                    <div class="h-8 w-8 rounded-sm bg-red-600/10 border border-red-600/20 flex items-center justify-center">
+                      <iconify-icon icon="solar:shield-check-bold" class="text-red-600 text-lg"></iconify-icon>
+                    </div>
+                  </div>
+                  <div class="space-y-3">
+                    <div class="">
+                      <div class="flex justify-between text-[9px] font-mono text-zinc-600 uppercase mb-1">
+                        Risk Utilization
+                      </div>
+                      <div class="w-full bg-zinc-900 h-1">
+                        <div class="bg-red-600 h-full w-[42%] relative">
+                          <div class="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-2 bg-white"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                      <div class="text-[10px] font-mono text-zinc-400">
+                        RISK:
+                        <span class="text-white">1.2%</span>
+                      </div>
+                      <div class="text-[10px] font-mono text-green-500 border border-green-900 bg-green-900/10 px-1.5 py-0.5 rounded-sm">
+                        OPTIMAL
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Glow Effect -->
+                  <div class="absolute inset-0 bg-red-600/5 blur-xl -z-10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                  <!-- Scanline -->
+                  <div class="absolute inset-0 bg-scanline opacity-20 pointer-events-none"></div>
+                </div>
+
+                <!-- Card 3: Session Status (Bottom Right) -->
+                <div class="absolute -bottom-24 right-8 w-64 bg-[#050505]/90 backdrop-blur-sm border border-zinc-800 p-4 z-10 sys-reveal sys-slide-l sys-delay-400">
+                  <div class="flex justify-between items-center mb-3">
+                    <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">
+                      SESSION_STATUS
+                    </span>
+                    <span class="text-[9px] font-mono text-amber-500 border border-amber-900 bg-amber-900/10 px-1">
+                      TRAILING
+                    </span>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-3 border-l border-zinc-800 pl-3">
+                      <iconify-icon icon="solar:refresh-circle-linear" class="text-amber-500 animate-spin-slow" width="14"></iconify-icon>
+                      <div class="flex flex-col">
+                        <span class="text-[10px] text-white font-mono">
+                          Shot 2/3 Active
+                        </span>
+                        <span class="text-[8px] text-zinc-600 font-mono">
+                          Momentum TP engaged...
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Decorative Corner Marks -->
+          <div class="absolute bottom-8 left-8 w-4 h-4 border-l border-b border-red-600/30"></div>
+          <div class="absolute top-8 right-8 w-4 h-4 border-r border-t border-red-600/30"></div>
+        </div>
+
+        <!-- Features Grid Row -->
+        <section id="features" class="flex flex-col bg-[#050505] border-b border-zinc-800">
+          <div class="flex flex-col md:px-12 md:flex-row md:items-end md:pt-36 md:pb-28 bg-center bg-gradient-to-r from-white/10 via-white/0 to-white/10 border-zinc-800 border-b pt-36 pr-8 pb-28 pl-8 gap-x-6 gap-y-6 justify-between">
+            <div class="max-w-2xl">
+              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-4">
+                <span class="w-1.5 h-1.5 bg-red-600"></span>
+                // PROTECTION_LAYER
+              </div>
+              <h2 class="text-3xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-none mb-4">
+                <span class="text-red-600">RISK ENGINE</span>
+                <span class="text-white">PRIMITIVES</span>
+              </h2>
+              <p class="text-sm text-zinc-500 font-mono leading-relaxed max-w-lg">
+                The same risk management technology used by quantitative hedge
+                funds. Now protecting your capital.
+              </p>
+            </div>
+            <div class="hidden md:flex items-center gap-3">
+              <a href="#" class="group flex items-center gap-2 text-[10px] uppercase hover:text-red-600 transition-colors text-zinc-500 tracking-widest font-mono">
+                Explore All Features
+                <iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
+              </a>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <!-- Card 1 -->
+            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-100">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    FIG. 01
+                  </span>
+                  <iconify-icon icon="solar:layers-minimalistic-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <div class="w-full h-32 mb-6 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-01" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  MULTI-SHOT POSITION SCALING
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Institutional-grade averaging system
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    3-tier entry with automatic sizing
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    R-multiple optimized allocation
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Budget recovery on stopped positions
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-200">
+              <div class="">
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    FIG. 02
+                  </span>
+                  <iconify-icon icon="solar:shield-warning-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <div class="w-full h-32 mb-6 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-02" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  ADAPTIVE STOP ARCHITECTURE
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Structural stops at key market levels
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Safety net hard floor protection
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Dynamic trailing guard evolution
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Automatic breakeven at +1R
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="group relative border-r border-b md:border-r-0 lg:border-r border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-300">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    FIG. 03
+                  </span>
+                  <iconify-icon icon="solar:graph-up-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <div class="w-full h-32 mb-6 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-03" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  MOMENTUM CAPTURE SYSTEM
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Slope-based trend measurement
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Candle body trailing algorithm
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Wick penetration protection
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Aggressive profit lock mechanism
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-400">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    FIG. 04
+                  </span>
+                  <iconify-icon icon="solar:umbrella-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <div class="w-full h-32 mb-6 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-04" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  VOLATILITY REGIME ENGINE
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Real-time ATR regime classification
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    LOW → NORMAL → HIGH → EXTREME
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Automatic position size adjustment
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    50% reduction in extreme regimes
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-500">
+              <div class="">
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    FIG. 05
+                  </span>
+                  <iconify-icon icon="solar:sitemap-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <div class="w-full h-32 mb-6 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-05" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  STRUCTURE ANALYSIS
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Multi-timeframe level detection
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Confluence scoring algorithm
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Structure freshness weighting
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Dynamic support/resistance mapping
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Card 6 -->
+            <div class="group relative border-b lg:border-b-0 border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-600">
+              <div class="">
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    FIG. 06
+                  </span>
+                  <iconify-icon icon="solar:chart-square-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <div class="w-full h-32 mb-6 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-06" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  DIVERGENCE INTELLIGENCE
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    RSI divergence across timeframes
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Trend exhaustion early warning
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Automatic partial exit signals
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Bullish/bearish classification
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="intelligence" class="flex flex-col bg-[#050505] border-b border-zinc-800">
+          <!-- Section Intro -->
+          <div class="flex flex-col md:px-12 md:flex-row md:items-end md:pt-36 md:pb-28 bg-center border-zinc-800 border-b pt-36 pr-8 pb-28 pl-8 gap-x-6 gap-y-6 justify-between">
+            <div class="max-w-2xl">
+              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-4">
+                <span class="w-1.5 h-1.5 bg-red-600"></span>
+                // MARKET_INTELLIGENCE
+              </div>
+              <h2 class="text-3xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-none mb-4">
+                <span class="text-white">MARKET</span>
+                <span class="text-red-600">INTELLIGENCE</span>
+              </h2>
+              <p class="text-sm text-zinc-500 font-mono leading-relaxed max-w-lg">
+                Deep-dive analytics across on-chain and off-chain data streams.
+                Real-time synthesis.
+              </p>
+            </div>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <!-- Card 1 -->
+            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-100">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    DAT. 01
+                  </span>
+                  <iconify-icon icon="solar:drop-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <div class="w-full h-32 mb-6 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-dat-01" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  LIQUIDATION INTELLIGENCE
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Real-time liquidation cascade prediction
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Exchange-level liquidation heatmaps
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Historical liquidation pattern analysis
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Leveraged position concentration mapping
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- Card 2 -->
+            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-200">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    DAT. 02
+                  </span>
+                  <iconify-icon icon="solar:wallet-money-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <div class="w-full h-32 mb-6 bg-amber-900/10 rounded-sm border border-amber-800/20 relative overflow-hidden flex items-center justify-center group-hover:border-amber-500/30 transition-colors">
+                  <canvas id="canvas-dat-02" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  WHALE FLOW TRACKING
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    42-chain blockchain surveillance
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Institutional wallet fingerprinting
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Exchange deposit/withdrawal monitoring
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Smart money accumulation detection
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- Card 3 -->
+            <div class="group relative border-r border-b md:border-r-0 lg:border-r border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-300">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    DAT. 03
+                  </span>
+                  <iconify-icon icon="solar:tuning-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  DERIVATIVES MATRIX
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Cross-exchange funding rate arbitrage
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Open interest anomaly detection
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Basis spread monitoring
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Options flow &amp; IV surface analysis
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- Card 4 -->
+            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-400">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    DAT. 04
+                  </span>
+                  <iconify-icon icon="solar:sort-from-top-to-bottom-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  ORDER FLOW INTELLIGENCE
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Cumulative volume delta tracking
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Absorption &amp; exhaustion detection
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Iceberg order identification
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Aggressive vs passive flow analysis
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- Card 5 -->
+            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-500">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    DAT. 05
+                  </span>
+                  <iconify-icon icon="solar:heart-pulse-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  SENTIMENT SYNTHESIS
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Fear/greed regime classification
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Social momentum scoring
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Funding sentiment divergence
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Retail vs institutional positioning
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- Card 6 -->
+            <div class="group relative border-b lg:border-b-0 border-zinc-800 p-8 min-h-[320px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-600">
+              <div>
+                <div class="flex justify-between items-start mb-6">
+                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">
+                    DAT. 06
+                  </span>
+                  <iconify-icon icon="solar:globe-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                </div>
+                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">
+                  MACRO CORRELATION ENGINE
+                </h3>
+                <ul class="space-y-2">
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    DXY/BTC correlation tracking
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Equity market spillover detection
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Bond yield impact analysis
+                  </li>
+                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
+                    <span class="text-red-600/70 mt-0.5">•</span>
+                    Crypto dominance shifts
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Strategy Integration (Formerly Deployments) -->
+        <section id="ai-advisor" class="flex flex-col bg-[#050505] border-b border-zinc-800 py-32">
+          <div class="container mx-auto px-6 lg:px-12 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <!-- Left: Text -->
+              <div>
+                <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <iconify-icon icon="solar:chat-line-bold"></iconify-icon>
+                  // NEURAL_INTELLIGENCE
+                </div>
+                <h2 class="text-3xl md:text-5xl font-semibold text-white uppercase tracking-tight leading-none mb-6">
+                  <span class="text-red-600">AI-POWERED</span>
+                  TRADE COACHING
+                </h2>
+                <p class="text-sm text-zinc-500 font-mono max-w-lg mb-10 border-l-2 border-red-600/30 pl-4">
+                  7 billion parameter neural network dedicated to your risk
+                  decisions. Institutional analysis in natural language.
+                </p>
+
+                <div class="space-y-6">
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors shadow-[0_0_10px_rgba(220,38,38,0.1)]">
+                      <iconify-icon icon="solar:chat-square-code-linear" class="text-xl"></iconify-icon>
+                    </div>
+                    <div>
+                      <h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">
+                        TRADE NARRATIVE ENGINE
+                      </h4>
+                      <p class="text-xs text-zinc-500 font-mono">
+                        Every decision explained in plain English
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors shadow-[0_0_10px_rgba(220,38,38,0.1)]">
+                      <iconify-icon icon="solar:monitor-camera-linear" class="text-xl"></iconify-icon>
+                    </div>
+                    <div>
+                      <h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">
+                        REAL-TIME COACHING
+                      </h4>
+                      <p class="text-xs text-zinc-500 font-mono">
+                        "Momentum trailing activated - slope strength 2.3x"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors shadow-[0_0_10px_rgba(220,38,38,0.1)]">
+                      <iconify-icon icon="solar:bell-bing-linear" class="text-xl"></iconify-icon>
+                    </div>
+                    <div>
+                      <h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">
+                        PREDICTIVE ALERTING
+                      </h4>
+                      <p class="text-xs text-zinc-500 font-mono">
+                        "Volatility regime shift detected - recommending 40%
+                        size reduction"
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors shadow-[0_0_10px_rgba(220,38,38,0.1)]">
+                      <iconify-icon icon="solar:check-read-linear" class="text-xl"></iconify-icon>
+                    </div>
+                    <div>
+                      <h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">
+                        ENTRY VALIDATION
+                      </h4>
+                      <p class="text-xs text-zinc-500 font-mono">
+                        Confluence scoring with structure, order flow, and
+                        sentiment synthesis
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Terminal Mockup -->
+              <div class="relative bg-black border border-zinc-800 p-1 shadow-[0_0_30px_rgba(220,38,38,0.15)] group">
+                <!-- Decorative tactical corners -->
+                <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-red-600"></div>
+                <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-red-600"></div>
+
+                <!-- Terminal Header -->
+                <div class="bg-zinc-900/80 border-b border-zinc-800 p-3 flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-2.5 bg-red-600 animate-pulse rounded-full shadow-[0_0_8px_#DC2626]"></div>
+                    <span class="text-[10px] font-mono text-zinc-300 font-bold tracking-wider">
+                      BASTION_CLI_v2.0 // ROOT
+                    </span>
+                  </div>
+                  <div class="text-[9px] font-mono text-red-500 font-bold uppercase border border-red-900/50 px-2 py-0.5 bg-red-900/10">
+                    ENCRYPTED CONNECTION
+                  </div>
+                </div>
+
+                <!-- Terminal Body -->
+                <div class="p-6 font-mono text-xs space-y-4 h-[350px] overflow-y-auto relative bg-[#050505]">
+                  <div class="absolute inset-0 bg-scanline opacity-10 pointer-events-none"></div>
+
+                  <div class="text-zinc-500">
+                    <span class="text-red-600 font-bold">root@bastion:~$</span>
+                    ./analyze_structure --target BTC
+                  </div>
+                  <div class="text-zinc-400 pl-4 border-l border-zinc-800/50">
+                    <span class="text-zinc-600">[10:42:01]</span>
+                    INGESTING 147 STREAMS...
+                    <span class="text-red-600">OK</span>
+                    <span class="text-zinc-600">[10:42:02]</span>
+                    CALCULATING LIQUIDATION LEVELS...
+                    <span class="text-red-600">DONE</span>
+                    <span class="text-red-500 font-bold">[10:42:03]</span>
+                    ALERT: VOLATILITY EXPANSION DETECTED
+                  </div>
+                  <div class="pl-4 space-y-2 mt-4">
+                    <div class="bg-red-950/20 border-l-2 border-red-600 p-3 text-red-200">
+                      <span class="font-bold">
+                        &gt;&gt;&gt; TACTICAL REPORT:
+                      </span>
+                      Market structure bearish on 4H. Massive short liquidation
+                      cluster detected at
+                      <span class="text-white font-bold">$68,200</span>
+                      . Suggest waiting for liquidity grab before entry.
+                    </div>
+                    <div class="text-white mt-2 font-bold">
+                      <span class="text-zinc-500">RECOMMENDATION &gt;</span>
+                      REDUCE POSITION SIZE 40%
+                    </div>
+                  </div>
+                  <div class="text-zinc-500 mt-4 flex items-center gap-1">
+                    <span class="text-red-600 font-bold">root@bastion:~$</span>
+                    <span class="w-2.5 h-5 bg-red-600 animate-pulse block"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="flex flex-col scroll-mt-16 group bg-[#050505] border-zinc-800 relative" id="deployments">
+          <!-- Section Header -->
+          <div class="flex flex-col md:px-12 md:flex-row md:items-end md:pt-36 md:pb-28 bg-center border-zinc-800 pt-24 pr-8 pb-20 pl-8 gap-x-6 gap-y-6 justify-between bg-zinc-950">
+            <div class="max-w-2xl">
+              <div class="text-[10px] uppercase flex gap-2 text-red-600 tracking-widest font-mono mb-6 gap-x-2 gap-y-2 items-center">
+                <span class="w-1.5 h-1.5 bg-red-600"></span>
+                // Tactical_Scenarios
+              </div>
+              <h2 class="text-3xl md:text-4xl font-medium text-white uppercase tracking-tight mb-4 leading-none">
+                Strategy
+                <span class="text-zinc-600">Integration</span>
+              </h2>
+              <p class="text-sm text-zinc-500 font-mono leading-relaxed max-w-lg mb-4">
+                Operational contexts where BASTION delivers measurable edge
+                across market conditions.
+              </p>
+              <div class="flex items-center gap-2 text-[10px] font-mono text-zinc-600 uppercase tracking-wide">
+                <iconify-icon icon="solar:verified-check-linear" class="text-green-500"></iconify-icon>
+                Live on Mainnet
+              </div>
+            </div>
+          </div>
+          <!-- (Keeping structural code but updating accent colors) -->
+          <div class="hidden lg:grid grid-cols-12 border-t border-zinc-800 min-h-[550px]">
+            <!-- Tabs Column -->
+            <div class="col-span-4 border-r border-zinc-800 bg-[#050505] flex flex-col">
+              <button onclick="window.switchTab(0)" class="scenario-tab group hover:bg-zinc-900/20 transition-all text-left bg-zinc-900/30 w-full border-zinc-800 border-b border-l-2 pt-8 pr-8 pb-8 pl-8 border-red-600" data-index="0">
+                <div class="flex justify-between items-start mb-3">
+                  <span class="text-[10px] font-mono text-zinc-500 group-hover:text-red-600 transition-colors uppercase tracking-wider">
+                    SCALPING
+                  </span>
+                  <iconify-icon icon="solar:bolt-linear" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
+                </div>
+                <div class="text-base font-medium text-white uppercase tracking-tight mb-3">
+                  High-Frequency Protection
+                </div>
+                <div class="inline-flex items-center px-2 py-1 bg-zinc-900 border border-zinc-800 rounded-sm text-[10px] font-mono text-green-500">
+                  <span class="mr-1">●</span>
+                  LOW LATENCY
+                </div>
+              </button>
+              <!-- More tabs hidden for brevity, styles updated via JS logic below -->
+            </div>
+            <!-- Detail Panels Column -->
+            <div class="col-span-8 bg-[#080808] relative overflow-hidden">
+              <!-- Panel 1 -->
+              <div class="scenario-panel absolute inset-0 p-16 flex flex-col justify-between opacity-100 z-10 transition-all duration-300" data-index="0">
+                <div class="flex justify-between items-start gap-12">
+                  <div class="max-w-lg">
+                    <h3 class="text-3xl text-white font-medium uppercase tracking-tight mb-6">
+                      High-Frequency Protection
+                    </h3>
+                    <p class="text-sm text-zinc-500 font-mono leading-relaxed mb-10">
+                      Automated trailing stops that react to tick-level data.
+                      Ideal for scalping strategies where every point of
+                      drawdown matters.
+                    </p>
+                    <ul class="space-y-4 mb-8">
+                      <li class="flex items-center gap-3 text-xs font-mono text-zinc-300">
+                        <span class="w-1 h-1 bg-red-600"></span>
+                        Instant Break-Even Triggers
+                      </li>
+                      <li class="flex items-center gap-3 text-xs font-mono text-zinc-300">
+                        <span class="w-1 h-1 bg-red-600"></span>
+                        Slippage Guard
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Mobile accordion fallback omitted for brevity but follows same red styling -->
+          <script>
+            window.switchTab = function(index) {
+              document.querySelectorAll('.scenario-tab').forEach(tab => {
+                const isSelected = tab.getAttribute('data-index') == index;
+                if(isSelected) {
+                  tab.classList.add('border-red-600', 'bg-zinc-900/30');
+                  tab.classList.remove('border-transparent');
+                  tab.querySelector('.text-base').classList.remove('text-zinc-400');
+                  tab.querySelector('.text-base').classList.add('text-white');
+                } else {
+                  tab.classList.remove('border-red-600', 'bg-zinc-900/30');
+                  tab.classList.add('border-transparent');
+                  tab.querySelector('.text-base').classList.add('text-zinc-400');
+                  tab.querySelector('.text-base').classList.remove('text-white');
+                }
+              });
+              // Panel switching logic remains same
+            };
+          </script>
+        </section>
+
+        <!-- Footer -->
+        <footer class="border-t border-zinc-800 bg-[#050505] text-zinc-500 font-mono relative z-20">
+          <div class="border-t border-zinc-800 bg-[#080808] px-8 py-4 flex flex-col md:flex-row items-center justify-between text-[10px] uppercase tracking-wider text-zinc-600 relative z-20">
+            <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-2 md:mb-0">
+              <span class="cursor-default">© 2024 BASTION SYSTEMS.</span>
+              <span class="hidden md:inline w-px h-3 bg-zinc-800"></span>
+              <div class="flex gap-6">
+                <a href="#" class="hover:text-white transition-colors">
+                  Privacy
+                </a>
+                <a href="#" class="hover:text-white transition-colors">Terms</a>
+              </div>
+            </div>
+            <div class="flex items-center gap-6 font-mono">
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="solar:clock-circle-linear" width="12"></iconify-icon>
+                <span>MARKET OPEN</span>
+              </div>
+              <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
+              <div class="flex items-center gap-2 text-red-900">
+                <iconify-icon icon="solar:shield-check-linear" width="12"></iconify-icon>
+                <span class="text-red-600">SECURE_CONNECTION</span>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </main>
+
+    <script>
+      // Animation observers
+      document.addEventListener("DOMContentLoaded", () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("sys-active");
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        document.querySelectorAll(".sys-reveal, .sys-rise").forEach(el => observer.observe(el));
+      });
+    </script>
+
+    <script>
+      (function() {
+        const el = document.getElementById("hero-typewriter");
+        if (!el) return;
+        const words = ["ENGINEERED", "ARMED", "WEAPONIZED"];
+        let wordIdx = 0, charIdx = 0, isDeleting = false;
+        function type() {
+          const currentWord = words[wordIdx];
+          if (!isDeleting && charIdx <= currentWord.length) {
+            el.textContent = currentWord.substring(0, charIdx);
+            charIdx++;
+            if (charIdx > currentWord.length) {
+              isDeleting = true;
+              setTimeout(type, currentWord === "WEAPONIZED" ? 2000 : 1500);
+            } else setTimeout(type, 100);
+          } else if (isDeleting && charIdx >= 0) {
+            el.textContent = currentWord.substring(0, charIdx);
+            charIdx--;
+            if (charIdx < 0) {
+              isDeleting = false;
+              wordIdx = (wordIdx + 1) % words.length;
+              charIdx = 0;
+              setTimeout(type, 200);
+            } else setTimeout(type, 50);
+          }
+        }
+        setTimeout(type, 1000);
+      })();
+    </script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const C = { R: "#DC2626", G: "#22C55E", A: "#F59E0B", C: "#06B6D4", W: "#FFFFFF", Z: "#52525b", B: "rgba(0,0,0,0.5)" };
+        const drawCircle = (ctx, x, y, r, c, fill=false) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); fill ? (ctx.fillStyle=c, ctx.fill()) : (ctx.strokeStyle=c, ctx.stroke()); };
+        const drawLine = (ctx, x1, y1, x2, y2, c, w=1, d=[]) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.setLineDash(d); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]); };
+        const drawText = (ctx, t, x, y, c, s=10) => { ctx.font = `bold ${s}px 'JetBrains Mono', monospace`; ctx.fillStyle = c; ctx.fillText(t, x, y); };
+
+        const anims = {
+          "canvas-fig-01": (ctx, w, h, t) => { // Multi-Shot
+            ctx.clearRect(0,0,w,h); const cx = w/2, cy = h/2; const loop = t % 4000;
+            [30, 20, 10].forEach((r, i) => { ctx.shadowBlur = 0; drawCircle(ctx, cx, cy, r, '#333'); });
+            [1000, 1600, 2200].forEach((st, i) => {
+              if (loop > st) {
+                const age = loop - st;
+                if (age < 600) { ctx.shadowBlur = 10; ctx.shadowColor = C.R; drawCircle(ctx, cx, cy, 10 + age/10, `rgba(220,38,38,${1-age/600})`); }
+                ctx.shadowBlur = 10; ctx.shadowColor = C.R; drawCircle(ctx, cx, cy, 2, C.R, true);
+                ctx.shadowBlur = 0; drawText(ctx, ["40%","30%","30%"][i], cx+20, cy - 10 + i*12, C.R, 9);
+              } else if (loop > st - 300) {
+                const p = (loop - (st-300))/300; const x = cx + (w/2)*(1-p), y = cy - (h/2)*(1-p);
+                ctx.shadowBlur = 5; ctx.shadowColor = C.R; drawLine(ctx, x, y, x+10, y-10, C.R, 2);
+              }
+            });
+          },
+          "canvas-fig-02": (ctx, w, h, t) => { // Adaptive Stop
+            ctx.clearRect(0,0,w,h);
+            const loop = t % 5000; const p = loop / 5000;
+            // Grid
+            ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1; ctx.beginPath();
+            for(let i=0; i<w; i+=20) { ctx.moveTo(i,0); ctx.lineTo(i,h); }
+            for(let i=0; i<h; i+=20) { ctx.moveTo(0,i); ctx.lineTo(w,i); }
+            ctx.stroke();
+
+            // Candles
+            const candleW = w/10;
+            const candles = [0.3, 0.32, 0.45, 0.42, 0.6, 0.7, 0.75, 0.72];
+            const count = Math.floor(p * 12);
+            let maxY = h;
+
+            candles.forEach((val, i) => {
+              if (i >= count) return;
+              const x = i * (candleW+2) + 10;
+              const base = h - 20;
+              const top = base - (val * (h*0.8));
+              if (top < maxY) maxY = top;
+
+              ctx.fillStyle = (i === 3 || i === 7) ? C.R : C.G;
+              const ch = base - top;
+              ctx.fillRect(x, top, candleW, ch);
+              ctx.beginPath(); ctx.moveTo(x+candleW/2, top-5); ctx.lineTo(x+candleW/2, base+5);
+              ctx.strokeStyle = ctx.fillStyle; ctx.stroke();
+            });
+
+            // Lines
+            const safeY = h - 10;
+            const structY = h * 0.5;
+            let guardY = h - 15;
+
+            if (p > 0.1) guardY = Math.min(guardY, maxY + 30);
+
+            drawLine(ctx, 0, safeY, w, safeY, C.R, 2);
+            drawText(ctx, "SAFETY", 5, safeY-5, C.R, 8);
+
+            drawLine(ctx, 0, structY, w, structY, C.A, 1, [4,4]);
+            drawText(ctx, "STRUCT", 5, structY-5, C.A, 8);
+
+            if (p > 0.1) {
+              ctx.shadowBlur = 10; ctx.shadowColor = C.C;
+              drawLine(ctx, 0, guardY, w, guardY, C.C, 2);
+              drawText(ctx, "GUARD", 5, guardY-5, C.C, 8);
+              ctx.shadowBlur = 0;
+
+              if (guardY < structY && p > 0.5) drawText(ctx, "🔒", w-20, guardY-5, C.W, 10);
+              if (p > 0.4 && p < 0.6) drawText(ctx, "LOCKED", w/2-20, guardY+15, C.C, 9);
+              if (guardY < structY) {
+                 ctx.fillStyle = "rgba(6,182,212,0.1)"; ctx.fillRect(0,0,w,h);
+                 drawText(ctx, "BREAKEVEN SECURED", w/2-50, h/2, C.C, 10);
+              }
+            }
+          },
+          "canvas-fig-03": (ctx, w, h, t) => { // Momentum
+            ctx.fillStyle = '#050505'; ctx.fillRect(0,0,w,h);
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.beginPath();
+            for(let i=0; i<w; i+=20) { ctx.moveTo(i,0); ctx.lineTo(i,h); }
+            ctx.stroke();
+
+            const loop = t % 6000; const p = loop / 6000;
+            const capture = 0.8;
+
+            const step = w/15;
+            const pts = [];
+            for(let i=0; i<15; i++) {
+               let y = h*0.8;
+               if (i > 3) y -= (i-3)*(h*0.08);
+               if (i > 11) y += (i-11)*(h*0.05);
+               pts.push({x: i*step, y: y});
+            }
+
+            const cur = Math.floor(p * 18);
+            let lastX = 0, lastY = h*0.8;
+
+            pts.forEach((pt, i) => {
+               if (i > cur) return;
+               const isDip = (i > 11);
+               const isPump = (i > 3 && i <= 11);
+
+               ctx.fillStyle = isDip ? C.R : (isPump ? C.G : '#333');
+               if(isPump) { ctx.shadowBlur = 10; ctx.shadowColor = C.G; } else ctx.shadowBlur = 0;
+
+               const ch = isPump ? 15 + Math.random()*10 : 5;
+               ctx.fillRect(pt.x, pt.y - ch/2, step-4, ch);
+
+               ctx.beginPath(); ctx.moveTo(pt.x+step/2, pt.y-ch/2-5); ctx.lineTo(pt.x+step/2, pt.y+ch/2+5);
+               ctx.strokeStyle = ctx.fillStyle; ctx.stroke();
+
+               lastX = pt.x+step; lastY = pt.y;
+            });
+
+            if (p < 0.2) {
+               drawText(ctx, "MONITORING", 10, 20, C.G, 10);
+            } else if (p < capture) {
+               drawText(ctx, "MOMENTUM DETECTED", 10, 20, C.R, 10);
+               drawText(ctx, "SLOPE: 2.3x", 10, 35, C.W, 9);
+               ctx.beginPath();
+               ctx.moveTo(0, h*0.9);
+               ctx.quadraticCurveTo(lastX/2, h*0.9, lastX, lastY+15);
+               ctx.strokeStyle = C.C; ctx.lineWidth = 2;
+               ctx.shadowBlur = 10; ctx.shadowColor = C.C;
+               ctx.stroke();
+               drawText(ctx, "TRAILING...", lastX-40, lastY+30, C.C, 8);
+            } else {
+               if (p < capture + 0.1) {
+                  ctx.fillStyle = `rgba(255,255,255,${1 - (p-capture)*10})`;
+                  ctx.fillRect(0,0,w,h);
+               }
+               for(let k=0; k<8; k++) {
+                  const a = k*Math.PI/4; const d = (p-capture)*200;
+                  ctx.fillStyle = C.C; ctx.beginPath(); ctx.arc(w/2+Math.cos(a)*d, h/2+Math.sin(a)*d, 2, 0, Math.PI*2); ctx.fill();
+               }
+               drawText(ctx, "CAPTURED", w/2-30, h/2-10, C.W, 14);
+               drawText(ctx, "+3.2R LOCKED", w/2-35, h/2+10, C.G, 12);
+            }
+          },
+          "canvas-fig-04": (ctx, w, h, t) => { // Volatility
+            ctx.clearRect(0,0,w,h); const cx = w/2, cy = h-10, r = w/2.5;
+            ctx.lineWidth = 8; const zones = [C.G, C.A, C.R, "#7F1D1D"];
+            zones.forEach((c, i) => { ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI + (i/4)*Math.PI, Math.PI + ((i+1)/4)*Math.PI); ctx.strokeStyle = c; ctx.globalAlpha = 0.3; ctx.stroke(); });
+            const v = (Math.sin(t/1500)+1)/2; const ang = Math.PI + v * Math.PI;
+            ctx.globalAlpha = 1; ctx.strokeStyle = C.W; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang)*r, cy + Math.sin(ang)*r); ctx.stroke();
+            if(v > 0.75) { ctx.fillStyle = "rgba(220,38,38,0.2)"; ctx.fillRect(0,0,w,h); drawText(ctx, "SIZE: -50%", cx-25, cy-20, C.R, 10); }
+          },
+          "canvas-fig-05": (ctx, w, h, t) => { // Structure
+             ctx.clearRect(0,0,w,h);
+             ctx.beginPath(); ctx.moveTo(0, h/2);
+             for(let i=0; i<w; i+=10) ctx.lineTo(i, h/2 + Math.sin(i/20 + t/1000)*20);
+             ctx.strokeStyle = '#333'; ctx.stroke();
+             const lvls = [h/3, h/2, h/1.5];
+             lvls.forEach((y, i) => {
+               const active = Math.abs((h/2 + Math.sin(w/20 + t/1000)*20) - y) < 10;
+               ctx.shadowBlur = active ? 10 : 0; ctx.shadowColor = active ? C.G : 'transparent';
+               drawLine(ctx, 0, y, w, y, active ? C.W : '#333', 1, [2,2]);
+               if(active) drawText(ctx, "CONF: " + (80+i*5), w-60, y-5, C.G, 9);
+             });
+          },
+          "canvas-fig-06": (ctx, w, h, t) => { // Divergence
+             ctx.clearRect(0,0,w,h);
+             const p1 = h/3, p2 = h/3 - 10; const r1 = h*0.7, r2 = h*0.7 + 10;
+             drawLine(ctx, 20, p1, w-20, p2, C.G, 2); drawLine(ctx, 20, r1, w-20, r2, '#A855F7', 2);
+             if (t%2000 < 1000) {
+                drawLine(ctx, 20, p1, 20, r1, '#333', 1, [2,2]);
+                drawLine(ctx, w-20, p2, w-20, r2, C.R, 1, [2,2]);
+                drawText(ctx, "⚠️ DIV", w/2-15, h/2, C.A, 10);
+             }
+          },
+          "canvas-dat-01": (ctx, w, h, t) => { // Liquidation
+             ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,w,h);
+             const bars = 8; const bw = w/bars;
+             for(let i=0; i<bars; i++) {
+                const bh = (Math.sin(i*132)*20 + 30);
+                ctx.fillStyle = C.R; ctx.globalAlpha = 0.3 + (Math.sin(t/500 + i)*0.2); ctx.fillRect(i*bw, h-bh, bw-2, bh);
+             }
+             if(Math.random() > 0.9) {
+                const ex = Math.random()*w; const ey = h - 20;
+                ctx.fillStyle = C.W; ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI*2); ctx.fill();
+                drawText(ctx, "-$47M", ex, ey-10, C.R, 9);
+             }
+          },
+          "canvas-dat-02": (ctx, w, h, t) => { // Whale Flow
+             ctx.clearRect(0,0,w,h);
+             const nodes = [{x:20, y:h/2, c:C.C}, {x:w/2, y:h/2, c:C.W}, {x:w-20, y:h/2, c:C.G}];
+             nodes.forEach(n => { ctx.shadowBlur=10; ctx.shadowColor=n.c; drawCircle(ctx, n.x, n.y, 4, n.c, true); });
+             const p = (t%2000)/2000; const x = 20 + p*(w-40); const y = h/2 - Math.sin(p*Math.PI)*20;
+             ctx.shadowBlur=5; ctx.shadowColor=C.C; drawCircle(ctx, x, y, 2, C.C, true);
+             drawText(ctx, "$42M", x, y-10, C.W, 8);
+          },
+          "canvas-dat-03": (ctx, w, h, t) => { // Matrix
+             ctx.clearRect(0,0,w,h); const cx=w/2, cy=h/2;
+             drawLine(ctx, 0, 0, cx, cy, C.G, 1); drawLine(ctx, w, 0, cx, cy, C.G, 1);
+             drawLine(ctx, 0, h, cx, cy, C.R, 1); drawLine(ctx, w, h, cx, cy, C.A, 1);
+             ctx.shadowBlur=20; ctx.shadowColor=C.G; drawCircle(ctx, cx, cy, 5 + Math.sin(t/200)*2, C.G, true);
+             drawText(ctx, "BULLISH", cx-20, cy+20, C.G, 9);
+          },
+          "canvas-dat-04": (ctx, w, h, t) => { // Order Flow
+             ctx.clearRect(0,0,w,h);
+             let cvd = h/2;
+             ctx.beginPath(); ctx.moveTo(0, cvd);
+             for(let i=0; i<w; i+=5) {
+                cvd += Math.sin(i/50 + t/1000)*2;
+                ctx.lineTo(i, cvd);
+                if(i % 20 === 0) { ctx.fillStyle = Math.random()>0.5 ? C.G : C.R; ctx.fillRect(i, cvd, 4, 4); }
+             }
+             ctx.strokeStyle=C.W; ctx.stroke();
+             drawText(ctx, "DELTA: +2.4M", 10, 15, C.G, 10);
+          },
+          "canvas-dat-05": (ctx, w, h, t) => { // Sentiment
+             ctx.clearRect(0,0,w,h); const cx=w/2, cy=h-5, r=w/2.5;
+             ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 2*Math.PI); ctx.strokeStyle = '#333'; ctx.stroke();
+             const ang = Math.PI + (Math.sin(t/2000)*0.4 + 0.6) * Math.PI;
+             drawLine(ctx, cx, cy, cx+Math.cos(ang)*r, cy+Math.sin(ang)*r, C.A, 2);
+             drawText(ctx, "GREED", cx-15, cy-10, C.A, 10);
+          },
+          "canvas-dat-06": (ctx, w, h, t) => { // Macro
+             ctx.clearRect(0,0,w,h);
+             [0, 1, 2].forEach(i => {
+                const y = 10 + i*(h/3);
+                drawText(ctx, ["BTC","DXY","SPX"][i], 5, y+10, C.Z, 8);
+                ctx.beginPath(); ctx.moveTo(30, y+10);
+                for(let x=0; x<w-40; x+=5) ctx.lineTo(30+x, y+10 + Math.sin(x/10 + t/500 + i)*5);
+                ctx.strokeStyle = i===1 ? C.R : (i===2 ? C.A : C.G); ctx.stroke();
+             });
+             drawLine(ctx, w/2, 10, w/2, h-10, '#333', 1, [2,2]);
+             drawText(ctx, "-0.73", w/2+5, h/2, C.W, 8);
+          }
+        };
+
+        const obs = new IntersectionObserver(entries => { entries.forEach(e => { if(e.target.tagName === 'CANVAS') e.target._visible = e.isIntersecting; }); });
+        Object.keys(anims).forEach(id => {
+           const c = document.getElementById(id);
+           if(!c) return;
+           obs.observe(c);
+           const ctx = c.getContext('2d');
+           const loop = (t) => {
+             if(c._visible) { if(c.width !== c.clientWidth) { c.width = c.clientWidth; c.height = c.clientHeight; } anims[id](ctx, c.width, c.height, t); }
+             requestAnimationFrame(loop);
+           };
+           requestAnimationFrame(loop);
+        });
+      });
+    </script>
+  
+</body></html>
