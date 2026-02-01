@@ -26,7 +26,41 @@ A professional-grade cryptocurrency risk management system with real-time price 
 - **Live P&L Tracking** - Real-time unrealized and realized P&L
 - **Manual Guard Activation** - Lock profits when you decide
 
-## Quick Start
+## 🚀 QUICK START - TERMINAL DASHBOARD
+
+### One-Command Launch
+```bash
+git clone https://github.com/LUGIAAAAA/Godterminal.git
+cd Godterminal
+pip install -r requirements.txt
+python api/terminal_api.py
+```
+
+### Open the Terminal
+**http://localhost:8888** - Full institutional trading dashboard with live data
+
+### What You Get (All Live & Updating)
+| Column | Panels |
+|--------|--------|
+| **MARKET PULSE** | BTC Price, Fear & Greed, Funding Rates, Open Interest, Liquidations |
+| **CHART** | 15m Candlesticks with Session Markers (Kraken data) |
+| **INTELLIGENCE** | MM Magnet, Volatility Regime, Time-of-Day, Macro Sync |
+| **ON-CHAIN** | Exchange Reserves, Stablecoin Flows, Miner Outflows, Whale Wallets |
+| **ORDER FLOW** | Bid/Ask Imbalance, Aggressor Side, CVD, Large Orders, Spoof Detection |
+| **RISK SIM** | Kelly Criterion, Monte Carlo Simulator, Social Sentiment |
+| **ALERTS** | Whale Alerts, Liquidation Warnings, Price Alerts |
+| **MCF LABS** | Institutional Reports, Neural Assistant |
+
+### API Keys (Pre-Configured)
+All API keys are hardcoded in `iros_integration/config/settings.py`:
+- ✅ Helsinki VM (free quant data)
+- ✅ Coinglass Premium (liquidations, OI, funding)
+- ✅ Whale Alert Premium (large transactions)
+- ✅ Kraken/Coinbase (chart data - no keys needed)
+
+---
+
+## Legacy Risk Engine
 
 ### Prerequisites
 - Python 3.10+
@@ -35,14 +69,7 @@ A professional-grade cryptocurrency risk management system with real-time price 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/LUGIAAAAA/BASTION.git
-cd BASTION
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the server
+# Run the risk engine server
 python run.py
 ```
 
