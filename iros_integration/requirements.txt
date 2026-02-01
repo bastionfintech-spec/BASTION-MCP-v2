@@ -1,0 +1,28 @@
+# BASTION AI Integration Dependencies
+# =====================================
+
+# HTTP/Async
+httpx>=0.25.0
+aiohttp>=3.9.0
+
+# Environment/Config
+python-dotenv>=1.0.0
+
+# Typing
+pydantic>=2.0.0
+
+# Optional: For WebSocket connections (Whale Alert)
+websockets>=12.0
+
+# Optional: For caching
+redis>=5.0.0
+
+# Optional: FastAPI integration
+fastapi>=0.109.0
+uvicorn>=0.27.0
+
+
+
+
+
+

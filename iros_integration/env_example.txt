@@ -1,0 +1,47 @@
+# =============================================================================
+# BASTION AI - Environment Configuration
+# =============================================================================
+# 🎉 GOOD NEWS: Most values are PRE-CONFIGURED in settings.py!
+# 
+# The ONLY thing you need to set is your GPU cluster URL:
+#   BASTION_MODEL_URL=https://your-tunnel.trycloudflare.com
+#
+# Everything else (Helsinki, Coinglass, Whale Alert) works out of the box!
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# HELSINKI VM - Free Quant Data Network (33 endpoints) [PRE-CONFIGURED]
+# -----------------------------------------------------------------------------
+# DEFAULT: http://77.42.29.188:5002 - Only change if Helsinki VM moves
+# HELSINKI_VM_URL=http://77.42.29.188:5002
+# HELSINKI_TIMEOUT=5000
+
+# -----------------------------------------------------------------------------
+# GPU CLUSTER - Vast.ai vLLM (32B Model) [REQUIRED - SET THIS!]
+# -----------------------------------------------------------------------------
+# 1. Start your Vast.ai instance with vLLM
+# 2. Run: cloudflared tunnel --url http://localhost:18000
+# 3. Copy the generated URL here:
+BASTION_MODEL_URL=https://your-tunnel.trycloudflare.com
+
+# API Key - Pre-configured, override if you change it in vLLM startup
+# BASTION_MODEL_API_KEY=5c37b5e8e6c2480813aa0cfd4de5c903544b7a000bff729e1c99d9b4538eb34d
+# BASTION_MODEL_TIMEOUT=120000
+
+# -----------------------------------------------------------------------------
+# PREMIUM APIS [PRE-CONFIGURED - YOUR PAID KEYS ARE INCLUDED!]
+# -----------------------------------------------------------------------------
+
+# Coinglass Premium - $299/mo ✅ API KEY INCLUDED
+# COINGLASS_API_KEY=03e5a43afaa4489384cb935b9b2ea16b
+
+# Whale Alert Premium - $29.95/mo ✅ API KEY INCLUDED
+# WHALE_ALERT_API_KEY=OsCbgowziN4kMRnC6WhgokKXW3bfVKcQ
+
+# -----------------------------------------------------------------------------
+# SERVER CONFIGURATION (Optional)
+# -----------------------------------------------------------------------------
+# PORT=3001
+# NODE_ENV=development
+# TEST_MODE=true
+

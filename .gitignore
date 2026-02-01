@@ -30,9 +30,7 @@ env/
 .env
 .env.*
 
-# Sensitive Integration (contains API keys)
-iros_integration/
-api/terminal_api.py
+# Full code included for future reference
 
 # IDE
 .vscode/
