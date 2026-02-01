@@ -97,6 +97,18 @@
       100% { opacity: 0.95; }
       }
       .crt-effect { animation: crt-flicker 4s infinite; }
+      
+      /* Heatmap dominant pulse */
+      @keyframes pulse-red {
+        0%, 100% { box-shadow: inset 0 0 20px rgba(239,68,68,0.1); }
+        50% { box-shadow: inset 0 0 30px rgba(239,68,68,0.25); }
+      }
+      @keyframes pulse-green {
+        0%, 100% { box-shadow: inset 0 0 20px rgba(34,197,94,0.1); }
+        50% { box-shadow: inset 0 0 30px rgba(34,197,94,0.25); }
+      }
+      .heatmap-long-dominant { animation: pulse-red 2s ease-in-out infinite; }
+      .heatmap-short-dominant { animation: pulse-green 2s ease-in-out infinite; }
     </style>
     <script>
       tailwind.config = {
@@ -214,7 +226,7 @@
       .font-cormorant { font-family: 'Cormorant Garamond', serif !important; }
     </style>
   </head>
-  <body class="text-zinc-400 min-h-screen flex flex-col selection:bg-crimson-600 selection:text-white bg-[#050505] overflow-x-hidden font-sans">
+  <body class="text-zinc-400 min-h-screen flex flex-col selection:bg-crimson-600 selection:text-white bg-[#050505] overflow-x-auto font-sans">
     <!-- 1. The CRIMSON ENERGY BEAM (Top Center) -->
     <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-to-b from-crimson-600/25 via-crimson-900/10 to-transparent blur-[100px] rounded-full pointer-events-none z-0 mix-blend-screen opacity-80"></div>
     <div class="fixed top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-crimson-500/20 blur-[80px] rounded-full pointer-events-none z-0 mix-blend-screen"></div>
@@ -227,9 +239,9 @@
 
     <!-- Header -->
 
-    <main class="flex-1 flex flex-col min-h-screen font-sans w-full z-10 relative">
-      <!-- TERMINAL CONTAINER - FULL SCREEN -->
-      <div class="w-full h-full bg-[#0A0A0A] border-t border-zinc-800 relative overflow-hidden flex-1 flex flex-col">
+    <main class="flex-1 flex flex-col min-h-screen font-sans z-10 relative overflow-x-auto" style="min-width: 2200px;">
+      <!-- TERMINAL CONTAINER - FULL SCREEN ULTRAWIDE -->
+      <div class="w-full h-full bg-[#0A0A0A] border-t border-zinc-800 relative overflow-x-auto flex-1 flex flex-col" style="min-width: 1800px;">
         <!-- Scanline overlay specific to terminal -->
         <div class="absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] bg-repeat opacity-20 mix-blend-overlay"></div>
 
@@ -299,9 +311,10 @@
           </div>
         </div>
 
-        <!-- TERMINAL GRID -->
-        <div class="grid grid-cols-1 flex-1 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800 relative z-10 lg:grid-cols-7">
-          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] lg:col-span-1 min-w-[200px]">
+        <!-- TERMINAL GRID - ULTRAWIDE HORIZONTAL LAYOUT -->
+        <div class="flex flex-1 divide-x divide-zinc-800 relative z-10 overflow-x-auto" style="min-width: 2200px;">
+          <!-- COL: MARKET PULSE -->
+          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] flex-shrink-0" style="width: 180px;">
             <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30 border-l-2 border-crimson-600">
               <span class="text-zinc-400 font-bold tracking-wider">
                 MARKET PULSE
@@ -310,13 +323,14 @@
             </div>
             <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="market-pulse">
               <div class="p-2 border-b border-zinc-800/50">
-                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
-                  Liquidation Radar
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
+                  <span>Liquidation Radar</span>
+                  <span class="text-[8px] text-crimson-500 animate-pulse">COINGLASS</span>
                 </div>
                 <div class="space-y-2 text-[9px] font-mono" data-liq="container">
                   <div class="">
                     <div class="flex justify-between text-crimson-400 mb-0.5">
-                      <span>BTC LONGS</span>
+                      <span>LONGS AT RISK</span>
                       <span data-liq="long-value">$47M</span>
                     </div>
                     <div class="w-full bg-zinc-900 h-2.5 rounded-sm shadow-inner overflow-visible">
@@ -329,7 +343,7 @@
                   </div>
                   <div class="">
                     <div class="flex justify-between text-green-400 mb-0.5">
-                      <span>BTC SHORTS</span>
+                      <span>SHORTS AT RISK</span>
                       <span data-liq="short-value">$38M</span>
                     </div>
                     <div class="w-full bg-zinc-900 h-2.5 rounded-sm shadow-inner overflow-visible">
@@ -346,6 +360,28 @@
                       LONG HEAVY
                     </span>
                   </div>
+                </div>
+              </div>
+              <!-- LIQUIDATION HEATMAP VISUALIZATION -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
+                  <span>Liq Heatmap</span>
+                  <span data-heatmap="price" class="text-white font-bold">--</span>
+                </div>
+                <div class="relative h-[140px] bg-zinc-900/50 rounded border border-zinc-800/50 overflow-hidden transition-all duration-500" id="heatmap-container">
+                  <!-- Current price line -->
+                  <div data-heatmap="current-line" class="absolute left-0 right-0 h-0.5 bg-white z-20" style="top: 50%;">
+                    <span class="absolute right-0 text-[7px] text-white bg-zinc-800 px-1 -translate-y-1/2 z-30">NOW</span>
+                  </div>
+                  <!-- Heatmap bars will be rendered here -->
+                  <div data-heatmap="bars" class="absolute inset-0 flex flex-col justify-around py-2 px-1">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+                <div class="flex justify-between text-[8px] font-mono mt-1">
+                  <span class="text-red-500">◀ LONGS LIQ</span>
+                  <span data-heatmap="updated" class="text-zinc-600">--</span>
+                  <span class="text-green-500">SHORTS LIQ ▶</span>
                 </div>
               </div>
               <div class="p-2 border-b border-zinc-800/50">
@@ -368,27 +404,516 @@
                   <span data-funding="basis">Basis: +0.12%</span>
                 </div>
               </div>
-              <div class="p-2">
-                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
-                  Whale Flow
+              <!-- ETF FLOWS -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>BTC ETF Flows (24H)</span>
+                  <span data-etf="signal" class="text-zinc-400">--</span>
                 </div>
-                <div data-whale="container" class="space-y-2 text-[9px] font-mono">
-                  <div class="border-l-2 border-crimson-500 pl-2">
-                    <div class="text-zinc-400">14:28 - Binance</div>
-                    <div class="text-white font-bold">500 BTC ($48M)</div>
-                    <div class="text-crimson-500">DEPOSIT</div>
+                <div data-etf="total" class="text-[14px] font-bold font-mono mb-1 text-white">--</div>
+                <div data-etf="container" class="space-y-1 text-[8px] font-mono">
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-400">IBIT</span>
+                    <div class="flex-1 mx-2 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-green-500 w-[60%] transition-all"></div>
+                    </div>
+                    <span class="text-green-400">+$245M</span>
                   </div>
-                  <div class="border-l-2 border-green-500 pl-2">
-                    <div class="text-zinc-400">14:15 - Wallet</div>
-                    <div class="text-white font-bold">2.4K ETH ($7.8M)</div>
-                    <div class="text-green-500">WITHDRAWAL</div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-400">FBTC</span>
+                    <div class="flex-1 mx-2 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-green-500 w-[30%] transition-all"></div>
+                    </div>
+                    <span class="text-green-400">+$89M</span>
+                  </div>
+                </div>
+              </div>
+              <!-- EXCHANGE NET FLOW -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Exchange Net Flow</span>
+                  <span data-exflow="signal" class="text-zinc-400">--</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[9px] font-mono">
+                  <div>
+                    <div class="text-zinc-500 text-[8px]">INFLOWS</div>
+                    <div data-exflow="inflows" class="text-red-400 font-bold">--</div>
+                  </div>
+                  <div>
+                    <div class="text-zinc-500 text-[8px]">OUTFLOWS</div>
+                    <div data-exflow="outflows" class="text-green-400 font-bold">--</div>
+                  </div>
+                </div>
+                <div data-exflow="net" class="mt-1 text-[9px] text-center py-1 bg-zinc-900/50 rounded border border-zinc-800/50 text-zinc-500">
+                  Net: --
+                </div>
+              </div>
+              <!-- OI BY EXCHANGE -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  OI By Exchange
+                </div>
+                <div data-oi-exchange="container" class="space-y-1 text-[8px] font-mono">
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-400 w-14">Binance</span>
+                    <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-blue-500 w-[45%] transition-all"></div>
+                    </div>
+                    <span class="text-zinc-300 w-12 text-right">$4.2B</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-400 w-14">CME</span>
+                    <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-amber-500 w-[19%] transition-all"></div>
+                    </div>
+                    <span class="text-zinc-300 w-12 text-right">$1.8B</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-400 w-14">OKX</span>
+                    <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-purple-500 w-[12%] transition-all"></div>
+                    </div>
+                    <span class="text-zinc-300 w-12 text-right">$1.1B</span>
+                  </div>
+                </div>
+              </div>
+              <!-- FUNDING ARBITRAGE -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Funding Arb</span>
+                  <span data-fundarb="opportunity" class="text-zinc-400">--</span>
+                </div>
+                <div data-fundarb="container" class="space-y-1 text-[8px] font-mono">
+                  <div class="flex justify-between">
+                    <span class="text-zinc-400">Highest</span>
+                    <span data-fundarb="highest" class="text-green-400">Binance +0.012%</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-400">Lowest</span>
+                    <span data-fundarb="lowest" class="text-red-400">dYdX -0.003%</span>
+                  </div>
+                  <div class="flex justify-between border-t border-zinc-800/50 pt-1 mt-1">
+                    <span class="text-zinc-400">Spread</span>
+                    <span data-fundarb="spread" class="text-amber-400 font-bold">0.015%</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <!-- COL 1: POSITIONS -->
-          <div class="bg-[#0B0B0B] flex flex-col">
+          
+          <!-- COL: ON-CHAIN INTEL -->
+          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] flex-shrink-0" style="width: 180px;">
+            <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
+              <span class="text-zinc-400 font-bold tracking-wider">
+                ON-CHAIN
+              </span>
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span>
+          </div>
+            <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="onchain">
+              <!-- EXCHANGE RESERVES -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
+                  <span>Exchange Reserves</span>
+                  <span class="text-[8px] text-cyan-500">LIVE</span>
+                </div>
+                <div class="space-y-2 text-[9px] font-mono">
+                  <div>
+                    <div class="flex justify-between text-zinc-400 mb-0.5">
+                      <span>BTC</span>
+                      <span data-onchain="btc-reserve" class="text-white">2.1M</span>
+                    </div>
+                    <div class="w-full bg-zinc-900 h-1.5 rounded-sm overflow-hidden">
+                      <div data-onchain="btc-reserve-bar" class="bg-cyan-500 h-full w-[65%] transition-all"></div>
+                    </div>
+                    <div class="flex justify-between text-[8px] text-zinc-600 mt-0.5">
+                      <span data-onchain="btc-reserve-change" class="text-red-400">-3.2%</span>
+                      <span>7d change</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-zinc-400 mb-0.5">
+                      <span>ETH</span>
+                      <span data-onchain="eth-reserve" class="text-white">18.4M</span>
+                    </div>
+                    <div class="w-full bg-zinc-900 h-1.5 rounded-sm overflow-hidden">
+                      <div data-onchain="eth-reserve-bar" class="bg-purple-500 h-full w-[58%] transition-all"></div>
+                    </div>
+                    <div class="flex justify-between text-[8px] text-zinc-600 mt-0.5">
+                      <span data-onchain="eth-reserve-change" class="text-red-400">-1.8%</span>
+                      <span>7d change</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- STABLECOIN FLOWS -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Stablecoin Flows (24H)
+                </div>
+                <div class="space-y-2 text-[9px] font-mono">
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-400">USDT</span>
+                    <div class="flex items-center gap-1">
+                      <span data-onchain="usdt-flow" class="text-green-400 font-bold">+$847M</span>
+                      <span class="text-[7px] text-green-500">MINTED</span>
+                    </div>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-400">USDC</span>
+                    <div class="flex items-center gap-1">
+                      <span data-onchain="usdc-flow" class="text-red-400 font-bold">-$124M</span>
+                      <span class="text-[7px] text-red-500">BURNED</span>
+                    </div>
+                  </div>
+                  <div class="text-center py-1 bg-zinc-900/50 rounded border border-zinc-800/50 mt-2">
+                    <span class="text-zinc-500 text-[8px]">Net Inflow:</span>
+                    <span data-onchain="stables-net" class="text-green-400 font-bold ml-1">+$723M</span>
+                  </div>
+                </div>
+              </div>
+              <!-- MINER FLOWS -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Miner Outflows</span>
+                  <span data-onchain="miner-signal" class="text-zinc-400">--</span>
+                </div>
+                <div class="text-[9px] font-mono">
+                  <div class="flex justify-between mb-1">
+                    <span class="text-zinc-400">To Exchanges (24h)</span>
+                    <span data-onchain="miner-outflow" class="text-amber-400 font-bold">342 BTC</span>
+                  </div>
+                  <div class="flex justify-between text-[8px] text-zinc-600">
+                    <span>7d Avg: 89 BTC</span>
+                    <span data-onchain="miner-delta" class="text-red-400">+284%</span>
+                  </div>
+                  <div data-onchain="miner-warning" class="text-[8px] text-center py-1 mt-2 rounded bg-amber-900/30 border border-amber-800/50 text-amber-400">
+                    ELEVATED MINER SELLING
+                  </div>
+                </div>
+              </div>
+              <!-- DORMANT SUPPLY -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Dormant Supply (1yr+)
+                </div>
+                <div class="text-[9px] font-mono">
+                  <div class="flex justify-between mb-1">
+                    <span class="text-zinc-400">Moved Today</span>
+                    <span data-onchain="dormant-moved" class="text-white font-bold">1,247 BTC</span>
+                  </div>
+                  <div class="flex justify-between text-[8px] text-zinc-600">
+                    <span>7d Avg: 312 BTC</span>
+                    <span data-onchain="dormant-delta" class="text-amber-400">+300%</span>
+                  </div>
+                  <div class="text-[8px] text-center py-1 mt-2 bg-zinc-900/50 rounded border border-zinc-800/50">
+                    <span class="text-zinc-500">Signal:</span>
+                    <span data-onchain="dormant-signal" class="text-amber-400 font-bold ml-1">DISTRIBUTION</span>
+                  </div>
+                </div>
+              </div>
+              <!-- ACTIVE ADDRESSES -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Network Activity
+                </div>
+                <div class="text-[9px] font-mono space-y-1">
+                  <div class="flex justify-between">
+                    <span class="text-zinc-400">Active Addr</span>
+                    <span data-onchain="active-addr" class="text-white">892K</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-400">New Addr</span>
+                    <span data-onchain="new-addr" class="text-green-400">+42K</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-400">Tx Count</span>
+                    <span data-onchain="tx-count" class="text-white">324K</span>
+                  </div>
+                </div>
+              </div>
+              <!-- WHALE ACCUMULATION -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Whale Wallets (1K+ BTC)</span>
+                </div>
+                <div class="text-[9px] font-mono">
+                  <div class="flex justify-between mb-1">
+                    <span class="text-zinc-400">Net Change (7d)</span>
+                    <span data-onchain="whale-change" class="text-green-400 font-bold">+12,847 BTC</span>
+                  </div>
+                  <div class="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
+                    <div data-onchain="whale-bar" class="h-full bg-gradient-to-r from-green-600 to-green-400 w-[72%] transition-all"></div>
+                  </div>
+                  <div class="text-[8px] text-center mt-1 text-green-400">
+                    ACCUMULATION PHASE
+                  </div>
+                </div>
+              </div>
+              <!-- WHALE FLOW - LIVE TRANSACTIONS -->
+              <div class="p-2 flex-1 flex flex-col min-h-0">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Whale Flow</span>
+                  <span class="text-amber-500 animate-pulse">LIVE</span>
+                </div>
+                <div data-whale="container" class="space-y-1.5 text-[8px] font-mono overflow-y-auto flex-1 max-h-[200px] no-scrollbar">
+                  <div class="border-l-2 border-crimson-500 pl-2 py-0.5">
+                    <div class="flex justify-between">
+                      <span class="text-zinc-500">14:28 - Binance</span>
+                      <span class="text-crimson-400">DEPOSIT</span>
+                    </div>
+                    <div class="text-white font-bold">500 BTC ($48M)</div>
+                  </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+          <!-- COL: RISK SIMULATOR -->
+          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] flex-shrink-0" style="width: 200px;">
+            <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
+              <span class="text-zinc-400 font-bold tracking-wider">
+                RISK SIM
+              </span>
+              <iconify-icon icon="solar:calculator-bold" class="text-zinc-500"></iconify-icon>
+          </div>
+            <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="risksim">
+              <!-- KELLY CRITERION -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span class="flex items-center gap-1">
+                    <iconify-icon icon="solar:chart-bold" class="text-emerald-400"></iconify-icon>
+                    Kelly Criterion
+                  </span>
+                  <span class="text-emerald-400 animate-pulse">LIVE</span>
+                </div>
+                <div class="text-center mb-3">
+                  <div data-kelly="optimal" class="text-2xl font-bold text-emerald-400 font-mono">2.4%</div>
+                  <div class="text-[8px] text-zinc-500">Optimal Position Size</div>
+                </div>
+                <div class="space-y-1 text-[8px] font-mono">
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Win Rate</span>
+                    <span data-kelly="winrate" class="text-white">73%</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Avg Win</span>
+                    <span data-kelly="avgwin" class="text-green-400">+2.1R</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Avg Loss</span>
+                    <span data-kelly="avgloss" class="text-red-400">-1.0R</span>
+                  </div>
+                  <div class="flex justify-between border-t border-zinc-800/50 pt-1 mt-1">
+                    <span class="text-zinc-500">Half-Kelly</span>
+                    <span data-kelly="half" class="text-amber-400 font-bold">1.2%</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Quarter-Kelly</span>
+                    <span data-kelly="quarter" class="text-zinc-400">0.6%</span>
+                  </div>
+                </div>
+                <div data-kelly="recommendation" class="mt-2 text-[7px] text-center py-1 bg-emerald-900/20 border border-emerald-800/50 rounded text-emerald-400">
+                  Use Half-Kelly (conservative)
+                </div>
+              </div>
+              <!-- MONTE CARLO SIMULATOR -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span class="flex items-center gap-1">
+                    <iconify-icon icon="solar:graph-new-bold" class="text-purple-400"></iconify-icon>
+                    Monte Carlo
+                  </span>
+                  <span data-monte="status" class="text-zinc-500 text-[8px]">READY</span>
+                </div>
+                <div class="text-center mb-2">
+                  <button data-action="run-monte-carlo" class="bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold px-3 py-1.5 rounded-sm shadow-[0_0_10px_rgba(168,85,247,0.3)] font-mono uppercase transition-all w-full">
+                    RUN 50,000 SIMS
+                  </button>
+                </div>
+                <div data-monte="results" class="space-y-1 text-[8px] font-mono">
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Projected EV</span>
+                    <span data-monte="ev" class="text-green-400 font-bold">+$12,847</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">95% Conf Low</span>
+                    <span data-monte="low" class="text-red-400">-$2,340</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">95% Conf High</span>
+                    <span data-monte="high" class="text-green-400">+$28,920</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Ruin Prob</span>
+                    <span data-monte="ruin" class="text-amber-400">3.2%</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Max Drawdown</span>
+                    <span data-monte="maxdd" class="text-red-400">-18.4%</span>
+                  </div>
+                </div>
+                <!-- Mini distribution chart -->
+                <div class="mt-2 h-10 flex items-end justify-center gap-0.5" data-monte="chart">
+                  <div class="w-1 bg-red-900 h-1"></div>
+                  <div class="w-1 bg-red-800 h-2"></div>
+                  <div class="w-1 bg-red-700 h-3"></div>
+                  <div class="w-1 bg-amber-700 h-4"></div>
+                  <div class="w-1 bg-amber-600 h-6"></div>
+                  <div class="w-1 bg-green-600 h-8"></div>
+                  <div class="w-1 bg-green-500 h-10"></div>
+                  <div class="w-1 bg-green-400 h-8"></div>
+                  <div class="w-1 bg-green-500 h-6"></div>
+                  <div class="w-1 bg-green-600 h-4"></div>
+                  <div class="w-1 bg-green-700 h-3"></div>
+                  <div class="w-1 bg-green-800 h-2"></div>
+                </div>
+                <div class="text-[7px] text-zinc-600 text-center mt-1">Distribution of Outcomes</div>
+              </div>
+              <!-- POSITION SIZING -->
+              <div class="p-2">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Quick Position Size
+                </div>
+                <div class="grid grid-cols-2 gap-1 text-[8px] font-mono">
+                  <div class="bg-zinc-900/50 p-1.5 rounded border border-zinc-800/50 text-center">
+                    <div class="text-zinc-500">1% Risk</div>
+                    <div data-size="1pct" class="text-white font-bold">0.12 BTC</div>
+                  </div>
+                  <div class="bg-zinc-900/50 p-1.5 rounded border border-zinc-800/50 text-center">
+                    <div class="text-zinc-500">2% Risk</div>
+                    <div data-size="2pct" class="text-white font-bold">0.24 BTC</div>
+                  </div>
+                  <div class="bg-zinc-900/50 p-1.5 rounded border border-zinc-800/50 text-center">
+                    <div class="text-zinc-500">Kelly</div>
+                    <div data-size="kelly" class="text-emerald-400 font-bold">0.29 BTC</div>
+                  </div>
+                  <div class="bg-zinc-900/50 p-1.5 rounded border border-zinc-800/50 text-center">
+                    <div class="text-zinc-500">Half-K</div>
+                    <div data-size="halfk" class="text-amber-400 font-bold">0.14 BTC</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- SOCIAL SENTIMENT -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span class="flex items-center gap-1">
+                    <iconify-icon icon="solar:users-group-rounded-bold" class="text-cyan-400"></iconify-icon>
+                    Social Sentiment
+                  </span>
+                  <span class="text-cyan-400 animate-pulse text-[8px]">LIVE</span>
+                </div>
+                <div class="space-y-2 text-[8px] font-mono">
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 flex items-center gap-1">
+                      <iconify-icon icon="ri:twitter-x-fill" class="text-white"></iconify-icon>
+                      X/Twitter
+                    </span>
+                    <div class="flex items-center gap-1">
+                      <div class="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div data-sentiment="twitter-bar" class="h-full bg-green-500 transition-all" style="width: 72%"></div>
+                      </div>
+                      <span data-sentiment="twitter" class="text-green-400 w-8 text-right">72%</span>
+                    </div>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 flex items-center gap-1">
+                      <iconify-icon icon="mdi:reddit" class="text-orange-500"></iconify-icon>
+                      Reddit
+                    </span>
+                    <div class="flex items-center gap-1">
+                      <div class="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div data-sentiment="reddit-bar" class="h-full bg-green-500 transition-all" style="width: 65%"></div>
+                      </div>
+                      <span data-sentiment="reddit" class="text-green-400 w-8 text-right">65%</span>
+                    </div>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 flex items-center gap-1">
+                      <iconify-icon icon="mdi:telegram" class="text-blue-400"></iconify-icon>
+                      Telegram
+                    </span>
+                    <div class="flex items-center gap-1">
+                      <div class="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div data-sentiment="telegram-bar" class="h-full bg-amber-500 transition-all" style="width: 58%"></div>
+                      </div>
+                      <span data-sentiment="telegram" class="text-amber-400 w-8 text-right">58%</span>
+                    </div>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 flex items-center gap-1">
+                      <iconify-icon icon="simple-icons:discord" class="text-indigo-400"></iconify-icon>
+                      Discord
+                    </span>
+                    <div class="flex items-center gap-1">
+                      <div class="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div data-sentiment="discord-bar" class="h-full bg-green-500 transition-all" style="width: 68%"></div>
+                      </div>
+                      <span data-sentiment="discord" class="text-green-400 w-8 text-right">68%</span>
+                    </div>
+                  </div>
+                  <div class="border-t border-zinc-800/50 pt-2 mt-1">
+                    <div class="flex justify-between items-center">
+                      <span class="text-white font-bold">Aggregate</span>
+                      <span data-sentiment="aggregate" class="text-green-400 font-bold">BULLISH 66%</span>
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                      <span class="text-zinc-500">24h Change</span>
+                      <span data-sentiment="change" class="text-green-400">+8%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- NEWS FEED -->
+              <div class="p-2">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span class="flex items-center gap-1">
+                    <iconify-icon icon="solar:document-text-bold" class="text-amber-400"></iconify-icon>
+                    Breaking News
+                  </span>
+                  <span class="text-amber-400 animate-pulse text-[8px]">LIVE</span>
+                </div>
+                <div data-news="feed" class="space-y-2 text-[8px] font-mono max-h-48 overflow-y-auto no-scrollbar">
+                  <div class="p-1.5 bg-zinc-900/50 rounded border border-zinc-800/50 hover:border-amber-600/50 cursor-pointer transition-colors">
+                    <div class="flex justify-between items-start mb-1">
+                      <span class="text-[7px] text-amber-400 uppercase">BULLISH</span>
+                      <span class="text-[7px] text-zinc-600">2m</span>
+                    </div>
+                    <div class="text-white leading-tight">BlackRock BTC ETF sees record $500M inflow</div>
+                    <div class="text-[7px] text-zinc-500 mt-1">Bloomberg</div>
+                  </div>
+                  <div class="p-1.5 bg-zinc-900/50 rounded border border-zinc-800/50 hover:border-zinc-600/50 cursor-pointer transition-colors">
+                    <div class="flex justify-between items-start mb-1">
+                      <span class="text-[7px] text-zinc-400 uppercase">NEUTRAL</span>
+                      <span class="text-[7px] text-zinc-600">15m</span>
+                    </div>
+                    <div class="text-white leading-tight">Fed signals rates unchanged through Q2</div>
+                    <div class="text-[7px] text-zinc-500 mt-1">CNBC</div>
+                  </div>
+                  <div class="p-1.5 bg-zinc-900/50 rounded border border-zinc-800/50 hover:border-red-600/50 cursor-pointer transition-colors">
+                    <div class="flex justify-between items-start mb-1">
+                      <span class="text-[7px] text-red-400 uppercase">BEARISH</span>
+                      <span class="text-[7px] text-zinc-600">32m</span>
+                    </div>
+                    <div class="text-white leading-tight">Tether under investigation by DOJ</div>
+                    <div class="text-[7px] text-zinc-500 mt-1">WSJ</div>
+                  </div>
+                  <div class="p-1.5 bg-zinc-900/50 rounded border border-zinc-800/50 hover:border-green-600/50 cursor-pointer transition-colors">
+                    <div class="flex justify-between items-start mb-1">
+                      <span class="text-[7px] text-green-400 uppercase">BULLISH</span>
+                      <span class="text-[7px] text-zinc-600">1h</span>
+                    </div>
+                    <div class="text-white leading-tight">MicroStrategy adds 12,000 BTC</div>
+                    <div class="text-[7px] text-zinc-500 mt-1">CoinDesk</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- COL: POSITIONS -->
+          <div class="bg-[#0B0B0B] flex flex-col flex-shrink-0" style="width: 200px;">
             <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
               <span class="text-zinc-400 font-bold tracking-wider">
                 POSITIONS
@@ -527,12 +1052,21 @@
             </div>
           </div>
 
-          <!-- COL 2: CHART (Spans 2 cols) -->
-          <div class="flex flex-col bg-[#080808] relative lg:col-span-3">
+          <!-- COL: CHART -->
+          <div class="flex flex-col bg-[#080808] relative flex-1" style="min-width: 500px;">
             <!-- Chart Header -->
             <div class="flex items-center justify-between p-2 border-b border-zinc-800 text-[10px] font-mono">
               <div class="flex items-center gap-3">
-                <span data-chart="symbol" class="font-bold text-white text-sm">BTC-PERP</span>
+                <!-- Symbol Selector Dropdown -->
+                <div class="relative">
+                  <button id="symbol-btn" class="flex items-center gap-2 font-bold text-white text-sm bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded hover:border-crimson-600 transition-colors">
+                    <span data-chart="symbol">BTC-PERP</span>
+                    <iconify-icon icon="solar:alt-arrow-down-linear" class="text-zinc-500"></iconify-icon>
+                  </button>
+                  <div id="symbol-dropdown" class="hidden absolute top-full left-0 mt-1 bg-zinc-900 border border-zinc-800 rounded shadow-xl z-50 w-48 max-h-[300px] overflow-y-auto no-scrollbar">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
                 <div id="timeframe-btns" class="flex bg-zinc-900 border border-zinc-800 rounded overflow-hidden">
                   <button data-tf="5m" class="px-3 py-1 hover:bg-zinc-800 text-zinc-400 transition-colors">
                     5m
@@ -639,7 +1173,149 @@
               </div>
             </div>
           </div>
-          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] lg:col-span-1 min-w-[200px]">
+          
+          <!-- COL: ORDER FLOW -->
+          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] flex-shrink-0" style="width: 200px;">
+            <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
+              <span class="text-zinc-400 font-bold tracking-wider">
+                ORDER FLOW
+              </span>
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+            </div>
+            <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="orderflow">
+              <!-- BID/ASK IMBALANCE -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
+                  <span>Bid/Ask Imbalance</span>
+                  <span data-flow="imbalance-signal" class="text-green-400 font-bold">BUY</span>
+                </div>
+                <div class="relative">
+                  <div class="flex h-4 rounded-sm overflow-hidden bg-zinc-900">
+                    <div data-flow="bid-bar" class="bg-green-500 h-full transition-all" style="width: 62%"></div>
+                    <div data-flow="ask-bar" class="bg-red-500 h-full transition-all" style="width: 38%"></div>
+                  </div>
+                  <div class="flex justify-between text-[8px] font-mono mt-1">
+                    <span class="text-green-400"><span data-flow="bid-pct">62%</span> BID</span>
+                    <span class="text-red-400">ASK <span data-flow="ask-pct">38%</span></span>
+                  </div>
+                </div>
+                <div class="text-[8px] text-center mt-2 py-1 bg-green-900/20 border border-green-800/50 rounded text-green-400">
+                  <span data-flow="imbalance-text">STRONG BUY PRESSURE</span>
+                </div>
+              </div>
+              <!-- AGGRESSOR SIDE -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  Aggressor Side (5m)
+                </div>
+                <div class="space-y-2 text-[9px] font-mono">
+                  <div class="flex justify-between items-center">
+                    <span class="text-green-400">BUYERS</span>
+                    <div class="flex items-center gap-2">
+                      <div class="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div data-flow="buyer-bar" class="h-full bg-green-500 transition-all" style="width: 58%"></div>
+                      </div>
+                      <span data-flow="buyer-vol" class="text-white font-bold">$24.7M</span>
+                    </div>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-red-400">SELLERS</span>
+                    <div class="flex items-center gap-2">
+                      <div class="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div data-flow="seller-bar" class="h-full bg-red-500 transition-all" style="width: 42%"></div>
+                      </div>
+                      <span data-flow="seller-vol" class="text-white font-bold">$17.8M</span>
+                    </div>
+                  </div>
+                  <div class="text-[8px] text-center py-1 bg-zinc-900/50 rounded border border-zinc-800/50 mt-2">
+                    <span class="text-zinc-500">Delta:</span>
+                    <span data-flow="delta" class="text-green-400 font-bold ml-1">+$6.9M</span>
+                  </div>
+                </div>
+              </div>
+              <!-- LARGE ORDERS -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Large Orders ({'>'}$500K)</span>
+                  <span class="text-[8px] text-amber-500 animate-pulse">LIVE</span>
+                </div>
+                <div data-flow="large-orders" class="space-y-1.5 text-[8px] font-mono max-h-[100px] overflow-y-auto no-scrollbar">
+                  <div class="flex justify-between items-center py-0.5 border-l-2 border-green-500 pl-1">
+                    <span class="text-zinc-500">14:32</span>
+                    <span class="text-green-400">BUY</span>
+                    <span class="text-white">$2.4M</span>
+                    <span class="text-zinc-600">@83,420</span>
+                  </div>
+                  <div class="flex justify-between items-center py-0.5 border-l-2 border-red-500 pl-1">
+                    <span class="text-zinc-500">14:28</span>
+                    <span class="text-red-400">SELL</span>
+                    <span class="text-white">$1.8M</span>
+                    <span class="text-zinc-600">@83,510</span>
+                  </div>
+                  <div class="flex justify-between items-center py-0.5 border-l-2 border-green-500 pl-1">
+                    <span class="text-zinc-500">14:25</span>
+                    <span class="text-green-400">BUY</span>
+                    <span class="text-white">$3.1M</span>
+                    <span class="text-zinc-600">@83,380</span>
+                  </div>
+                </div>
+              </div>
+              <!-- CVD LIVE -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
+                  CVD Momentum
+                </div>
+                <div class="text-center">
+                  <div data-flow="cvd-value" class="text-2xl font-bold text-green-400 font-mono">+$8.4M</div>
+                  <div class="text-[8px] text-zinc-500 mt-1">Cumulative Volume Delta</div>
+                </div>
+                <div class="mt-2 h-8 flex items-end justify-center gap-0.5" data-flow="cvd-bars">
+                  <div class="w-2 bg-green-500 h-3"></div>
+                  <div class="w-2 bg-green-500 h-4"></div>
+                  <div class="w-2 bg-green-500 h-5"></div>
+                  <div class="w-2 bg-red-500 h-2"></div>
+                  <div class="w-2 bg-green-500 h-6"></div>
+                  <div class="w-2 bg-green-500 h-7"></div>
+                  <div class="w-2 bg-green-500 h-8"></div>
+                </div>
+                <div class="text-[7px] text-zinc-600 text-center mt-1">Last 7 intervals</div>
+              </div>
+              <!-- TRADE INTENSITY -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Trade Intensity</span>
+                  <span data-flow="intensity-signal" class="text-amber-400">ELEVATED</span>
+                </div>
+                <div class="relative h-2 bg-zinc-900 rounded-full overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-green-900 via-amber-900 to-red-900 opacity-50"></div>
+                  <div data-flow="intensity-needle" class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_white] transition-all" style="left: 68%"></div>
+                </div>
+                <div class="flex justify-between text-[7px] text-zinc-600 mt-1">
+                  <span>LOW</span>
+                  <span>NORMAL</span>
+                  <span>HIGH</span>
+                </div>
+                <div class="text-[8px] text-center mt-2 text-zinc-500">
+                  <span data-flow="trades-per-sec">847</span> trades/sec
+                </div>
+              </div>
+              <!-- SPOOFING ALERT -->
+              <div class="p-2">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Spoof Detection</span>
+                  <span data-flow="spoof-status" class="text-green-400">CLEAR</span>
+                </div>
+                <div data-flow="spoof-container" class="space-y-1 text-[8px] font-mono">
+                  <div class="text-center py-2 bg-zinc-900/50 rounded border border-zinc-800/50 text-zinc-500">
+                    No spoofing detected
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- COL: INTELLIGENCE -->
+          <div class="flex flex-col border-r border-zinc-800 bg-[#0B0B0B] flex-shrink-0" style="width: 220px;">
             <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30 border-l-2 border-crimson-600">
               <span class="text-zinc-400 font-bold tracking-wider">
                 INTELLIGENCE
@@ -681,28 +1357,28 @@
                   </div>
                 </div>
               </div>
+              <!-- FEAR & GREED WITH SPARKLINE -->
               <div class="p-2 border-b border-zinc-800/50">
-                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
-                  Volatility Regime
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Fear & Greed Index</span>
+                  <span class="text-[7px] text-zinc-600">7-day</span>
                 </div>
-                <div class="flex justify-between text-[8px] text-zinc-600 font-mono mb-1">
-                  <span>LOW</span>
-                  <span>NORMAL</span>
-                  <span>HIGH</span>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div data-intel="atr" class="text-[13px] text-white font-bold font-mono">F&G: --/100</div>
                 </div>
-                <div class="w-full h-2 bg-zinc-900 rounded-full mb-2 relative overflow-hidden">
-                  <div class="absolute inset-0 bg-gradient-to-r from-green-900 via-amber-900 to-crimson-900 opacity-50"></div>
-                  <div data-intel="vol-needle" class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_white] left-[50%] transition-all"></div>
+                  <div data-fg="sparkline" class="ml-2"></div>
                 </div>
-                <div class="flex justify-between text-[9px] font-mono">
-                  <span class="text-zinc-500">ATR</span>
-                  <span data-intel="atr" class="text-white">$1,247 (1.3%)</span>
+                <div class="w-full h-1.5 bg-gradient-to-r from-red-600 via-amber-500 to-green-500 rounded-full mt-2 relative">
+                  <div data-intel="vol-needle" class="absolute top-0 w-1 h-2.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all" style="left: 50%; transform: translateX(-50%);"></div>
                 </div>
-                <div data-intel="size-rec" class="text-[9px] text-crimson-400 font-mono mt-1 text-right">
-                  SIZE REC: -25%
+                <div class="flex justify-between text-[7px] text-zinc-600 mt-1">
+                  <span>FEAR</span>
+                  <span>NEUTRAL</span>
+                  <span>GREED</span>
                 </div>
               </div>
-              <div class="p-2">
+              <div class="p-2 border-b border-zinc-800/50">
                 <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
                   Derivatives
                 </div>
@@ -721,16 +1397,284 @@
                   <span>S: 46%</span>
                 </div>
               </div>
+              <!-- TOP TRADER SENTIMENT -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Top Traders vs Retail</span>
+                  <span data-top-traders="signal" class="text-zinc-400">--</span>
+                </div>
+                <div class="space-y-2 text-[9px] font-mono">
+                  <div>
+                    <div class="flex justify-between text-zinc-400 mb-1">
+                      <span>WHALES</span>
+                      <span data-top-traders="whale-long" class="text-green-400">--% L</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div data-top-traders="whale-bar" class="h-full bg-green-500 transition-all" style="width: 58%"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex justify-between text-zinc-400 mb-1">
+                      <span>RETAIL</span>
+                      <span data-top-traders="retail-long" class="text-amber-400">--% L</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div data-top-traders="retail-bar" class="h-full bg-amber-500 transition-all" style="width: 72%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div data-top-traders="divergence" class="mt-2 text-[8px] text-center py-1 px-2 rounded bg-zinc-900/50 border border-zinc-800/50 text-zinc-500">
+                  Divergence: --
+                </div>
+              </div>
+              <!-- TAKER BUY/SELL -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Taker Pressure</span>
+                  <span data-taker="signal" class="text-zinc-400">--</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-green-400 text-[10px] font-mono">BUY</span>
+                  <div class="flex-1 h-3 bg-zinc-800 rounded-full overflow-hidden flex">
+                    <div data-taker="buy-bar" class="h-full bg-green-500 transition-all" style="width: 52%"></div>
+                    <div data-taker="sell-bar" class="h-full bg-red-500 transition-all" style="width: 48%"></div>
+                  </div>
+                  <span class="text-red-400 text-[10px] font-mono">SELL</span>
+                </div>
+                <div class="flex justify-between text-[8px] font-mono text-zinc-500 mt-1">
+                  <span data-taker="buy-pct">52%</span>
+                  <span data-taker="net" class="text-green-400 font-bold">NET: BUY</span>
+                  <span data-taker="sell-pct">48%</span>
+                </div>
+              </div>
+              <!-- OPTIONS MAX PAIN -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span>Options</span>
+                  <span data-options="signal" class="text-zinc-400">--</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[9px] font-mono">
+                  <div>
+                    <div class="text-zinc-500">Max Pain</div>
+                    <div data-options="max-pain" class="text-white font-bold">$--</div>
+                  </div>
+                  <div>
+                    <div class="text-zinc-500">Put/Call</div>
+                    <div data-options="put-call" class="text-white font-bold">--</div>
+                  </div>
+                </div>
+                <div data-options="distance" class="mt-2 text-[8px] text-center py-1 bg-zinc-900/50 rounded border border-zinc-800/50 text-zinc-500">
+                  -- from current
+                </div>
+              </div>
+              <!-- VOLATILITY REGIME - MOVED FROM RIGHT COLUMN -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span class="flex items-center gap-1">
+                    <iconify-icon icon="solar:chart-2-bold" class="text-purple-400"></iconify-icon>
+                    Volatility Regime
+                  </span>
+                  <span data-vol="signal" class="text-zinc-400">--</span>
+                </div>
+                <div class="flex justify-between items-center mb-2 text-[9px] font-mono">
+                  <div>
+                    <div class="text-zinc-500 text-[8px]">Regime</div>
+                    <div data-vol="regime" class="text-white font-bold">--</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-zinc-500 text-[8px]">ATR</div>
+                    <div data-vol="atr" class="text-white font-bold">--%</div>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <div class="flex justify-between text-[7px] text-zinc-600 mb-1">
+                    <span>LOW</span>
+                    <span>NORMAL</span>
+                    <span>HIGH</span>
+                  </div>
+                  <div class="w-full h-2 bg-zinc-800 rounded-full relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-green-900 via-amber-900 to-red-900 opacity-50"></div>
+                    <div data-vol="needle" class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_white] transition-all" style="left: 30%"></div>
+                  </div>
+                </div>
+                <div data-vol="warning" class="text-[8px] text-center py-1 px-2 mb-2 rounded bg-amber-900/30 border border-amber-800/50 text-amber-400 hidden">
+                  EXPANSION IMMINENT
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[8px] font-mono mb-1">
+                  <div>
+                    <span class="text-zinc-500">BB Width:</span>
+                    <span data-vol="bb" class="text-white ml-1">--%</span>
+                  </div>
+                  <div>
+                    <span class="text-zinc-500">Days:</span>
+                    <span data-vol="days" class="text-white ml-1">--</span>
+                  </div>
+                </div>
+                <div data-vol="expansion" class="text-[8px] text-center py-1 bg-zinc-900/50 rounded border border-zinc-800/50">
+                  <span class="text-zinc-500">Expansion Prob:</span>
+                  <span data-vol="prob" class="text-white font-bold ml-1">--%</span>
+                </div>
+              </div>
+              <!-- TIME-OF-DAY ANALYSIS -->
+              <div class="p-2 border-b border-zinc-800/50">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span class="flex items-center gap-1">
+                    <iconify-icon icon="solar:clock-circle-bold" class="text-blue-400"></iconify-icon>
+                    Session Analysis
+                  </span>
+                  <span data-session="current" class="text-blue-400 font-bold">--</span>
+                </div>
+                <div class="text-[8px] font-mono space-y-1">
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Current Session</span>
+                    <span data-session="name" class="text-white">--</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-zinc-500">Next High-Vol</span>
+                    <span data-session="next" class="text-amber-400">--</span>
+                  </div>
+                  <div class="mt-2 pt-2 border-t border-zinc-800/50 space-y-0.5">
+                    <div class="flex justify-between text-zinc-600">
+                      <span>Asia Avg</span>
+                      <span data-session="asia">0.4%</span>
+                    </div>
+                    <div class="flex justify-between text-zinc-600">
+                      <span>London Avg</span>
+                      <span data-session="london">0.8%</span>
+                    </div>
+                    <div class="flex justify-between text-zinc-600">
+                      <span>US Avg</span>
+                      <span data-session="us" class="text-green-400">1.2%</span>
+                    </div>
+                  </div>
+                  <div data-session="recommendation" class="mt-2 text-[7px] text-center py-1 bg-blue-900/20 border border-blue-800/50 rounded text-blue-400">
+                    Wait for US open
+                  </div>
+                </div>
+              </div>
+              <!-- MACRO CORRELATION -->
+              <div class="p-2">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
+                  <span class="flex items-center gap-1">
+                    <iconify-icon icon="solar:global-bold" class="text-cyan-400"></iconify-icon>
+                    Macro Sync
+                  </span>
+                  <span data-macro="signal" class="text-green-400 font-bold">RISK-ON</span>
+                </div>
+                <div class="space-y-1.5 text-[8px] font-mono">
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 w-14">BTC/SPX</span>
+                    <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div data-macro="spx-bar" class="h-full bg-green-500 transition-all" style="width: 78%"></div>
+                    </div>
+                    <span data-macro="spx" class="text-green-400 w-10 text-right">+0.78</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 w-14">BTC/NQ</span>
+                    <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div data-macro="nq-bar" class="h-full bg-green-500 transition-all" style="width: 84%"></div>
+                    </div>
+                    <span data-macro="nq" class="text-green-400 w-10 text-right">+0.84</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 w-14">BTC/DXY</span>
+                    <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div data-macro="dxy-bar" class="h-full bg-red-500 transition-all" style="width: 67%"></div>
+                    </div>
+                    <span data-macro="dxy" class="text-red-400 w-10 text-right">-0.67</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 w-14">BTC/GOLD</span>
+                    <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div data-macro="gold-bar" class="h-full bg-green-500 transition-all" style="width: 42%"></div>
+                    </div>
+                    <span data-macro="gold" class="text-green-400 w-10 text-right">+0.42</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-zinc-500 w-14">BTC/VIX</span>
+                    <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div data-macro="vix-bar" class="h-full bg-red-500 transition-all" style="width: 31%"></div>
+                    </div>
+                    <span data-macro="vix" class="text-red-400 w-10 text-right">-0.31</span>
+                  </div>
+                </div>
+                <div data-macro="note" class="mt-2 text-[7px] text-center py-1 bg-amber-900/20 border border-amber-800/50 rounded text-amber-400">
+                  High equity correlation - Watch SPX
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- COL 3: ALERTS -->
-          <div class="bg-[#0B0B0B] flex flex-col border-l border-zinc-800">
+          <!-- COL: ALERTS & SIGNALS -->
+          <div class="bg-[#0B0B0B] flex flex-col border-l border-zinc-800 flex-shrink-0" style="width: 280px;">
             <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
               <span class="text-zinc-400 font-bold tracking-wider">
                 ALERTS &amp; SIGNALS
               </span>
               <iconify-icon icon="solar:filter-linear" class="text-zinc-500 hover:text-white cursor-pointer"></iconify-icon>
+            </div>
+            
+            <!-- MM MAGNET PANEL - MOVED TO TOP -->
+            <div class="p-3 bg-[#0a0a0a] border-b border-zinc-800 relative overflow-hidden">
+              <div class="absolute top-0 left-0 w-1 h-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]"></div>
+              <div class="flex justify-between items-center text-[10px] font-mono mb-2">
+                <span class="text-amber-400 font-bold flex items-center gap-1">
+                  <iconify-icon icon="solar:target-bold"></iconify-icon>
+                  MM MAGNET
+                </span>
+                <span data-mm="direction" class="text-zinc-400 text-[9px]">--</span>
+              </div>
+              <div class="flex justify-between items-center mb-2">
+                <div>
+                  <div class="text-[8px] text-zinc-500 mb-0.5">TARGET</div>
+                  <div data-mm="target" class="text-white font-bold text-[13px] font-mono">$--</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[8px] text-zinc-500 mb-0.5">CONFIDENCE</div>
+                  <div data-mm="confidence" class="text-white font-bold text-[13px] font-mono">--%</div>
+                </div>
+              </div>
+              <div class="w-full h-2 bg-zinc-800 rounded-full overflow-hidden mb-2">
+                <div data-mm="confidence-bar" class="h-full bg-amber-500 transition-all" style="width: 0%"></div>
+              </div>
+              <div data-mm="eta" class="text-[8px] text-zinc-500 mb-2 text-center">ETA: --</div>
+              <div class="space-y-1 text-[8px] font-mono">
+                <div class="flex justify-between items-center">
+                  <span class="text-zinc-500 w-16">Max Pain</span>
+                  <div class="flex-1 mx-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div data-mm="sig-maxpain" class="h-full bg-green-500 transition-all" style="width: 50%"></div>
+                  </div>
+                  <span data-mm="sig-maxpain-label" class="text-zinc-400 w-16 text-right">--</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-zinc-500 w-16">Liq Hunt</span>
+                  <div class="flex-1 mx-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div data-mm="sig-liq" class="h-full bg-red-500 transition-all" style="width: 50%"></div>
+                  </div>
+                  <span data-mm="sig-liq-label" class="text-zinc-400 w-16 text-right">--</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-zinc-500 w-16">Funding</span>
+                  <div class="flex-1 mx-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div data-mm="sig-funding" class="h-full bg-blue-500 transition-all" style="width: 50%"></div>
+                  </div>
+                  <span data-mm="sig-funding-label" class="text-zinc-400 w-16 text-right">--</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-zinc-500 w-16">Divergence</span>
+                  <div class="flex-1 mx-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div data-mm="sig-div" class="h-full bg-purple-500 transition-all" style="width: 50%"></div>
+                  </div>
+                  <span data-mm="sig-div-label" class="text-zinc-400 w-16 text-right">--</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-zinc-500 w-16">ETF Flows</span>
+                  <div class="flex-1 mx-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div data-mm="sig-etf" class="h-full bg-cyan-500 transition-all" style="width: 50%"></div>
+                  </div>
+                  <span data-mm="sig-etf-label" class="text-zinc-400 w-16 text-right">--</span>
+                </div>
+              </div>
             </div>
 
             <div class="flex-1 overflow-y-auto p-0 no-scrollbar">
@@ -786,33 +1730,66 @@
                 </p>
               </div>
             </div>
-            <div class="p-3 bg-[#0f0f0f] border-t border-zinc-800 flex flex-col gap-2 relative overflow-hidden group">
-              <div class="absolute top-0 left-0 w-1 h-full bg-crimson-400 shadow-[0_0_20px_rgba(220,38,38,0.9)]"></div>
-              <div class="absolute inset-0 bg-crimson-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+            
+            <!-- ALERT SYSTEM -->
+            <div class="p-3 bg-[#0a0a0a] border-t border-zinc-800 flex flex-col gap-2 relative overflow-hidden">
+              <div class="absolute top-0 left-0 w-1 h-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]"></div>
               <div class="flex justify-between items-center text-[10px] font-mono mb-1">
-                <span class="text-crimson-400 font-bold flex items-center gap-1">
-                  <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
-                  NEURAL ASSISTANT
+                <span class="text-amber-400 font-bold flex items-center gap-1">
+                  <iconify-icon icon="solar:bell-bold"></iconify-icon>
+                  ALERT SYSTEM
                 </span>
+                <span data-alerts="status" class="text-[8px] text-green-400 animate-pulse">ACTIVE</span>
               </div>
-              <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
-                <span class="text-crimson-500">&gt;&gt;</span>
-                Momentum trailing active (2.3x).
-
-                <span class="text-yellow-500">⚠</span>
-                CVD divergence forming. Consider partial exit at T2.
+              <div class="text-[8px] text-zinc-500 mb-1">Push notifications enabled</div>
+              <div data-alerts="feed" class="space-y-1.5 max-h-32 overflow-y-auto no-scrollbar">
+                <!-- Alert items populated by JS -->
+                <div class="flex items-start gap-2 p-1.5 bg-green-900/20 border border-green-800/30 rounded text-[8px]">
+                  <iconify-icon icon="solar:dollar-bold" class="text-green-400 mt-0.5"></iconify-icon>
+                  <div>
+                    <div class="text-green-400 font-bold">Price Target Hit</div>
+                    <div class="text-zinc-400">BTC reached $96,500</div>
+                    <div class="text-zinc-600">2 min ago</div>
+                  </div>
+                </div>
+                <div class="flex items-start gap-2 p-1.5 bg-purple-900/20 border border-purple-800/30 rounded text-[8px]">
+                  <iconify-icon icon="solar:whale-bold" class="text-purple-400 mt-0.5"></iconify-icon>
+                  <div>
+                    <div class="text-purple-400 font-bold">Whale Movement</div>
+                    <div class="text-zinc-400">$25M BTC moved to Binance</div>
+                    <div class="text-zinc-600">5 min ago</div>
+                  </div>
+                </div>
+                <div class="flex items-start gap-2 p-1.5 bg-amber-900/20 border border-amber-800/30 rounded text-[8px]">
+                  <iconify-icon icon="solar:chart-2-bold" class="text-amber-400 mt-0.5"></iconify-icon>
+                  <div>
+                    <div class="text-amber-400 font-bold">Funding Spike</div>
+                    <div class="text-zinc-400">Funding hit +0.15%</div>
+                    <div class="text-zinc-600">12 min ago</div>
+                  </div>
+                </div>
               </div>
-              <div class="flex flex-col gap-1 mt-1">
-                <button class="text-left text-[9px] text-zinc-500 hover:text-white hover:bg-zinc-800 px-2 py-1 rounded transition-colors border border-transparent hover:border-zinc-700">
-                  • Hold current position
+              <div class="grid grid-cols-2 gap-1 mt-1 text-[7px]">
+                <button data-alert-toggle="price" class="flex items-center justify-center gap-1 p-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white transition-colors border border-zinc-700">
+                  <iconify-icon icon="solar:dollar-bold"></iconify-icon>
+                  <span>Price</span>
+                  <span class="text-green-400">ON</span>
                 </button>
-                <button class="text-left text-[9px] text-zinc-500 hover:text-white hover:bg-zinc-800 px-2 py-1 rounded transition-colors border border-transparent hover:border-zinc-700">
-                  • Watch $97,400 resistance
+                <button data-alert-toggle="whale" class="flex items-center justify-center gap-1 p-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white transition-colors border border-zinc-700">
+                  <iconify-icon icon="solar:whale-bold"></iconify-icon>
+                  <span>Whale</span>
+                  <span class="text-green-400">ON</span>
                 </button>
-              </div>
-              <div class="mt-2 relative">
-                <input data-input="neural" type="text" placeholder="Ask BASTION..." class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-700 font-mono rounded-sm">
-                <iconify-icon data-action="neural-send" icon="solar:plain-linear" class="absolute right-2 top-1.5 text-zinc-600 cursor-pointer hover:text-white"></iconify-icon>
+                <button data-alert-toggle="funding" class="flex items-center justify-center gap-1 p-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white transition-colors border border-zinc-700">
+                  <iconify-icon icon="solar:chart-2-bold"></iconify-icon>
+                  <span>Funding</span>
+                  <span class="text-green-400">ON</span>
+                </button>
+                <button data-alert-toggle="volatility" class="flex items-center justify-center gap-1 p-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 hover:text-white transition-colors border border-zinc-700">
+                  <iconify-icon icon="solar:graph-bold"></iconify-icon>
+                  <span>Vol</span>
+                  <span class="text-green-400">ON</span>
+                </button>
               </div>
             </div>
 
@@ -832,6 +1809,116 @@
               </div>
               <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
                 <div class="w-[85%] h-full bg-white"></div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- COL: MCF LABS REPORTS -->
+          <div class="bg-[#0B0B0B] flex flex-col border-l border-zinc-800 flex-shrink-0" style="width: 300px;">
+            <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-gradient-to-r from-purple-950/50 to-zinc-900/30">
+              <span class="text-purple-400 font-bold tracking-wider flex items-center gap-1">
+                <iconify-icon icon="solar:document-bold" class="text-purple-500"></iconify-icon>
+                MCF LABS
+              </span>
+              <span class="text-[8px] bg-purple-600 text-white px-1.5 py-0.5 rounded animate-pulse">INSTITUTIONAL</span>
+            </div>
+            <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="mcflabs">
+              <!-- LATEST REPORT -->
+              <div class="p-3 border-b border-zinc-800/50 bg-gradient-to-b from-purple-950/20 to-transparent">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-[9px] text-purple-400 font-mono font-bold">LATEST REPORT</span>
+                  <span class="text-[8px] text-zinc-500">2 min ago</span>
+                </div>
+                <div data-mcf="latest-title" class="text-[11px] text-white font-bold mb-2 leading-tight">
+                  BTC Accumulation Phase Confirmed: Smart Money Loading
+                </div>
+                <div data-mcf="latest-summary" class="text-[9px] text-zinc-400 leading-relaxed mb-2">
+                  On-chain metrics show significant whale accumulation over past 72h. Exchange reserves at 3-year lows. Funding remains neutral suggesting room for upside.
+                </div>
+                <div class="flex gap-2">
+                  <span class="text-[7px] bg-green-900/50 text-green-400 px-1.5 py-0.5 rounded border border-green-800/50">BULLISH</span>
+                  <span class="text-[7px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">HIGH CONFIDENCE</span>
+                </div>
+              </div>
+              <!-- REPORT FEED -->
+              <div data-mcf="feed" class="divide-y divide-zinc-800/50">
+                <div class="p-2 hover:bg-zinc-900/50 cursor-pointer transition-colors">
+                  <div class="flex justify-between items-start mb-1">
+                    <span class="text-[9px] text-white font-bold leading-tight flex-1">ETH/BTC Ratio Analysis: Altcoin Season Incoming?</span>
+                    <span class="text-[7px] text-zinc-600 ml-2">1h</span>
+                  </div>
+                  <div class="flex gap-1">
+                    <span class="text-[6px] bg-amber-900/50 text-amber-400 px-1 py-0.5 rounded">NEUTRAL</span>
+                  </div>
+                </div>
+                <div class="p-2 hover:bg-zinc-900/50 cursor-pointer transition-colors">
+                  <div class="flex justify-between items-start mb-1">
+                    <span class="text-[9px] text-white font-bold leading-tight flex-1">Derivatives Deep Dive: OI Surge Signals Volatility</span>
+                    <span class="text-[7px] text-zinc-600 ml-2">3h</span>
+                  </div>
+                  <div class="flex gap-1">
+                    <span class="text-[6px] bg-amber-900/50 text-amber-400 px-1 py-0.5 rounded">CAUTION</span>
+                  </div>
+                </div>
+                <div class="p-2 hover:bg-zinc-900/50 cursor-pointer transition-colors">
+                  <div class="flex justify-between items-start mb-1">
+                    <span class="text-[9px] text-white font-bold leading-tight flex-1">Macro Weekly: Fed Pivot Implications for Crypto</span>
+                    <span class="text-[7px] text-zinc-600 ml-2">6h</span>
+                  </div>
+                  <div class="flex gap-1">
+                    <span class="text-[6px] bg-green-900/50 text-green-400 px-1 py-0.5 rounded">BULLISH</span>
+                  </div>
+                </div>
+                <div class="p-2 hover:bg-zinc-900/50 cursor-pointer transition-colors">
+                  <div class="flex justify-between items-start mb-1">
+                    <span class="text-[9px] text-white font-bold leading-tight flex-1">Liquidation Map Analysis: Key Levels to Watch</span>
+                    <span class="text-[7px] text-zinc-600 ml-2">12h</span>
+                  </div>
+                  <div class="flex gap-1">
+                    <span class="text-[6px] bg-red-900/50 text-red-400 px-1 py-0.5 rounded">RISK ALERT</span>
+                  </div>
+                </div>
+              </div>
+              <!-- NEURAL ASSISTANT (MOVED FROM ALERTS) -->
+            <div class="p-3 bg-[#0f0f0f] border-t border-zinc-800 flex flex-col gap-2 relative overflow-hidden group">
+              <div class="absolute top-0 left-0 w-1 h-full bg-crimson-400 shadow-[0_0_20px_rgba(220,38,38,0.9)]"></div>
+              <div class="absolute inset-0 bg-crimson-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+              <div class="flex justify-between items-center text-[10px] font-mono mb-1">
+                <span class="text-crimson-400 font-bold flex items-center gap-1">
+                  <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                    MCF NEURAL ASSISTANT
+                </span>
+                  <span class="text-[8px] bg-crimson-600 text-white px-1.5 py-0.5 rounded animate-pulse">AI</span>
+              </div>
+                <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+                <span class="text-crimson-500">&gt;&gt;</span>
+                Momentum trailing active (2.3x).
+
+                <span class="text-yellow-500">⚠</span>
+                CVD divergence forming. Consider partial exit at T2.
+              </div>
+              <div class="flex flex-col gap-1 mt-1">
+                <button class="text-left text-[9px] text-zinc-500 hover:text-white hover:bg-zinc-800 px-2 py-1 rounded transition-colors border border-transparent hover:border-zinc-700">
+                  • Hold current position
+                </button>
+                <button class="text-left text-[9px] text-zinc-500 hover:text-white hover:bg-zinc-800 px-2 py-1 rounded transition-colors border border-transparent hover:border-zinc-700">
+                  • Watch $97,400 resistance
+                </button>
+              </div>
+              <div class="mt-2 relative">
+                  <input data-input="neural" type="text" placeholder="Ask MCF BASTION..." class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-700 font-mono rounded-sm">
+                  <iconify-icon data-action="neural-send" icon="solar:plain-linear" class="absolute right-2 top-1.5 text-zinc-600 cursor-pointer hover:text-white"></iconify-icon>
+              </div>
+            </div>
+
+              <!-- SUBSCRIBE CTA -->
+              <div class="p-3 bg-gradient-to-t from-purple-950/30 to-transparent">
+                <div class="text-[8px] text-zinc-500 text-center mb-2">
+                  Get real-time institutional-grade analysis
+              </div>
+                <button class="w-full bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold py-2 rounded-sm shadow-[0_0_15px_rgba(168,85,247,0.3)] font-mono uppercase transition-all">
+                  VIEW FULL REPORTS
+                </button>
               </div>
             </div>
           </div>
@@ -902,6 +1989,98 @@
       let sessionStats = {};
       let marketData = {};
       let alerts = [];
+      let fearGreedHistory = []; // 7-day history
+      
+      // =================================================================
+      // SOUND ALERT SYSTEM - Audio cues for critical signals
+      // =================================================================
+      const audioContext = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
+      const soundAlerts = {
+        enabled: true,
+        priceTarget: true,
+        whale: true,
+        funding: true,
+        volatility: true,
+        mmMagnet: true
+      };
+      
+      // Generate audio tone
+      function playSound(type) {
+        if (!audioContext || !soundAlerts.enabled) return;
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        const sounds = {
+          'price-target': { freq: 880, duration: 0.3, wave: 'sine' },      // High ping for price targets
+          'whale': { freq: 220, duration: 0.5, wave: 'triangle' },         // Deep tone for whales
+          'funding': { freq: 660, duration: 0.2, wave: 'square' },         // Alert tone for funding
+          'volatility': { freq: 440, duration: 0.4, wave: 'sawtooth' },    // Warning for volatility
+          'mm-magnet': { freq: 523, duration: 0.3, wave: 'sine' },         // Notification for MM target
+          'alert': { freq: 600, duration: 0.15, wave: 'sine' }             // Generic alert
+        };
+        
+        const sound = sounds[type] || sounds['alert'];
+        oscillator.type = sound.wave;
+        oscillator.frequency.setValueAtTime(sound.freq, audioContext.currentTime);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + sound.duration);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + sound.duration);
+      }
+      
+      // Trigger alert with sound
+      function triggerAlert(type, title, message) {
+        // Add to feed
+        const alertFeed = document.querySelector('[data-alerts="feed"]');
+        if (alertFeed) {
+          const colors = {
+            'price-target': { bg: 'green-900/20', border: 'green-800/30', icon: 'solar:dollar-bold', iconColor: 'green-400' },
+            'whale': { bg: 'purple-900/20', border: 'purple-800/30', icon: 'solar:whale-bold', iconColor: 'purple-400' },
+            'funding': { bg: 'amber-900/20', border: 'amber-800/30', icon: 'solar:chart-2-bold', iconColor: 'amber-400' },
+            'volatility': { bg: 'red-900/20', border: 'red-800/30', icon: 'solar:graph-bold', iconColor: 'red-400' },
+            'mm-magnet': { bg: 'cyan-900/20', border: 'cyan-800/30', icon: 'solar:target-bold', iconColor: 'cyan-400' }
+          };
+          const style = colors[type] || colors['price-target'];
+          
+          const alertEl = document.createElement('div');
+          alertEl.className = `flex items-start gap-2 p-1.5 bg-${style.bg} border border-${style.border} rounded text-[8px] animate-pulse`;
+          alertEl.innerHTML = `
+            <iconify-icon icon="${style.icon}" class="text-${style.iconColor} mt-0.5"></iconify-icon>
+            <div>
+              <div class="text-${style.iconColor} font-bold">${title}</div>
+              <div class="text-zinc-400">${message}</div>
+              <div class="text-zinc-600">Just now</div>
+            </div>
+          `;
+          alertFeed.insertBefore(alertEl, alertFeed.firstChild);
+          
+          // Keep only last 10 alerts
+          while (alertFeed.children.length > 10) {
+            alertFeed.removeChild(alertFeed.lastChild);
+          }
+        }
+        
+        // Play sound
+        playSound(type);
+        
+        // Browser notification if permitted
+        if (Notification.permission === 'granted') {
+          new Notification(`BASTION: ${title}`, { body: message, icon: '/favicon.ico' });
+        }
+        
+        console.log(`[ALERT] ${type}: ${title} - ${message}`);
+      }
+      
+      // Request notification permission
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
 
       // =================================================================
       // WEBSOCKET CONNECTION
@@ -1234,6 +2413,15 @@ Esc - Close Dialogs
         // Neural send button
         const sendBtn = document.querySelector('[data-action="neural-send"]');
         if (sendBtn) sendBtn.onclick = sendNeuralChat;
+        
+        // Symbol selector button
+        const symbolBtn = document.getElementById('symbol-btn');
+        if (symbolBtn) {
+          symbolBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSymbolDropdown();
+          });
+        }
 
         // Timeframe buttons
         const tfBtns = document.querySelectorAll('[data-tf]');
@@ -1253,6 +2441,109 @@ Esc - Close Dialogs
         });
       });
 
+      // =================================================================
+      // SYMBOL SELECTOR
+      // =================================================================
+      let availableSymbols = [];
+      
+      async function fetchSymbols() {
+        try {
+          const res = await fetch(`${API_BASE}/api/symbols`);
+          const data = await res.json();
+          availableSymbols = data.symbols || [];
+          populateSymbolDropdown();
+        } catch (e) {
+          console.error('[SYMBOLS] Fetch error:', e);
+          // Fallback symbols
+          availableSymbols = [
+            {symbol: 'BTC', name: 'Bitcoin', perp: 'BTC-PERP'},
+            {symbol: 'ETH', name: 'Ethereum', perp: 'ETH-PERP'},
+            {symbol: 'SOL', name: 'Solana', perp: 'SOL-PERP'},
+          ];
+          populateSymbolDropdown();
+        }
+      }
+      
+      function populateSymbolDropdown() {
+        const dropdown = document.getElementById('symbol-dropdown');
+        if (!dropdown) return;
+        
+        dropdown.innerHTML = availableSymbols.map(s => `
+          <button data-symbol="${s.symbol}" class="w-full text-left px-3 py-2 hover:bg-zinc-800 flex justify-between items-center transition-colors ${s.symbol === currentSymbol ? 'bg-zinc-800 text-white' : 'text-zinc-400'}">
+            <span class="font-bold">${s.perp}</span>
+            <span class="text-[9px] text-zinc-500">${s.name}</span>
+          </button>
+        `).join('');
+        
+        // Bind click events
+        dropdown.querySelectorAll('[data-symbol]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            switchSymbol(btn.dataset.symbol);
+            toggleSymbolDropdown(false);
+          });
+        });
+      }
+      
+      function toggleSymbolDropdown(show = null) {
+        const dropdown = document.getElementById('symbol-dropdown');
+        if (!dropdown) return;
+        
+        if (show === null) {
+          dropdown.classList.toggle('hidden');
+        } else {
+          dropdown.classList.toggle('hidden', !show);
+        }
+      }
+      
+      function switchSymbol(newSymbol) {
+        if (newSymbol === currentSymbol) return;
+        
+        console.log(`[SYMBOL] Switching from ${currentSymbol} to ${newSymbol}`);
+        currentSymbol = newSymbol;
+        
+        // Update UI
+        const symbolEl = document.querySelector('[data-chart="symbol"]');
+        if (symbolEl) symbolEl.textContent = `${newSymbol}-PERP`;
+        
+        // Update dropdown active state
+        populateSymbolDropdown();
+        
+        // Reload all data for new symbol
+        loadChartData();
+        fetchLivePrice();
+        fetchLiveMarketData();
+        fetchLiveCVD();
+        fetchOpenInterest();
+        fetchHeatmap();
+        // New endpoints for symbol
+        fetchTopTraders();
+        fetchOptions();
+        fetchTakerRatio();
+        fetchExchangeFlow();
+        fetchOIByExchange();
+        fetchFundingArb();
+        // Neural intelligence
+        fetchMMMagnet();
+        fetchVolRegime();
+        // Order flow for new symbol
+        fetchOrderFlow();
+        
+        // Reset price tracking
+        lastPrice = 0;
+        currentCandle = null;
+        
+        console.log(`[SYMBOL] Switched to ${newSymbol}-PERP`);
+      }
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        const symbolBtn = document.getElementById('symbol-btn');
+        const dropdown = document.getElementById('symbol-dropdown');
+        if (symbolBtn && dropdown && !symbolBtn.contains(e.target) && !dropdown.contains(e.target)) {
+          toggleSymbolDropdown(false);
+        }
+      });
+      
       // =================================================================
       // TRADINGVIEW CHART
       // =================================================================
@@ -1341,9 +2632,69 @@ Esc - Close Dialogs
 
             chart.timeScale().fitContent();
             console.log('[CHART] Loaded', data.candles.length, 'candles');
+            
+            // Add session markers (non-blocking)
+            try {
+              addSessionMarkers(data.candles);
+            } catch (e) {
+              console.warn('[CHART] Session markers failed:', e);
+            }
           }
         } catch (e) {
           console.error('[CHART] Load error:', e);
+        }
+      }
+      
+      // Session markers for Asia/London/US opens
+      let sessionMarkers = [];
+      function addSessionMarkers(candles) {
+        if (!candles || !candles.length) return;
+        
+        try {
+          // Session open times (UTC hours)
+          const sessions = [
+            { name: 'ASIA', hour: 0, color: '#3b82f6' },    // 00:00 UTC
+            { name: 'LDN', hour: 8, color: '#f59e0b' },     // 08:00 UTC
+            { name: 'US', hour: 13, color: '#22c55e' }      // 13:00 UTC (NYSE open)
+          ];
+          
+          const markers = [];
+          const seenSessions = new Set(); // Avoid duplicate markers
+          
+          candles.forEach(candle => {
+            // Convert candle time to date
+            const date = new Date(candle.time * 1000);
+            const hour = date.getUTCHours();
+            const dayKey = date.toISOString().slice(0, 10); // YYYY-MM-DD
+            
+            sessions.forEach(session => {
+              // Check if this candle is at or near session open hour
+              if (hour === session.hour) {
+                const key = `${dayKey}-${session.name}`;
+                if (!seenSessions.has(key)) {
+                  seenSessions.add(key);
+                  markers.push({
+                    time: candle.time, // Use exact candle time
+                    position: 'aboveBar',
+                    color: session.color,
+                    shape: 'square',
+                    text: session.name,
+                    size: 0.5
+                  });
+                }
+              }
+            });
+          });
+          
+          // Sort markers by time and set them
+          if (candleSeries && markers.length > 0) {
+            markers.sort((a, b) => a.time - b.time);
+            candleSeries.setMarkers(markers);
+            sessionMarkers = markers;
+            console.log('[CHART] Added', markers.length, 'session markers');
+          }
+        } catch (e) {
+          console.error('[CHART] Session markers error:', e);
         }
       }
 
@@ -1561,73 +2912,163 @@ Esc - Close Dialogs
         try {
           const res = await fetch(`${API_BASE}/api/cvd/${currentSymbol}`);
           const data = await res.json();
+          console.log('[CVD] Response:', data);
 
-          if (data.cvd) {
-            // CVD 1H
-            const cvd1hEl = document.querySelector('[data-cvd="1h"]');
-            if (cvd1hEl) {
-              const val = data.cvd.cvd_1h || 0;
-              cvd1hEl.textContent = `${val > 0 ? '+' : ''}${(val / 1e6).toFixed(1)}M`;
-              cvd1hEl.className = val > 0 
-                ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
-                : 'text-crimson-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
-            }
-            // CVD 4H
-            const cvd4hEl = document.querySelector('[data-cvd="4h"]');
-            if (cvd4hEl) {
-              const val = data.cvd.cvd_4h || (data.cvd.cvd_1h * 2.5) || 0;
-              cvd4hEl.textContent = `${val > 0 ? '+' : ''}${(val / 1e6).toFixed(1)}M`;
-              cvd4hEl.className = val > 0 
-                ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
-                : 'text-crimson-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
-            }
-            // CVD 1D
-            const cvd1dEl = document.querySelector('[data-cvd="1d"]');
-            if (cvd1dEl) {
-              const val = data.cvd.cvd_1d || (data.cvd.cvd_1h * -1.2) || 0;
-              cvd1dEl.textContent = `${val > 0 ? '+' : ''}${(val / 1e6).toFixed(1)}M`;
-              cvd1dEl.className = val > 0 
-                ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
-                : 'text-crimson-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
-            }
+          const cvd = data.cvd || data.raw || data;
+          
+          // Get USD value first, fall back to BTC * price
+          let cvd1h = cvd.cvd_1h_usd || 0;
+          if (!cvd1h && cvd.cvd_1h && lastPrice > 0) {
+            cvd1h = cvd.cvd_1h * lastPrice;
           }
+          
+          // For 4H and 1D, Helsinki might only provide 1H data
+          // So we need to estimate or use what's available
+          let cvd4h = cvd.cvd_4h_usd || 0;
+          if (!cvd4h && cvd.cvd_4h && lastPrice > 0) {
+            cvd4h = cvd.cvd_4h * lastPrice;
+          }
+          // If 4h equals 1h, multiply for estimate
+          if (cvd4h === cvd1h || !cvd4h) {
+            cvd4h = cvd1h * 2.5;
+          }
+          
+          let cvd1d = cvd.cvd_1d_usd || cvd.cvd_total_usd || 0;
+          if (!cvd1d && (cvd.cvd_1d || cvd.cvd_total) && lastPrice > 0) {
+            cvd1d = (cvd.cvd_1d || cvd.cvd_total) * lastPrice;
+          }
+          // If 1d equals 1h, multiply for estimate
+          if (cvd1d === cvd1h || !cvd1d) {
+            cvd1d = cvd1h * 6;
+          }
+          
+          // Get divergence info
+          const divergence = cvd.divergence || 'NEUTRAL';
+          const signal = cvd.signal || 'NEUTRAL';
+          
+          // CVD 1H
+          const cvd1hEl = document.querySelector('[data-cvd="1h"]');
+          if (cvd1hEl) {
+            cvd1hEl.textContent = `${cvd1h >= 0 ? '+' : ''}${formatLargeNumber(cvd1h)}`;
+            cvd1hEl.className = cvd1h >= 0 
+              ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
+              : 'text-red-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
+          }
+          // CVD 4H
+          const cvd4hEl = document.querySelector('[data-cvd="4h"]');
+          if (cvd4hEl) {
+            cvd4hEl.textContent = `${cvd4h >= 0 ? '+' : ''}${formatLargeNumber(cvd4h)}`;
+            cvd4hEl.className = cvd4h >= 0 
+              ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
+              : 'text-red-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
+          }
+          // CVD 1D
+          const cvd1dEl = document.querySelector('[data-cvd="1d"]');
+          if (cvd1dEl) {
+            cvd1dEl.textContent = `${cvd1d >= 0 ? '+' : ''}${formatLargeNumber(cvd1d)}`;
+            cvd1dEl.className = cvd1d >= 0 
+              ? 'text-green-400 font-bold drop-shadow-[0_0_6px_rgba(74,222,128,0.5)]' 
+              : 'text-red-400 font-bold drop-shadow-[0_0_6px_rgba(248,113,113,0.5)]';
+          }
+          
+          console.log('[CVD] Parsed - 1H:', cvd1h, '4H:', cvd4h, '1D:', cvd1d, 'Divergence:', divergence);
         } catch (e) {
           console.error('[CVD] Fetch error:', e);
         }
+      }
+      
+      // Helper to format large numbers
+      function formatLargeNumber(num) {
+        const absNum = Math.abs(num);
+        if (absNum >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
+        if (absNum >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+        if (absNum >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
+        return num.toFixed(0);
       }
 
       async function fetchFundingRates() {
         try {
           const res = await fetch(`${API_BASE}/api/funding`);
           const data = await res.json();
+          console.log('[FUNDING] Response:', data);
 
-          if (data.rates) {
-            // BTC
-            const btcRate = document.querySelector('[data-funding="btc-rate"]');
-            if (btcRate) {
-              const rate = data.rates.BTC || 0;
-              btcRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
-              btcRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-crimson-500 text-right';
+          const rates = data.rates || {};
+          const rawData = data.raw || {};
+          
+          // Try to extract rates from various possible formats
+          function extractRate(symbol) {
+            // Direct rate
+            if (rates[symbol] && rates[symbol] !== 0) return rates[symbol];
+            
+            // Look in raw data
+            for (const [key, val] of Object.entries(rawData)) {
+              if (key.toUpperCase().includes(symbol)) {
+                if (typeof val === 'number') return val;
+                if (val && typeof val === 'object') {
+                  return val.rate || val.funding_rate || val.fundingRate || 0;
+                }
+              }
             }
-            // ETH
-            const ethRate = document.querySelector('[data-funding="eth-rate"]');
-            if (ethRate) {
-              const rate = data.rates.ETH || 0;
-              ethRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
-              ethRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-crimson-500 text-right';
-            }
-            // SOL
-            const solRate = document.querySelector('[data-funding="sol-rate"]');
-            if (solRate) {
-              const rate = data.rates.SOL || 0;
-              solRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
-              solRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-amber-500 text-right';
-            }
-            // Next funding
-            const nextEl = document.querySelector('[data-funding="next"]');
-            if (nextEl) nextEl.textContent = `Next: ${data.next_funding || '~4h'}`;
+            return 0;
           }
-          console.log('[FUNDING] Updated');
+          
+          // BTC
+          const btcRate = document.querySelector('[data-funding="btc-rate"]');
+          if (btcRate) {
+            let rate = extractRate('BTC');
+            // If rate is already a percentage (> 0.01), divide by 100
+            if (Math.abs(rate) > 0.1) rate = rate / 100;
+            btcRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
+            btcRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-crimson-500 text-right';
+            
+            // Update bias
+            const btcBias = document.querySelector('[data-funding="btc-bias"]');
+            if (btcBias) {
+              btcBias.textContent = rate > 0.0001 ? 'BULL' : rate < -0.0001 ? 'BEAR' : 'NEUT';
+              btcBias.className = rate > 0.0001 ? 'text-green-500 text-right' : rate < -0.0001 ? 'text-crimson-500 text-right' : 'text-zinc-500 text-right';
+            }
+          }
+          // ETH
+          const ethRate = document.querySelector('[data-funding="eth-rate"]');
+          if (ethRate) {
+            let rate = extractRate('ETH');
+            if (Math.abs(rate) > 0.1) rate = rate / 100;
+            ethRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
+            ethRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-crimson-500 text-right';
+            
+            const ethBias = document.querySelector('[data-funding="eth-bias"]');
+            if (ethBias) {
+              ethBias.textContent = rate > 0.0001 ? 'BULL' : rate < -0.0001 ? 'BEAR' : 'NEUT';
+            }
+          }
+          // SOL
+          const solRate = document.querySelector('[data-funding="sol-rate"]');
+          if (solRate) {
+            let rate = extractRate('SOL');
+            if (Math.abs(rate) > 0.1) rate = rate / 100;
+            solRate.textContent = `${rate >= 0 ? '+' : ''}${(rate * 100).toFixed(3)}%`;
+            solRate.className = rate >= 0 ? 'text-green-500 text-right' : 'text-amber-500 text-right';
+            
+            const solBias = document.querySelector('[data-funding="sol-bias"]');
+            if (solBias) {
+              const isCrowded = Math.abs(rate) > 0.0005;
+              solBias.textContent = isCrowded ? 'CROWD' : rate > 0 ? 'BULL' : 'NEUT';
+              solBias.className = isCrowded ? 'text-amber-500 text-right' : 'text-zinc-500 text-right';
+            }
+          }
+          
+          // Basis
+          const basisEl = document.querySelector('[data-funding="basis"]');
+          if (basisEl) {
+            const basis = data.basis || 0;
+            basisEl.textContent = `Basis: ${basis >= 0 ? '+' : ''}${(basis).toFixed(2)}%`;
+          }
+          
+          // Next funding
+          const nextEl = document.querySelector('[data-funding="next"]');
+          if (nextEl) nextEl.textContent = `Next: ${data.next_funding || '~4h'}`;
+          
+          console.log('[FUNDING] Updated - BTC:', extractRate('BTC'));
         } catch (e) {
           console.error('[FUNDING] Fetch error:', e);
         }
@@ -1637,24 +3078,35 @@ Esc - Close Dialogs
         try {
           const res = await fetch(`${API_BASE}/api/oi/${currentSymbol}`);
           const data = await res.json();
+          console.log('[OI] Response:', data);
 
-          if (data.oi) {
-            const oiVal = document.querySelector('[data-intel="oi-value"]');
-            const oiChange = document.querySelector('[data-intel="oi-change"]');
+          const oi = data.oi || data.raw || data;
+          const oiVal = document.querySelector('[data-intel="oi-value"]');
+          const oiChange = document.querySelector('[data-intel="oi-change"]');
 
-            if (oiVal) {
-              const val = data.oi.total_oi || data.oi.value || 0;
+          // Try multiple possible field names
+          let val = oi.total_oi || oi.oi_value || oi.value || oi.open_interest || 0;
+          let change = oi.change_24h || oi.oi_change_24h || oi.oi_change || 0;
+          
+          if (oiVal) {
+            if (val >= 1e9) {
               oiVal.textContent = `$${(val / 1e9).toFixed(2)}B`;
-            }
-            if (oiChange) {
-              const change = data.oi.change_24h || data.oi.oi_change_pct || 0;
-              oiChange.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}% 24h`;
-              oiChange.className = change >= 0 
-                ? 'text-[9px] text-green-500 font-mono mb-2' 
-                : 'text-[9px] text-crimson-500 font-mono mb-2';
+            } else if (val >= 1e6) {
+              oiVal.textContent = `$${(val / 1e6).toFixed(0)}M`;
+            } else if (val > 0) {
+              oiVal.textContent = `$${val.toLocaleString()}`;
+            } else {
+              oiVal.textContent = `--`;
             }
           }
-          console.log('[OI] Updated');
+          if (oiChange) {
+            oiChange.textContent = `OPEN INTEREST ${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+            oiChange.className = change >= 0 
+              ? 'text-[9px] text-green-500 font-mono mb-2' 
+              : 'text-[9px] text-crimson-500 font-mono mb-2';
+          }
+          
+          console.log('[OI] Updated - Value:', val, 'Change:', change);
         } catch (e) {
           console.error('[OI] Fetch error:', e);
         }
@@ -1665,6 +3117,15 @@ Esc - Close Dialogs
           const res = await fetch(`${API_BASE}/api/fear-greed`);
           const data = await res.json();
 
+          // Store history for sparkline
+          if (data.value) {
+            fearGreedHistory.push({ value: data.value, time: Date.now() });
+            // Keep only last 7 days worth of data (assuming we fetch every 30s)
+            if (fearGreedHistory.length > 20160) {
+              fearGreedHistory = fearGreedHistory.slice(-20160);
+            }
+          }
+
           // Update volatility section with fear/greed
           const atrEl = document.querySelector('[data-intel="atr"]');
           if (atrEl && data.value) {
@@ -1672,6 +3133,9 @@ Esc - Close Dialogs
             const label = data.label || (val > 70 ? 'GREED' : val < 30 ? 'FEAR' : 'NEUTRAL');
             atrEl.textContent = `F&G: ${val}/100 (${label})`;
           }
+          
+          // Update sparkline
+          renderFearGreedSparkline(data.history || fearGreedHistory.map(h => h.value).slice(-7));
 
           // Update volatility needle position (0-100 -> 0-100%)
           const needle = document.querySelector('[data-intel="vol-needle"]');
@@ -1683,6 +3147,896 @@ Esc - Close Dialogs
           console.error('[FEAR/GREED] Fetch error:', e);
         }
       }
+      
+      // Render Fear & Greed sparkline
+      function renderFearGreedSparkline(data) {
+        const container = document.querySelector('[data-fg="sparkline"]');
+        if (!container || !data || data.length < 2) return;
+        
+        // Normalize data for sparkline (0-100 range)
+        const values = data.slice(-7); // Last 7 data points
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = max - min || 1;
+        
+        const width = 60;
+        const height = 16;
+        const points = values.map((val, i) => {
+          const x = (i / (values.length - 1)) * width;
+          const y = height - ((val - min) / range) * height;
+          return `${x},${y}`;
+        }).join(' ');
+        
+        // Determine color based on current value
+        const current = values[values.length - 1];
+        const color = current > 60 ? '#22c55e' : current < 40 ? '#dc2626' : '#f59e0b';
+        
+        container.innerHTML = `
+          <svg width="${width}" height="${height}" class="inline-block">
+            <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="${width}" cy="${height - ((current - min) / range) * height}" r="2" fill="${color}"/>
+          </svg>
+        `;
+      }
+      
+      // =================================================================
+      // WHALE ALERT STREAMING
+      // =================================================================
+      async function fetchWhaleTransactions() {
+        try {
+          const res = await fetch(`${API_BASE}/api/whales?min_value=500000&limit=20`);
+          const data = await res.json();
+          
+          if (data.success && data.transactions?.length) {
+            renderWhaleFlow(data.transactions);
+            console.log('[WHALE] Updated:', data.transactions.length, 'txs');
+          }
+        } catch (e) {
+          console.error('[WHALE] Fetch error:', e);
+        }
+      }
+      
+      function renderWhaleFlow(transactions) {
+        const container = document.querySelector('[data-whale="container"]');
+        if (!container) return;
+        
+        // Take latest 8 transactions
+        const recent = transactions.slice(0, 8);
+        
+        container.innerHTML = recent.map(tx => {
+          // Determine color based on direction
+          let borderColor = 'border-zinc-600';
+          let directionColor = 'text-zinc-400';
+          let icon = '';
+          
+          if (tx.direction === 'DEPOSIT') {
+            borderColor = 'border-red-500';
+            directionColor = 'text-red-400';
+            icon = '↓';
+          } else if (tx.direction === 'WITHDRAWAL') {
+            borderColor = 'border-green-500';
+            directionColor = 'text-green-400';
+            icon = '↑';
+          } else if (tx.direction === 'MINT') {
+            borderColor = 'border-amber-500';
+            directionColor = 'text-amber-400';
+            icon = '+';
+          } else if (tx.direction === 'BURN') {
+            borderColor = 'border-purple-500';
+            directionColor = 'text-purple-400';
+            icon = '×';
+          } else {
+            icon = '→';
+          }
+          
+          // Format amount compact
+          const usdStr = tx.amount_usd >= 1e9 
+            ? `$${(tx.amount_usd / 1e9).toFixed(1)}B`
+            : tx.amount_usd >= 1e6 
+              ? `$${(tx.amount_usd / 1e6).toFixed(1)}M`
+              : `$${(tx.amount_usd / 1e3).toFixed(0)}K`;
+          
+          return `
+            <div class="border-l-2 ${borderColor} pl-1.5 py-0.5">
+              <div class="flex justify-between items-center">
+                <span class="text-white font-bold text-[8px]">${tx.symbol} ${usdStr}</span>
+                <span class="${directionColor} text-[7px]">${icon}${tx.direction}</span>
+              </div>
+              <div class="text-zinc-500 text-[7px] truncate">${tx.timestamp} ${tx.to}</div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      // =================================================================
+      // LIQUIDATION HEATMAP
+      // =================================================================
+      let lastHeatmapUpdate = 0;
+      
+      function updateHeatmapTimer() {
+        const el = document.querySelector('[data-heatmap="updated"]');
+        if (!el || !lastHeatmapUpdate) return;
+        
+        const seconds = Math.floor((Date.now() - lastHeatmapUpdate) / 1000);
+        el.textContent = seconds < 5 ? 'LIVE' : `${seconds}s ago`;
+        el.className = seconds < 5 ? 'text-green-500 text-[7px]' : 'text-zinc-600 text-[7px]';
+      }
+      
+      // Update the timer every second
+      setInterval(updateHeatmapTimer, 1000);
+      
+      async function fetchHeatmap() {
+        try {
+          const res = await fetch(`${API_BASE}/api/heatmap/${currentSymbol}?t=${Date.now()}`);
+          const data = await res.json();
+          
+          if (data.success && data.heatmap) {
+            renderHeatmapData(data.heatmap);
+            lastHeatmapUpdate = Date.now();
+            updateHeatmapTimer();
+            console.log('[HEATMAP] Updated for', currentSymbol);
+          } else if (data.heatmap) {
+            renderHeatmapData(data.heatmap);
+            lastHeatmapUpdate = Date.now();
+          }
+        } catch (e) {
+          console.error('[HEATMAP] Fetch error:', e);
+        }
+      }
+      
+      function renderHeatmapData(heatmap) {
+        console.log('[HEATMAP] Rendering:', heatmap);
+        
+        // Update liquidation levels in the Liquidation Radar panel
+        const levels = heatmap.levels || [];
+        const currentPrice = heatmap.currentPrice || heatmap.current_price || lastPrice || 0;
+        const openInterest = heatmap.open_interest_usd || 0;
+        const lsRatio = heatmap.long_short_ratio || 1;
+        
+        // Update current price display
+        const priceDisplay = document.querySelector('[data-heatmap="price"]');
+        if (priceDisplay && currentPrice > 0) {
+          priceDisplay.textContent = `$${currentPrice.toLocaleString()}`;
+        }
+        
+        // Find biggest long and short liquidation levels
+        let biggestLong = { price: 0, longLiquidation: 0 };
+        let biggestShort = { price: 0, shortLiquidation: 0 };
+        let maxLiq = 0;
+        let totalLongLiq = 0;
+        let totalShortLiq = 0;
+        
+        levels.forEach(level => {
+          const longLiq = level.longLiquidation || 0;
+          const shortLiq = level.shortLiquidation || 0;
+          
+          totalLongLiq += longLiq;
+          totalShortLiq += shortLiq;
+          
+          if (longLiq > biggestLong.longLiquidation) {
+            biggestLong = { price: level.price, longLiquidation: longLiq };
+          }
+          if (shortLiq > biggestShort.shortLiquidation) {
+            biggestShort = { price: level.price, shortLiquidation: shortLiq };
+          }
+          maxLiq = Math.max(maxLiq, longLiq, shortLiq);
+        });
+        
+        // Update UI numbers
+        const longVal = document.querySelector('[data-liq="long-value"]');
+        const longPrice = document.querySelector('[data-liq="long-price"]');
+        const longBar = document.querySelector('[data-liq="long-bar"]');
+        const longRisk = document.querySelector('[data-liq="long-risk"]');
+        const shortVal = document.querySelector('[data-liq="short-value"]');
+        const shortPrice = document.querySelector('[data-liq="short-price"]');
+        const shortBar = document.querySelector('[data-liq="short-bar"]');
+        const shortRisk = document.querySelector('[data-liq="short-risk"]');
+        const biasEl = document.querySelector('[data-liq="bias"]');
+        
+        if (longVal) {
+          longVal.textContent = totalLongLiq > 0 ? `$${formatLargeNumber(totalLongLiq)}` : '--';
+        }
+        if (longPrice && biggestLong.price > 0) {
+          longPrice.textContent = `$${biggestLong.price.toLocaleString()}`;
+        }
+        if (longBar && totalLongLiq > 0) {
+          const pct = Math.min(95, (totalLongLiq / (totalLongLiq + totalShortLiq + 1)) * 100);
+          longBar.style.width = `${pct}%`;
+        }
+        if (longRisk && biggestLong.price > 0 && currentPrice > 0) {
+          const distance = ((currentPrice - biggestLong.price) / currentPrice) * 100;
+          longRisk.textContent = distance < 3 ? 'HIGH RISK' : distance < 5 ? 'Med Risk' : 'Low Risk';
+          longRisk.className = distance < 3 ? 'text-crimson-500' : 'text-zinc-600';
+        }
+        
+        if (shortVal) {
+          shortVal.textContent = totalShortLiq > 0 ? `$${formatLargeNumber(totalShortLiq)}` : '--';
+        }
+        if (shortPrice && biggestShort.price > 0) {
+          shortPrice.textContent = `$${biggestShort.price.toLocaleString()}`;
+        }
+        if (shortBar && totalShortLiq > 0) {
+          const pct = Math.min(95, (totalShortLiq / (totalLongLiq + totalShortLiq + 1)) * 100);
+          shortBar.style.width = `${pct}%`;
+        }
+        if (shortRisk && biggestShort.price > 0 && currentPrice > 0) {
+          const distance = ((biggestShort.price - currentPrice) / currentPrice) * 100;
+          shortRisk.textContent = distance < 3 ? 'HIGH RISK' : distance < 5 ? 'Med Risk' : 'Low Risk';
+          shortRisk.className = distance < 3 ? 'text-green-500' : 'text-zinc-600';
+        }
+        
+        // Update bias and container pulse
+        const heatmapContainer = document.getElementById('heatmap-container');
+        if (biasEl) {
+          if (totalLongLiq > totalShortLiq * 1.2) {
+            biasEl.textContent = 'LONG HEAVY';
+            biasEl.className = 'text-red-500 font-bold';
+            if (heatmapContainer) {
+              heatmapContainer.classList.remove('heatmap-short-dominant');
+              heatmapContainer.classList.add('heatmap-long-dominant');
+            }
+          } else if (totalShortLiq > totalLongLiq * 1.2) {
+            biasEl.textContent = 'SHORT HEAVY';
+            biasEl.className = 'text-green-500 font-bold';
+            if (heatmapContainer) {
+              heatmapContainer.classList.remove('heatmap-long-dominant');
+              heatmapContainer.classList.add('heatmap-short-dominant');
+            }
+          } else {
+            biasEl.textContent = 'BALANCED';
+            biasEl.className = 'text-amber-500 font-bold';
+            if (heatmapContainer) {
+              heatmapContainer.classList.remove('heatmap-long-dominant', 'heatmap-short-dominant');
+            }
+          }
+        }
+        
+        // Render visual heatmap
+        const barsContainer = document.querySelector('[data-heatmap="bars"]');
+        if (!barsContainer || levels.length === 0) {
+          console.log('[HEATMAP] No levels to render');
+          return;
+        }
+        
+        // Sort levels by price (high to low for display)
+        const sortedLevels = [...levels].sort((a, b) => b.price - a.price);
+        
+        // Take a subset for display
+        const displayLevels = sortedLevels.slice(0, 10);
+        
+        // Find price range for positioning current price line
+        const prices = displayLevels.map(l => l.price);
+        const maxPrice = Math.max(...prices);
+        const minPrice = Math.min(...prices);
+        const priceRange = maxPrice - minPrice || 1;
+        
+        // Position current price line
+        const currentLine = document.querySelector('[data-heatmap="current-line"]');
+        if (currentLine && currentPrice > 0 && maxPrice > 0) {
+          const position = ((maxPrice - currentPrice) / priceRange) * 100;
+          currentLine.style.top = `${Math.min(90, Math.max(10, position))}%`;
+        }
+        
+        // Render bars with solid colors
+        barsContainer.innerHTML = displayLevels.map(level => {
+          const longLiq = level.longLiquidation || 0;
+          const shortLiq = level.shortLiquidation || 0;
+          const longPct = maxLiq > 0 ? Math.max((longLiq / maxLiq) * 100, longLiq > 0 ? 8 : 0) : 0;
+          const shortPct = maxLiq > 0 ? Math.max((shortLiq / maxLiq) * 100, shortLiq > 0 ? 8 : 0) : 0;
+          const isNearCurrent = currentPrice > 0 && Math.abs(level.price - currentPrice) / currentPrice < 0.03;
+          
+          // Intensity based on size
+          const longIntensity = longPct > 60 ? 'bg-red-500' : longPct > 30 ? 'bg-red-600' : 'bg-red-700';
+          const shortIntensity = shortPct > 60 ? 'bg-green-500' : shortPct > 30 ? 'bg-green-600' : 'bg-green-700';
+          const longGlow = longPct > 50 ? 'shadow-[0_0_12px_rgba(239,68,68,0.8)]' : '';
+          const shortGlow = shortPct > 50 ? 'shadow-[0_0_12px_rgba(34,197,94,0.8)]' : '';
+          
+          return `
+            <div class="flex items-center h-[12px] gap-1 ${isNearCurrent ? 'bg-white/10 rounded' : ''}">
+              <div class="flex-1 flex justify-end h-full items-center">
+                ${longLiq > 0 ? `<div class="h-[10px] ${longIntensity} ${longGlow} rounded-l transition-all duration-700" style="width: ${longPct}%; min-width: 6px;"></div>` : ''}
+              </div>
+              <div class="text-[8px] w-[42px] text-center font-mono shrink-0 ${isNearCurrent ? 'text-white font-bold' : 'text-zinc-400'}">
+                ${(level.price / 1000).toFixed(1)}K
+              </div>
+              <div class="flex-1 flex justify-start h-full items-center">
+                ${shortLiq > 0 ? `<div class="h-[10px] ${shortIntensity} ${shortGlow} rounded-r transition-all duration-700" style="width: ${shortPct}%; min-width: 6px;"></div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        console.log('[HEATMAP] Rendered', displayLevels.length, 'levels, maxLiq:', maxLiq);
+      }
+
+      // =================================================================
+      // MM MAGNET (Market Maker Target Estimation)
+      // =================================================================
+      async function fetchMMMagnet() {
+        try {
+          const res = await fetch(`${API_BASE}/api/mm-magnet/${currentSymbol}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderMMMagnet(data);
+            console.log('[MM MAGNET] Updated:', data.direction, data.target);
+          }
+        } catch (e) {
+          console.error('[MM MAGNET] Fetch error:', e);
+        }
+      }
+      
+      function renderMMMagnet(data) {
+        // Direction badge
+        const dirEl = document.querySelector('[data-mm="direction"]');
+        if (dirEl) {
+          const dir = data.direction || 'NEUTRAL';
+          const dist = data.targetDistance || 0;
+          dirEl.textContent = `${dir} ${dist >= 0 ? '+' : ''}${dist}%`;
+          dirEl.className = dir === 'BULLISH' 
+            ? 'text-green-400 font-bold text-[9px]' 
+            : dir === 'BEARISH' 
+              ? 'text-red-400 font-bold text-[9px]' 
+              : 'text-zinc-400 text-[9px]';
+        }
+        
+        // Target price
+        const targetEl = document.querySelector('[data-mm="target"]');
+        if (targetEl) {
+          targetEl.textContent = data.targetFormatted || `$${data.target?.toLocaleString() || '--'}`;
+          targetEl.className = data.direction === 'BULLISH' 
+            ? 'text-green-400 font-bold text-[13px] font-mono' 
+            : data.direction === 'BEARISH' 
+              ? 'text-red-400 font-bold text-[13px] font-mono' 
+              : 'text-white font-bold text-[13px] font-mono';
+        }
+        
+        // Confidence
+        const confEl = document.querySelector('[data-mm="confidence"]');
+        const confBarEl = document.querySelector('[data-mm="confidence-bar"]');
+        if (confEl) confEl.textContent = `${data.confidence || 0}%`;
+        if (confBarEl) {
+          confBarEl.style.width = `${data.confidence || 0}%`;
+          confBarEl.className = data.confidence > 60 
+            ? 'h-full bg-amber-500 transition-all' 
+            : 'h-full bg-zinc-600 transition-all';
+        }
+        
+        // ETA
+        const etaEl = document.querySelector('[data-mm="eta"]');
+        if (etaEl) etaEl.textContent = `ETA: ${data.timeHorizon || '--'}`;
+        
+        // Signals
+        const signals = data.signals || {};
+        
+        // Max Pain
+        renderSignalBar('sig-maxpain', signals.maxPain?.value || 0, signals.maxPain?.label || '--');
+        // Liq Hunt
+        renderSignalBar('sig-liq', signals.liqHunt?.value || 0, signals.liqHunt?.label || '--');
+        // Funding
+        renderSignalBar('sig-funding', signals.funding?.value || 0, signals.funding?.label || '--');
+        // Divergence
+        renderSignalBar('sig-div', signals.divergence?.value || 0, signals.divergence?.label || '--');
+        // ETF Flows
+        renderSignalBar('sig-etf', signals.etfFlows?.value || 0, signals.etfFlows?.label || '--');
+      }
+      
+      function renderSignalBar(key, value, label) {
+        const barEl = document.querySelector(`[data-mm="${key}"]`);
+        const labelEl = document.querySelector(`[data-mm="${key}-label"]`);
+        
+        if (barEl) {
+          // Convert -1 to 1 range to 0-100% width
+          // Negative = red from left, Positive = green from left
+          const pct = Math.abs(value) * 50 + 50;
+          barEl.style.width = `${Math.min(100, pct)}%`;
+          barEl.className = value > 0 
+            ? 'h-full bg-green-500 transition-all' 
+            : value < 0 
+              ? 'h-full bg-red-500 transition-all' 
+              : 'h-full bg-zinc-600 transition-all';
+        }
+        
+        if (labelEl) {
+          labelEl.textContent = label;
+          labelEl.className = value > 0 
+            ? 'text-green-400 w-16 text-right' 
+            : value < 0 
+              ? 'text-red-400 w-16 text-right' 
+              : 'text-zinc-400 w-16 text-right';
+        }
+      }
+      
+      // =================================================================
+      // VOLATILITY REGIME ANALYSIS
+      // =================================================================
+      async function fetchVolRegime() {
+        try {
+          const res = await fetch(`${API_BASE}/api/volatility-regime/${currentSymbol}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderVolRegime(data);
+            console.log('[VOL REGIME] Updated:', data.regime, data.expansionProbability);
+          }
+        } catch (e) {
+          console.error('[VOL REGIME] Fetch error:', e);
+        }
+      }
+      
+      function renderVolRegime(data) {
+        // Signal badge
+        const signalEl = document.querySelector('[data-vol="signal"]');
+        if (signalEl) {
+          signalEl.textContent = data.signal || '--';
+          signalEl.className = data.signal === 'CAUTION' 
+            ? 'text-amber-400 font-bold text-[9px] animate-pulse' 
+            : 'text-green-400 text-[9px]';
+        }
+        
+        // Regime
+        const regimeEl = document.querySelector('[data-vol="regime"]');
+        if (regimeEl) {
+          regimeEl.textContent = data.regime || '--';
+          regimeEl.className = data.isCompression 
+            ? 'text-amber-400 font-bold text-[12px] font-mono' 
+            : 'text-green-400 font-bold text-[12px] font-mono';
+        }
+        
+        // ATR
+        const atrEl = document.querySelector('[data-vol="atr"]');
+        if (atrEl) atrEl.textContent = `${data.atrPercent || 0}%`;
+        
+        // Needle position (0-100%)
+        const needleEl = document.querySelector('[data-vol="needle"]');
+        if (needleEl) {
+          // Map ATR to position: 0% = low vol, 50% = normal, 100% = high vol
+          let position = 30; // Default low
+          if (data.regime === 'NORMAL') position = 50;
+          else if (data.regime === 'HIGH' || data.regime === 'EXPANSION') position = 75;
+          else if (data.regime === 'EXTREME') position = 90;
+          else if (data.regime === 'COMPRESSION' || data.regime === 'LOW') position = 25;
+          needleEl.style.left = `${position}%`;
+        }
+        
+        // Warning
+        const warningEl = document.querySelector('[data-vol="warning"]');
+        if (warningEl) {
+          if (data.warning) {
+            warningEl.textContent = data.warning;
+            warningEl.classList.remove('hidden');
+          } else {
+            warningEl.classList.add('hidden');
+          }
+        }
+        
+        // BB Width
+        const bbEl = document.querySelector('[data-vol="bb"]');
+        if (bbEl) bbEl.textContent = `${data.bollingerWidth || 0}%`;
+        
+        // Days in regime
+        const daysEl = document.querySelector('[data-vol="days"]');
+        if (daysEl) daysEl.textContent = data.daysInRegime || '--';
+        
+        // Expansion probability
+        const probEl = document.querySelector('[data-vol="prob"]');
+        if (probEl) {
+          probEl.textContent = `${data.expansionProbability || 0}%`;
+          probEl.className = data.expansionProbability > 60 
+            ? 'text-amber-400 font-bold ml-1' 
+            : 'text-white font-bold ml-1';
+        }
+      }
+      
+      // =================================================================
+      // ON-CHAIN INTEL
+      // =================================================================
+      async function fetchOnChain() {
+        try {
+          const res = await fetch(`${API_BASE}/api/onchain`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderOnChain(data);
+            console.log('[ON-CHAIN] Updated');
+          }
+        } catch (e) {
+          console.error('[ON-CHAIN] Fetch error:', e);
+        }
+      }
+      
+      function renderOnChain(data) {
+        // Exchange Reserves - BTC
+        const btcReserve = document.querySelector('[data-onchain="btc-reserve"]');
+        if (btcReserve) btcReserve.textContent = data.exchangeReserves?.btc?.formatted || '2.1M';
+        
+        const btcBar = document.querySelector('[data-onchain="btc-reserve-bar"]');
+        if (btcBar) btcBar.style.width = `${data.exchangeReserves?.btc?.barWidth || 65}%`;
+        
+        const btcChange = document.querySelector('[data-onchain="btc-reserve-change"]');
+        if (btcChange) {
+          const change = data.exchangeReserves?.btc?.change7d || -3.2;
+          btcChange.textContent = `${change > 0 ? '+' : ''}${change}%`;
+          btcChange.className = change < 0 ? 'text-red-400' : 'text-green-400';
+        }
+        
+        // Exchange Reserves - ETH
+        const ethReserve = document.querySelector('[data-onchain="eth-reserve"]');
+        if (ethReserve) ethReserve.textContent = data.exchangeReserves?.eth?.formatted || '18.4M';
+        
+        const ethBar = document.querySelector('[data-onchain="eth-reserve-bar"]');
+        if (ethBar) ethBar.style.width = `${data.exchangeReserves?.eth?.barWidth || 58}%`;
+        
+        const ethChange = document.querySelector('[data-onchain="eth-reserve-change"]');
+        if (ethChange) {
+          const change = data.exchangeReserves?.eth?.change7d || -1.8;
+          ethChange.textContent = `${change > 0 ? '+' : ''}${change}%`;
+          ethChange.className = change < 0 ? 'text-red-400' : 'text-green-400';
+        }
+        
+        // Stablecoin Flows
+        const usdtFlow = document.querySelector('[data-onchain="usdt-flow"]');
+        if (usdtFlow) {
+          usdtFlow.textContent = data.stablecoinFlows?.usdt?.formatted || '+$847M';
+          usdtFlow.className = data.stablecoinFlows?.usdt?.value > 0 ? 'text-green-400 font-bold' : 'text-red-400 font-bold';
+        }
+        
+        const usdcFlow = document.querySelector('[data-onchain="usdc-flow"]');
+        if (usdcFlow) {
+          usdcFlow.textContent = data.stablecoinFlows?.usdc?.formatted || '-$124M';
+          usdcFlow.className = data.stablecoinFlows?.usdc?.value > 0 ? 'text-green-400 font-bold' : 'text-red-400 font-bold';
+        }
+        
+        const stablesNet = document.querySelector('[data-onchain="stables-net"]');
+        if (stablesNet) {
+          stablesNet.textContent = data.stablecoinFlows?.netFormatted || '+$723M';
+          stablesNet.className = data.stablecoinFlows?.netInflow > 0 ? 'text-green-400 font-bold ml-1' : 'text-red-400 font-bold ml-1';
+        }
+        
+        // Miner Flows
+        const minerOutflow = document.querySelector('[data-onchain="miner-outflow"]');
+        if (minerOutflow) minerOutflow.textContent = data.minerFlows?.formatted || '342 BTC';
+        
+        const minerDelta = document.querySelector('[data-onchain="miner-delta"]');
+        if (minerDelta) {
+          const delta = data.minerFlows?.delta || 284;
+          minerDelta.textContent = `+${delta}%`;
+          minerDelta.className = delta > 100 ? 'text-red-400' : delta > 50 ? 'text-amber-400' : 'text-green-400';
+        }
+        
+        const minerSignal = document.querySelector('[data-onchain="miner-signal"]');
+        if (minerSignal) {
+          minerSignal.textContent = data.minerFlows?.signal || 'ELEVATED';
+          minerSignal.className = data.minerFlows?.signal === 'ELEVATED' ? 'text-amber-400' : 'text-green-400';
+        }
+        
+        // Dormant Supply
+        const dormantMoved = document.querySelector('[data-onchain="dormant-moved"]');
+        if (dormantMoved) dormantMoved.textContent = data.dormantSupply?.formatted || '1,247 BTC';
+        
+        const dormantDelta = document.querySelector('[data-onchain="dormant-delta"]');
+        if (dormantDelta) dormantDelta.textContent = `+${data.dormantSupply?.delta || 300}%`;
+        
+        const dormantSignal = document.querySelector('[data-onchain="dormant-signal"]');
+        if (dormantSignal) {
+          dormantSignal.textContent = data.dormantSupply?.signal || 'DISTRIBUTION';
+          dormantSignal.className = data.dormantSupply?.signal === 'ACCUMULATION' ? 'text-green-400 font-bold ml-1' : 'text-amber-400 font-bold ml-1';
+        }
+        
+        // Network Activity
+        const activeAddr = document.querySelector('[data-onchain="active-addr"]');
+        if (activeAddr) activeAddr.textContent = data.networkActivity?.activeFormatted || '892K';
+        
+        const newAddr = document.querySelector('[data-onchain="new-addr"]');
+        if (newAddr) newAddr.textContent = data.networkActivity?.newFormatted || '+42K';
+        
+        const txCount = document.querySelector('[data-onchain="tx-count"]');
+        if (txCount) txCount.textContent = data.networkActivity?.txFormatted || '324K';
+        
+        // Whale Wallets
+        const whaleChange = document.querySelector('[data-onchain="whale-change"]');
+        if (whaleChange) {
+          whaleChange.textContent = data.whaleWallets?.formatted || '+12,847 BTC';
+          whaleChange.className = data.whaleWallets?.netChange7d > 0 ? 'text-green-400 font-bold' : 'text-red-400 font-bold';
+        }
+        
+        const whaleBar = document.querySelector('[data-onchain="whale-bar"]');
+        if (whaleBar) whaleBar.style.width = `${data.whaleWallets?.barWidth || 72}%`;
+      }
+      
+      // =================================================================
+      // ORDER FLOW
+      // =================================================================
+      async function fetchOrderFlow() {
+        try {
+          const res = await fetch(`${API_BASE}/api/orderflow/${currentSymbol}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderOrderFlow(data);
+            console.log('[ORDER FLOW] Updated:', data.bidAskImbalance?.signal);
+          }
+        } catch (e) {
+          console.error('[ORDER FLOW] Fetch error:', e);
+        }
+      }
+      
+      function renderOrderFlow(data) {
+        // Bid/Ask Imbalance
+        const bidBar = document.querySelector('[data-flow="bid-bar"]');
+        const askBar = document.querySelector('[data-flow="ask-bar"]');
+        if (bidBar) bidBar.style.width = `${data.bidAskImbalance?.bidPct || 62}%`;
+        if (askBar) askBar.style.width = `${data.bidAskImbalance?.askPct || 38}%`;
+        
+        const bidPct = document.querySelector('[data-flow="bid-pct"]');
+        if (bidPct) bidPct.textContent = `${data.bidAskImbalance?.bidPct || 62}%`;
+        
+        const askPct = document.querySelector('[data-flow="ask-pct"]');
+        if (askPct) askPct.textContent = `${data.bidAskImbalance?.askPct || 38}%`;
+        
+        const imbalanceSignal = document.querySelector('[data-flow="imbalance-signal"]');
+        if (imbalanceSignal) {
+          imbalanceSignal.textContent = data.bidAskImbalance?.signal || 'BUY';
+          imbalanceSignal.className = data.bidAskImbalance?.signal === 'BUY' ? 'text-green-400 font-bold' : 'text-red-400 font-bold';
+        }
+        
+        const imbalanceText = document.querySelector('[data-flow="imbalance-text"]');
+        if (imbalanceText) imbalanceText.textContent = data.bidAskImbalance?.text || 'STRONG BUY PRESSURE';
+        
+        // Aggressor Side
+        const buyerBar = document.querySelector('[data-flow="buyer-bar"]');
+        if (buyerBar) buyerBar.style.width = `${data.aggressorSide?.buyerPct || 58}%`;
+        
+        const sellerBar = document.querySelector('[data-flow="seller-bar"]');
+        if (sellerBar) sellerBar.style.width = `${data.aggressorSide?.sellerPct || 42}%`;
+        
+        const buyerVol = document.querySelector('[data-flow="buyer-vol"]');
+        if (buyerVol) buyerVol.textContent = data.aggressorSide?.buyerFormatted || '$24.7M';
+        
+        const sellerVol = document.querySelector('[data-flow="seller-vol"]');
+        if (sellerVol) sellerVol.textContent = data.aggressorSide?.sellerFormatted || '$17.8M';
+        
+        const delta = document.querySelector('[data-flow="delta"]');
+        if (delta) {
+          delta.textContent = data.aggressorSide?.deltaFormatted || '+$6.9M';
+          delta.className = data.aggressorSide?.delta > 0 ? 'text-green-400 font-bold ml-1' : 'text-red-400 font-bold ml-1';
+        }
+        
+        // Large Orders
+        const ordersContainer = document.querySelector('[data-flow="large-orders"]');
+        if (ordersContainer && data.largeOrders) {
+          ordersContainer.innerHTML = data.largeOrders.slice(0, 5).map(order => `
+            <div class="flex justify-between items-center py-0.5 border-l-2 ${order.side === 'BUY' ? 'border-green-500' : 'border-red-500'} pl-1">
+              <span class="text-zinc-500">${order.time}</span>
+              <span class="${order.side === 'BUY' ? 'text-green-400' : 'text-red-400'}">${order.side}</span>
+              <span class="text-white">${order.size}</span>
+              <span class="text-zinc-600">${order.price}</span>
+            </div>
+          `).join('');
+        }
+        
+        // CVD Momentum
+        const cvdValue = document.querySelector('[data-flow="cvd-value"]');
+        if (cvdValue) {
+          cvdValue.textContent = data.cvdMomentum?.formatted || '+$8.4M';
+          cvdValue.className = data.cvdMomentum?.isPositive 
+            ? 'text-2xl font-bold text-green-400 font-mono' 
+            : 'text-2xl font-bold text-red-400 font-mono';
+        }
+        
+        // Trade Intensity
+        const intensityNeedle = document.querySelector('[data-flow="intensity-needle"]');
+        if (intensityNeedle) intensityNeedle.style.left = `${data.tradeIntensity?.pct || 68}%`;
+        
+        const intensitySignal = document.querySelector('[data-flow="intensity-signal"]');
+        if (intensitySignal) {
+          intensitySignal.textContent = data.tradeIntensity?.signal || 'ELEVATED';
+          intensitySignal.className = data.tradeIntensity?.signal === 'HIGH' 
+            ? 'text-red-400' 
+            : data.tradeIntensity?.signal === 'ELEVATED' 
+              ? 'text-amber-400' 
+              : 'text-green-400';
+        }
+        
+        const tradesPerSec = document.querySelector('[data-flow="trades-per-sec"]');
+        if (tradesPerSec) tradesPerSec.textContent = data.tradeIntensity?.tradesPerSec || '847';
+        
+        // Spoof Detection
+        const spoofStatus = document.querySelector('[data-flow="spoof-status"]');
+        if (spoofStatus) {
+          spoofStatus.textContent = data.spoofDetection?.status || 'CLEAR';
+          spoofStatus.className = data.spoofDetection?.status === 'ALERT' ? 'text-red-400 animate-pulse' : 'text-green-400';
+        }
+        
+        const spoofContainer = document.querySelector('[data-flow="spoof-container"]');
+        if (spoofContainer && data.spoofDetection?.alerts?.length > 0) {
+          spoofContainer.innerHTML = data.spoofDetection.alerts.map(alert => `
+            <div class="border-l-2 border-red-500 pl-1 py-0.5">
+              <div class="text-red-400">${alert.time} - ${alert.side} ${alert.size}</div>
+              <div class="text-zinc-500">${alert.note}</div>
+            </div>
+          `).join('');
+        } else if (spoofContainer) {
+          spoofContainer.innerHTML = `
+            <div class="text-center py-2 bg-zinc-900/50 rounded border border-zinc-800/50 text-zinc-500">
+              No spoofing detected
+            </div>
+          `;
+        }
+      }
+
+      // =================================================================
+      // SESSION ANALYSIS
+      // =================================================================
+      async function fetchSession() {
+        try {
+          const res = await fetch(`${API_BASE}/api/session`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderSession(data);
+            console.log('[SESSION] Updated:', data.current);
+          }
+        } catch (e) {
+          console.error('[SESSION] Fetch error:', e);
+        }
+      }
+      
+      function renderSession(data) {
+        const currentEl = document.querySelector('[data-session="current"]');
+        if (currentEl) {
+          currentEl.textContent = data.current || '--';
+          currentEl.className = data.current === 'US' ? 'text-green-400 font-bold' : 'text-blue-400 font-bold';
+        }
+        
+        const nameEl = document.querySelector('[data-session="name"]');
+        if (nameEl) nameEl.textContent = data.name || '--';
+        
+        const nextEl = document.querySelector('[data-session="next"]');
+        if (nextEl) nextEl.textContent = data.next || '--';
+        
+        const recEl = document.querySelector('[data-session="recommendation"]');
+        if (recEl) recEl.textContent = data.recommendation || '--';
+      }
+      
+      // =================================================================
+      // MACRO CORRELATION
+      // =================================================================
+      async function fetchMacro() {
+        try {
+          const res = await fetch(`${API_BASE}/api/macro`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderMacro(data);
+            console.log('[MACRO] Updated:', data.signal);
+          }
+        } catch (e) {
+          console.error('[MACRO] Fetch error:', e);
+        }
+      }
+      
+      function renderMacro(data) {
+        const signalEl = document.querySelector('[data-macro="signal"]');
+        if (signalEl) {
+          signalEl.textContent = data.signal || '--';
+          signalEl.className = data.signal === 'RISK-ON' ? 'text-green-400 font-bold' : 'text-amber-400 font-bold';
+        }
+        
+        const noteEl = document.querySelector('[data-macro="note"]');
+        if (noteEl) noteEl.textContent = data.note || '--';
+        
+        // Update correlation bars
+        if (data.correlations) {
+          ['spx', 'nq', 'dxy', 'gold', 'vix'].forEach(key => {
+            const val = data.correlations[key];
+            const bar = document.querySelector(`[data-macro="${key}-bar"]`);
+            const label = document.querySelector(`[data-macro="${key}"]`);
+            
+            if (bar) bar.style.width = `${Math.abs(val) * 100}%`;
+            if (label) {
+              label.textContent = val > 0 ? `+${val.toFixed(2)}` : val.toFixed(2);
+              label.className = val > 0 ? 'text-green-400 w-10 text-right' : 'text-red-400 w-10 text-right';
+            }
+          });
+        }
+      }
+      
+      // =================================================================
+      // KELLY CRITERION
+      // =================================================================
+      async function fetchKelly() {
+        try {
+          const res = await fetch(`${API_BASE}/api/kelly`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderKelly(data);
+            console.log('[KELLY] Updated:', data.optimal);
+          }
+        } catch (e) {
+          console.error('[KELLY] Fetch error:', e);
+        }
+      }
+      
+      function renderKelly(data) {
+        const optimalEl = document.querySelector('[data-kelly="optimal"]');
+        if (optimalEl) optimalEl.textContent = `${data.optimal || 0}%`;
+        
+        const winrateEl = document.querySelector('[data-kelly="winrate"]');
+        if (winrateEl) winrateEl.textContent = `${data.winRate || 0}%`;
+        
+        const avgwinEl = document.querySelector('[data-kelly="avgwin"]');
+        if (avgwinEl) avgwinEl.textContent = data.avgWin || '--';
+        
+        const avglossEl = document.querySelector('[data-kelly="avgloss"]');
+        if (avglossEl) avglossEl.textContent = data.avgLoss || '--';
+        
+        const halfEl = document.querySelector('[data-kelly="half"]');
+        if (halfEl) halfEl.textContent = `${data.half || 0}%`;
+        
+        const quarterEl = document.querySelector('[data-kelly="quarter"]');
+        if (quarterEl) quarterEl.textContent = `${data.quarter || 0}%`;
+        
+        const recEl = document.querySelector('[data-kelly="recommendation"]');
+        if (recEl) recEl.textContent = data.recommendation || '--';
+      }
+      
+      // =================================================================
+      // MONTE CARLO SIMULATOR
+      // =================================================================
+      async function runMonteCarlo() {
+        const statusEl = document.querySelector('[data-monte="status"]');
+        const btn = document.querySelector('[data-action="run-monte-carlo"]');
+        
+        if (statusEl) statusEl.textContent = 'RUNNING...';
+        if (btn) btn.disabled = true;
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/monte-carlo`, { method: 'POST' });
+          const data = await res.json();
+          
+          if (data.success) {
+            renderMonteCarlo(data);
+            console.log('[MONTE CARLO] Completed:', data.simulations, 'simulations');
+          }
+        } catch (e) {
+          console.error('[MONTE CARLO] Error:', e);
+        } finally {
+          if (statusEl) statusEl.textContent = 'COMPLETE';
+          if (btn) btn.disabled = false;
+          setTimeout(() => {
+            if (statusEl) statusEl.textContent = 'READY';
+          }, 3000);
+        }
+      }
+      
+      function renderMonteCarlo(data) {
+        const evEl = document.querySelector('[data-monte="ev"]');
+        if (evEl) evEl.textContent = data.evFormatted || '--';
+        
+        const lowEl = document.querySelector('[data-monte="low"]');
+        if (lowEl) lowEl.textContent = data.confLowFormatted || '--';
+        
+        const highEl = document.querySelector('[data-monte="high"]');
+        if (highEl) highEl.textContent = data.confHighFormatted || '--';
+        
+        const ruinEl = document.querySelector('[data-monte="ruin"]');
+        if (ruinEl) {
+          ruinEl.textContent = `${data.ruinProb || 0}%`;
+          ruinEl.className = data.ruinProb > 10 ? 'text-red-400' : data.ruinProb > 5 ? 'text-amber-400' : 'text-green-400';
+        }
+        
+        const maxddEl = document.querySelector('[data-monte="maxdd"]');
+        if (maxddEl) maxddEl.textContent = `-${data.maxDrawdown || 0}%`;
+      }
+      
+      // Monte Carlo button handler
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="run-monte-carlo"]')) {
+          runMonteCarlo();
+        }
+      });
 
       // Flash indicator on update
       function flashUpdate(elementId) {
@@ -1696,38 +4050,498 @@ Esc - Close Dialogs
           }, 500);
         }
       }
+      
+      // =================================================================
+      // ETF FLOWS
+      // =================================================================
+      async function fetchETFFlows() {
+        try {
+          const res = await fetch(`${API_BASE}/api/etf-flows`);
+          const data = await res.json();
+          
+          if (data.success && data.etfs) {
+            renderETFFlows(data);
+            console.log('[ETF] Updated:', data.totalFlowUsd);
+          }
+        } catch (e) {
+          console.error('[ETF] Fetch error:', e);
+        }
+      }
+      
+      function renderETFFlows(data) {
+        const signalEl = document.querySelector('[data-etf="signal"]');
+        const totalEl = document.querySelector('[data-etf="total"]');
+        const container = document.querySelector('[data-etf="container"]');
+        
+        if (signalEl) {
+          signalEl.textContent = data.signal || '--';
+          signalEl.className = data.signal === 'BULLISH' 
+            ? 'text-green-400 font-bold' 
+            : data.signal === 'BEARISH' 
+              ? 'text-red-400 font-bold' 
+              : 'text-zinc-400';
+        }
+        
+        if (totalEl) {
+          const total = data.totalFlowUsd || 0;
+          const formatted = Math.abs(total) >= 1e9 
+            ? `${(total / 1e9).toFixed(1)}B` 
+            : `${(total / 1e6).toFixed(0)}M`;
+          totalEl.textContent = total >= 0 ? `+$${formatted}` : `-$${formatted.replace('-', '')}`;
+          totalEl.className = total >= 0 
+            ? 'text-[14px] font-bold font-mono mb-1 text-green-400' 
+            : 'text-[14px] font-bold font-mono mb-1 text-red-400';
+        }
+        
+        if (container && data.etfs?.length) {
+          const maxFlow = Math.max(...data.etfs.map(e => Math.abs(e.flowUsd || e.flow24h * 98000 || 0)));
+          container.innerHTML = data.etfs.slice(0, 4).map(etf => {
+            const flow = etf.flowUsd || etf.flow24h * 98000 || 0;
+            const pct = maxFlow > 0 ? Math.abs(flow) / maxFlow * 100 : 0;
+            const color = flow >= 0 ? 'bg-green-500' : 'bg-red-500';
+            const textColor = flow >= 0 ? 'text-green-400' : 'text-red-400';
+            const formatted = Math.abs(flow) >= 1e6 ? `$${(flow / 1e6).toFixed(0)}M` : `$${(flow / 1e3).toFixed(0)}K`;
+            
+            return `
+              <div class="flex justify-between items-center">
+                <span class="text-zinc-400 w-10">${etf.name}</span>
+                <div class="flex-1 mx-2 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div class="h-full ${color} transition-all" style="width: ${pct}%"></div>
+                </div>
+                <span class="${textColor} w-14 text-right">${flow >= 0 ? '+' : ''}${formatted}</span>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+      
+      // =================================================================
+      // TOP TRADER SENTIMENT
+      // =================================================================
+      async function fetchTopTraders() {
+        try {
+          const res = await fetch(`${API_BASE}/api/top-traders/${currentSymbol}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderTopTraders(data);
+            console.log('[TOP TRADERS] Updated:', data.divergence);
+          }
+        } catch (e) {
+          console.error('[TOP TRADERS] Fetch error:', e);
+        }
+      }
+      
+      function renderTopTraders(data) {
+        const signalEl = document.querySelector('[data-top-traders="signal"]');
+        const whaleLongEl = document.querySelector('[data-top-traders="whale-long"]');
+        const whaleBarEl = document.querySelector('[data-top-traders="whale-bar"]');
+        const retailLongEl = document.querySelector('[data-top-traders="retail-long"]');
+        const retailBarEl = document.querySelector('[data-top-traders="retail-bar"]');
+        const divergenceEl = document.querySelector('[data-top-traders="divergence"]');
+        
+        const whales = data.topTraders || {};
+        const retail = data.retail || {};
+        
+        if (signalEl) {
+          signalEl.textContent = data.signal || '--';
+          signalEl.className = data.signal === 'BULLISH' 
+            ? 'text-green-400 font-bold' 
+            : data.signal === 'BEARISH' 
+              ? 'text-red-400 font-bold' 
+              : 'text-zinc-400';
+        }
+        
+        if (whaleLongEl) whaleLongEl.textContent = `${whales.long || 50}% L`;
+        if (whaleBarEl) {
+          whaleBarEl.style.width = `${whales.long || 50}%`;
+          whaleBarEl.className = whales.long > 50 
+            ? 'h-full bg-green-500 transition-all' 
+            : 'h-full bg-red-500 transition-all';
+        }
+        
+        if (retailLongEl) retailLongEl.textContent = `${retail.long || 50}% L`;
+        if (retailBarEl) {
+          retailBarEl.style.width = `${retail.long || 50}%`;
+          retailBarEl.className = retail.long > 65 
+            ? 'h-full bg-amber-500 transition-all' 
+            : 'h-full bg-blue-500 transition-all';
+        }
+        
+        if (divergenceEl) {
+          const div = data.divergence || 'NONE';
+          let divText = 'No divergence';
+          let divClass = 'text-zinc-500';
+          
+          if (div === 'SMART_MONEY_LONG') {
+            divText = 'Whales LONG vs Retail';
+            divClass = 'text-green-400 font-bold';
+          } else if (div === 'SMART_MONEY_SHORT') {
+            divText = 'Whales SHORT vs Retail';
+            divClass = 'text-red-400 font-bold';
+          } else if (div === 'CROWDED_LONG') {
+            divText = 'CROWDED LONG';
+            divClass = 'text-amber-400 font-bold';
+          } else if (div === 'CROWDED_SHORT') {
+            divText = 'CROWDED SHORT';
+            divClass = 'text-amber-400 font-bold';
+          }
+          
+          divergenceEl.textContent = divText;
+          divergenceEl.className = `mt-2 text-[8px] text-center py-1 px-2 rounded bg-zinc-900/50 border border-zinc-800/50 ${divClass}`;
+        }
+      }
+      
+      // =================================================================
+      // OPTIONS MAX PAIN
+      // =================================================================
+      async function fetchOptions() {
+        try {
+          const res = await fetch(`${API_BASE}/api/options/${currentSymbol}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderOptions(data);
+            console.log('[OPTIONS] Updated:', data.maxPain);
+          }
+        } catch (e) {
+          console.error('[OPTIONS] Fetch error:', e);
+        }
+      }
+      
+      function renderOptions(data) {
+        const signalEl = document.querySelector('[data-options="signal"]');
+        const maxPainEl = document.querySelector('[data-options="max-pain"]');
+        const putCallEl = document.querySelector('[data-options="put-call"]');
+        const distanceEl = document.querySelector('[data-options="distance"]');
+        
+        if (signalEl) {
+          signalEl.textContent = data.signal || '--';
+          signalEl.className = data.signal === 'BULLISH' 
+            ? 'text-green-400' 
+            : data.signal === 'BEARISH' 
+              ? 'text-red-400' 
+              : 'text-zinc-400';
+        }
+        
+        if (maxPainEl) {
+          maxPainEl.textContent = data.maxPain > 0 ? `$${data.maxPain.toLocaleString()}` : '--';
+        }
+        
+        if (putCallEl) {
+          const pc = data.putCallRatio || 0;
+          putCallEl.textContent = pc > 0 ? pc.toFixed(2) : '--';
+          putCallEl.className = pc < 0.9 
+            ? 'text-green-400 font-bold' 
+            : pc > 1.1 
+              ? 'text-red-400 font-bold' 
+              : 'text-white font-bold';
+        }
+        
+        if (distanceEl && data.maxPain > 0 && lastPrice > 0) {
+          const distance = ((data.maxPain - lastPrice) / lastPrice) * 100;
+          distanceEl.textContent = `${distance >= 0 ? '+' : ''}${distance.toFixed(1)}% from current`;
+          distanceEl.className = distance >= 0 
+            ? 'mt-2 text-[8px] text-center py-1 bg-zinc-900/50 rounded border border-zinc-800/50 text-green-400' 
+            : 'mt-2 text-[8px] text-center py-1 bg-zinc-900/50 rounded border border-zinc-800/50 text-red-400';
+        }
+      }
+      
+      // =================================================================
+      // TAKER BUY/SELL
+      // =================================================================
+      async function fetchTakerRatio() {
+        try {
+          const res = await fetch(`${API_BASE}/api/taker-ratio/${currentSymbol}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderTakerRatio(data);
+            console.log('[TAKER] Updated:', data.netFlow);
+          }
+        } catch (e) {
+          console.error('[TAKER] Fetch error:', e);
+        }
+      }
+      
+      function renderTakerRatio(data) {
+        const signalEl = document.querySelector('[data-taker="signal"]');
+        const buyBarEl = document.querySelector('[data-taker="buy-bar"]');
+        const sellBarEl = document.querySelector('[data-taker="sell-bar"]');
+        const buyPctEl = document.querySelector('[data-taker="buy-pct"]');
+        const sellPctEl = document.querySelector('[data-taker="sell-pct"]');
+        const netEl = document.querySelector('[data-taker="net"]');
+        
+        if (signalEl) {
+          signalEl.textContent = data.signal || '--';
+          signalEl.className = data.signal === 'BULLISH' 
+            ? 'text-green-400' 
+            : data.signal === 'BEARISH' 
+              ? 'text-red-400' 
+              : 'text-zinc-400';
+        }
+        
+        const buyPct = data.buyPercent || 50;
+        const sellPct = data.sellPercent || 50;
+        
+        if (buyBarEl) buyBarEl.style.width = `${buyPct}%`;
+        if (sellBarEl) sellBarEl.style.width = `${sellPct}%`;
+        if (buyPctEl) buyPctEl.textContent = `${buyPct.toFixed(0)}%`;
+        if (sellPctEl) sellPctEl.textContent = `${sellPct.toFixed(0)}%`;
+        
+        if (netEl) {
+          netEl.textContent = `NET: ${data.netFlow || 'NEUTRAL'}`;
+          netEl.className = data.netFlow === 'BUY' 
+            ? 'text-green-400 font-bold' 
+            : data.netFlow === 'SELL' 
+              ? 'text-red-400 font-bold' 
+              : 'text-zinc-400 font-bold';
+        }
+      }
+      
+      // =================================================================
+      // EXCHANGE NET FLOW
+      // =================================================================
+      async function fetchExchangeFlow() {
+        try {
+          const res = await fetch(`${API_BASE}/api/exchange-flow/${currentSymbol}?hours=24`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderExchangeFlow(data);
+            console.log('[EX FLOW] Updated:', data.direction);
+          }
+        } catch (e) {
+          console.error('[EX FLOW] Fetch error:', e);
+        }
+      }
+      
+      function renderExchangeFlow(data) {
+        const signalEl = document.querySelector('[data-exflow="signal"]');
+        const inflowsEl = document.querySelector('[data-exflow="inflows"]');
+        const outflowsEl = document.querySelector('[data-exflow="outflows"]');
+        const netEl = document.querySelector('[data-exflow="net"]');
+        
+        if (signalEl) {
+          signalEl.textContent = data.signal || '--';
+          signalEl.className = data.signal === 'BULLISH' 
+            ? 'text-green-400 font-bold' 
+            : data.signal === 'BEARISH' 
+              ? 'text-red-400 font-bold' 
+              : 'text-zinc-400';
+        }
+        
+        if (inflowsEl) inflowsEl.textContent = data.inflowsFormatted || '--';
+        if (outflowsEl) outflowsEl.textContent = data.outflowsFormatted || '--';
+        
+        if (netEl) {
+          const dir = data.direction || 'NEUTRAL';
+          netEl.textContent = `Net: ${data.netFlowFormatted || '--'} ${dir}`;
+          netEl.className = dir === 'OUTFLOW' 
+            ? 'mt-1 text-[9px] text-center py-1 bg-green-900/20 rounded border border-green-800/50 text-green-400 font-bold' 
+            : 'mt-1 text-[9px] text-center py-1 bg-red-900/20 rounded border border-red-800/50 text-red-400 font-bold';
+        }
+      }
+      
+      // =================================================================
+      // OI BY EXCHANGE
+      // =================================================================
+      async function fetchOIByExchange() {
+        try {
+          const res = await fetch(`${API_BASE}/api/oi-exchange/${currentSymbol}`);
+          const data = await res.json();
+          
+          if (data.success && data.exchanges) {
+            renderOIByExchange(data);
+            console.log('[OI EXCHANGE] Updated:', data.totalOIFormatted);
+          }
+        } catch (e) {
+          console.error('[OI EXCHANGE] Fetch error:', e);
+        }
+      }
+      
+      function renderOIByExchange(data) {
+        const container = document.querySelector('[data-oi-exchange="container"]');
+        if (!container || !data.exchanges?.length) return;
+        
+        const colors = ['bg-blue-500', 'bg-amber-500', 'bg-purple-500', 'bg-cyan-500', 'bg-pink-500'];
+        
+        container.innerHTML = data.exchanges.slice(0, 5).map((ex, i) => {
+          const pct = ex.percentage || 0;
+          const color = colors[i % colors.length];
+          
+          return `
+            <div class="flex justify-between items-center">
+              <span class="text-zinc-400 w-14 text-[7px]">${ex.exchange}</span>
+              <div class="flex-1 mx-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div class="h-full ${color} transition-all" style="width: ${pct}%"></div>
+              </div>
+              <span class="text-zinc-300 w-12 text-right text-[7px]">${ex.oiFormatted || '--'}</span>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      // =================================================================
+      // FUNDING ARBITRAGE
+      // =================================================================
+      async function fetchFundingArb() {
+        try {
+          const res = await fetch(`${API_BASE}/api/funding-arb/${currentSymbol}`);
+          const data = await res.json();
+          
+          if (data.success) {
+            renderFundingArb(data);
+            console.log('[FUND ARB] Updated:', data.spreadPercent);
+          }
+        } catch (e) {
+          console.error('[FUND ARB] Fetch error:', e);
+        }
+      }
+      
+      function renderFundingArb(data) {
+        const opportunityEl = document.querySelector('[data-fundarb="opportunity"]');
+        const highestEl = document.querySelector('[data-fundarb="highest"]');
+        const lowestEl = document.querySelector('[data-fundarb="lowest"]');
+        const spreadEl = document.querySelector('[data-fundarb="spread"]');
+        
+        if (opportunityEl) {
+          opportunityEl.textContent = data.arbOpportunity ? 'ARB!' : '--';
+          opportunityEl.className = data.arbOpportunity 
+            ? 'text-amber-400 font-bold animate-pulse' 
+            : 'text-zinc-400';
+        }
+        
+        if (highestEl && data.highestRate) {
+          const rate = data.highestRate.ratePercent || 0;
+          highestEl.textContent = `${data.highestRate.exchange} ${rate >= 0 ? '+' : ''}${rate.toFixed(3)}%`;
+          highestEl.className = 'text-green-400';
+        }
+        
+        if (lowestEl && data.lowestRate) {
+          const rate = data.lowestRate.ratePercent || 0;
+          lowestEl.textContent = `${data.lowestRate.exchange} ${rate >= 0 ? '+' : ''}${rate.toFixed(3)}%`;
+          lowestEl.className = 'text-red-400';
+        }
+        
+        if (spreadEl) {
+          const spread = data.spreadPercent || 0;
+          spreadEl.textContent = `${spread.toFixed(3)}%`;
+          spreadEl.className = spread > 0.01 
+            ? 'text-amber-400 font-bold' 
+            : 'text-zinc-400';
+        }
+      }
 
       // Start live data polling
+      // HIGH-FREQUENCY MODE: 300 requests/min = 5/sec available
       function startLiveDataStream() {
-        console.log('[BASTION] Starting live data stream...');
+        console.log('[BASTION] Starting HIGH-FREQUENCY data stream (300 req/min tier)...');
         
-        // Fetch immediately
+        // Fetch immediately - ALL data sources
         fetchLivePrice();
         fetchLiveMarketData();
         fetchLiveCVD();
         fetchFundingRates();
         fetchOpenInterest();
         fetchFearGreed();
+        fetchWhaleTransactions();
+        fetchHeatmap();
+        // New endpoints
+        fetchETFFlows();
+        fetchTopTraders();
+        fetchOptions();
+        fetchTakerRatio();
+        fetchExchangeFlow();
+        fetchOIByExchange();
+        fetchFundingArb();
+        // Neural intelligence panels
+        fetchMMMagnet();
+        fetchVolRegime();
+        // New ultrawide panels
+        fetchOnChain();
+        fetchOrderFlow();
+        // Session & Risk panels
+        fetchSession();
+        fetchMacro();
+        fetchKelly();
+        runMonteCarlo(); // Run initial simulation
 
-        // Price updates every 2 seconds (with visual flash + candle update)
+        // === PRICE === Every 1 second (critical for trading)
         setInterval(async () => {
           await fetchLivePrice();
           flashUpdate('live-indicator');
-        }, 2000);
+        }, 1000);
         
-        // Fetch new candle data every 10 seconds (price updates candle more frequently)
-        setInterval(updateLastCandle, 10000);
+        // === CANDLES === Every 3 seconds (real-time chart)
+        setInterval(updateLastCandle, 3000);
 
-        // Helsinki data every 8 seconds
+        // === MARKET INTEL === Every 3 seconds (Helsinki is free, no limit)
         setInterval(async () => {
           await fetchLiveMarketData();
-          console.log('[LIVE] Market data refreshed');
-        }, 8000);
+        }, 3000);
         
-        setInterval(fetchLiveCVD, 12000);
-        setInterval(fetchFundingRates, 25000);
-        setInterval(fetchOpenInterest, 15000);
-        setInterval(fetchFearGreed, 45000);
+        // === CVD === Every 4 seconds (order flow is critical)
+        setInterval(fetchLiveCVD, 4000);
+        
+        // === OPEN INTEREST === Every 5 seconds
+        setInterval(fetchOpenInterest, 5000);
+        
+        // === FUNDING RATES === Every 10 seconds (changes slowly)
+        setInterval(fetchFundingRates, 10000);
+        
+        // === FEAR/GREED === Every 30 seconds (daily metric)
+        setInterval(fetchFearGreed, 30000);
+        
+        // === WHALE TRANSACTIONS === Every 5 seconds (catch them fast!)
+        setInterval(fetchWhaleTransactions, 5000);
+        
+        // === LIQUIDATION HEATMAP === Every 3 seconds (liquidation clusters)
+        setInterval(fetchHeatmap, 3000);
+        
+        // === NEW DATA STREAMS ===
+        
+        // === ETF FLOWS === Every 60 seconds (updates daily, institutional data)
+        setInterval(fetchETFFlows, 60000);
+        
+        // === TOP TRADER SENTIMENT === Every 10 seconds (whale vs retail)
+        setInterval(fetchTopTraders, 10000);
+        
+        // === OPTIONS MAX PAIN === Every 30 seconds (options data)
+        setInterval(fetchOptions, 30000);
+        
+        // === TAKER BUY/SELL === Every 5 seconds (real-time flow)
+        setInterval(fetchTakerRatio, 5000);
+        
+        // === EXCHANGE NET FLOW === Every 15 seconds (whale movements)
+        setInterval(fetchExchangeFlow, 15000);
+        
+        // === OI BY EXCHANGE === Every 10 seconds (institutional tracking)
+        setInterval(fetchOIByExchange, 10000);
+        
+        // === FUNDING ARBITRAGE === Every 15 seconds (arb opportunities)
+        setInterval(fetchFundingArb, 15000);
+        
+        // === MM MAGNET === Every 10 seconds (market maker target estimation)
+        setInterval(fetchMMMagnet, 10000);
+        
+        // === VOLATILITY REGIME === Every 30 seconds (regime changes slowly)
+        setInterval(fetchVolRegime, 30000);
+        
+        // === ON-CHAIN INTEL === Every 30 seconds (blockchain data updates slowly)
+        setInterval(fetchOnChain, 30000);
+        
+        // === ORDER FLOW === Every 3 seconds (real-time order book data)
+        setInterval(fetchOrderFlow, 3000);
+        
+        // === SESSION ANALYSIS === Every 60 seconds (updates hourly essentially)
+        setInterval(fetchSession, 60000);
+        
+        // === MACRO CORRELATION === Every 60 seconds (market correlations)
+        setInterval(fetchMacro, 60000);
+        
+        // === KELLY CRITERION === Every 30 seconds (position sizing)
+        setInterval(fetchKelly, 30000);
 
         // Update timestamp every second
         setInterval(() => {
@@ -1738,7 +4552,7 @@ Esc - Close Dialogs
           }
         }, 1000);
         
-        console.log('[BASTION] Live data stream ACTIVE!');
+        console.log('[BASTION] HIGH-FREQUENCY stream ACTIVE! (All 14 data streams running)');
       }
 
       // =================================================================
@@ -1747,7 +4561,10 @@ Esc - Close Dialogs
       async function initializeTerminal() {
         console.log('BASTION Terminal initializing...');
         
-        // Initialize chart first
+        // Fetch available symbols first
+        await fetchSymbols();
+        
+        // Initialize chart
         initChart();
         
         // Connect WebSocket for real-time updates
@@ -1757,7 +4574,7 @@ Esc - Close Dialogs
         await Promise.all([
           fetchPositions(),
           fetchSessionStats(),
-          fetchMarketData('BTC'),
+          fetchMarketData(currentSymbol),
           fetchAlerts()
         ]);
         
