@@ -196,18 +196,8 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize on startup (works for both local and serverless)."""
-    init_clients()
-
-
-# Ensure clients are initialized on each request for serverless
-@app.middleware("http")
-async def init_middleware(request, call_next):
-    init_clients()
-    response = await call_next(request)
-    return response
+# Note: For Vercel serverless, we use lazy initialization in init_clients()
+# which is called at the start of each endpoint that needs clients
 
 
 # =============================================================================
