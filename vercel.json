@@ -39,11 +39,6 @@
       "src": "/(.*)",
       "dest": "/generated-page.html"
     }
-  ],
-  "env": {
-    "HELSINKI_API_KEY": "@helsinki-api-key",
-    "COINGLASS_API_KEY": "@coinglass-api-key",
-    "WHALE_ALERT_API_KEY": "@whale-alert-api-key"
-  }
+  ]
 }
 
