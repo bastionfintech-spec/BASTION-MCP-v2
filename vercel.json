@@ -2,11 +2,16 @@
   "version": 2,
   "builds": [
     {
+      "src": "api/test.py",
+      "use": "@vercel/python"
+    },
+    {
       "src": "api/terminal_api.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
+    { "src": "/api/test(.*)", "dest": "/api/test.py" },
     { "src": "/api/(.*)", "dest": "/api/terminal_api.py" },
     { "src": "/visualizations", "dest": "/web/visualizations.html" },
     { "src": "/research", "dest": "/web/research.html" },
