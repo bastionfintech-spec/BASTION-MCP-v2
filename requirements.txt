@@ -1,26 +1,11 @@
-# BASTION Risk Management API
-# Python 3.10+
+# BASTION Terminal Dependencies
+fastapi>=0.104.0
+uvicorn>=0.24.0
+httpx>=0.25.0
+websockets>=12.0
+python-dateutil>=2.8.2
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
 
-# Web Framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-
-# HTTP Client
-aiohttp==3.9.1
-httpx==0.25.2
-
-# Data Processing
-pandas==2.1.4
-numpy==1.26.2
-
-# CORS is handled by FastAPI's built-in CORSMiddleware
-
-# Environment Variables
-python-dotenv==1.0.0
-
-# Existing MCF Dependencies (already in MCF-Project)
-# These should already be installed:
-# - riskshield core modules
-# - mcf_live_service modules
-
+# For Vercel serverless
+mangum>=0.17.0

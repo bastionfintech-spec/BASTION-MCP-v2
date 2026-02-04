@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/terminal_api.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "generated-page.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "web/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/terminal_api.py"
+    },
+    {
+      "src": "/visualizations",
+      "dest": "/web/visualizations.html"
+    },
+    {
+      "src": "/research",
+      "dest": "/web/research.html"
+    },
+    {
+      "src": "/account",
+      "dest": "/web/account.html"
+    },
+    {
+      "src": "/frontend",
+      "dest": "/BASTION FRONT END.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/generated-page.html"
+    }
+  ],
+  "env": {
+    "HELSINKI_API_KEY": "@helsinki-api-key",
+    "COINGLASS_API_KEY": "@coinglass-api-key",
+    "WHALE_ALERT_API_KEY": "@whale-alert-api-key"
+  }
+}
+
