@@ -3001,12 +3001,15 @@ async def health():
 # RUN
 # =============================================================================
 
-# Vercel serverless handler
+# Vercel serverless handler - export both app and handler
 try:
     from mangum import Mangum
     handler = Mangum(app, lifespan="off")
 except ImportError:
-    handler = None
+    handler = app  # Fallback to FastAPI app directly
+
+# For Vercel - they sometimes expect 'app' at module level
+# which we already have
 
 if __name__ == "__main__":
     import uvicorn

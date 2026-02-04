@@ -1,44 +1,17 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/terminal_api.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "generated-page.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "web/**",
-      "use": "@vercel/static"
-    }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/terminal_api.py" },
+    { "source": "/visualizations", "destination": "/web/visualizations.html" },
+    { "source": "/research", "destination": "/web/research.html" },
+    { "source": "/account", "destination": "/web/account.html" },
+    { "source": "/frontend", "destination": "/BASTION FRONT END.html" }
   ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/terminal_api.py"
-    },
-    {
-      "src": "/visualizations",
-      "dest": "/web/visualizations.html"
-    },
-    {
-      "src": "/research",
-      "dest": "/web/research.html"
-    },
-    {
-      "src": "/account",
-      "dest": "/web/account.html"
-    },
-    {
-      "src": "/frontend",
-      "dest": "/BASTION FRONT END.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/generated-page.html"
+  "functions": {
+    "api/terminal_api.py": {
+      "runtime": "python3.12",
+      "maxDuration": 30
     }
-  ]
+  }
 }
 
