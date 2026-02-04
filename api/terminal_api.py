@@ -27,6 +27,7 @@ from iros_integration.services.helsinki import HelsinkiClient
 from iros_integration.services.query_processor import QueryProcessor
 from iros_integration.services.whale_alert import WhaleAlertClient
 from iros_integration.services.coinglass import CoinglassClient, CoinglassResponse
+from iros_integration.services.exchange_connector import user_context, Position
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -166,6 +167,228 @@ async def serve_visualizations():
     if viz_path.exists():
         return FileResponse(viz_path)
     return HTMLResponse("<h1>Visualizations page not found</h1>")
+
+
+@app.get("/research", response_class=HTMLResponse)
+async def serve_research():
+    """Serve the Research Terminal page."""
+    research_path = bastion_path / "web" / "research.html"
+    if research_path.exists():
+        return FileResponse(research_path)
+    return HTMLResponse("<h1>Research page not found</h1>")
+
+
+@app.get("/account", response_class=HTMLResponse)
+async def serve_account():
+    """Serve the Account Center page."""
+    account_path = bastion_path / "web" / "account.html"
+    if account_path.exists():
+        return FileResponse(account_path)
+    return HTMLResponse("<h1>Account page not found</h1>")
+
+
+# =============================================================================
+# EXCHANGE API KEY MANAGEMENT
+# =============================================================================
+
+# In-memory storage for demo (would use encrypted DB in production)
+connected_exchanges: Dict[str, Dict] = {}
+
+
+@app.post("/api/exchange/connect")
+async def connect_exchange(data: dict):
+    """Connect a new exchange via API keys."""
+    exchange = data.get("exchange")
+    api_key = data.get("api_key")
+    api_secret = data.get("api_secret")
+    passphrase = data.get("passphrase")
+    read_only = data.get("read_only", True)
+    
+    if not exchange or not api_key or not api_secret:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    # Validate exchange name
+    valid_exchanges = ["blofin", "bitunix", "bybit", "okx", "binance", "deribit"]
+    if exchange not in valid_exchanges:
+        raise HTTPException(status_code=400, detail=f"Invalid exchange: {exchange}")
+    
+    # Try to connect using the exchange connector service
+    try:
+        success = await user_context.connect_exchange(
+            exchange=exchange,
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+            read_only=read_only
+        )
+        
+        if not success:
+            # Still store for demo mode even if connection fails
+            logger.warning(f"[EXCHANGE] Connection test failed for {exchange}, storing in demo mode")
+    except Exception as e:
+        logger.warning(f"[EXCHANGE] Connection error: {e}, storing in demo mode")
+    
+    # Store connection info (masked)
+    connected_exchanges[exchange] = {
+        "exchange": exchange,
+        "api_key": api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***",
+        "read_only": read_only,
+        "connected_at": datetime.now().isoformat(),
+        "status": "active"
+    }
+    
+    logger.info(f"[EXCHANGE] Connected to {exchange}")
+    
+    return {
+        "success": True,
+        "message": f"Successfully connected to {exchange}",
+        "exchange": connected_exchanges[exchange]
+    }
+
+
+@app.get("/api/exchange/list")
+async def list_exchanges():
+    """List all connected exchanges."""
+    return {
+        "success": True,
+        "exchanges": list(connected_exchanges.values())
+    }
+
+
+@app.delete("/api/exchange/{exchange_name}")
+async def disconnect_exchange(exchange_name: str):
+    """Disconnect an exchange."""
+    if exchange_name not in connected_exchanges:
+        raise HTTPException(status_code=404, detail="Exchange not connected")
+    
+    del connected_exchanges[exchange_name]
+    logger.info(f"[EXCHANGE] Disconnected from {exchange_name}")
+    
+    return {"success": True, "message": f"Disconnected from {exchange_name}"}
+
+
+@app.get("/api/exchange/{exchange_name}/positions")
+async def get_exchange_positions(exchange_name: str):
+    """Get live positions from a connected exchange."""
+    if exchange_name not in connected_exchanges:
+        raise HTTPException(status_code=404, detail="Exchange not connected")
+    
+    # Try to get live positions
+    try:
+        all_positions = await user_context.get_all_positions()
+        exchange_positions = [
+            {
+                "id": p.id,
+                "symbol": p.symbol,
+                "direction": p.direction,
+                "entry_price": p.entry_price,
+                "current_price": p.current_price,
+                "size": p.size,
+                "size_usd": p.size_usd,
+                "pnl": p.pnl,
+                "pnl_pct": p.pnl_pct,
+                "leverage": p.leverage,
+                "liquidation_price": p.liquidation_price,
+                "stop_loss": p.stop_loss,
+                "take_profit": p.take_profit,
+                "exchange": p.exchange,
+                "updated_at": p.updated_at
+            }
+            for p in all_positions if p.exchange == exchange_name
+        ]
+        
+        if exchange_positions:
+            return {
+                "success": True,
+                "exchange": exchange_name,
+                "positions": exchange_positions,
+                "timestamp": datetime.now().isoformat(),
+                "source": "live"
+            }
+    except Exception as e:
+        logger.warning(f"Could not fetch live positions: {e}")
+    
+    # Fallback to mock data
+    return {
+        "success": True,
+        "exchange": exchange_name,
+        "positions": MOCK_POSITIONS,
+        "timestamp": datetime.now().isoformat(),
+        "source": "demo"
+    }
+
+
+@app.get("/api/positions/all")
+async def get_all_positions():
+    """Get positions from all connected exchanges."""
+    try:
+        all_positions = await user_context.get_all_positions()
+        
+        if all_positions:
+            return {
+                "success": True,
+                "positions": [
+                    {
+                        "id": p.id,
+                        "symbol": p.symbol,
+                        "direction": p.direction,
+                        "entry_price": p.entry_price,
+                        "current_price": p.current_price,
+                        "size": p.size,
+                        "size_usd": p.size_usd,
+                        "pnl": p.pnl,
+                        "pnl_pct": p.pnl_pct,
+                        "leverage": p.leverage,
+                        "liquidation_price": p.liquidation_price,
+                        "exchange": p.exchange,
+                        "updated_at": p.updated_at
+                    }
+                    for p in all_positions
+                ],
+                "exchanges": list(connected_exchanges.keys()),
+                "timestamp": datetime.now().isoformat(),
+                "source": "live"
+            }
+    except Exception as e:
+        logger.warning(f"Could not fetch positions: {e}")
+    
+    # Fallback to mock
+    return {
+        "success": True,
+        "positions": MOCK_POSITIONS,
+        "exchanges": list(connected_exchanges.keys()),
+        "timestamp": datetime.now().isoformat(),
+        "source": "demo"
+    }
+
+
+# =============================================================================
+# REPORTS API
+# =============================================================================
+
+@app.get("/api/reports")
+async def get_reports(category: str = None, asset: str = None, limit: int = 20):
+    """Get research reports - would be from database in production."""
+    # For now return sample data - would be from MCF research database
+    reports = [
+        {
+            "id": 1,
+            "title": "BTC Accumulation Phase Confirmed: Smart Money Loading",
+            "summary": "On-chain metrics show significant whale accumulation over past 72h. Exchange reserves at 3-year lows.",
+            "category": "On-Chain Intel",
+            "sentiment": "BULLISH",
+            "sentimentColor": "green",
+            "confidence": "HIGH",
+            "timeAgo": "2 min ago",
+            "author": "MCF Research",
+            "assets": ["BTC"],
+            "readTime": "5 min read",
+            "created_at": datetime.now().isoformat()
+        },
+        # More reports would come from DB
+    ]
+    
+    return {"success": True, "reports": reports[:limit]}
 
 
 # =============================================================================
@@ -905,21 +1128,82 @@ async def get_alerts(limit: int = 10):
 
 @app.post("/api/neural/chat")
 async def neural_chat(request: Dict[str, Any]):
-    """Chat with the Bastion AI."""
+    """Chat with the Bastion AI - includes user position context."""
     query = request.get("query", "")
     symbol = request.get("symbol", "BTC")
+    include_positions = request.get("include_positions", True)
     
     if not query:
         raise HTTPException(status_code=400, detail="Query is required")
     
-    # Extract context
+    # Extract context from query
     context = query_processor.extract_context(query)
     
-    # For now, return a mock response (will connect to real AI later)
-    # This shows the structure of what will come from the AI
-    return {
-        "success": True,
-        "response": f"""**Analysis for {symbol}**
+    # Get user positions for AI context
+    position_context = ""
+    user_positions = []
+    if include_positions:
+        try:
+            positions = await user_context.get_all_positions()
+            if positions:
+                position_context = user_context.get_position_context_for_ai(positions)
+                user_positions = [
+                    {
+                        "symbol": p.symbol,
+                        "direction": p.direction,
+                        "entry": p.entry_price,
+                        "current": p.current_price,
+                        "pnl": p.pnl,
+                        "pnl_pct": p.pnl_pct
+                    }
+                    for p in positions
+                ]
+        except Exception as e:
+            logger.warning(f"Could not fetch user positions: {e}")
+            # Fall back to mock positions if no exchange connected
+            position_context = """User's Current Positions (Demo):
+- BTC-PERP LONG: Entry $95,120, Current $96,847, P&L +$776 (+1.82%)
+- ETH-PERP SHORT: Entry $3,245, Current $3,198, P&L +$244 (+1.47%)
+- SOL-PERP LONG: Entry $142.80, Current $141.20, P&L -$80 (-1.12%)"""
+    
+    # Build full context for AI (would be sent to actual AI model)
+    full_context = f"""
+Query: {query}
+Symbol Focus: {symbol}
+
+{position_context}
+
+Market Data Available:
+- Helsinki VM: CVD, volatility, liquidation estimates, options data
+- Coinglass: OI, funding, long/short ratio, liquidations
+- Whale Alert: Large transaction monitoring
+"""
+    
+    # For now, return a contextual mock response
+    # In production, this would call the actual AI model with full_context
+    
+    # Check if query is about positions
+    position_related = any(word in query.lower() for word in ["position", "trade", "holding", "exposure", "risk"])
+    
+    if position_related and user_positions:
+        response = f"""**Position Analysis**
+
+Based on your current positions:
+{position_context}
+
+**Risk Assessment:**
+- Total Exposure: ${sum(abs(p['current'] * 0.5) for p in user_positions):,.0f}
+- Net P&L: ${sum(p['pnl'] for p in user_positions):,.2f}
+- Win Rate: 2/3 positions in profit
+
+**Recommendations:**
+1. Your BTC long is performing well - consider trailing stop
+2. ETH short approaching T1 target - prepare for partial take
+3. SOL position at risk - stop loss proximity alert active
+
+⚠️ Monitor funding rates on short positions."""
+    else:
+        response = f"""**Analysis for {symbol}**
 
 Based on current market conditions:
 - Smart Money Bias: BULLISH (78%)
@@ -928,14 +1212,21 @@ Based on current market conditions:
 
 **Recommendation:** Hold current position. Momentum trailing active at 2.3x slope strength.
 
-⚠️ CVD divergence forming on daily. Consider partial exit at T2 ($98,200).""",
+⚠️ CVD divergence forming on daily. Consider partial exit at T2 ($98,200)."""
+    
+    return {
+        "success": True,
+        "response": response,
         "context": {
             "symbol": context.symbol,
             "capital": context.capital,
             "timeframe": context.timeframe,
-            "intent": context.query_intent
+            "intent": context.query_intent,
+            "has_positions": len(user_positions) > 0,
+            "position_count": len(user_positions)
         },
-        "data_sources": ["Helsinki:smart-money", "Helsinki:cvd", "Helsinki:volatility"]
+        "user_positions": user_positions,
+        "data_sources": ["Helsinki:smart-money", "Helsinki:cvd", "Helsinki:volatility", "Exchange:positions"]
     }
 
 

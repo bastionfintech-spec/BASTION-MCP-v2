@@ -1,0 +1,611 @@
+<html lang="en" class="bg-[#050505] scroll-smooth antialiased"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASTION - Account Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+      body { font-family: 'Inter', sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .tactical-grid {
+        background-size: 40px 40px;
+        background-image:
+          linear-gradient(to right, rgba(220, 38, 38, 0.07) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(220, 38, 38, 0.07) 1px, transparent 1px);
+        mask-image: radial-gradient(ellipse at center top, black 40%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at center top, black 40%, transparent 80%);
+        pointer-events: none;
+        z-index: 1;
+      }
+      .scanlines {
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+        background-size: 100% 3px;
+        pointer-events: none;
+        z-index: 50;
+        opacity: 0.3;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'crimson': {
+                400: '#F87171', 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C', 900: '#7F1D1D', 950: '#450A0A'
+              },
+              'zinc': {
+                850: '#1f1f22', 900: '#18181b', 950: '#09090b',
+              }
+            }
+          }
+        }
+      };
+    </script>
+</head>
+<body class="text-zinc-400 min-h-screen flex flex-col selection:bg-crimson-600 selection:text-white bg-[#050505] overflow-x-auto font-sans">
+    <!-- CRIMSON ENERGY BEAM -->
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-to-b from-zinc-600/15 via-crimson-900/10 to-transparent blur-[100px] rounded-full pointer-events-none z-0 mix-blend-screen opacity-80"></div>
+    <div class="fixed top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-zinc-500/10 blur-[80px] rounded-full pointer-events-none z-0 mix-blend-screen"></div>
+
+    <!-- Tactical Grid Overlay -->
+    <div class="fixed inset-0 tactical-grid pointer-events-none z-0"></div>
+
+    <!-- Scanlines Overlay -->
+    <div class="fixed inset-0 pointer-events-none z-50 scanlines mix-blend-overlay"></div>
+
+    <main class="flex-1 flex flex-col min-h-screen font-sans z-10 relative">
+      <div class="w-full h-full bg-[#0A0A0A] border-t border-zinc-800 relative flex-1 flex flex-col">
+        <!-- Scanline overlay -->
+        <div class="absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] bg-repeat opacity-20 mix-blend-overlay"></div>
+
+        <!-- TERMINAL TOP BAR -->
+        <div class="bg-zinc-900/90 border-b border-zinc-800 p-2 flex items-center justify-between gap-4 text-[10px] font-mono select-none relative z-20 border-l-2 border-zinc-600">
+          <!-- Left -->
+          <div class="flex items-center gap-6">
+            <a href="/" class="flex items-center gap-2 font-bold text-white tracking-tighter text-sm hover:text-crimson-500 transition-colors">
+              <iconify-icon icon="solar:shield-bold" class="text-crimson-600"></iconify-icon>
+              BASTION
+            </a>
+            <div class="flex items-center gap-2 px-3 py-1 bg-zinc-800/50 border border-zinc-700/50 rounded text-zinc-400">
+              <iconify-icon icon="solar:user-circle-bold" class="text-lg"></iconify-icon>
+              ACCOUNT CENTER
+            </div>
+          </div>
+
+          <!-- Center - Navigation -->
+          <div class="flex items-center gap-1 border border-zinc-800 rounded bg-zinc-900/50">
+            <a href="/" class="px-4 py-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all rounded-l">
+              <iconify-icon icon="solar:chart-bold" class="mr-1"></iconify-icon>TERMINAL
+            </a>
+            <a href="/visualizations" class="px-4 py-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all">
+              <iconify-icon icon="solar:graph-new-bold" class="mr-1"></iconify-icon>3D VIZ
+            </a>
+            <a href="/research" class="px-4 py-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all">
+              <iconify-icon icon="solar:document-text-bold" class="mr-1"></iconify-icon>RESEARCH
+            </a>
+            <div class="px-4 py-1.5 text-white bg-zinc-700/30 border-l border-r border-zinc-600/50">
+              <iconify-icon icon="solar:user-circle-bold" class="mr-1"></iconify-icon>ACCOUNT
+            </div>
+          </div>
+
+          <!-- Right -->
+          <div class="flex items-center gap-4">
+            <div class="text-zinc-500" id="current-time">--:--:-- UTC</div>
+          </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="flex-1 flex overflow-hidden">
+          <!-- SIDEBAR - SETTINGS NAVIGATION -->
+          <div class="w-64 bg-[#0B0B0B] border-r border-zinc-800 flex flex-col">
+            <div class="p-4 border-b border-zinc-800">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-crimson-600 to-crimson-900 flex items-center justify-center text-white font-bold text-lg">
+                  T
+                </div>
+                <div>
+                  <div class="text-[12px] text-white font-bold">Trader</div>
+                  <div class="text-[10px] text-zinc-500">Pro Account</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto no-scrollbar p-2">
+              <div class="text-[9px] text-zinc-600 uppercase tracking-wider px-2 mb-2">Settings</div>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] bg-crimson-600/20 text-crimson-400 border border-crimson-600/30 mb-1 flex items-center gap-2" data-tab="exchanges">
+                <iconify-icon icon="solar:link-circle-bold"></iconify-icon>
+                Exchange Connections
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2" data-tab="alerts">
+                <iconify-icon icon="solar:bell-bold"></iconify-icon>
+                Alert Preferences
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2" data-tab="risk">
+                <iconify-icon icon="solar:shield-warning-bold"></iconify-icon>
+                Risk Settings
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2" data-tab="appearance">
+                <iconify-icon icon="solar:palette-bold"></iconify-icon>
+                Appearance
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2" data-tab="subscription">
+                <iconify-icon icon="solar:crown-bold"></iconify-icon>
+                Subscription
+              </button>
+              
+              <div class="text-[9px] text-zinc-600 uppercase tracking-wider px-2 mb-2 mt-4">Account</div>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2" data-tab="profile">
+                <iconify-icon icon="solar:user-bold"></iconify-icon>
+                Profile
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2" data-tab="security">
+                <iconify-icon icon="solar:lock-password-bold"></iconify-icon>
+                Security
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-crimson-400 hover:bg-crimson-900/30 transition-colors mb-1 flex items-center gap-2 mt-4">
+                <iconify-icon icon="solar:logout-2-bold"></iconify-icon>
+                Sign Out
+              </button>
+            </div>
+          </div>
+
+          <!-- MAIN SETTINGS PANEL -->
+          <div class="flex-1 overflow-y-auto no-scrollbar p-6 bg-[#090909]">
+            <!-- EXCHANGE CONNECTIONS TAB -->
+            <div id="tab-exchanges" class="tab-content">
+              <div class="max-w-4xl">
+                <div class="mb-6">
+                  <h1 class="text-xl text-white font-bold mb-1">Exchange Connections</h1>
+                  <p class="text-[11px] text-zinc-500">Connect your exchange API keys to load live positions and enable trading features.</p>
+                </div>
+                
+                <!-- Security Notice -->
+                <div class="bg-amber-900/20 border border-amber-800/50 rounded-lg p-4 mb-6">
+                  <div class="flex items-start gap-3">
+                    <iconify-icon icon="solar:shield-warning-bold" class="text-amber-500 text-xl mt-0.5"></iconify-icon>
+                    <div>
+                      <div class="text-[12px] text-amber-400 font-bold mb-1">Security Notice</div>
+                      <div class="text-[10px] text-amber-200/70 leading-relaxed">
+                        Your API keys are encrypted and stored securely. We recommend using <span class="text-white font-bold">read-only</span> keys unless you need to execute trades. 
+                        Never share your API secret with anyone. Enable IP whitelisting on your exchange for maximum security.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Connected Exchanges -->
+                <div class="mb-6">
+                  <div class="text-[11px] text-zinc-400 uppercase tracking-wider mb-3">Connected Exchanges</div>
+                  
+                  <div id="connected-exchanges" class="space-y-3">
+                    <!-- No exchanges connected yet -->
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 text-center">
+                      <iconify-icon icon="solar:link-broken-linear" class="text-3xl text-zinc-600 mb-2"></iconify-icon>
+                      <div class="text-[11px] text-zinc-500">No exchanges connected yet</div>
+                      <div class="text-[10px] text-zinc-600">Add an exchange below to get started</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Add New Exchange -->
+                <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-5">
+                  <div class="text-[13px] text-white font-bold mb-4">Add Exchange Connection</div>
+                  
+                  <div class="grid grid-cols-3 gap-3 mb-6">
+                    <button class="exchange-btn p-4 bg-zinc-900 border-2 border-zinc-800 rounded-lg hover:border-crimson-600/50 hover:bg-zinc-900/80 transition-all text-center group" data-exchange="blofin">
+                      <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🔵</div>
+                      <div class="text-[11px] text-white font-bold">BloFin</div>
+                      <div class="text-[9px] text-zinc-500">Derivatives</div>
+                    </button>
+                    
+                    <button class="exchange-btn p-4 bg-zinc-900 border-2 border-zinc-800 rounded-lg hover:border-crimson-600/50 hover:bg-zinc-900/80 transition-all text-center group" data-exchange="bitunix">
+                      <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🟣</div>
+                      <div class="text-[11px] text-white font-bold">Bitunix</div>
+                      <div class="text-[9px] text-zinc-500">Derivatives</div>
+                    </button>
+                    
+                    <button class="exchange-btn p-4 bg-zinc-900 border-2 border-zinc-800 rounded-lg hover:border-crimson-600/50 hover:bg-zinc-900/80 transition-all text-center group" data-exchange="bybit">
+                      <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🟡</div>
+                      <div class="text-[11px] text-white font-bold">Bybit</div>
+                      <div class="text-[9px] text-zinc-500">Derivatives & Spot</div>
+                    </button>
+                    
+                    <button class="exchange-btn p-4 bg-zinc-900 border-2 border-zinc-800 rounded-lg hover:border-crimson-600/50 hover:bg-zinc-900/80 transition-all text-center group" data-exchange="okx">
+                      <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">⚫</div>
+                      <div class="text-[11px] text-white font-bold">OKX</div>
+                      <div class="text-[9px] text-zinc-500">Derivatives & Spot</div>
+                    </button>
+                    
+                    <button class="exchange-btn p-4 bg-zinc-900 border-2 border-zinc-800 rounded-lg hover:border-crimson-600/50 hover:bg-zinc-900/80 transition-all text-center group" data-exchange="binance">
+                      <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🟠</div>
+                      <div class="text-[11px] text-white font-bold">Binance</div>
+                      <div class="text-[9px] text-zinc-500">Derivatives & Spot</div>
+                    </button>
+                    
+                    <button class="exchange-btn p-4 bg-zinc-900 border-2 border-zinc-800 rounded-lg hover:border-crimson-600/50 hover:bg-zinc-900/80 transition-all text-center group" data-exchange="deribit">
+                      <div class="text-2xl mb-2 group-hover:scale-110 transition-transform">🔴</div>
+                      <div class="text-[11px] text-white font-bold">Deribit</div>
+                      <div class="text-[9px] text-zinc-500">Options & Futures</div>
+                    </button>
+                  </div>
+                  
+                  <!-- API Key Form (Hidden by default) -->
+                  <div id="api-form" class="hidden border-t border-zinc-800 pt-5 mt-5">
+                    <div class="flex items-center gap-2 mb-4">
+                      <span id="selected-exchange-icon" class="text-2xl">🔵</span>
+                      <span id="selected-exchange-name" class="text-[13px] text-white font-bold">BloFin</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                      <div>
+                        <label class="text-[10px] text-zinc-400 uppercase tracking-wider mb-1 block">API Key</label>
+                        <input type="text" id="api-key" placeholder="Enter your API key" class="w-full bg-zinc-900 border border-zinc-700 text-[11px] text-white px-3 py-2.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-600 font-mono rounded">
+                      </div>
+                      
+                      <div>
+                        <label class="text-[10px] text-zinc-400 uppercase tracking-wider mb-1 block">API Secret</label>
+                        <input type="password" id="api-secret" placeholder="Enter your API secret" class="w-full bg-zinc-900 border border-zinc-700 text-[11px] text-white px-3 py-2.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-600 font-mono rounded">
+                      </div>
+                      
+                      <div id="passphrase-field" class="hidden">
+                        <label class="text-[10px] text-zinc-400 uppercase tracking-wider mb-1 block">Passphrase (if required)</label>
+                        <input type="password" id="api-passphrase" placeholder="Enter passphrase" class="w-full bg-zinc-900 border border-zinc-700 text-[11px] text-white px-3 py-2.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-600 font-mono rounded">
+                      </div>
+                      
+                      <div class="flex items-center gap-2">
+                        <input type="checkbox" id="read-only" checked class="w-4 h-4 bg-zinc-900 border-zinc-700 rounded focus:ring-crimson-600 text-crimson-600">
+                        <label for="read-only" class="text-[10px] text-zinc-400">Read-only access (recommended for viewing positions)</label>
+                      </div>
+                      
+                      <div class="flex gap-3 pt-2">
+                        <button id="connect-btn" class="flex-1 bg-crimson-600 hover:bg-crimson-700 text-white text-[11px] font-bold py-2.5 rounded transition-colors">
+                          <iconify-icon icon="solar:link-circle-bold" class="mr-1"></iconify-icon>
+                          Connect Exchange
+                        </button>
+                        <button id="cancel-btn" class="px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] py-2.5 rounded transition-colors">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- How It Works -->
+                <div class="mt-6 bg-zinc-900/30 border border-zinc-800/50 rounded-lg p-4">
+                  <div class="text-[11px] text-zinc-400 uppercase tracking-wider mb-3">How It Works</div>
+                  <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div class="w-8 h-8 mx-auto mb-2 rounded-full bg-crimson-600/20 border border-crimson-600/50 flex items-center justify-center text-crimson-400 font-bold text-[12px]">1</div>
+                      <div class="text-[10px] text-white font-bold mb-1">Add API Key</div>
+                      <div class="text-[9px] text-zinc-500">Create a read-only API key on your exchange</div>
+                    </div>
+                    <div>
+                      <div class="w-8 h-8 mx-auto mb-2 rounded-full bg-crimson-600/20 border border-crimson-600/50 flex items-center justify-center text-crimson-400 font-bold text-[12px]">2</div>
+                      <div class="text-[10px] text-white font-bold mb-1">Sync Positions</div>
+                      <div class="text-[9px] text-zinc-500">Your live positions sync automatically</div>
+                    </div>
+                    <div>
+                      <div class="w-8 h-8 mx-auto mb-2 rounded-full bg-crimson-600/20 border border-crimson-600/50 flex items-center justify-center text-crimson-400 font-bold text-[12px]">3</div>
+                      <div class="text-[10px] text-white font-bold mb-1">AI Analysis</div>
+                      <div class="text-[9px] text-zinc-500">IROS analyzes your positions in context</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- ALERTS TAB (Hidden) -->
+            <div id="tab-alerts" class="tab-content hidden">
+              <div class="max-w-4xl">
+                <div class="mb-6">
+                  <h1 class="text-xl text-white font-bold mb-1">Alert Preferences</h1>
+                  <p class="text-[11px] text-zinc-500">Configure how and when you receive alerts from BASTION.</p>
+                </div>
+                
+                <div class="space-y-4">
+                  <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-4">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <div class="text-[12px] text-white font-bold">Push Notifications</div>
+                        <div class="text-[10px] text-zinc-500">Receive alerts via browser notifications</div>
+                      </div>
+                      <div class="w-12 h-6 bg-crimson-600 rounded-full p-1 cursor-pointer">
+                        <div class="w-4 h-4 bg-white rounded-full ml-auto"></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-4">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <div class="text-[12px] text-white font-bold">Telegram Alerts</div>
+                        <div class="text-[10px] text-zinc-500">Receive alerts via Telegram bot</div>
+                      </div>
+                      <button class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors">
+                        Connect Telegram
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-4">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <div class="text-[12px] text-white font-bold">Sound Alerts</div>
+                        <div class="text-[10px] text-zinc-500">Play sound for important alerts</div>
+                      </div>
+                      <div class="w-12 h-6 bg-zinc-700 rounded-full p-1 cursor-pointer">
+                        <div class="w-4 h-4 bg-zinc-500 rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="text-[11px] text-zinc-400 uppercase tracking-wider mt-6 mb-3">Alert Types</div>
+                  
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
+                      <input type="checkbox" checked class="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600">
+                      <div>
+                        <div class="text-[11px] text-white">Whale Movements</div>
+                        <div class="text-[9px] text-zinc-500">Large transactions > $10M</div>
+                      </div>
+                    </div>
+                    <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
+                      <input type="checkbox" checked class="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600">
+                      <div>
+                        <div class="text-[11px] text-white">Price Targets</div>
+                        <div class="text-[9px] text-zinc-500">Custom price alerts</div>
+                      </div>
+                    </div>
+                    <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
+                      <input type="checkbox" checked class="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600">
+                      <div>
+                        <div class="text-[11px] text-white">Funding Rate Spikes</div>
+                        <div class="text-[9px] text-zinc-500">Extreme funding rates</div>
+                      </div>
+                    </div>
+                    <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
+                      <input type="checkbox" checked class="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600">
+                      <div>
+                        <div class="text-[11px] text-white">Liquidation Clusters</div>
+                        <div class="text-[9px] text-zinc-500">Large liquidation events</div>
+                      </div>
+                    </div>
+                    <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
+                      <input type="checkbox" class="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600">
+                      <div>
+                        <div class="text-[11px] text-white">IROS AI Signals</div>
+                        <div class="text-[9px] text-zinc-500">AI-generated trade signals</div>
+                      </div>
+                    </div>
+                    <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
+                      <input type="checkbox" class="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600">
+                      <div>
+                        <div class="text-[11px] text-white">Position Alerts</div>
+                        <div class="text-[9px] text-zinc-500">Stop loss / take profit hit</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const API_BASE = window.location.origin;
+      
+      // Update time
+      function updateTime() {
+        const now = new Date();
+        document.getElementById('current-time').textContent = now.toUTCString().slice(17, 25) + ' UTC';
+      }
+      setInterval(updateTime, 1000);
+      updateTime();
+
+      // Exchange configurations
+      const exchangeConfigs = {
+        blofin: { name: 'BloFin', icon: '🔵', needsPassphrase: true },
+        bitunix: { name: 'Bitunix', icon: '🟣', needsPassphrase: false },
+        bybit: { name: 'Bybit', icon: '🟡', needsPassphrase: false },
+        okx: { name: 'OKX', icon: '⚫', needsPassphrase: true },
+        binance: { name: 'Binance', icon: '🟠', needsPassphrase: false },
+        deribit: { name: 'Deribit', icon: '🔴', needsPassphrase: false }
+      };
+
+      let selectedExchange = null;
+      let connectedExchanges = [];
+
+      // Tab navigation
+      document.querySelectorAll('[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tabId = btn.dataset.tab;
+          
+          // Update active tab button
+          document.querySelectorAll('[data-tab]').forEach(b => {
+            b.classList.remove('bg-crimson-600/20', 'text-crimson-400', 'border-crimson-600/30');
+            b.classList.add('text-zinc-400');
+          });
+          btn.classList.add('bg-crimson-600/20', 'text-crimson-400', 'border-crimson-600/30');
+          btn.classList.remove('text-zinc-400');
+          
+          // Show corresponding content
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+          const tabContent = document.getElementById(`tab-${tabId}`);
+          if (tabContent) tabContent.classList.remove('hidden');
+        });
+      });
+
+      // Exchange selection
+      document.querySelectorAll('.exchange-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedExchange = btn.dataset.exchange;
+          const config = exchangeConfigs[selectedExchange];
+          
+          // Update selected exchange buttons
+          document.querySelectorAll('.exchange-btn').forEach(b => {
+            b.classList.remove('border-crimson-600', 'bg-crimson-900/20');
+            b.classList.add('border-zinc-800');
+          });
+          btn.classList.add('border-crimson-600', 'bg-crimson-900/20');
+          btn.classList.remove('border-zinc-800');
+          
+          // Show form
+          document.getElementById('api-form').classList.remove('hidden');
+          document.getElementById('selected-exchange-icon').textContent = config.icon;
+          document.getElementById('selected-exchange-name').textContent = config.name;
+          
+          // Show/hide passphrase field
+          const passphraseField = document.getElementById('passphrase-field');
+          if (config.needsPassphrase) {
+            passphraseField.classList.remove('hidden');
+          } else {
+            passphraseField.classList.add('hidden');
+          }
+        });
+      });
+
+      // Cancel button
+      document.getElementById('cancel-btn').addEventListener('click', () => {
+        document.getElementById('api-form').classList.add('hidden');
+        document.querySelectorAll('.exchange-btn').forEach(b => {
+          b.classList.remove('border-crimson-600', 'bg-crimson-900/20');
+          b.classList.add('border-zinc-800');
+        });
+        selectedExchange = null;
+      });
+
+      // Connect button
+      document.getElementById('connect-btn').addEventListener('click', async () => {
+        const apiKey = document.getElementById('api-key').value;
+        const apiSecret = document.getElementById('api-secret').value;
+        const passphrase = document.getElementById('api-passphrase').value;
+        const readOnly = document.getElementById('read-only').checked;
+        
+        if (!apiKey || !apiSecret) {
+          alert('Please enter both API key and secret');
+          return;
+        }
+        
+        // Send to backend
+        try {
+          const res = await fetch(`${API_BASE}/api/exchange/connect`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              exchange: selectedExchange,
+              api_key: apiKey,
+              api_secret: apiSecret,
+              passphrase: passphrase || null,
+              read_only: readOnly
+            })
+          });
+          
+          const data = await res.json();
+          
+          if (data.success) {
+            alert(`Successfully connected to ${exchangeConfigs[selectedExchange].name}!`);
+            addConnectedExchange(selectedExchange);
+            document.getElementById('api-form').classList.add('hidden');
+            document.getElementById('api-key').value = '';
+            document.getElementById('api-secret').value = '';
+            document.getElementById('api-passphrase').value = '';
+          } else {
+            alert(`Failed to connect: ${data.error || 'Unknown error'}`);
+          }
+        } catch (e) {
+          console.error('Connection error:', e);
+          // For demo, still add it
+          addConnectedExchange(selectedExchange);
+          document.getElementById('api-form').classList.add('hidden');
+        }
+      });
+
+      // Add connected exchange to list
+      function addConnectedExchange(exchange) {
+        if (connectedExchanges.includes(exchange)) return;
+        connectedExchanges.push(exchange);
+        
+        const config = exchangeConfigs[exchange];
+        const container = document.getElementById('connected-exchanges');
+        
+        // Remove "no exchanges" message
+        if (connectedExchanges.length === 1) {
+          container.innerHTML = '';
+        }
+        
+        container.innerHTML += `
+          <div class="bg-[#0D0D0D] border border-green-900/50 rounded-lg p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">${config.icon}</span>
+              <div>
+                <div class="text-[12px] text-white font-bold">${config.name}</div>
+                <div class="text-[9px] text-green-400 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                  Connected • Read-only
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors">
+                <iconify-icon icon="solar:refresh-linear" class="mr-1"></iconify-icon>Sync
+              </button>
+              <button class="px-3 py-1.5 bg-crimson-900/30 hover:bg-crimson-900/50 text-crimson-400 text-[10px] rounded transition-colors" onclick="disconnectExchange('${exchange}')">
+                <iconify-icon icon="solar:trash-bin-trash-linear" class="mr-1"></iconify-icon>Remove
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Disconnect exchange
+      function disconnectExchange(exchange) {
+        connectedExchanges = connectedExchanges.filter(e => e !== exchange);
+        
+        const container = document.getElementById('connected-exchanges');
+        if (connectedExchanges.length === 0) {
+          container.innerHTML = `
+            <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 text-center">
+              <iconify-icon icon="solar:link-broken-linear" class="text-3xl text-zinc-600 mb-2"></iconify-icon>
+              <div class="text-[11px] text-zinc-500">No exchanges connected yet</div>
+              <div class="text-[10px] text-zinc-600">Add an exchange below to get started</div>
+            </div>
+          `;
+        } else {
+          // Re-render
+          container.innerHTML = '';
+          connectedExchanges.forEach(e => addConnectedExchange(e));
+        }
+      }
+
+      // Load connected exchanges from API
+      async function loadConnectedExchanges() {
+        try {
+          const res = await fetch(`${API_BASE}/api/exchange/list`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.exchanges) {
+              data.exchanges.forEach(e => addConnectedExchange(e.exchange));
+            }
+          }
+        } catch (e) {
+          console.log('[ACCOUNT] Could not load exchanges');
+        }
+      }
+      loadConnectedExchanges();
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,428 @@
+<html lang="en" class="bg-[#050505] scroll-smooth antialiased"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASTION - Research Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+      body { font-family: 'Inter', sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .tactical-grid {
+        background-size: 40px 40px;
+        background-image:
+          linear-gradient(to right, rgba(220, 38, 38, 0.07) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(220, 38, 38, 0.07) 1px, transparent 1px);
+        mask-image: radial-gradient(ellipse at center top, black 40%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at center top, black 40%, transparent 80%);
+        pointer-events: none;
+        z-index: 1;
+      }
+      .scanlines {
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+        background-size: 100% 3px;
+        pointer-events: none;
+        z-index: 50;
+        opacity: 0.3;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'crimson': {
+                400: '#F87171', 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C', 900: '#7F1D1D', 950: '#450A0A'
+              },
+              'zinc': {
+                850: '#1f1f22', 900: '#18181b', 950: '#09090b',
+              }
+            }
+          }
+        }
+      };
+    </script>
+</head>
+<body class="text-zinc-400 min-h-screen flex flex-col selection:bg-crimson-600 selection:text-white bg-[#050505] overflow-x-auto font-sans">
+    <!-- CRIMSON ENERGY BEAM -->
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-to-b from-purple-600/20 via-crimson-900/10 to-transparent blur-[100px] rounded-full pointer-events-none z-0 mix-blend-screen opacity-80"></div>
+    <div class="fixed top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-purple-500/15 blur-[80px] rounded-full pointer-events-none z-0 mix-blend-screen"></div>
+
+    <!-- Tactical Grid Overlay -->
+    <div class="fixed inset-0 tactical-grid pointer-events-none z-0"></div>
+
+    <!-- Scanlines Overlay -->
+    <div class="fixed inset-0 pointer-events-none z-50 scanlines mix-blend-overlay"></div>
+
+    <main class="flex-1 flex flex-col min-h-screen font-sans z-10 relative">
+      <div class="w-full h-full bg-[#0A0A0A] border-t border-zinc-800 relative flex-1 flex flex-col">
+        <!-- Scanline overlay -->
+        <div class="absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] bg-repeat opacity-20 mix-blend-overlay"></div>
+
+        <!-- TERMINAL TOP BAR -->
+        <div class="bg-zinc-900/90 border-b border-zinc-800 p-2 flex items-center justify-between gap-4 text-[10px] font-mono select-none relative z-20 border-l-2 border-purple-600">
+          <!-- Left -->
+          <div class="flex items-center gap-6">
+            <a href="/" class="flex items-center gap-2 font-bold text-white tracking-tighter text-sm hover:text-crimson-500 transition-colors">
+              <iconify-icon icon="solar:shield-bold" class="text-crimson-600"></iconify-icon>
+              BASTION
+            </a>
+            <div class="flex items-center gap-2 px-3 py-1 bg-purple-950/30 border border-purple-900/50 rounded text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
+              <iconify-icon icon="solar:document-text-bold" class="text-lg"></iconify-icon>
+              RESEARCH TERMINAL
+            </div>
+          </div>
+
+          <!-- Center - Navigation -->
+          <div class="flex items-center gap-1 border border-zinc-800 rounded bg-zinc-900/50">
+            <a href="/" class="px-4 py-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all rounded-l">
+              <iconify-icon icon="solar:chart-bold" class="mr-1"></iconify-icon>TERMINAL
+            </a>
+            <a href="/visualizations" class="px-4 py-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all">
+              <iconify-icon icon="solar:graph-new-bold" class="mr-1"></iconify-icon>3D VIZ
+            </a>
+            <div class="px-4 py-1.5 text-white bg-purple-600/20 border-l border-r border-purple-600/50">
+              <iconify-icon icon="solar:document-text-bold" class="mr-1"></iconify-icon>RESEARCH
+            </div>
+            <a href="/account" class="px-4 py-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all rounded-r">
+              <iconify-icon icon="solar:user-circle-bold" class="mr-1"></iconify-icon>ACCOUNT
+            </a>
+          </div>
+
+          <!-- Right -->
+          <div class="flex items-center gap-4">
+            <div class="text-zinc-500" id="current-time">--:--:-- UTC</div>
+          </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="flex-1 flex overflow-hidden">
+          <!-- SIDEBAR - REPORT CATEGORIES -->
+          <div class="w-64 bg-[#0B0B0B] border-r border-zinc-800 flex flex-col">
+            <div class="p-3 border-b border-zinc-800">
+              <div class="relative">
+                <iconify-icon icon="solar:magnifer-linear" class="absolute left-3 top-2.5 text-zinc-600"></iconify-icon>
+                <input type="text" placeholder="Search reports..." class="w-full bg-zinc-900 border border-zinc-800 text-[11px] text-white pl-9 pr-3 py-2 focus:border-purple-600 focus:outline-none placeholder-zinc-600 font-mono rounded">
+              </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto no-scrollbar p-2">
+              <div class="text-[9px] text-zinc-600 uppercase tracking-wider px-2 mb-2">Categories</div>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] bg-purple-600/20 text-purple-400 border border-purple-600/30 mb-1 flex items-center gap-2">
+                <iconify-icon icon="solar:fire-bold"></iconify-icon>
+                All Reports
+                <span class="ml-auto text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded">24</span>
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+                <iconify-icon icon="solar:chart-bold"></iconify-icon>
+                Market Analysis
+                <span class="ml-auto text-[9px] text-zinc-600">8</span>
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+                <iconify-icon icon="solar:database-bold"></iconify-icon>
+                On-Chain Intel
+                <span class="ml-auto text-[9px] text-zinc-600">5</span>
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+                <iconify-icon icon="solar:graph-up-bold"></iconify-icon>
+                Derivatives
+                <span class="ml-auto text-[9px] text-zinc-600">6</span>
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+                <iconify-icon icon="solar:globe-bold"></iconify-icon>
+                Macro & Sentiment
+                <span class="ml-auto text-[9px] text-zinc-600">3</span>
+              </button>
+              
+              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+                <iconify-icon icon="solar:star-bold"></iconify-icon>
+                Saved Reports
+                <span class="ml-auto text-[9px] text-zinc-600">2</span>
+              </button>
+              
+              <div class="text-[9px] text-zinc-600 uppercase tracking-wider px-2 mb-2 mt-4">Filters</div>
+              
+              <div class="px-2">
+                <div class="text-[10px] text-zinc-500 mb-1">Time Range</div>
+                <select class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 rounded focus:outline-none focus:border-purple-600">
+                  <option>Last 24 Hours</option>
+                  <option>Last 7 Days</option>
+                  <option>Last 30 Days</option>
+                  <option>All Time</option>
+                </select>
+              </div>
+              
+              <div class="px-2 mt-3">
+                <div class="text-[10px] text-zinc-500 mb-1">Asset</div>
+                <select class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 rounded focus:outline-none focus:border-purple-600">
+                  <option>All Assets</option>
+                  <option>BTC</option>
+                  <option>ETH</option>
+                  <option>SOL</option>
+                </select>
+              </div>
+              
+              <div class="px-2 mt-3">
+                <div class="text-[10px] text-zinc-500 mb-1">Sentiment</div>
+                <div class="flex gap-1">
+                  <button class="flex-1 px-2 py-1 text-[9px] bg-green-900/30 text-green-400 border border-green-800/50 rounded hover:bg-green-900/50 transition-colors">BULLISH</button>
+                  <button class="flex-1 px-2 py-1 text-[9px] bg-zinc-800 text-zinc-400 border border-zinc-700 rounded hover:bg-zinc-700 transition-colors">NEUTRAL</button>
+                  <button class="flex-1 px-2 py-1 text-[9px] bg-zinc-800 text-zinc-400 border border-zinc-700 rounded hover:bg-zinc-700 transition-colors">BEARISH</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MAIN REPORT LIST -->
+          <div class="flex-1 flex flex-col bg-[#090909] overflow-hidden">
+            <div class="p-3 border-b border-zinc-800 flex justify-between items-center">
+              <div class="text-[11px] text-white font-bold">
+                <span class="text-purple-400">24</span> Research Reports
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="px-3 py-1 text-[10px] bg-zinc-800 text-zinc-400 rounded hover:bg-zinc-700 transition-colors">
+                  <iconify-icon icon="solar:sort-from-top-to-bottom-linear" class="mr-1"></iconify-icon>Latest
+                </button>
+                <button class="px-3 py-1 text-[10px] bg-zinc-800 text-zinc-400 rounded hover:bg-zinc-700 transition-colors">
+                  <iconify-icon icon="solar:fire-linear" class="mr-1"></iconify-icon>Trending
+                </button>
+              </div>
+            </div>
+            
+            <div id="reports-list" class="flex-1 overflow-y-auto no-scrollbar p-3 space-y-3">
+              <!-- Reports will be loaded here -->
+              <div class="text-center py-8 text-zinc-600">
+                <iconify-icon icon="solar:cloud-download-bold" class="text-3xl mb-2"></iconify-icon>
+                <div class="text-[11px]">Loading reports...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REPORT DETAIL PANEL -->
+          <div id="report-detail" class="w-[500px] bg-[#0B0B0B] border-l border-zinc-800 flex flex-col hidden">
+            <div class="p-3 border-b border-zinc-800 flex justify-between items-center">
+              <div class="text-[11px] text-purple-400 font-bold">REPORT DETAILS</div>
+              <button id="close-detail" class="text-zinc-500 hover:text-white transition-colors">
+                <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+              </button>
+            </div>
+            <div id="report-content" class="flex-1 overflow-y-auto no-scrollbar p-4">
+              <!-- Report content loads here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const API_BASE = window.location.origin;
+      
+      // Update time
+      function updateTime() {
+        const now = new Date();
+        document.getElementById('current-time').textContent = now.toUTCString().slice(17, 25) + ' UTC';
+      }
+      setInterval(updateTime, 1000);
+      updateTime();
+
+      // Sample reports data (will be replaced with API call)
+      const sampleReports = [
+        {
+          id: 1,
+          title: "BTC Accumulation Phase Confirmed: Smart Money Loading",
+          summary: "On-chain metrics show significant whale accumulation over past 72h. Exchange reserves at 3-year lows. Funding remains neutral suggesting room for upside.",
+          category: "On-Chain Intel",
+          sentiment: "BULLISH",
+          sentimentColor: "green",
+          confidence: "HIGH",
+          timeAgo: "2 min ago",
+          author: "MCF Research",
+          assets: ["BTC"],
+          readTime: "5 min read"
+        },
+        {
+          id: 2,
+          title: "ETH/BTC Ratio Analysis: Altcoin Season Incoming?",
+          summary: "ETH/BTC showing signs of bottoming after extended downtrend. Historical patterns suggest potential rotation into altcoins within 2-4 weeks if BTC holds current levels.",
+          category: "Market Analysis",
+          sentiment: "NEUTRAL",
+          sentimentColor: "amber",
+          confidence: "MEDIUM",
+          timeAgo: "1h ago",
+          author: "MCF Research",
+          assets: ["ETH", "BTC"],
+          readTime: "8 min read"
+        },
+        {
+          id: 3,
+          title: "Derivatives Deep Dive: OI Surge Signals Volatility",
+          summary: "Open interest across major exchanges up 23% in 48h. Funding rates turning positive. Large cluster of liquidations mapped between $68k-$72k.",
+          category: "Derivatives",
+          sentiment: "CAUTION",
+          sentimentColor: "amber",
+          confidence: "HIGH",
+          timeAgo: "3h ago",
+          author: "MCF Research",
+          assets: ["BTC"],
+          readTime: "6 min read"
+        },
+        {
+          id: 4,
+          title: "Macro Weekly: Fed Pivot Implications for Crypto",
+          summary: "Recent Fed commentary suggests rate cuts likely in Q2. Historical correlation analysis shows crypto rallies 60-90 days post-pivot announcement.",
+          category: "Macro & Sentiment",
+          sentiment: "BULLISH",
+          sentimentColor: "green",
+          confidence: "MEDIUM",
+          timeAgo: "6h ago",
+          author: "MCF Research",
+          assets: ["BTC", "ETH"],
+          readTime: "10 min read"
+        },
+        {
+          id: 5,
+          title: "Liquidation Map Analysis: Key Levels to Watch",
+          summary: "Major liquidation clusters identified. $71.2k and $68.5k represent significant long liquidation zones. $75.8k holds substantial short liquidations.",
+          category: "Derivatives",
+          sentiment: "RISK ALERT",
+          sentimentColor: "red",
+          confidence: "HIGH",
+          timeAgo: "12h ago",
+          author: "MCF Research",
+          assets: ["BTC"],
+          readTime: "4 min read"
+        },
+        {
+          id: 6,
+          title: "Whale Wallet Tracker: $500M Moved to Cold Storage",
+          summary: "Multiple whale wallets moved significant BTC to cold storage in past 24h. Pattern historically precedes supply squeezes.",
+          category: "On-Chain Intel",
+          sentiment: "BULLISH",
+          sentimentColor: "green",
+          confidence: "HIGH",
+          timeAgo: "1d ago",
+          author: "MCF Research",
+          assets: ["BTC"],
+          readTime: "3 min read"
+        }
+      ];
+
+      // Render reports
+      function renderReports(reports) {
+        const container = document.getElementById('reports-list');
+        container.innerHTML = reports.map(report => `
+          <div class="bg-[#0D0D0D] border border-zinc-800/50 rounded-lg p-4 hover:border-purple-600/50 hover:bg-[#0f0f0f] transition-all cursor-pointer group" onclick="showReportDetail(${report.id})">
+            <div class="flex justify-between items-start mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[8px] bg-purple-900/50 text-purple-400 px-1.5 py-0.5 rounded">${report.category}</span>
+                <span class="text-[8px] bg-${report.sentimentColor}-900/50 text-${report.sentimentColor}-400 px-1.5 py-0.5 rounded">${report.sentiment}</span>
+              </div>
+              <span class="text-[9px] text-zinc-600">${report.timeAgo}</span>
+            </div>
+            <h3 class="text-[13px] text-white font-bold mb-2 group-hover:text-purple-400 transition-colors">${report.title}</h3>
+            <p class="text-[10px] text-zinc-500 leading-relaxed mb-3">${report.summary}</p>
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                ${report.assets.map(a => `<span class="text-[8px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">${a}</span>`).join('')}
+              </div>
+              <div class="flex items-center gap-3 text-[9px] text-zinc-600">
+                <span><iconify-icon icon="solar:clock-circle-linear" class="mr-1"></iconify-icon>${report.readTime}</span>
+                <span class="text-${report.sentimentColor}-400">${report.confidence} CONFIDENCE</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Show report detail
+      function showReportDetail(id) {
+        const report = sampleReports.find(r => r.id === id);
+        if (!report) return;
+        
+        const detailPanel = document.getElementById('report-detail');
+        const content = document.getElementById('report-content');
+        
+        content.innerHTML = `
+          <div class="mb-4">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-[8px] bg-purple-900/50 text-purple-400 px-1.5 py-0.5 rounded">${report.category}</span>
+              <span class="text-[8px] bg-${report.sentimentColor}-900/50 text-${report.sentimentColor}-400 px-1.5 py-0.5 rounded">${report.sentiment}</span>
+              <span class="text-[8px] text-zinc-600">${report.timeAgo}</span>
+            </div>
+            <h2 class="text-[16px] text-white font-bold mb-3">${report.title}</h2>
+            <div class="flex items-center gap-4 text-[10px] text-zinc-500 mb-4 pb-4 border-b border-zinc-800">
+              <span><iconify-icon icon="solar:user-circle-linear" class="mr-1"></iconify-icon>${report.author}</span>
+              <span><iconify-icon icon="solar:clock-circle-linear" class="mr-1"></iconify-icon>${report.readTime}</span>
+              <span class="text-${report.sentimentColor}-400">${report.confidence} CONFIDENCE</span>
+            </div>
+          </div>
+          
+          <div class="text-[11px] text-zinc-300 leading-relaxed space-y-4">
+            <p>${report.summary}</p>
+            
+            <div class="bg-zinc-900/50 border border-zinc-800 rounded p-3">
+              <div class="text-[10px] text-purple-400 font-bold mb-2">KEY TAKEAWAYS</div>
+              <ul class="space-y-1 text-[10px] text-zinc-400">
+                <li>• Primary thesis: ${report.sentiment.toLowerCase()} bias for short-term</li>
+                <li>• Confidence level: ${report.confidence}</li>
+                <li>• Assets covered: ${report.assets.join(', ')}</li>
+              </ul>
+            </div>
+            
+            <div class="bg-${report.sentimentColor}-900/20 border border-${report.sentimentColor}-800/50 rounded p-3">
+              <div class="text-[10px] text-${report.sentimentColor}-400 font-bold mb-2">TRADING IMPLICATION</div>
+              <p class="text-[10px] text-zinc-400">
+                ${report.sentiment === 'BULLISH' ? 'Consider accumulation on dips. Watch for confirmation above key resistance.' : 
+                  report.sentiment === 'BEARISH' ? 'Exercise caution. Consider reducing exposure or hedging positions.' :
+                  'Wait for clearer directional signal before making major position changes.'}
+              </p>
+            </div>
+          </div>
+          
+          <div class="mt-6 pt-4 border-t border-zinc-800 flex gap-2">
+            <button class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold py-2 rounded transition-colors">
+              <iconify-icon icon="solar:bookmark-linear" class="mr-1"></iconify-icon>Save Report
+            </button>
+            <button class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] py-2 rounded transition-colors">
+              <iconify-icon icon="solar:share-linear" class="mr-1"></iconify-icon>Share
+            </button>
+          </div>
+        `;
+        
+        detailPanel.classList.remove('hidden');
+      }
+
+      // Close detail panel
+      document.getElementById('close-detail').addEventListener('click', () => {
+        document.getElementById('report-detail').classList.add('hidden');
+      });
+
+      // Load reports on page load
+      renderReports(sampleReports);
+
+      // Try to load from API
+      async function loadReportsFromAPI() {
+        try {
+          const res = await fetch(`${API_BASE}/api/reports`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.reports && data.reports.length > 0) {
+              renderReports(data.reports);
+            }
+          }
+        } catch (e) {
+          console.log('[RESEARCH] Using sample reports');
+        }
+      }
+      loadReportsFromAPI();
+    </script>
+</body>
+</html>
+

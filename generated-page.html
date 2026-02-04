@@ -303,6 +303,14 @@
               <iconify-icon icon="solar:graph-new-bold" class="text-sm"></iconify-icon>
               3D VIZ
             </a>
+            <a href="/research" class="flex items-center gap-2 px-3 py-1 bg-purple-600/20 border border-purple-600/50 rounded text-purple-400 hover:bg-purple-600/30 hover:text-purple-300 transition-all font-bold text-[10px]">
+              <iconify-icon icon="solar:document-text-bold" class="text-sm"></iconify-icon>
+              RESEARCH
+            </a>
+            <a href="/account" class="flex items-center gap-2 px-3 py-1 bg-zinc-700/30 border border-zinc-600/50 rounded text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200 transition-all font-bold text-[10px]">
+              <iconify-icon icon="solar:user-circle-bold" class="text-sm"></iconify-icon>
+              ACCOUNT
+            </a>
             <div class="flex items-center gap-2 text-crimson-500 font-bold animate-pulse">
               <iconify-icon icon="solar:brain-bold"></iconify-icon>
               NEURAL ACTIVE
@@ -1883,45 +1891,39 @@
                   </div>
                 </div>
               </div>
-              <!-- NEURAL ASSISTANT (MOVED FROM ALERTS) -->
-            <div class="p-3 bg-[#0f0f0f] border-t border-zinc-800 flex flex-col gap-2 relative overflow-hidden group">
-              <div class="absolute top-0 left-0 w-1 h-full bg-crimson-400 shadow-[0_0_20px_rgba(220,38,38,0.9)]"></div>
-              <div class="absolute inset-0 bg-crimson-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-              <div class="flex justify-between items-center text-[10px] font-mono mb-1">
-                <span class="text-crimson-400 font-bold flex items-center gap-1">
-                  <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
-                    MCF NEURAL ASSISTANT
-                </span>
-                  <span class="text-[8px] bg-crimson-600 text-white px-1.5 py-0.5 rounded animate-pulse">AI</span>
-              </div>
-                <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
-                <span class="text-crimson-500">&gt;&gt;</span>
-                Momentum trailing active (2.3x).
-
-                <span class="text-yellow-500">⚠</span>
-                CVD divergence forming. Consider partial exit at T2.
-              </div>
-              <div class="flex flex-col gap-1 mt-1">
-                <button class="text-left text-[9px] text-zinc-500 hover:text-white hover:bg-zinc-800 px-2 py-1 rounded transition-colors border border-transparent hover:border-zinc-700">
-                  • Hold current position
-                </button>
-                <button class="text-left text-[9px] text-zinc-500 hover:text-white hover:bg-zinc-800 px-2 py-1 rounded transition-colors border border-transparent hover:border-zinc-700">
-                  • Watch $97,400 resistance
-                </button>
-              </div>
-              <div class="mt-2 relative">
-                  <input data-input="neural" type="text" placeholder="Ask MCF BASTION..." class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-700 font-mono rounded-sm">
-                  <iconify-icon data-action="neural-send" icon="solar:plain-linear" class="absolute right-2 top-1.5 text-zinc-600 cursor-pointer hover:text-white"></iconify-icon>
-              </div>
-            </div>
-
-              <!-- SUBSCRIBE CTA -->
-              <div class="p-3 bg-gradient-to-t from-purple-950/30 to-transparent">
+              
+              <!-- VIEW FULL REPORTS (MOVED ABOVE NEURAL ASSISTANT) -->
+              <div class="p-3 bg-gradient-to-t from-purple-950/30 to-transparent border-t border-zinc-800/50">
                 <div class="text-[8px] text-zinc-500 text-center mb-2">
                   Get real-time institutional-grade analysis
-              </div>
-                <button class="w-full bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold py-2 rounded-sm shadow-[0_0_15px_rgba(168,85,247,0.3)] font-mono uppercase transition-all">
+                </div>
+                <a href="/research" class="block w-full bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold py-2 rounded-sm shadow-[0_0_15px_rgba(168,85,247,0.3)] font-mono uppercase transition-all text-center">
                   VIEW FULL REPORTS
+                </a>
+              </div>
+              
+              <!-- NEURAL ASSISTANT (BOTTOM OF MCF LABS) -->
+              <div class="p-3 bg-[#0f0f0f] border-t border-zinc-800 flex flex-col gap-2 relative overflow-hidden group">
+                <div class="absolute top-0 left-0 w-1 h-full bg-crimson-400 shadow-[0_0_20px_rgba(220,38,38,0.9)]"></div>
+                <div class="absolute inset-0 bg-crimson-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                <div class="flex justify-between items-center text-[10px] font-mono mb-1">
+                  <span class="text-crimson-400 font-bold flex items-center gap-1">
+                    <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
+                    ASK BASTION
+                  </span>
+                  <span class="text-[8px] bg-crimson-600 text-white px-1.5 py-0.5 rounded animate-pulse">AI</span>
+                </div>
+                <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50 max-h-32 overflow-y-auto no-scrollbar">
+                  <span class="text-crimson-500">&gt;&gt;</span>
+                  Ready for your query...
+                </div>
+                <div class="mt-2 relative">
+                  <input data-input="neural" type="text" placeholder="Ask BASTION anything..." class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-700 font-mono rounded-sm">
+                  <iconify-icon data-action="neural-send" icon="solar:plain-linear" class="absolute right-2 top-1.5 text-zinc-600 cursor-pointer hover:text-white"></iconify-icon>
+                </div>
+                <!-- Expand to full panel -->
+                <button data-action="expand-neural" class="text-[8px] text-zinc-600 hover:text-crimson-400 text-center transition-colors mt-1">
+                  <iconify-icon icon="solar:maximize-square-linear"></iconify-icon> Expand
                 </button>
               </div>
             </div>
@@ -2364,8 +2366,9 @@
 Ctrl+E - Emergency Exit All
 Ctrl+B - Move All to Breakeven
 Ctrl+R - Refresh Data
-Esc - Close Dialogs
-/ - Focus Neural Chat`);
+Space  - Open AI Assistant
+Esc    - Close Dialogs
+/      - Focus Neural Chat`);
         }
         
         // Ctrl+E = Emergency Exit
@@ -2384,6 +2387,17 @@ Esc - Close Dialogs
         if (e.ctrlKey && e.key === 'r') {
           e.preventDefault();
           initializeTerminal();
+        }
+        
+        // Space = Open Neural Modal (when not in input)
+        if (e.key === ' ' && !e.target.matches('input, textarea')) {
+          e.preventDefault();
+          const modal = document.getElementById('neural-modal');
+          if (modal) {
+            modal.classList.remove('hidden');
+            const input = document.getElementById('neural-modal-input');
+            if (input) input.focus();
+          }
         }
         
         // / = Focus chat
@@ -4650,5 +4664,268 @@ Esc - Close Dialogs
       <span class="text-zinc-300">?</span>
       for keyboard shortcuts
     </div>
+
+    <!-- EXPANDED AI CHAT MODAL -->
+    <div id="neural-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] hidden">
+      <div class="absolute inset-4 lg:inset-10 bg-[#0A0A0A] border border-crimson-600/50 rounded-lg flex overflow-hidden shadow-[0_0_50px_rgba(220,38,38,0.3)]">
+        <!-- Left: Chat History -->
+        <div class="flex-1 flex flex-col border-r border-zinc-800">
+          <div class="p-4 border-b border-zinc-800 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:magic-stick-3-bold" class="text-crimson-500 text-xl"></iconify-icon>
+              <span class="text-white font-bold">ASK BASTION</span>
+              <span class="text-[9px] bg-crimson-600 text-white px-2 py-0.5 rounded animate-pulse">AI ASSISTANT</span>
+            </div>
+            <button id="close-neural-modal" class="text-zinc-500 hover:text-white transition-colors p-1">
+              <iconify-icon icon="solar:close-circle-linear" class="text-xl"></iconify-icon>
+            </button>
+          </div>
+          
+          <!-- Chat Messages -->
+          <div id="neural-chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+            <div class="text-center text-zinc-600 text-[11px] py-8">
+              <iconify-icon icon="solar:chat-round-dots-linear" class="text-3xl mb-2"></iconify-icon>
+              <div>Ask BASTION about your positions, market analysis, or risk management.</div>
+              <div class="text-zinc-700 mt-1">Your positions are automatically included in the context.</div>
+            </div>
+          </div>
+          
+          <!-- Chat Input -->
+          <div class="p-4 border-t border-zinc-800">
+            <div class="flex gap-2">
+              <input id="neural-modal-input" type="text" placeholder="Ask about your positions, market analysis, or risk..." class="flex-1 bg-zinc-900 border border-zinc-800 text-[12px] text-white px-4 py-3 focus:border-crimson-600 focus:outline-none placeholder-zinc-600 font-mono rounded">
+              <button id="neural-modal-send" class="bg-crimson-600 hover:bg-crimson-700 text-white px-6 py-3 rounded font-bold text-[11px] transition-colors">
+                <iconify-icon icon="solar:plain-bold" class="mr-1"></iconify-icon>SEND
+              </button>
+            </div>
+            <div class="flex gap-2 mt-2">
+              <button class="quick-prompt text-[9px] px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded transition-colors" data-prompt="Analyze my current positions">📊 Analyze positions</button>
+              <button class="quick-prompt text-[9px] px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded transition-colors" data-prompt="What's the current market bias for BTC?">🎯 BTC market bias</button>
+              <button class="quick-prompt text-[9px] px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded transition-colors" data-prompt="What are the key risk levels I should watch?">⚠️ Risk levels</button>
+              <button class="quick-prompt text-[9px] px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded transition-colors" data-prompt="Suggest position adjustments based on current market conditions">🔄 Suggest adjustments</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right: Context Panel -->
+        <div class="w-80 bg-[#0B0B0B] flex flex-col">
+          <div class="p-4 border-b border-zinc-800">
+            <div class="text-[11px] text-zinc-400 uppercase tracking-wider mb-2">POSITION CONTEXT</div>
+            <div id="modal-position-context" class="space-y-2">
+              <!-- Positions loaded here -->
+              <div class="text-[10px] text-zinc-600">Loading positions...</div>
+            </div>
+          </div>
+          
+          <div class="p-4 border-b border-zinc-800">
+            <div class="text-[11px] text-zinc-400 uppercase tracking-wider mb-2">DATA SOURCES</div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                <span class="text-zinc-400">Helsinki VM (CVD, Volatility)</span>
+              </div>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                <span class="text-zinc-400">Coinglass (OI, Funding)</span>
+              </div>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                <span class="text-zinc-400">Whale Alert</span>
+              </div>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                <span class="text-zinc-400">Exchange Positions</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex-1 p-4 overflow-y-auto no-scrollbar">
+            <div class="text-[11px] text-zinc-400 uppercase tracking-wider mb-2">RECENT INSIGHTS</div>
+            <div id="modal-recent-insights" class="space-y-2">
+              <div class="text-[10px] text-zinc-600 bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+                <span class="text-crimson-500">⚡</span> CVD divergence detected on BTC 4H
+              </div>
+              <div class="text-[10px] text-zinc-600 bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+                <span class="text-green-500">📈</span> Smart money bias shifted bullish
+              </div>
+              <div class="text-[10px] text-zinc-600 bg-zinc-900/50 p-2 rounded border border-zinc-800/50">
+                <span class="text-amber-500">⚠️</span> Funding rate elevated (0.08%)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Expanded Neural Modal Functionality
+      (function() {
+        const modal = document.getElementById('neural-modal');
+        const closeBtn = document.getElementById('close-neural-modal');
+        const expandBtn = document.querySelector('[data-action="expand-neural"]');
+        const modalInput = document.getElementById('neural-modal-input');
+        const modalSend = document.getElementById('neural-modal-send');
+        const chatHistory = document.getElementById('neural-chat-history');
+        const positionContext = document.getElementById('modal-position-context');
+        const quickPrompts = document.querySelectorAll('.quick-prompt');
+        
+        // Open modal
+        if (expandBtn) {
+          expandBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            modalInput.focus();
+            loadPositionContext();
+          });
+        }
+        
+        // Also open with Space key (already handled in keyboard shortcuts)
+        
+        // Close modal
+        closeBtn.addEventListener('click', () => {
+          modal.classList.add('hidden');
+        });
+        
+        // Close on escape
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            modal.classList.add('hidden');
+          }
+        });
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.classList.add('hidden');
+          }
+        });
+        
+        // Send message
+        async function sendMessage(query) {
+          if (!query.trim()) return;
+          
+          // Add user message to chat
+          addMessage('user', query);
+          modalInput.value = '';
+          
+          // Show typing indicator
+          const typingId = addMessage('assistant', '<span class="animate-pulse">Thinking...</span>', true);
+          
+          try {
+            const res = await fetch(`${API_BASE}/api/neural/chat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                query: query,
+                symbol: currentSymbol,
+                include_positions: true
+              })
+            });
+            
+            const data = await res.json();
+            
+            // Remove typing indicator
+            document.getElementById(typingId)?.remove();
+            
+            if (data.success) {
+              addMessage('assistant', data.response);
+              
+              // Update small neural response too
+              const smallResponse = document.querySelector('[data-neural="response"]');
+              if (smallResponse) {
+                smallResponse.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> ${data.response.split('\n')[0].substring(0, 100)}...`;
+              }
+            } else {
+              addMessage('assistant', 'Sorry, I encountered an error processing your request.');
+            }
+          } catch (e) {
+            console.error('Neural chat error:', e);
+            document.getElementById(typingId)?.remove();
+            addMessage('assistant', 'Connection error. Please try again.');
+          }
+        }
+        
+        function addMessage(role, content, isTyping = false) {
+          const id = 'msg-' + Date.now();
+          const msgDiv = document.createElement('div');
+          msgDiv.id = id;
+          msgDiv.className = role === 'user' 
+            ? 'flex justify-end'
+            : 'flex justify-start';
+          
+          const bubble = document.createElement('div');
+          bubble.className = role === 'user'
+            ? 'max-w-[80%] bg-crimson-600/20 border border-crimson-600/30 text-white text-[11px] px-4 py-2 rounded-lg'
+            : 'max-w-[80%] bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px] px-4 py-2 rounded-lg font-mono whitespace-pre-wrap';
+          
+          bubble.innerHTML = content;
+          msgDiv.appendChild(bubble);
+          
+          // Remove empty state if present
+          const emptyState = chatHistory.querySelector('.text-center');
+          if (emptyState) emptyState.remove();
+          
+          chatHistory.appendChild(msgDiv);
+          chatHistory.scrollTop = chatHistory.scrollHeight;
+          
+          return id;
+        }
+        
+        async function loadPositionContext() {
+          try {
+            const res = await fetch(`${API_BASE}/api/positions/all`);
+            const data = await res.json();
+            
+            if (data.positions && data.positions.length > 0) {
+              positionContext.innerHTML = data.positions.map(p => `
+                <div class="bg-zinc-900/50 border border-zinc-800/50 rounded p-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold ${p.direction === 'long' ? 'text-green-400' : 'text-crimson-400'}">
+                      ${p.symbol} ${p.direction.toUpperCase()}
+                    </span>
+                    <span class="text-[9px] ${p.pnl_pct >= 0 ? 'text-green-400' : 'text-crimson-400'}">
+                      ${p.pnl_pct >= 0 ? '+' : ''}${p.pnl_pct?.toFixed(2) || 0}%
+                    </span>
+                  </div>
+                  <div class="text-[9px] text-zinc-500 mt-1">
+                    Entry: $${p.entry_price?.toLocaleString() || 'N/A'} → $${p.current_price?.toLocaleString() || 'N/A'}
+                  </div>
+                </div>
+              `).join('');
+            } else {
+              positionContext.innerHTML = `
+                <div class="text-[10px] text-zinc-600 text-center py-4">
+                  <iconify-icon icon="solar:link-broken-linear" class="text-lg mb-1"></iconify-icon>
+                  <div>No positions loaded</div>
+                  <a href="/account" class="text-crimson-400 hover:underline">Connect exchange</a>
+                </div>
+              `;
+            }
+          } catch (e) {
+            console.error('Error loading positions:', e);
+          }
+        }
+        
+        // Send on button click
+        modalSend.addEventListener('click', () => {
+          sendMessage(modalInput.value);
+        });
+        
+        // Send on enter
+        modalInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            sendMessage(modalInput.value);
+          }
+        });
+        
+        // Quick prompts
+        quickPrompts.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const prompt = btn.dataset.prompt;
+            modalInput.value = prompt;
+            sendMessage(prompt);
+          });
+        });
+      })();
+    </script>
   
 </body></html>
