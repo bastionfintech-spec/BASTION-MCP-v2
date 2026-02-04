@@ -17,21 +17,60 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import sys
-
-# Add paths
-bastion_path = Path(__file__).parent.parent
-sys.path.insert(0, str(bastion_path))
-
-# Import IROS integration
-from iros_integration.services.helsinki import HelsinkiClient
-from iros_integration.services.query_processor import QueryProcessor
-from iros_integration.services.whale_alert import WhaleAlertClient
-from iros_integration.services.coinglass import CoinglassClient, CoinglassResponse
-from iros_integration.services.exchange_connector import user_context, Position
-
 import logging
+
+# Setup logging FIRST
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Add paths - handle both local and Vercel environments
+try:
+    bastion_path = Path(__file__).parent.parent.resolve()
+except:
+    bastion_path = Path.cwd()
+
+sys.path.insert(0, str(bastion_path))
+
+# For Vercel, also try the /var/task path
+if not (bastion_path / "iros_integration").exists():
+    vercel_path = Path("/var/task")
+    if (vercel_path / "iros_integration").exists():
+        bastion_path = vercel_path
+        sys.path.insert(0, str(vercel_path))
+
+logger.info(f"BASTION path: {bastion_path}")
+
+# Import IROS integration - with fallbacks for serverless
+try:
+    from iros_integration.services.helsinki import HelsinkiClient
+    from iros_integration.services.query_processor import QueryProcessor
+    from iros_integration.services.whale_alert import WhaleAlertClient
+    from iros_integration.services.coinglass import CoinglassClient, CoinglassResponse
+    from iros_integration.services.exchange_connector import user_context, Position
+    logger.info("IROS integration modules loaded successfully")
+except ImportError as e:
+    logger.error(f"Import error: {e}")
+    # Create dummy classes for graceful degradation
+    class HelsinkiClient:
+        async def fetch_full_data(self, *args, **kwargs): return {}
+    class QueryProcessor:
+        def extract_context(self, *args, **kwargs): return type('obj', (object,), {'symbol': 'BTC', 'capital': 10000, 'timeframe': '1h', 'query_intent': 'analysis'})()
+    class WhaleAlertClient:
+        async def get_recent_transactions(self, *args, **kwargs): return []
+    class CoinglassClient:
+        async def get_liquidation_history(self, *args, **kwargs): return type('obj', (object,), {'success': False, 'data': None})()
+        async def get_open_interest(self, *args, **kwargs): return type('obj', (object,), {'success': False, 'data': None})()
+        async def get_funding_rates(self, *args, **kwargs): return type('obj', (object,), {'success': False, 'data': None})()
+        async def get_long_short_ratio(self, *args, **kwargs): return type('obj', (object,), {'success': False, 'data': None})()
+    class CoinglassResponse:
+        success: bool = False
+        data = None
+    class Position:
+        pass
+    user_context = type('obj', (object,), {
+        'get_all_positions': lambda: [],
+        'get_position_context_for_ai': lambda x: ''
+    })()
 
 # Global clients
 helsinki: HelsinkiClient = None
@@ -97,27 +136,46 @@ MOCK_POSITIONS = [
 ]
 
 
+def init_clients():
+    """Initialize clients lazily for serverless compatibility."""
+    global helsinki, query_processor, whale_alert, coinglass
+    
+    if helsinki is None:
+        try:
+            helsinki = HelsinkiClient()
+            logger.info("Helsinki VM client ready")
+        except Exception as e:
+            logger.error(f"Helsinki init error: {e}")
+    
+    if query_processor is None:
+        try:
+            query_processor = QueryProcessor()
+            logger.info("Query processor ready")
+        except Exception as e:
+            logger.error(f"Query processor init error: {e}")
+    
+    if whale_alert is None:
+        try:
+            whale_alert = WhaleAlertClient()
+            logger.info("Whale Alert client ready")
+        except Exception as e:
+            logger.error(f"Whale Alert init error: {e}")
+    
+    if coinglass is None:
+        try:
+            coinglass = CoinglassClient()
+            logger.info("Coinglass client ready")
+        except Exception as e:
+            logger.error(f"Coinglass init error: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown."""
-    global helsinki, query_processor, whale_alert, coinglass
-    
     logger.info("BASTION Terminal API starting...")
-    
-    # Initialize clients
-    helsinki = HelsinkiClient()
-    query_processor = QueryProcessor()
-    whale_alert = WhaleAlertClient()
-    coinglass = CoinglassClient()
-    
-    logger.info("Helsinki VM client ready (33 endpoints)")
-    logger.info("Whale Alert client ready (streaming)")
-    logger.info("Coinglass client ready (heatmap + liquidations)")
-    logger.info("Query processor ready")
-    logger.info("BASTION Terminal API LIVE on http://localhost:8888")
-    
+    init_clients()
+    logger.info("BASTION Terminal API LIVE")
     yield
-    
     logger.info("BASTION Terminal API shutting down...")
 
 
@@ -125,7 +183,7 @@ app = FastAPI(
     title="BASTION Terminal API",
     description="Powers the BASTION Trading Terminal",
     version="1.0.0",
-    lifespan=lifespan
+    # Skip lifespan for serverless - use lazy init instead
 )
 
 # CORS
@@ -136,6 +194,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize on startup (works for both local and serverless)."""
+    init_clients()
+
+
+# Ensure clients are initialized on each request for serverless
+@app.middleware("http")
+async def init_middleware(request, call_next):
+    init_clients()
+    response = await call_next(request)
+    return response
 
 
 # =============================================================================
