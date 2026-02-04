@@ -803,11 +803,7 @@ class StructureDetector:
         horizontal_level: Optional[HorizontalLevel],
         distance_pct: float,
     ) -> float:
-        """
-        Calculate confluence score for a pressure point.
-        
-        Includes staleness penalty and freshness bonus.
-        """
+        """Calculate confluence score for a pressure point."""
         score = 0.0
         
         # Trendline grade contribution (0-4 points)
@@ -826,28 +822,15 @@ class StructureDetector:
             if horizontal_level.is_bipolar():
                 score += 0.5
         
-        # === FRESHNESS BONUS (0-1.5 points) ===
-        # Structure touched within last 10 bars is FRESH and more reliable
-        if trendline.bars_since_last_touch < 10:
-            freshness_bonus = 1.5 * (1 - trendline.bars_since_last_touch / 10)
-            score += freshness_bonus
-        elif trendline.bars_since_last_touch < 20:
-            # Moderate freshness
-            score += 0.5 * (1 - (trendline.bars_since_last_touch - 10) / 10)
-        
-        # === STALENESS PENALTY (0-2 points) ===
-        # Structure not touched for 50+ bars is STALE and less reliable
-        if trendline.bars_since_last_touch > 50:
-            # Calculate penalty: increases as structure gets more stale
-            bars_stale = trendline.bars_since_last_touch - 50
-            staleness_penalty = min(2.0, bars_stale / 50)  # Max 2 point penalty
-            score -= staleness_penalty
+        # Freshness bonus (0-1 point)
+        if trendline.bars_since_last_touch < 20:
+            score += 1.0 - (trendline.bars_since_last_touch / 20)
         
         # Proximity bonus (0-1 point) - closer is better
         score += 1.0 - min(1.0, distance_pct * 20)
         
         # Normalize to 0-10
-        return max(0.0, min(10.0, score))
+        return min(10.0, score)
     
     def _calculate_structure_score(
         self,

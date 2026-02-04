@@ -299,6 +299,10 @@
 
           <!-- Right -->
           <div class="flex items-center gap-6 w-full lg:w-auto justify-between lg:justify-end">
+            <a href="/visualizations" class="flex items-center gap-2 px-3 py-1 bg-crimson-600/20 border border-crimson-600/50 rounded text-crimson-400 hover:bg-crimson-600/30 hover:text-crimson-300 transition-all font-bold text-[10px]">
+              <iconify-icon icon="solar:graph-new-bold" class="text-sm"></iconify-icon>
+              3D VIZ
+            </a>
             <div class="flex items-center gap-2 text-crimson-500 font-bold animate-pulse">
               <iconify-icon icon="solar:brain-bold"></iconify-icon>
               NEURAL ACTIVE
@@ -1091,12 +1095,12 @@
             <!-- Chart Area - Real TradingView Chart -->
             <div id="chart-container" class="flex-1 relative overflow-hidden bg-[#080808]">
               <!-- Live Price Badge -->
-              <div data-price="current" class="absolute top-2 right-2 bg-green-600 text-white text-[11px] font-mono px-2 py-1 z-30 font-bold shadow-[0_0_15px_rgba(34,197,94,0.6)] rounded">
-                $96,847
+              <div data-price="current" class="absolute top-2 right-2 bg-zinc-700 text-white text-[11px] font-mono px-2 py-1 z-30 font-bold rounded">
+                Loading...
               </div>
               <!-- 24h Change Badge -->
-              <div data-price="change" class="absolute top-2 right-24 bg-zinc-800 text-green-400 text-[10px] font-mono px-2 py-1 z-30 border border-zinc-700 rounded">
-                +0.00%
+              <div data-price="change" class="absolute top-2 right-24 bg-zinc-800 text-zinc-400 text-[10px] font-mono px-2 py-1 z-30 border border-zinc-700 rounded">
+                --
               </div>
               <!-- Chart renders here -->
               <div id="tv-chart" class="w-full h-full"></div>
@@ -2752,8 +2756,10 @@ Esc - Close Dialogs
         try {
           const res = await fetch(`${API_BASE}/api/price/${currentSymbol}`);
           const data = await res.json();
+          
+          console.log('[PRICE] Fetched:', data);
 
-          if (data.price) {
+          if (data.price && data.price > 0) {
             const priceEl = document.querySelector('[data-price="current"]');
             const changeEl = document.querySelector('[data-price="change"]');
             const newPrice = data.price;
@@ -3983,6 +3989,53 @@ Esc - Close Dialogs
       }
       
       // =================================================================
+      // LIVE NEWS FEED
+      // =================================================================
+      async function fetchLiveNews() {
+        try {
+          const res = await fetch(`${API_BASE}/api/news?limit=8`);
+          const data = await res.json();
+          
+          if (data.success && data.news) {
+            renderNewsFeed(data.news);
+            console.log('[NEWS] Updated:', data.news.length, 'items');
+          }
+        } catch (e) {
+          console.error('[NEWS] Fetch error:', e);
+        }
+      }
+      
+      function renderNewsFeed(news) {
+        const container = document.querySelector('[data-news="feed"]');
+        if (!container) return;
+        
+        container.innerHTML = news.map(item => {
+          const sentimentColors = {
+            'BULLISH': { text: 'text-green-400', border: 'hover:border-green-600/50' },
+            'BEARISH': { text: 'text-red-400', border: 'hover:border-red-600/50' },
+            'NEUTRAL': { text: 'text-zinc-400', border: 'hover:border-zinc-600/50' }
+          };
+          const colors = sentimentColors[item.sentiment] || sentimentColors['NEUTRAL'];
+          const currencyTags = item.currencies?.length ? 
+            item.currencies.map(c => `<span class="px-1 py-0.5 bg-zinc-800 rounded text-[6px]">${c}</span>`).join(' ') : '';
+          
+          return `
+            <div class="p-1.5 bg-zinc-900/50 rounded border border-zinc-800/50 ${colors.border} cursor-pointer transition-colors" onclick="window.open('${item.url}', '_blank')">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-[7px] ${colors.text} uppercase font-bold">${item.sentiment}</span>
+                <span class="text-[7px] text-zinc-600">${item.timeAgo}</span>
+              </div>
+              <div class="text-white leading-tight text-[8px]">${item.title}</div>
+              <div class="flex justify-between items-center mt-1">
+                <span class="text-[7px] text-zinc-500">${item.source}</span>
+                <div class="flex gap-1">${currencyTags}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      // =================================================================
       // MONTE CARLO SIMULATOR
       // =================================================================
       async function runMonteCarlo() {
@@ -4542,6 +4595,9 @@ Esc - Close Dialogs
         
         // === KELLY CRITERION === Every 30 seconds (position sizing)
         setInterval(fetchKelly, 30000);
+        
+        // === LIVE NEWS === Every 60 seconds (breaking news)
+        setInterval(fetchLiveNews, 60000);
 
         // Update timestamp every second
         setInterval(() => {
@@ -4575,7 +4631,8 @@ Esc - Close Dialogs
           fetchPositions(),
           fetchSessionStats(),
           fetchMarketData(currentSymbol),
-          fetchAlerts()
+          fetchAlerts(),
+          fetchLiveNews()
         ]);
         
         // Start live data streaming

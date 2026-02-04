@@ -189,7 +189,7 @@ class QueryProcessor:
         
         if context.leverage and context.leverage > 1:
             lines.append(
-                f"[!] LEVERAGE WARNING: {context.leverage}x increases liquidation risk. "
+                f"⚠️ LEVERAGE WARNING: {context.leverage}x increases liquidation risk. "
                 "Adjust stops accordingly."
             )
         
@@ -217,10 +217,5 @@ class QueryProcessor:
             )
         
         return "\n".join(lines) if lines else ""
-
-
-
-
-
 
 

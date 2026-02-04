@@ -218,8 +218,9 @@ class OrderFlowDetector:
                 analysis.cvd = cvd_data.get('cvd', 0.0)
                 analysis.cvd_trend = cvd_data.get('trend', 'neutral')
             elif ohlcv is not None:
-                # Fallback: Enhanced CVD calculation from OHLCV
-                analysis.cvd, analysis.cvd_trend = self._calculate_cvd_from_ohlcv(ohlcv)
+                # Fallback: Calculate CVD from OHLCV
+                analysis.cvd = self._calculate_cvd_from_ohlcv(ohlcv)
+                analysis.cvd_trend = 'accumulation' if analysis.cvd > 0 else 'distribution' if analysis.cvd < 0 else 'neutral'
             
             # Determine flow direction
             analysis.flow_direction, analysis.flow_strength = self._determine_flow_direction(
@@ -362,109 +363,22 @@ class OrderFlowDetector:
         else:
             return "neutral"
     
-    def _calculate_cvd_from_ohlcv(self, ohlcv: pd.DataFrame) -> Tuple[float, str]:
+    def _calculate_cvd_from_ohlcv(self, ohlcv: pd.DataFrame) -> float:
         """
-        Enhanced CVD calculation from OHLCV data (fallback method).
+        Calculate CVD from OHLCV data (fallback method).
         
-        Improvements over basic CVD:
-        1. Delta-weighted by candle body size (strong candles = more weight)
-        2. OBV trend confirmation
-        3. Combined signal for accumulation/distribution
-        
-        Returns:
-            Tuple of (cvd_value, trend: 'accumulation'|'distribution'|'neutral')
+        CVD = Sum of (Volume * sign(Close - Open))
         """
-        if len(ohlcv) < 10:
-            return 0.0, "neutral"
-        
         if len(ohlcv) < self.cvd_lookback:
-            data = ohlcv.copy()
+            data = ohlcv
         else:
-            data = ohlcv.tail(self.cvd_lookback).copy()
+            data = ohlcv.tail(self.cvd_lookback)
         
-        close = data['close'].values
-        open_p = data['open'].values
-        high = data['high'].values
-        low = data['low'].values
-        volume = data['volume'].values
+        # Calculate delta for each bar
+        delta = np.sign(data['close'] - data['open']) * data['volume']
+        cvd = np.sum(delta)
         
-        # === Enhanced Delta Calculation ===
-        # Weight by candle body size relative to range (strong candles = more weight)
-        body_size = np.abs(close - open_p)
-        range_size = high - low
-        
-        # Avoid division by zero
-        range_size = np.where(range_size == 0, 1e-10, range_size)
-        
-        # Delta weight: how much of the candle is body vs wick
-        delta_weight = body_size / range_size
-        
-        # Direction: +1 for bullish, -1 for bearish
-        direction = np.sign(close - open_p)
-        
-        # Weighted delta volume
-        weighted_delta = direction * volume * delta_weight
-        cvd = float(np.sum(weighted_delta))
-        
-        # === OBV (On-Balance Volume) Trend Confirmation ===
-        # OBV adds volume on up days, subtracts on down days
-        price_direction = np.sign(np.diff(close, prepend=close[0]))
-        obv = np.cumsum(price_direction * volume)
-        
-        # OBV trend: compare current to 20-bar ago
-        lookback = min(20, len(obv) - 1)
-        if lookback > 0:
-            obv_change = obv[-1] - obv[-lookback]
-            obv_trend = "up" if obv_change > 0 else "down"
-        else:
-            obv_trend = "neutral"
-        
-        # === Money Flow Index (simplified) ===
-        # Typical price * volume weighted by direction
-        typical_price = (high + low + close) / 3
-        money_flow = typical_price * volume * direction
-        mfi_sum = np.sum(money_flow[-14:])  # 14-period
-        
-        # === Combine Signals for Final Trend ===
-        signals = []
-        
-        # CVD signal
-        if cvd > 0:
-            signals.append("bullish")
-        elif cvd < 0:
-            signals.append("bearish")
-        else:
-            signals.append("neutral")
-        
-        # OBV confirmation
-        if obv_trend == "up":
-            signals.append("bullish")
-        elif obv_trend == "down":
-            signals.append("bearish")
-        else:
-            signals.append("neutral")
-        
-        # MFI signal
-        if mfi_sum > 0:
-            signals.append("bullish")
-        elif mfi_sum < 0:
-            signals.append("bearish")
-        else:
-            signals.append("neutral")
-        
-        # Count signals
-        bullish_count = signals.count("bullish")
-        bearish_count = signals.count("bearish")
-        
-        # Determine final trend
-        if bullish_count >= 2 and cvd > 0:
-            trend = "accumulation"
-        elif bearish_count >= 2 and cvd < 0:
-            trend = "distribution"
-        else:
-            trend = "neutral"
-        
-        return cvd, trend
+        return float(cvd)
     
     def _determine_flow_direction(
         self,

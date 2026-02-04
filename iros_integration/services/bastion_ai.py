@@ -300,7 +300,7 @@ LIVE DATA:
         except Exception as e:
             # Return fallback response with market data
             return {
-                "response": f"""[WARNING] **BASTION MODEL TEMPORARILY UNAVAILABLE**
+                "response": f"""⚠️ **BASTION MODEL TEMPORARILY UNAVAILABLE**
 
 The Bastion 32B model at {self.model_url} is not reachable.
 
@@ -395,10 +395,5 @@ async def ask_bastion(query: str, **kwargs) -> str:
         return result.response
     else:
         return f"Error: {result.error}"
-
-
-
-
-
 
 

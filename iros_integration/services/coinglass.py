@@ -183,48 +183,87 @@ class CoinglassClient:
         )
     
     # =========================================================================
-    # OPTIONS DATA
+    # OPTIONS ENDPOINTS
     # =========================================================================
     
     async def get_options_info(self, symbol: str = "BTC") -> CoinglassResponse:
-        """Get options overview - put/call ratio, max pain"""
+        """Get options market data - open interest, volume, put/call ratio"""
         return await self._request(
-            "/options/info",
+            "/option/info",
+            {"symbol": symbol}
+        )
+    
+    async def get_options_max_pain(self, symbol: str = "BTC") -> CoinglassResponse:
+        """Get options max pain price"""
+        return await self._request(
+            "/option/max-pain",
+            {"symbol": symbol}
+        )
+    
+    async def get_options_oi_expiry(self, symbol: str = "BTC") -> CoinglassResponse:
+        """Get options OI by expiry date"""
+        return await self._request(
+            "/option/oi-expiry",
             {"symbol": symbol}
         )
     
     # =========================================================================
-    # ETF DATA
+    # TAKER BUY/SELL ENDPOINTS
     # =========================================================================
     
-    async def get_bitcoin_etf(self) -> CoinglassResponse:
-        """Get Bitcoin ETF flows data"""
-        return await self._request("/index/bitcoin-etf")
-    
-    async def get_gbtc(self) -> CoinglassResponse:
-        """Get GBTC holdings"""
-        return await self._request("/index/gbtc")
-    
-    # =========================================================================
-    # TAKER BUY/SELL
-    # =========================================================================
-    
-    async def get_taker_buy_sell(self, symbol: str = "BTC") -> CoinglassResponse:
-        """Get taker buy/sell ratio - real-time order flow"""
+    async def get_taker_buy_sell(self, symbol: str = "BTC", interval: str = "h1") -> CoinglassResponse:
+        """Get taker buy/sell volume ratio"""
         return await self._request(
-            "/futures/taker-buy-sell-ratio",
+            "/futures/takerbuy-sell-vol/exchange-list",
+            {"symbol": symbol, "interval": interval}
+        )
+    
+    async def get_taker_buy_sell_history(
+        self,
+        symbol: str = "BTC",
+        interval: str = "h1",
+        limit: int = 100
+    ) -> CoinglassResponse:
+        """Get historical taker buy/sell volume"""
+        return await self._request(
+            "/futures/takerbuy-sell-vol/aggregated-history",
+            {"symbol": symbol, "interval": interval, "limit": limit}
+        )
+    
+    # =========================================================================
+    # EXCHANGE FLOW ENDPOINTS
+    # =========================================================================
+    
+    async def get_exchange_netflow(self, symbol: str = "BTC") -> CoinglassResponse:
+        """Get exchange inflow/outflow (on-chain data)"""
+        return await self._request(
+            "/futures/exchange-flow/exchange-list",
+            {"symbol": symbol}
+        )
+    
+    async def get_exchange_balance(self, symbol: str = "BTC") -> CoinglassResponse:
+        """Get exchange balances"""
+        return await self._request(
+            "/futures/exchange-balance/exchange-list",
             {"symbol": symbol}
         )
     
     # =========================================================================
-    # LIQUIDATION BY EXCHANGE
+    # PRICE DATA
     # =========================================================================
     
-    async def get_liquidation_by_exchange(self, symbol: str = "BTC") -> CoinglassResponse:
-        """Get liquidations broken down by exchange"""
+    async def get_price(self, symbol: str = "BTC") -> CoinglassResponse:
+        """Get current price from Coinglass"""
         return await self._request(
-            "/futures/liquidation/exchange-list",
+            "/futures/price",
             {"symbol": symbol}
+        )
+    
+    async def get_ohlc(self, symbol: str = "BTC", interval: str = "1h", limit: int = 100) -> CoinglassResponse:
+        """Get OHLC candlestick data"""
+        return await self._request(
+            "/futures/ohlc-aggregated-history",
+            {"symbol": symbol, "interval": interval, "limit": limit}
         )
     
     # =========================================================================
@@ -253,8 +292,6 @@ class CoinglassClient:
             "long_short_ratio": results[2].data if isinstance(results[2], CoinglassResponse) and results[2].success else None,
             "liquidations_24h": results[3].data if isinstance(results[3], CoinglassResponse) and results[3].success else None,
         }
-
-
 
 
 

@@ -28,9 +28,6 @@ env/
 
 # Environment Variables
 .env
-.env.*
-
-# Full code included for future reference
 
 # IDE
 .vscode/
