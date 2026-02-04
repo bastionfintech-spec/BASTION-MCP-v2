@@ -35,5 +35,43 @@ def test_imports():
     except Exception as e:
         results["settings"] = str(e)
     
+    # Test the clients
+    try:
+        from iros_integration.services.helsinki import HelsinkiClient
+        results["helsinki_client"] = "ok"
+    except Exception as e:
+        results["helsinki_client"] = str(e)
+    
+    try:
+        from iros_integration.services.coinglass import CoinglassClient
+        results["coinglass_client"] = "ok"
+    except Exception as e:
+        results["coinglass_client"] = str(e)
+    
+    try:
+        from iros_integration.services.whale_alert import WhaleAlertClient
+        results["whale_alert_client"] = "ok"
+    except Exception as e:
+        results["whale_alert_client"] = str(e)
+    
+    try:
+        from iros_integration.services.query_processor import QueryProcessor
+        results["query_processor"] = "ok"
+    except Exception as e:
+        results["query_processor"] = str(e)
+    
+    try:
+        from iros_integration.services.exchange_connector import user_context
+        results["exchange_connector"] = "ok"
+    except Exception as e:
+        results["exchange_connector"] = str(e)
+    
+    # Try importing the main terminal_api
+    try:
+        from api.terminal_api import app as terminal_app
+        results["terminal_api"] = "ok"
+    except Exception as e:
+        results["terminal_api"] = str(e)
+    
     return {"results": results}
 
