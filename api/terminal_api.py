@@ -183,7 +183,6 @@ app = FastAPI(
     title="BASTION Terminal API",
     description="Powers the BASTION Trading Terminal",
     version="1.0.0",
-    lifespan=lifespan,  # Enable for Railway (uvicorn)
 )
 
 # CORS
@@ -203,6 +202,8 @@ app.add_middleware(
 @app.get("/api/status")
 async def get_status():
     """Health check and client status."""
+    # Lazy init on first request
+    init_clients()
     return {
         "status": "ok",
         "helsinki": helsinki is not None,
@@ -215,6 +216,12 @@ async def get_status():
             "helsinki_url": config.helsinki.base_url if hasattr(config, 'helsinki') else "not set"
         }
     }
+
+
+@app.get("/api/health")
+async def health_check():
+    """Simple health check - no client init."""
+    return {"status": "ok"}
 
 
 # =============================================================================
@@ -1009,6 +1016,7 @@ async def get_klines(symbol: str = "BTC", interval: str = "15m", limit: int = 10
 @app.get("/api/market/{symbol}")
 async def get_market_data(symbol: str = "BTC"):
     """Get comprehensive market data from Helsinki VM."""
+    init_clients()
     try:
         data = await helsinki.fetch_full_data(symbol.upper())
         formatted = helsinki.format_for_prompt(data)
@@ -1033,6 +1041,7 @@ async def get_market_data(symbol: str = "BTC"):
 @app.get("/api/cvd/{symbol}")
 async def get_cvd(symbol: str = "BTC"):
     """Get CVD data for a symbol."""
+    init_clients()
     import httpx
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -1060,6 +1069,7 @@ async def get_cvd(symbol: str = "BTC"):
 @app.get("/api/volatility/{symbol}")
 async def get_volatility(symbol: str = "BTC"):
     """Get volatility data for a symbol."""
+    init_clients()
     try:
         data = await helsinki.fetch_volatility_data(symbol.upper())
         return data
@@ -1070,6 +1080,7 @@ async def get_volatility(symbol: str = "BTC"):
 @app.get("/api/liquidations/{symbol}")
 async def get_liquidations(symbol: str = "BTC"):
     """Get liquidation data for a symbol."""
+    init_clients()
     try:
         data = await helsinki.fetch_liquidation_data(symbol.upper())
         return data
@@ -1080,6 +1091,7 @@ async def get_liquidations(symbol: str = "BTC"):
 @app.get("/api/funding")
 async def get_funding():
     """Get funding rates for all major pairs."""
+    init_clients()
     import httpx
     import asyncio
     
@@ -1130,6 +1142,7 @@ async def get_funding():
 @app.get("/api/oi/{symbol}")
 async def get_open_interest(symbol: str = "BTC"):
     """Get open interest data."""
+    init_clients()
     import httpx
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -1154,6 +1167,7 @@ async def get_open_interest(symbol: str = "BTC"):
 @app.get("/api/fear-greed")
 async def get_fear_greed():
     """Get fear and greed index."""
+    init_clients()
     try:
         import httpx
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -1450,6 +1464,7 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/api/whales")
 async def get_whale_transactions(min_value: int = 1000000, limit: int = 20):
     """Get recent whale transactions."""
+    init_clients()
     try:
         result = await whale_alert.get_transactions(min_value=min_value, limit=limit)
         
