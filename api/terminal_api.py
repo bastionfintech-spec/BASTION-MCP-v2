@@ -1582,27 +1582,38 @@ LIVE DATA:
                 
                 if response.status_code == 200:
                     result = response.json()
-                    ai_response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    logger.info(f"IROS raw response keys: {result.keys()}")
                     
-                    if ai_response:
-                        data_sources.append("IROS:32B-LLM")
-                        return {
-                            "success": True,
-                            "response": ai_response,
-                            "context": {
-                                "symbol": context.symbol,
-                                "capital": context.capital,
-                                "timeframe": context.timeframe,
-                                "intent": context.query_intent,
-                                "has_positions": len(user_positions) > 0,
-                                "position_count": len(user_positions)
-                            },
-                            "user_positions": user_positions,
-                            "data_sources": data_sources
-                        }
+                    choices = result.get("choices", [])
+                    if choices and len(choices) > 0:
+                        message = choices[0].get("message", {})
+                        ai_response = message.get("content", "")
+                        
+                        logger.info(f"IROS content length: {len(ai_response) if ai_response else 0}")
+                        
+                        if ai_response:
+                            data_sources.append("IROS:32B-LLM")
+                            return {
+                                "success": True,
+                                "response": ai_response,
+                                "context": {
+                                    "symbol": context.symbol,
+                                    "capital": context.capital,
+                                    "timeframe": context.timeframe,
+                                    "intent": context.query_intent,
+                                    "has_positions": len(user_positions) > 0,
+                                    "position_count": len(user_positions)
+                                },
+                                "user_positions": user_positions,
+                                "data_sources": data_sources
+                            }
+                        else:
+                            iros_error = f"Empty content in response. Message: {message}"
+                    else:
+                        iros_error = f"No choices in response. Result: {str(result)[:200]}"
                 else:
                     logger.error(f"IROS model error: {response.status_code} - {response.text[:500]}")
-                    logger.error(f"IROS URL: {model_url}, Headers sent: {list(response.request.headers.keys())}")
+                    iros_error = f"HTTP {response.status_code}: {response.text[:200]}"
                     
         except Exception as e:
             logger.error(f"IROS call failed: {e}")
