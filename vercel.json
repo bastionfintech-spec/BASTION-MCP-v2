@@ -2,17 +2,16 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/main.py",
+      "src": "api/test.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/main.py" },
+    { "src": "/api/(.*)", "dest": "/api/test.py" },
     { "src": "/visualizations", "dest": "/web/visualizations.html" },
     { "src": "/research", "dest": "/web/research.html" },
     { "src": "/account", "dest": "/web/account.html" },
-    { "src": "/frontend", "dest": "/BASTION FRONT END.html" },
-    { "src": "/", "dest": "/api/main.py" },
+    { "src": "/", "dest": "/generated-page.html" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }
