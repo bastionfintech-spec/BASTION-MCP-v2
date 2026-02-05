@@ -183,7 +183,7 @@ app = FastAPI(
     title="BASTION Terminal API",
     description="Powers the BASTION Trading Terminal",
     version="1.0.0",
-    # Skip lifespan for serverless - use lazy init instead
+    lifespan=lifespan,  # Enable for Railway (uvicorn)
 )
 
 # CORS
