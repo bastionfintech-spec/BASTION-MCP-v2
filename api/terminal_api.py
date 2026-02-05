@@ -1530,15 +1530,18 @@ async def neural_chat(request: Dict[str, Any]):
     # Format market data for IROS prompt
     market_context = _format_market_data_for_iros(symbol, market_data)
     
-    # Build full context for IROS
+    # Build full context for IROS (truncate to avoid exceeding 8K token limit)
+    # Rough estimate: 4 chars = 1 token, so max ~20K chars for safety
+    truncated_context = market_context[:15000] if len(market_context) > 15000 else market_context
+    
     full_context = f"""
 USER QUERY: {query}
 SYMBOL: {symbol}
 
-{position_context}
+{position_context[:2000] if position_context else ''}
 
 LIVE MARKET DATA:
-{market_context}
+{truncated_context}
 """
     
     # Call IROS model
@@ -1548,17 +1551,17 @@ LIVE MARKET DATA:
         try:
             import httpx
             
-            system_prompt = f"""You are BASTION, a senior quant analyst for a $500M+ hedge fund. Provide institutional-grade analysis.
+            # Keep system prompt concise to stay under token limit
+            system_prompt = f"""You are BASTION, an institutional crypto analyst. Be concise and precise.
 
-CRITICAL RULES:
-- USE THE CURRENT PRICE FROM THE DATA. NEVER MAKE UP PRICES.
-- No emojis. Use probabilities and confidence scores.
-- Be precise, quantified, actionable.
-- Reject bad setups with clear reasoning.
-- Reference SPECIFIC data points (whale positions, funding rates, max pain, etc.)
+RULES:
+- Use the CURRENT PRICE from data
+- No emojis, use percentages and probabilities
+- Be actionable with specific price levels
 
-LIVE DATA:
-{full_context}"""
+{full_context[:8000]}"""
+            
+            logger.info(f"IROS prompt length: {len(system_prompt)} chars")
             
             model_api_key = os.getenv("BASTION_MODEL_API_KEY", "5c37b5e8e6c2480813aa0cfd4de5c903544b7a000bff729e1c99d9b4538eb34d")
             
@@ -1571,7 +1574,7 @@ LIVE DATA:
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": query}
                         ],
-                        "max_tokens": 1500,
+                        "max_tokens": 800,
                         "temperature": 0.7
                     },
                     headers={
