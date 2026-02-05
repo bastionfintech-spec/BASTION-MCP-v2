@@ -2202,11 +2202,7 @@
         });
         renderPositions();
         
-        // Update chart current price
-        const priceLabel = document.querySelector('[data-price="current"]');
-        if (priceLabel && prices['BTC-PERP']) {
-          priceLabel.textContent = `$${prices['BTC-PERP'].toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
-        }
+        // Price label is updated by fetchLivePrice() - don't override here
         
         // Update timestamp
         const timeEl = document.querySelector('[data-time="utc"]');

@@ -1497,17 +1497,33 @@ async def websocket_endpoint(websocket: WebSocket):
         
         # Start sending updates
         while True:
-            # Simulate real-time price updates
-            price_update = {
-                "type": "price_update",
-                "data": {
-                    "BTC-PERP": 96847 + random.uniform(-50, 50),
-                    "ETH-PERP": 3198 + random.uniform(-5, 5),
-                    "SOL-PERP": 141.20 + random.uniform(-0.5, 0.5),
-                },
-                "timestamp": datetime.now().isoformat()
-            }
-            await websocket.send_json(price_update)
+            # Fetch real prices from cache or API
+            import httpx
+            prices = {}
+            try:
+                async with httpx.AsyncClient(timeout=2.0) as client:
+                    res = await client.get("https://api.kraken.com/0/public/Ticker?pair=XXBTZUSD,XETHZUSD,SOLUSD")
+                    data = res.json()
+                    if data.get("result"):
+                        for key, ticker in data["result"].items():
+                            price = float(ticker["c"][0])
+                            if "XBT" in key:
+                                prices["BTC-PERP"] = price
+                            elif "ETH" in key:
+                                prices["ETH-PERP"] = price
+                            elif "SOL" in key:
+                                prices["SOL-PERP"] = price
+            except:
+                pass
+            
+            # Only send if we got prices
+            if prices:
+                price_update = {
+                    "type": "price_update",
+                    "data": prices,
+                    "timestamp": datetime.now().isoformat()
+                }
+                await websocket.send_json(price_update)
             
             # Check for incoming messages
             try:
