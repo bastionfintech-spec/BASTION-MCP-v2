@@ -234,6 +234,59 @@ async def health_check():
     return {"status": "ok"}
 
 
+@app.get("/api/iros-test")
+async def test_iros_connection():
+    """Test IROS model connection directly."""
+    import httpx
+    
+    model_url = os.getenv("BASTION_MODEL_URL")
+    model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
+    
+    if not model_url:
+        return {"success": False, "error": "BASTION_MODEL_URL not set", "url": None}
+    
+    results = {"url": model_url, "tests": {}}
+    
+    # Test 1: Can we reach the models endpoint?
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(f"{model_url}/v1/models")
+            results["tests"]["models_endpoint"] = {
+                "status": resp.status_code,
+                "success": resp.status_code == 200,
+                "body_preview": resp.text[:200] if resp.status_code == 200 else resp.text
+            }
+    except Exception as e:
+        results["tests"]["models_endpoint"] = {"success": False, "error": str(e)}
+    
+    # Test 2: Can we do a chat completion?
+    try:
+        headers = {"Content-Type": "application/json"}
+        if model_api_key:
+            headers["Authorization"] = f"Bearer {model_api_key}"
+            
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{model_url}/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "iros",
+                    "messages": [{"role": "user", "content": "test"}],
+                    "max_tokens": 10
+                }
+            )
+            results["tests"]["chat_completion"] = {
+                "status": resp.status_code,
+                "success": resp.status_code == 200,
+                "body_preview": resp.text[:300]
+            }
+    except Exception as e:
+        results["tests"]["chat_completion"] = {"success": False, "error": str(e)}
+    
+    results["success"] = all(t.get("success", False) for t in results["tests"].values())
+    return results
+
+
 # =============================================================================
 # TERMINAL PAGE
 # =============================================================================
@@ -1553,8 +1606,11 @@ LIVE DATA:
                     
         except Exception as e:
             logger.error(f"IROS call failed: {e}")
+            # Include error in fallback for debugging
+            iros_error = str(e)
     
     # Fallback if IROS unavailable
+    error_info = f"\nDebug: {iros_error}" if 'iros_error' in dir() else ""
     response = f"""**Analysis for {symbol}**
 
 ⚠️ IROS model not available. Using rule-based fallback.
@@ -1562,7 +1618,7 @@ LIVE DATA:
 Market Data Summary:
 {market_context if market_context else 'Unable to fetch live data.'}
 
-**Recommendation:** Check BASTION_MODEL_URL configuration."""
+**Recommendation:** Check BASTION_MODEL_URL configuration.{error_info}"""
     
     return {
         "success": True,
