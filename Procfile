@@ -1,3 +1,1 @@
-web: python api/terminal_api.py
-
-
+web: uvicorn api.terminal_api:app --host 0.0.0.0 --port ${PORT:-8080}
