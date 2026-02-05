@@ -4,6 +4,14 @@
     {
       "src": "api/test.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "generated-page.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "web/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -11,8 +19,7 @@
     { "src": "/visualizations", "dest": "/web/visualizations.html" },
     { "src": "/research", "dest": "/web/research.html" },
     { "src": "/account", "dest": "/web/account.html" },
-    { "src": "/", "dest": "/generated-page.html" },
-    { "src": "/(.*)", "dest": "/$1" }
+    { "src": "/", "dest": "/generated-page.html" }
   ]
 }
 
