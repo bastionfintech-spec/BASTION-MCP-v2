@@ -499,12 +499,13 @@ async def get_viz_data(viz_name: str, symbol: str = "BTC"):
     import math
     
     sym = symbol.upper()
+    base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
     
     if viz_name == "liquidation-topology":
         # Get liquidation data
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
-                res = await client.get(f"{helsinki.base_url}/quant/liquidation-estimate/{sym}")
+                res = await client.get(f"{base}/quant/liquidation-estimate/{sym}")
                 data = res.json()
                 
                 current_price = data.get("current_price", 97000)
@@ -2096,12 +2097,14 @@ async def get_volatility_regime(symbol: str = "BTC"):
     Analyze volatility regime - compression vs expansion.
     Predicts when volatility regime is about to change.
     """
+    init_clients()
     import httpx
+    base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
     
     try:
         # Fetch volatility data from Helsinki
         async with httpx.AsyncClient(timeout=5.0) as client:
-            vol_res = await client.get(f"{helsinki.base_url}/quant/volatility/{symbol.upper()}")
+            vol_res = await client.get(f"{base}/quant/volatility/{symbol.upper()}")
             vol_data = vol_res.json()
             
             # Get recent price data for ATR calculation
