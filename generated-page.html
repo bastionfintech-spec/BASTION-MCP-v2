@@ -1762,7 +1762,7 @@
                     <div class="text-green-400 font-bold">Price Target Hit</div>
                     <div class="text-zinc-400">BTC reached $96,500</div>
                     <div class="text-zinc-600">2 min ago</div>
-                  </div>
+              </div>
                 </div>
                 <div class="flex items-start gap-2 p-1.5 bg-purple-900/20 border border-purple-800/30 rounded text-[8px]">
                   <iconify-icon icon="solar:whale-bold" class="text-purple-400 mt-0.5"></iconify-icon>
@@ -2092,7 +2092,8 @@
       // WEBSOCKET CONNECTION
       // =================================================================
       function connectWebSocket() {
-        const wsUrl = `ws://${window.location.host}/ws`;
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
         ws = new WebSocket(wsUrl);
         
         ws.onopen = () => {

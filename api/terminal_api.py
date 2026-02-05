@@ -1543,12 +1543,14 @@ async def get_whale_flows(symbol: str = "BTC", hours: int = 24):
 @app.get("/api/heatmap/{symbol}")
 async def get_liquidation_heatmap(symbol: str = "BTC", t: int = 0):
     """Get liquidation heatmap - try Helsinki first (free, unlimited)."""
+    init_clients()
     import httpx
+    base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
     
     # Always fetch fresh - no caching for heatmap
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
-            res = await client.get(f"{helsinki.base_url}/quant/liquidation-estimate/{symbol.upper()}?nocache={t}")
+            res = await client.get(f"{base}/quant/liquidation-estimate/{symbol.upper()}?nocache={t}")
             data = res.json()
             logger.info(f"Heatmap raw for {symbol}: {data}")
             
@@ -2222,8 +2224,10 @@ async def get_mm_magnet(symbol: str = "BTC"):
     - Top Trader vs Retail Divergence (15%)
     - ETF Flow Direction (15%)
     """
+    init_clients()
     import asyncio
     import httpx
+    base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
     
     try:
         # Fetch all required data in parallel
@@ -2232,10 +2236,10 @@ async def get_mm_magnet(symbol: str = "BTC"):
             price_task = client.get(f"https://min-api.cryptocompare.com/data/pricemultifull?fsyms={symbol.upper()}&tsyms=USD")
             
             # Get liquidation data from Helsinki
-            liq_task = client.get(f"{helsinki.base_url}/quant/liquidation-estimate/{symbol.upper()}")
+            liq_task = client.get(f"{base}/quant/liquidation-estimate/{symbol.upper()}")
             
             # Get funding data
-            funding_task = client.get(f"{helsinki.base_url}/quant/liquidation-estimate/{symbol.upper()}")  # Contains funding
+            funding_task = client.get(f"{base}/quant/liquidation-estimate/{symbol.upper()}")  # Contains funding
             
             price_res, liq_res, funding_res = await asyncio.gather(
                 price_task, liq_task, funding_task,
