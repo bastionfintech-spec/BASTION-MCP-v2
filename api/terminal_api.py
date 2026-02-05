@@ -2200,17 +2200,14 @@ async def get_exchange_net_flow(symbol: str = "BTC", hours: int = 24):
         "hours": hours,
         "inflows": 89000000,
         "inflowsFormatted": "$89M",
-            "outflows": 204000000,
-            "outflowsFormatted": "$204M",
-            "netFlow": 115000000,
-            "netFlowFormatted": "$115M",
-            "direction": "OUTFLOW",
-            "signal": "BULLISH",
-            "source": "fallback"
-        }
-    except Exception as e:
-        logger.error(f"Exchange flow error: {e}")
-        return {"success": False, "error": str(e)}
+        "outflows": 204000000,
+        "outflowsFormatted": "$204M",
+        "netFlow": 115000000,
+        "netFlowFormatted": "$115M",
+        "direction": "OUTFLOW",
+        "signal": "BULLISH",
+        "source": "fallback"
+    }
 
 
 # =============================================================================
