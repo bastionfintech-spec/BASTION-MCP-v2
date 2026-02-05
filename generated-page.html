@@ -4562,7 +4562,7 @@ Esc    - Close Dialogs
         setInterval(fetchFearGreed, 30000);
         
         // === WHALE TRANSACTIONS === Every 5 seconds (catch them fast!)
-        setInterval(fetchWhaleTransactions, 5000);
+        setInterval(fetchWhaleTransactions, 120000); // Every 2 minutes (whale txs don't need real-time)
         
         // === LIQUIDATION HEATMAP === Every 3 seconds (liquidation clusters)
         setInterval(fetchHeatmap, 3000);
