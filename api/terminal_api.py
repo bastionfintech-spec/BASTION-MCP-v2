@@ -196,8 +196,25 @@ app.add_middleware(
 )
 
 
-# Note: For Vercel serverless, we use lazy initialization in init_clients()
-# which is called at the start of each endpoint that needs clients
+# =============================================================================
+# STATUS & HEALTH CHECK
+# =============================================================================
+
+@app.get("/api/status")
+async def get_status():
+    """Health check and client status."""
+    return {
+        "status": "ok",
+        "helsinki": helsinki is not None,
+        "coinglass": coinglass is not None,
+        "whale_alert": whale_alert is not None,
+        "bastion_path": str(bastion_path),
+        "config": {
+            "coinglass_key_set": bool(config.coinglass.api_key),
+            "whale_key_set": bool(config.whale_alert.api_key),
+            "helsinki_url": config.helsinki.base_url if hasattr(config, 'helsinki') else "not set"
+        }
+    }
 
 
 # =============================================================================
