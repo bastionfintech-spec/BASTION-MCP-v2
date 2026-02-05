@@ -111,3 +111,4 @@ python api/terminal_api.py
 - The API has permissive CORS settings
 - If issues persist, check browser console for specific errors
 
+

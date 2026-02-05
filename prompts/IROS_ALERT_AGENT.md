@@ -222,3 +222,4 @@ To avoid alert fatigue:
 
 *This agent should be run as a continuous service, processing data streams and generating alerts in real-time. It should have access to user position data (when connected) to provide personalized, context-aware alerts.*
 
+

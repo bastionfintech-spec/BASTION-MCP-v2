@@ -188,3 +188,4 @@ def catch_all(path: str):
 # Handler for Vercel
 handler = app
 
+

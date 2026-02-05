@@ -267,6 +267,96 @@ class CoinglassClient:
         )
     
     # =========================================================================
+    # ETF DATA ENDPOINTS
+    # =========================================================================
+    
+    async def get_bitcoin_etf(self) -> CoinglassResponse:
+        """Get Bitcoin ETF flow data - IBIT, FBTC, GBTC, etc."""
+        return await self._request("/bitcoin-etf/flows")
+    
+    async def get_grayscale_holdings(self) -> CoinglassResponse:
+        """Get Grayscale fund holdings"""
+        return await self._request("/grayscale/holdings")
+    
+    # =========================================================================
+    # LIQUIDATION BY EXCHANGE
+    # =========================================================================
+    
+    async def get_liquidation_by_exchange(self, symbol: str = "BTC") -> CoinglassResponse:
+        """Get liquidations broken down by exchange"""
+        return await self._request(
+            "/futures/liquidation/exchange-list",
+            {"symbol": symbol}
+        )
+    
+    async def get_liquidation_coin_list(self, symbol: str = "BTC") -> CoinglassResponse:
+        """Get liquidation coin list - more reliable heatmap endpoint"""
+        return await self._request(
+            "/futures/liquidation/coin-list",
+            {"symbol": symbol}
+        )
+    
+    # =========================================================================
+    # COINS MARKETS - MEGA ENDPOINT
+    # =========================================================================
+    
+    async def get_coins_markets(self) -> CoinglassResponse:
+        """
+        MEGA endpoint - Comprehensive market data for all coins.
+        Returns: price, OI, funding, L/S ratio, liquidations at 1h/4h/12h/24h
+        """
+        return await self._request("/futures/coins-markets")
+    
+    # =========================================================================
+    # HYPERLIQUID WHALE POSITIONS
+    # =========================================================================
+    
+    async def get_hyperliquid_whale_positions(self, symbol: str = None) -> CoinglassResponse:
+        """Get top 20 whale positions on Hyperliquid with entry, leverage, PnL"""
+        params = {}
+        if symbol:
+            params["symbol"] = symbol
+        return await self._request("/hyperliquid/whale-position", params if params else None)
+    
+    # =========================================================================
+    # MARKET INDICATORS
+    # =========================================================================
+    
+    async def get_bitcoin_bubble_index(self) -> CoinglassResponse:
+        """Get Bitcoin Bubble Index - BTC valuation indicator"""
+        return await self._request("/index/bitcoin-bubble-index")
+    
+    async def get_ahr999_index(self) -> CoinglassResponse:
+        """Get AHR999 Index - DCA timing indicator"""
+        return await self._request("/index/ahr999")
+    
+    async def get_puell_multiple(self) -> CoinglassResponse:
+        """Get Puell Multiple - Mining cycle indicator"""
+        return await self._request("/index/puell-multiple")
+    
+    async def get_fear_greed_index(self) -> CoinglassResponse:
+        """Get Fear & Greed Index"""
+        return await self._request("/index/fear-greed")
+    
+    # =========================================================================
+    # ADVANCED FUNDING RATE ENDPOINTS
+    # =========================================================================
+    
+    async def get_oi_weighted_funding_rate(self, symbol: str = "BTC", interval: str = "h1", limit: int = 100) -> CoinglassResponse:
+        """Get OI-weighted funding rate history"""
+        return await self._request(
+            "/futures/fundingRate/oi-weight-ohlc-history",
+            {"symbol": symbol, "interval": interval, "limit": limit}
+        )
+    
+    async def get_vol_weighted_funding_rate(self, symbol: str = "BTC", interval: str = "h1", limit: int = 100) -> CoinglassResponse:
+        """Get volume-weighted funding rate history"""
+        return await self._request(
+            "/futures/fundingRate/vol-weight-ohlc-history",
+            {"symbol": symbol, "interval": interval, "limit": limit}
+        )
+    
+    # =========================================================================
     # AGGREGATED DATA
     # =========================================================================
     
@@ -292,6 +382,38 @@ class CoinglassClient:
             "long_short_ratio": results[2].data if isinstance(results[2], CoinglassResponse) and results[2].success else None,
             "liquidations_24h": results[3].data if isinstance(results[3], CoinglassResponse) and results[3].success else None,
         }
+    
+    async def get_full_market_data(self) -> Dict[str, Any]:
+        """
+        Fetch all 13 working endpoints in parallel for comprehensive market intelligence.
+        """
+        import asyncio
+        
+        results = await asyncio.gather(
+            self.get_coins_markets(),
+            self.get_bitcoin_etf(),
+            self.get_hyperliquid_whale_positions(),
+            self.get_bitcoin_bubble_index(),
+            self.get_ahr999_index(),
+            self.get_puell_multiple(),
+            self.get_fear_greed_index(),
+            self.get_options_info("BTC"),
+            self.get_options_max_pain("BTC"),
+            return_exceptions=True
+        )
+        
+        return {
+            "coins_markets": results[0].data if isinstance(results[0], CoinglassResponse) and results[0].success else None,
+            "etf_flows": results[1].data if isinstance(results[1], CoinglassResponse) and results[1].success else None,
+            "hyperliquid_whales": results[2].data if isinstance(results[2], CoinglassResponse) and results[2].success else None,
+            "bubble_index": results[3].data if isinstance(results[3], CoinglassResponse) and results[3].success else None,
+            "ahr999": results[4].data if isinstance(results[4], CoinglassResponse) and results[4].success else None,
+            "puell_multiple": results[5].data if isinstance(results[5], CoinglassResponse) and results[5].success else None,
+            "fear_greed": results[6].data if isinstance(results[6], CoinglassResponse) and results[6].success else None,
+            "options_info": results[7].data if isinstance(results[7], CoinglassResponse) and results[7].success else None,
+            "options_max_pain": results[8].data if isinstance(results[8], CoinglassResponse) and results[8].success else None,
+        }
+
 
 
 

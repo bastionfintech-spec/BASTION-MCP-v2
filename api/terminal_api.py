@@ -1227,27 +1227,38 @@ async def get_open_interest(symbol: str = "BTC"):
 
 @app.get("/api/fear-greed")
 async def get_fear_greed():
-    """Get fear and greed index."""
+    """Get fear and greed index from multiple sources."""
     init_clients()
+    import httpx
+    
+    # Try Coinglass first (premium)
     try:
-        import httpx
-        base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
+        result = await coinglass.get_fear_greed_index()
+        if result.success and result.data:
+            data = result.data
+            value = data.get("value") or data.get("index") or 50
+            return {
+                "value": int(value),
+                "label": "EXTREME FEAR" if value <= 20 else "FEAR" if value <= 40 else "NEUTRAL" if value <= 60 else "GREED" if value <= 80 else "EXTREME GREED"
+            }
+    except Exception as e:
+        logger.error(f"Coinglass F&G error: {e}")
+    
+    # Fallback to alternative.me API (free)
+    try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            res = await client.get(f"{base}/sentiment/fear-greed")
-            data = res.json()
-            if data.get("value"):
-                return data
-            # Fallback to alternative.me API
             alt_res = await client.get("https://api.alternative.me/fng/?limit=1")
             alt_data = alt_res.json()
             if alt_data.get("data"):
+                value = int(alt_data["data"][0]["value"])
                 return {
-                    "value": int(alt_data["data"][0]["value"]),
+                    "value": value,
                     "label": alt_data["data"][0]["value_classification"].upper()
                 }
     except Exception as e:
-        logger.error(f"Fear/Greed fetch error: {e}")
-    return {"value": 50, "label": "Neutral"}
+        logger.error(f"Alternative.me F&G fetch error: {e}")
+    
+    return {"value": 50, "label": "NEUTRAL"}
 
 
 # =============================================================================
@@ -1777,21 +1788,31 @@ async def get_top_traders(symbol: str = "BTC"):
             return_exceptions=True
         )
         
-        # Parse top trader data
+        # Parse top trader data (whales)
         top_long = 50
         top_short = 50
-        if isinstance(top_result, CoinglassClient) or (hasattr(top_result, 'success') and top_result.success and top_result.data):
+        if hasattr(top_result, 'success') and top_result.success and top_result.data:
             data = top_result.data[-1] if isinstance(top_result.data, list) and len(top_result.data) > 0 else top_result.data
-            top_long = data.get("longAccount", 50)
-            top_short = data.get("shortAccount", 50)
+            # Handle different field names from Coinglass
+            top_long = data.get("longAccount", data.get("longRatio", data.get("longShortRatio", 50)))
+            top_short = data.get("shortAccount", data.get("shortRatio", 100 - top_long))
+            # Convert ratio to percentage if needed
+            if top_long > 1 and top_long < 5:  # It's a ratio like 1.5
+                total = top_long + 1
+                top_long = (top_long / total) * 100
+                top_short = 100 - top_long
         
         # Parse global (retail) data
         retail_long = 50
         retail_short = 50
-        if isinstance(global_result, CoinglassClient) or (hasattr(global_result, 'success') and global_result.success and global_result.data):
+        if hasattr(global_result, 'success') and global_result.success and global_result.data:
             data = global_result.data[-1] if isinstance(global_result.data, list) and len(global_result.data) > 0 else global_result.data
-            retail_long = data.get("longAccount", 50)
-            retail_short = data.get("shortAccount", 50)
+            retail_long = data.get("longAccount", data.get("longRatio", data.get("longShortRatio", 50)))
+            retail_short = data.get("shortAccount", data.get("shortRatio", 100 - retail_long))
+            if retail_long > 1 and retail_long < 5:
+                total = retail_long + 1
+                retail_long = (retail_long / total) * 100
+                retail_short = 100 - retail_long
         
         # Detect divergence
         divergence = "NONE"
@@ -1839,23 +1860,64 @@ async def get_top_traders(symbol: str = "BTC"):
 @app.get("/api/options/{symbol}")
 async def get_options_data(symbol: str = "BTC"):
     """Get options data - max pain, put/call ratio."""
+    import asyncio
+    
     try:
-        result = await coinglass.get_options_info(symbol.upper())
+        # Fetch both options info and max pain in parallel
+        info_result, pain_result = await asyncio.gather(
+            coinglass.get_options_info(symbol.upper()),
+            coinglass.get_options_max_pain(symbol.upper()),
+            return_exceptions=True
+        )
         
-        if result.success and result.data:
-            data = result.data
+        max_pain = 0
+        put_call = 1.0
+        total_oi = 0
+        volume = 0
+        
+        # Parse options info
+        if isinstance(info_result, CoinglassResponse) and info_result.success and info_result.data:
+            data = info_result.data
+            # Handle array response - Coinglass returns array with "All" aggregate
+            if isinstance(data, list):
+                for item in data:
+                    if item.get("exchange") == "All" or item.get("exchangeName") == "All":
+                        put_call = item.get("putCallRatio", item.get("pcRatio", 1.0))
+                        total_oi = item.get("totalOpenInterest", item.get("openInterest", 0))
+                        volume = item.get("totalVolume24h", item.get("volume24h", 0))
+                        break
+                if not total_oi and len(data) > 0:
+                    # Sum all exchanges if no "All" found
+                    put_call = data[0].get("putCallRatio", data[0].get("pcRatio", 1.0))
+                    total_oi = sum(d.get("openInterest", 0) for d in data)
+                    volume = sum(d.get("volume24h", 0) for d in data)
+            else:
+                put_call = data.get("putCallRatio", data.get("pcRatio", 1.0))
+                total_oi = data.get("totalOpenInterest", data.get("openInterest", 0))
+                volume = data.get("totalVolume24h", data.get("volume24h", 0))
+        
+        # Parse max pain
+        if isinstance(pain_result, CoinglassResponse) and pain_result.success and pain_result.data:
+            data = pain_result.data
+            # Get the nearest expiry max pain
+            if isinstance(data, list) and len(data) > 0:
+                # Sort by expiry date, get nearest
+                max_pain = data[0].get("maxPain", data[0].get("maxPainPrice", 0))
+            elif isinstance(data, dict):
+                max_pain = data.get("maxPain", data.get("maxPainPrice", 0))
+        
+        if max_pain > 0 or put_call != 1.0 or total_oi > 0:
             return {
                 "success": True,
                 "symbol": symbol.upper(),
-                "maxPain": data.get("maxPainPrice", 0),
-                "putCallRatio": data.get("putCallRatio", 1),
-                "totalOI": data.get("totalOpenInterest", 0),
-                "volume24h": data.get("totalVolume24h", 0),
-                "signal": "BULLISH" if data.get("putCallRatio", 1) < 0.9 else "BEARISH" if data.get("putCallRatio", 1) > 1.1 else "NEUTRAL",
-                "latency_ms": result.latency_ms
+                "maxPain": max_pain,
+                "putCallRatio": round(put_call, 2),
+                "totalOI": total_oi,
+                "volume24h": volume,
+                "signal": "BULLISH" if put_call < 0.9 else "BEARISH" if put_call > 1.1 else "NEUTRAL"
             }
         
-        # Fallback
+        # Fallback if both fail
         return {
             "success": True,
             "symbol": symbol.upper(),
@@ -2006,17 +2068,33 @@ async def get_taker_ratio(symbol: str = "BTC"):
         
         if result.success and result.data:
             data = result.data
-            buy_ratio = data.get("buyRatio", 0.5)
-            sell_ratio = data.get("sellRatio", 0.5)
+            
+            # Handle array response - sum across exchanges
+            total_buy = 0
+            total_sell = 0
+            
+            if isinstance(data, list):
+                for ex in data:
+                    total_buy += ex.get("buyVolUsd", ex.get("buyVol", 0))
+                    total_sell += ex.get("sellVolUsd", ex.get("sellVol", 0))
+            else:
+                total_buy = data.get("buyVolUsd", data.get("buyVol", data.get("buyRatio", 0.5)))
+                total_sell = data.get("sellVolUsd", data.get("sellVol", data.get("sellRatio", 0.5)))
+            
+            total = total_buy + total_sell
+            buy_ratio = total_buy / total if total > 0 else 0.5
+            sell_ratio = total_sell / total if total > 0 else 0.5
             
             return {
                 "success": True,
                 "symbol": symbol.upper(),
-                "buyRatio": buy_ratio,
-                "sellRatio": sell_ratio,
+                "buyRatio": round(buy_ratio, 4),
+                "sellRatio": round(sell_ratio, 4),
                 "netFlow": "BUY" if buy_ratio > sell_ratio else "SELL",
-                "buyPercent": buy_ratio * 100,
-                "sellPercent": sell_ratio * 100,
+                "buyPercent": round(buy_ratio * 100, 1),
+                "sellPercent": round(sell_ratio * 100, 1),
+                "buyVolUsd": total_buy,
+                "sellVolUsd": total_sell,
                 "signal": "BULLISH" if buy_ratio > 0.55 else "BEARISH" if sell_ratio > 0.55 else "NEUTRAL",
                 "latency_ms": result.latency_ms
             }
@@ -2039,12 +2117,55 @@ async def get_taker_ratio(symbol: str = "BTC"):
 
 
 # =============================================================================
-# EXCHANGE NET FLOW API (Whale Alert)
+# EXCHANGE NET FLOW API (Coinglass + Whale Alert fallback)
 # =============================================================================
 
 @app.get("/api/exchange-flow/{symbol}")
 async def get_exchange_net_flow(symbol: str = "BTC", hours: int = 24):
     """Get net exchange inflow/outflow for a symbol."""
+    init_clients()
+    
+    # Try Coinglass first (more reliable, no rate limit issues)
+    try:
+        result = await coinglass.get_exchange_netflow(symbol.upper())
+        
+        if result.success and result.data:
+            data = result.data
+            
+            # Parse Coinglass format - may be array of exchanges
+            total_inflow = 0
+            total_outflow = 0
+            
+            if isinstance(data, list):
+                for ex in data:
+                    inflow = ex.get("inflow", ex.get("inflowUsd", 0))
+                    outflow = ex.get("outflow", ex.get("outflowUsd", 0))
+                    total_inflow += inflow
+                    total_outflow += outflow
+            else:
+                total_inflow = data.get("inflow", data.get("totalInflow", 0))
+                total_outflow = data.get("outflow", data.get("totalOutflow", 0))
+            
+            net_flow = total_outflow - total_inflow
+            
+            return {
+                "success": True,
+                "symbol": symbol.upper(),
+                "hours": hours,
+                "inflows": total_inflow,
+                "inflowsFormatted": f"${total_inflow/1e6:.1f}M" if total_inflow > 1e6 else f"${total_inflow/1e3:.0f}K",
+                "outflows": total_outflow,
+                "outflowsFormatted": f"${total_outflow/1e6:.1f}M" if total_outflow > 1e6 else f"${total_outflow/1e3:.0f}K",
+                "netFlow": net_flow,
+                "netFlowFormatted": f"${abs(net_flow)/1e6:.1f}M" if abs(net_flow) > 1e6 else f"${abs(net_flow)/1e3:.0f}K",
+                "direction": "OUTFLOW" if net_flow > 0 else "INFLOW",
+                "signal": "BULLISH" if net_flow > 0 else "BEARISH",
+                "source": "coinglass"
+            }
+    except Exception as e:
+        logger.warning(f"Coinglass exchange flow failed: {e}")
+    
+    # Fallback to Whale Alert
     try:
         flows = await whale_alert.get_exchange_flows(symbol=symbol.lower(), hours=hours)
         
@@ -2066,16 +2187,19 @@ async def get_exchange_net_flow(symbol: str = "BTC", hours: int = 24):
                 "direction": "OUTFLOW" if net_flow > 0 else "INFLOW",
                 "signal": "BULLISH" if net_flow > 0 else "BEARISH",
                 "exchangeBreakdown": flows.get("exchange_breakdown", {}),
-                "txCount": flows.get("transaction_count", 0)
+                "txCount": flows.get("transaction_count", 0),
+                "source": "whale_alert"
             }
-        
-        # Fallback
-        return {
-            "success": True,
-            "symbol": symbol.upper(),
-            "hours": hours,
-            "inflows": 89000000,
-            "inflowsFormatted": "$89M",
+    except Exception as e:
+        logger.warning(f"Whale Alert exchange flow failed: {e}")
+    
+    # Fallback if both fail
+    return {
+        "success": True,
+        "symbol": symbol.upper(),
+        "hours": hours,
+        "inflows": 89000000,
+        "inflowsFormatted": "$89M",
             "outflows": 204000000,
             "outflowsFormatted": "$204M",
             "netFlow": 115000000,
