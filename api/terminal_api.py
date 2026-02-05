@@ -1384,6 +1384,8 @@ def _format_market_data_for_iros(symbol: str, market_data: dict) -> str:
 @app.post("/api/neural/chat")
 async def neural_chat(request: Dict[str, Any]):
     """Chat with the Bastion AI - includes user position context."""
+    init_clients()  # Ensure clients are ready
+    
     query = request.get("query", "")
     symbol = request.get("symbol", "BTC")
     include_positions = request.get("include_positions", True)
@@ -1428,6 +1430,10 @@ async def neural_chat(request: Dict[str, Any]):
     data_sources = []
     
     try:
+        if coinglass is None:
+            logger.warning("Coinglass client not initialized")
+            raise ValueError("Coinglass not available")
+            
         # Fetch Coinglass data in parallel
         cg_results = await asyncio.gather(
             coinglass.get_coins_markets(),
