@@ -1513,7 +1513,7 @@ LIVE DATA:
                 response = await client.post(
                     f"{model_url}/v1/chat/completions",
                     json={
-                        "model": "bastion-32b",
+                        "model": "iros",
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": query}
