@@ -203,18 +203,27 @@ app.add_middleware(
 async def get_status():
     """Health check and client status."""
     # Lazy init on first request
-    init_clients()
+    try:
+        init_clients()
+    except Exception as e:
+        logger.error(f"Init error: {e}")
+    
+    try:
+        cfg_info = {
+            "coinglass_key_set": bool(getattr(config, 'coinglass', None) and config.coinglass.api_key),
+            "whale_key_set": bool(getattr(config, 'whale_alert', None) and config.whale_alert.api_key),
+            "helsinki_url": getattr(config.helsinki, 'base_url', 'not set') if hasattr(config, 'helsinki') else "not set"
+        }
+    except:
+        cfg_info = {"error": "config access failed"}
+    
     return {
         "status": "ok",
         "helsinki": helsinki is not None,
         "coinglass": coinglass is not None,
         "whale_alert": whale_alert is not None,
         "bastion_path": str(bastion_path),
-        "config": {
-            "coinglass_key_set": bool(config.coinglass.api_key),
-            "whale_key_set": bool(config.whale_alert.api_key),
-            "helsinki_url": config.helsinki.base_url if hasattr(config, 'helsinki') else "not set"
-        }
+        "config": cfg_info
     }
 
 
