@@ -1551,21 +1551,24 @@ LIVE MARKET DATA:
         try:
             import httpx
             
-            # Keep system prompt concise to stay under token limit
-            system_prompt = f"""You are BASTION, an institutional crypto analyst. Be concise and precise.
-
-RULES:
-- Use the CURRENT PRICE from data
-- No emojis, use percentages and probabilities
-- Be actionable with specific price levels
-
-{full_context[:8000]}"""
+            # Keep prompt minimal - model has 8K context limit
+            # Extract just key metrics for the prompt
+            price_line = ""
+            if market_data.get("coins_markets"):
+                for coin in market_data["coins_markets"][:3]:
+                    if coin.get("symbol", "").upper() == symbol.upper():
+                        price_line = f"Price: ${coin.get('price', 0):,.2f}, 24h: {coin.get('priceChangePercent24h', 0):.1f}%, OI: ${coin.get('openInterest', 0)/1e9:.1f}B, Funding: {coin.get('fundingRate', 0)*100:.4f}%"
+                        break
             
-            logger.info(f"IROS prompt length: {len(system_prompt)} chars")
+            system_prompt = f"""You are BASTION, crypto analyst. Answer concisely.
+{symbol} Data: {price_line}
+Query: {query}"""
+            
+            logger.info(f"IROS prompt: {len(system_prompt)} chars")
             
             model_api_key = os.getenv("BASTION_MODEL_API_KEY", "5c37b5e8e6c2480813aa0cfd4de5c903544b7a000bff729e1c99d9b4538eb34d")
             
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=120.0) as client:  # 2 min timeout for slower responses
                 response = await client.post(
                     f"{model_url}/v1/chat/completions",
                     json={
