@@ -111,40 +111,46 @@
             <div class="flex-1 overflow-y-auto no-scrollbar p-2">
               <div class="text-[9px] text-zinc-600 uppercase tracking-wider px-2 mb-2">Categories</div>
               
-              <button class="w-full text-left px-3 py-2 rounded text-[11px] bg-purple-600/20 text-purple-400 border border-purple-600/30 mb-1 flex items-center gap-2">
+              <button data-filter-type="" class="w-full text-left px-3 py-2 rounded text-[11px] bg-purple-600/20 text-purple-400 border border-purple-600/30 mb-1 flex items-center gap-2">
                 <iconify-icon icon="solar:fire-bold"></iconify-icon>
                 All Reports
-                <span class="ml-auto text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded">24</span>
+                <span class="ml-auto text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded" id="count-all">--</span>
               </button>
               
-              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+              <button data-filter-type="market_structure" class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
                 <iconify-icon icon="solar:chart-bold"></iconify-icon>
-                Market Analysis
-                <span class="ml-auto text-[9px] text-zinc-600">8</span>
+                Market Structure
+                <span class="ml-auto text-[9px] text-zinc-600" id="count-market">--</span>
               </button>
               
-              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+              <button data-filter-type="on_chain_intel" class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
                 <iconify-icon icon="solar:database-bold"></iconify-icon>
                 On-Chain Intel
-                <span class="ml-auto text-[9px] text-zinc-600">5</span>
+                <span class="ml-auto text-[9px] text-zinc-600" id="count-onchain">--</span>
               </button>
               
-              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+              <button data-filter-type="whale_intelligence" class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
                 <iconify-icon icon="solar:graph-up-bold"></iconify-icon>
-                Derivatives
-                <span class="ml-auto text-[9px] text-zinc-600">6</span>
+                Whale Intel
+                <span class="ml-auto text-[9px] text-zinc-600" id="count-whale">--</span>
               </button>
               
-              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+              <button data-filter-type="options_flow" class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+                <iconify-icon icon="solar:graph-new-bold"></iconify-icon>
+                Options Flow
+                <span class="ml-auto text-[9px] text-zinc-600" id="count-options">--</span>
+              </button>
+              
+              <button data-filter-type="cycle_position" class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
                 <iconify-icon icon="solar:globe-bold"></iconify-icon>
-                Macro & Sentiment
-                <span class="ml-auto text-[9px] text-zinc-600">3</span>
+                Cycle Position
+                <span class="ml-auto text-[9px] text-zinc-600" id="count-cycle">--</span>
               </button>
               
-              <button class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
+              <button onclick="currentFilter.saved=true; currentFilter.type=null; applyFilters();" class="w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2">
                 <iconify-icon icon="solar:star-bold"></iconify-icon>
                 Saved Reports
-                <span class="ml-auto text-[9px] text-zinc-600">2</span>
+                <span class="ml-auto text-[9px] text-zinc-600" id="count-saved">0</span>
               </button>
               
               <div class="text-[9px] text-zinc-600 uppercase tracking-wider px-2 mb-2 mt-4">Filters</div>
@@ -161,20 +167,26 @@
               
               <div class="px-2 mt-3">
                 <div class="text-[10px] text-zinc-500 mb-1">Asset</div>
-                <select class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 rounded focus:outline-none focus:border-purple-600">
-                  <option>All Assets</option>
-                  <option>BTC</option>
-                  <option>ETH</option>
-                  <option>SOL</option>
+                <select id="asset-filter" class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 rounded focus:outline-none focus:border-purple-600">
+                  <option value="">All Assets</option>
+                  <option value="BTC">BTC</option>
+                  <option value="ETH">ETH</option>
+                  <option value="SOL">SOL</option>
+                  <option value="BNB">BNB</option>
+                  <option value="XRP">XRP</option>
+                  <option value="AVAX">AVAX</option>
+                  <option value="LINK">LINK</option>
+                  <option value="ARB">ARB</option>
+                  <option value="OP">OP</option>
                 </select>
               </div>
               
               <div class="px-2 mt-3">
                 <div class="text-[10px] text-zinc-500 mb-1">Sentiment</div>
                 <div class="flex gap-1">
-                  <button class="flex-1 px-2 py-1 text-[9px] bg-green-900/30 text-green-400 border border-green-800/50 rounded hover:bg-green-900/50 transition-colors">BULLISH</button>
-                  <button class="flex-1 px-2 py-1 text-[9px] bg-zinc-800 text-zinc-400 border border-zinc-700 rounded hover:bg-zinc-700 transition-colors">NEUTRAL</button>
-                  <button class="flex-1 px-2 py-1 text-[9px] bg-zinc-800 text-zinc-400 border border-zinc-700 rounded hover:bg-zinc-700 transition-colors">BEARISH</button>
+                  <button data-filter-bias="BULLISH" class="flex-1 px-2 py-1 text-[9px] bg-zinc-800 text-green-400 border border-zinc-700 rounded hover:bg-green-900/50 transition-colors">BULLISH</button>
+                  <button data-filter-bias="NEUTRAL" class="flex-1 px-2 py-1 text-[9px] bg-zinc-800 text-amber-400 border border-zinc-700 rounded hover:bg-amber-900/50 transition-colors">NEUTRAL</button>
+                  <button data-filter-bias="BEARISH" class="flex-1 px-2 py-1 text-[9px] bg-zinc-800 text-red-400 border border-zinc-700 rounded hover:bg-red-900/50 transition-colors">BEARISH</button>
                 </div>
               </div>
             </div>
@@ -223,6 +235,9 @@
 
     <script>
       const API_BASE = window.location.origin;
+      let allReports = [];
+      let currentFilter = { type: null, symbol: null, bias: null };
+      let savedReports = JSON.parse(localStorage.getItem('savedReports') || '[]');
       
       // Update time
       function updateTime() {
@@ -232,109 +247,83 @@
       setInterval(updateTime, 1000);
       updateTime();
 
-      // Sample reports data (will be replaced with API call)
-      const sampleReports = [
-        {
-          id: 1,
-          title: "BTC Accumulation Phase Confirmed: Smart Money Loading",
-          summary: "On-chain metrics show significant whale accumulation over past 72h. Exchange reserves at 3-year lows. Funding remains neutral suggesting room for upside.",
-          category: "On-Chain Intel",
-          sentiment: "BULLISH",
-          sentimentColor: "green",
-          confidence: "HIGH",
-          timeAgo: "2 min ago",
-          author: "MCF Research",
-          assets: ["BTC"],
-          readTime: "5 min read"
-        },
-        {
-          id: 2,
-          title: "ETH/BTC Ratio Analysis: Altcoin Season Incoming?",
-          summary: "ETH/BTC showing signs of bottoming after extended downtrend. Historical patterns suggest potential rotation into altcoins within 2-4 weeks if BTC holds current levels.",
-          category: "Market Analysis",
-          sentiment: "NEUTRAL",
-          sentimentColor: "amber",
-          confidence: "MEDIUM",
-          timeAgo: "1h ago",
-          author: "MCF Research",
-          assets: ["ETH", "BTC"],
-          readTime: "8 min read"
-        },
-        {
-          id: 3,
-          title: "Derivatives Deep Dive: OI Surge Signals Volatility",
-          summary: "Open interest across major exchanges up 23% in 48h. Funding rates turning positive. Large cluster of liquidations mapped between $68k-$72k.",
-          category: "Derivatives",
-          sentiment: "CAUTION",
-          sentimentColor: "amber",
-          confidence: "HIGH",
-          timeAgo: "3h ago",
-          author: "MCF Research",
-          assets: ["BTC"],
-          readTime: "6 min read"
-        },
-        {
-          id: 4,
-          title: "Macro Weekly: Fed Pivot Implications for Crypto",
-          summary: "Recent Fed commentary suggests rate cuts likely in Q2. Historical correlation analysis shows crypto rallies 60-90 days post-pivot announcement.",
-          category: "Macro & Sentiment",
-          sentiment: "BULLISH",
-          sentimentColor: "green",
-          confidence: "MEDIUM",
-          timeAgo: "6h ago",
-          author: "MCF Research",
-          assets: ["BTC", "ETH"],
-          readTime: "10 min read"
-        },
-        {
-          id: 5,
-          title: "Liquidation Map Analysis: Key Levels to Watch",
-          summary: "Major liquidation clusters identified. $71.2k and $68.5k represent significant long liquidation zones. $75.8k holds substantial short liquidations.",
-          category: "Derivatives",
-          sentiment: "RISK ALERT",
-          sentimentColor: "red",
-          confidence: "HIGH",
-          timeAgo: "12h ago",
-          author: "MCF Research",
-          assets: ["BTC"],
-          readTime: "4 min read"
-        },
-        {
-          id: 6,
-          title: "Whale Wallet Tracker: $500M Moved to Cold Storage",
-          summary: "Multiple whale wallets moved significant BTC to cold storage in past 24h. Pattern historically precedes supply squeezes.",
-          category: "On-Chain Intel",
-          sentiment: "BULLISH",
-          sentimentColor: "green",
-          confidence: "HIGH",
-          timeAgo: "1d ago",
-          author: "MCF Research",
-          assets: ["BTC"],
-          readTime: "3 min read"
-        }
-      ];
+      // Map API report to display format
+      function mapReport(r) {
+        const biasColors = { 'BULLISH': 'green', 'BEARISH': 'red', 'NEUTRAL': 'amber' };
+        const typeNames = {
+          'market_structure': 'Market Analysis',
+          'whale_intelligence': 'Whale Intel',
+          'options_flow': 'Options Flow',
+          'on_chain_intel': 'On-Chain Intel',
+          'cycle_position': 'Cycle Position'
+        };
+        
+        // Calculate time ago
+        const created = new Date(r.generated_at);
+        const now = new Date();
+        const diffMs = now - created;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHrs = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        let timeAgo = diffMins < 60 ? `${diffMins}m ago` : diffHrs < 24 ? `${diffHrs}h ago` : `${diffDays}d ago`;
+        
+        // Extract assets from tags
+        const assets = (r.tags || []).filter(t => ['btc', 'eth', 'sol', 'bnb', 'xrp', 'avax', 'link', 'arb', 'op'].includes(t.toLowerCase())).map(t => t.toUpperCase());
+        
+        return {
+          id: r.id,
+          title: r.title,
+          summary: r.summary || 'Analysis pending...',
+          category: typeNames[r.type] || r.type,
+          sentiment: r.bias || 'NEUTRAL',
+          sentimentColor: biasColors[r.bias] || 'amber',
+          confidence: r.confidence || 'MEDIUM',
+          timeAgo: timeAgo,
+          author: 'MCF Research',
+          assets: assets.length > 0 ? assets : ['CRYPTO'],
+          readTime: '5 min read',
+          sections: r.sections || {},
+          tags: r.tags || [],
+          rawType: r.type
+        };
+      }
 
-      // Render reports
+      // Render reports list
       function renderReports(reports) {
         const container = document.getElementById('reports-list');
+        
+        if (reports.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-12 text-zinc-600">
+              <iconify-icon icon="solar:document-text-bold" class="text-4xl mb-3 text-zinc-700"></iconify-icon>
+              <div class="text-[12px] mb-1">No reports found</div>
+              <div class="text-[10px]">Reports will appear here once generated</div>
+            </div>
+          `;
+          return;
+        }
+        
+        // Update count
+        document.querySelector('.text-purple-400.font-bold span, [class*="text-purple-400"]').closest('div').innerHTML = `<span class="text-purple-400">${reports.length}</span> Research Reports`;
+        
         container.innerHTML = reports.map(report => `
-          <div class="bg-[#0D0D0D] border border-zinc-800/50 rounded-lg p-4 hover:border-purple-600/50 hover:bg-[#0f0f0f] transition-all cursor-pointer group" onclick="showReportDetail(${report.id})">
+          <div class="bg-[#0D0D0D] border border-zinc-800/50 rounded-lg p-4 hover:border-purple-600/50 hover:bg-[#0f0f0f] transition-all cursor-pointer group" onclick="showReportDetail('${report.id}')">
             <div class="flex justify-between items-start mb-2">
               <div class="flex items-center gap-2">
                 <span class="text-[8px] bg-purple-900/50 text-purple-400 px-1.5 py-0.5 rounded">${report.category}</span>
-                <span class="text-[8px] bg-${report.sentimentColor}-900/50 text-${report.sentimentColor}-400 px-1.5 py-0.5 rounded">${report.sentiment}</span>
+                <span class="text-[8px] ${report.sentimentColor === 'green' ? 'bg-green-900/50 text-green-400' : report.sentimentColor === 'red' ? 'bg-red-900/50 text-red-400' : 'bg-amber-900/50 text-amber-400'} px-1.5 py-0.5 rounded">${report.sentiment}</span>
               </div>
               <span class="text-[9px] text-zinc-600">${report.timeAgo}</span>
             </div>
             <h3 class="text-[13px] text-white font-bold mb-2 group-hover:text-purple-400 transition-colors">${report.title}</h3>
-            <p class="text-[10px] text-zinc-500 leading-relaxed mb-3">${report.summary}</p>
+            <p class="text-[10px] text-zinc-500 leading-relaxed mb-3 line-clamp-2">${report.summary}</p>
             <div class="flex justify-between items-center">
               <div class="flex items-center gap-2">
-                ${report.assets.map(a => `<span class="text-[8px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">${a}</span>`).join('')}
+                ${report.assets.slice(0, 3).map(a => `<span class="text-[8px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">${a}</span>`).join('')}
               </div>
               <div class="flex items-center gap-3 text-[9px] text-zinc-600">
                 <span><iconify-icon icon="solar:clock-circle-linear" class="mr-1"></iconify-icon>${report.readTime}</span>
-                <span class="text-${report.sentimentColor}-400">${report.confidence} CONFIDENCE</span>
+                <span class="${report.sentimentColor === 'green' ? 'text-green-400' : report.sentimentColor === 'red' ? 'text-red-400' : 'text-amber-400'}">${report.confidence} CONFIDENCE</span>
               </div>
             </div>
           </div>
@@ -343,30 +332,47 @@
 
       // Show report detail
       function showReportDetail(id) {
-        const report = sampleReports.find(r => r.id === id);
+        const report = allReports.find(r => r.id === id);
         if (!report) return;
         
         const detailPanel = document.getElementById('report-detail');
         const content = document.getElementById('report-content');
+        const isSaved = savedReports.includes(id);
         
-        content.innerHTML = `
-          <div class="mb-4">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-[8px] bg-purple-900/50 text-purple-400 px-1.5 py-0.5 rounded">${report.category}</span>
-              <span class="text-[8px] bg-${report.sentimentColor}-900/50 text-${report.sentimentColor}-400 px-1.5 py-0.5 rounded">${report.sentiment}</span>
-              <span class="text-[8px] text-zinc-600">${report.timeAgo}</span>
-            </div>
-            <h2 class="text-[16px] text-white font-bold mb-3">${report.title}</h2>
-            <div class="flex items-center gap-4 text-[10px] text-zinc-500 mb-4 pb-4 border-b border-zinc-800">
-              <span><iconify-icon icon="solar:user-circle-linear" class="mr-1"></iconify-icon>${report.author}</span>
-              <span><iconify-icon icon="solar:clock-circle-linear" class="mr-1"></iconify-icon>${report.readTime}</span>
-              <span class="text-${report.sentimentColor}-400">${report.confidence} CONFIDENCE</span>
-            </div>
-          </div>
-          
-          <div class="text-[11px] text-zinc-300 leading-relaxed space-y-4">
-            <p>${report.summary}</p>
-            
+        // Build sections HTML
+        let sectionsHTML = '';
+        if (report.sections) {
+          if (report.sections.key_takeaways) {
+            const takeaways = Array.isArray(report.sections.key_takeaways) ? report.sections.key_takeaways : [report.sections.key_takeaways];
+            sectionsHTML += `
+              <div class="bg-zinc-900/50 border border-zinc-800 rounded p-3">
+                <div class="text-[10px] text-purple-400 font-bold mb-2">KEY TAKEAWAYS</div>
+                <ul class="space-y-1 text-[10px] text-zinc-400">
+                  ${takeaways.map(t => `<li>• ${t}</li>`).join('')}
+                </ul>
+              </div>
+            `;
+          }
+          if (report.sections.trading_implication) {
+            sectionsHTML += `
+              <div class="${report.sentimentColor === 'green' ? 'bg-green-900/20 border-green-800/50' : report.sentimentColor === 'red' ? 'bg-red-900/20 border-red-800/50' : 'bg-amber-900/20 border-amber-800/50'} border rounded p-3">
+                <div class="text-[10px] ${report.sentimentColor === 'green' ? 'text-green-400' : report.sentimentColor === 'red' ? 'text-red-400' : 'text-amber-400'} font-bold mb-2">TRADING IMPLICATION</div>
+                <p class="text-[10px] text-zinc-400">${report.sections.trading_implication}</p>
+              </div>
+            `;
+          }
+          if (report.sections.iros_analysis) {
+            sectionsHTML += `
+              <div class="bg-purple-900/20 border border-purple-800/50 rounded p-3">
+                <div class="text-[10px] text-purple-400 font-bold mb-2">IROS ANALYSIS</div>
+                <p class="text-[10px] text-zinc-400 whitespace-pre-wrap">${report.sections.iros_analysis}</p>
+              </div>
+            `;
+          }
+        }
+        
+        if (!sectionsHTML) {
+          sectionsHTML = `
             <div class="bg-zinc-900/50 border border-zinc-800 rounded p-3">
               <div class="text-[10px] text-purple-400 font-bold mb-2">KEY TAKEAWAYS</div>
               <ul class="space-y-1 text-[10px] text-zinc-400">
@@ -375,22 +381,42 @@
                 <li>• Assets covered: ${report.assets.join(', ')}</li>
               </ul>
             </div>
-            
-            <div class="bg-${report.sentimentColor}-900/20 border border-${report.sentimentColor}-800/50 rounded p-3">
-              <div class="text-[10px] text-${report.sentimentColor}-400 font-bold mb-2">TRADING IMPLICATION</div>
+            <div class="${report.sentimentColor === 'green' ? 'bg-green-900/20 border-green-800/50' : report.sentimentColor === 'red' ? 'bg-red-900/20 border-red-800/50' : 'bg-amber-900/20 border-amber-800/50'} border rounded p-3">
+              <div class="text-[10px] ${report.sentimentColor === 'green' ? 'text-green-400' : report.sentimentColor === 'red' ? 'text-red-400' : 'text-amber-400'} font-bold mb-2">TRADING IMPLICATION</div>
               <p class="text-[10px] text-zinc-400">
                 ${report.sentiment === 'BULLISH' ? 'Consider accumulation on dips. Watch for confirmation above key resistance.' : 
                   report.sentiment === 'BEARISH' ? 'Exercise caution. Consider reducing exposure or hedging positions.' :
                   'Wait for clearer directional signal before making major position changes.'}
               </p>
             </div>
+          `;
+        }
+        
+        content.innerHTML = `
+          <div class="mb-4">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-[8px] bg-purple-900/50 text-purple-400 px-1.5 py-0.5 rounded">${report.category}</span>
+              <span class="text-[8px] ${report.sentimentColor === 'green' ? 'bg-green-900/50 text-green-400' : report.sentimentColor === 'red' ? 'bg-red-900/50 text-red-400' : 'bg-amber-900/50 text-amber-400'} px-1.5 py-0.5 rounded">${report.sentiment}</span>
+              <span class="text-[8px] text-zinc-600">${report.timeAgo}</span>
+            </div>
+            <h2 class="text-[16px] text-white font-bold mb-3">${report.title}</h2>
+            <div class="flex items-center gap-4 text-[10px] text-zinc-500 mb-4 pb-4 border-b border-zinc-800">
+              <span><iconify-icon icon="solar:user-circle-linear" class="mr-1"></iconify-icon>${report.author}</span>
+              <span><iconify-icon icon="solar:clock-circle-linear" class="mr-1"></iconify-icon>${report.readTime}</span>
+              <span class="${report.sentimentColor === 'green' ? 'text-green-400' : report.sentimentColor === 'red' ? 'text-red-400' : 'text-amber-400'}">${report.confidence} CONFIDENCE</span>
+            </div>
+          </div>
+          
+          <div class="text-[11px] text-zinc-300 leading-relaxed space-y-4">
+            <p>${report.summary}</p>
+            ${sectionsHTML}
           </div>
           
           <div class="mt-6 pt-4 border-t border-zinc-800 flex gap-2">
-            <button class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold py-2 rounded transition-colors">
-              <iconify-icon icon="solar:bookmark-linear" class="mr-1"></iconify-icon>Save Report
+            <button onclick="toggleSaveReport('${report.id}')" class="flex-1 ${isSaved ? 'bg-green-600 hover:bg-green-700' : 'bg-purple-600 hover:bg-purple-700'} text-white text-[10px] font-bold py-2 rounded transition-colors">
+              <iconify-icon icon="${isSaved ? 'solar:bookmark-bold' : 'solar:bookmark-linear'}" class="mr-1"></iconify-icon>${isSaved ? 'Saved' : 'Save Report'}
             </button>
-            <button class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] py-2 rounded transition-colors">
+            <button onclick="shareReport('${report.id}')" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] py-2 rounded transition-colors">
               <iconify-icon icon="solar:share-linear" class="mr-1"></iconify-icon>Share
             </button>
           </div>
@@ -399,29 +425,179 @@
         detailPanel.classList.remove('hidden');
       }
 
+      // Save/unsave report
+      function toggleSaveReport(id) {
+        const idx = savedReports.indexOf(id);
+        if (idx > -1) {
+          savedReports.splice(idx, 1);
+        } else {
+          savedReports.push(id);
+        }
+        localStorage.setItem('savedReports', JSON.stringify(savedReports));
+        showReportDetail(id); // Refresh detail view
+        updateSavedCount();
+      }
+      
+      // Share report
+      function shareReport(id) {
+        const report = allReports.find(r => r.id === id);
+        if (!report) return;
+        
+        const shareText = `${report.title}\n\n${report.summary}\n\nBias: ${report.sentiment} | Confidence: ${report.confidence}\n\nvia BASTION Research Terminal`;
+        
+        if (navigator.share) {
+          navigator.share({ title: report.title, text: shareText, url: window.location.href });
+        } else {
+          navigator.clipboard.writeText(shareText).then(() => {
+            alert('Report copied to clipboard!');
+          });
+        }
+      }
+      
+      // Update saved count in sidebar
+      function updateSavedCount() {
+        const savedBtn = document.querySelector('[onclick*="filterSaved"]') || document.querySelectorAll('.flex.items-center.gap-2')[5];
+        if (savedBtn) {
+          const countSpan = savedBtn.querySelector('.ml-auto');
+          if (countSpan) countSpan.textContent = savedReports.length;
+        }
+      }
+
+      // Filter reports
+      function applyFilters() {
+        let filtered = [...allReports];
+        
+        if (currentFilter.type) {
+          filtered = filtered.filter(r => r.rawType === currentFilter.type);
+        }
+        if (currentFilter.symbol) {
+          filtered = filtered.filter(r => r.assets.includes(currentFilter.symbol.toUpperCase()));
+        }
+        if (currentFilter.bias) {
+          filtered = filtered.filter(r => r.sentiment === currentFilter.bias);
+        }
+        if (currentFilter.saved) {
+          filtered = filtered.filter(r => savedReports.includes(r.id));
+        }
+        
+        renderReports(filtered);
+      }
+      
+      // Setup filter buttons
+      function setupFilters() {
+        // Category buttons
+        document.querySelectorAll('[data-filter-type]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            currentFilter.type = btn.dataset.filterType || null;
+            currentFilter.saved = false;
+            applyFilters();
+            // Update active state
+            document.querySelectorAll('[data-filter-type]').forEach(b => b.classList.remove('bg-purple-600/20', 'text-purple-400', 'border-purple-600/30'));
+            btn.classList.add('bg-purple-600/20', 'text-purple-400', 'border-purple-600/30');
+          });
+        });
+        
+        // Asset filter
+        document.getElementById('asset-filter')?.addEventListener('change', (e) => {
+          currentFilter.symbol = e.target.value || null;
+          applyFilters();
+        });
+        
+        // Bias filter buttons
+        document.querySelectorAll('[data-filter-bias]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const newBias = btn.dataset.filterBias;
+            currentFilter.bias = currentFilter.bias === newBias ? null : newBias;
+            applyFilters();
+            // Update active state
+            document.querySelectorAll('[data-filter-bias]').forEach(b => {
+              b.classList.remove('bg-green-900/50', 'bg-red-900/50', 'bg-amber-900/50');
+              b.classList.add('bg-zinc-800');
+            });
+            if (currentFilter.bias) {
+              btn.classList.remove('bg-zinc-800');
+              btn.classList.add(newBias === 'BULLISH' ? 'bg-green-900/50' : newBias === 'BEARISH' ? 'bg-red-900/50' : 'bg-amber-900/50');
+            }
+          });
+        });
+      }
+
       // Close detail panel
       document.getElementById('close-detail').addEventListener('click', () => {
         document.getElementById('report-detail').classList.add('hidden');
       });
 
-      // Load reports on page load
-      renderReports(sampleReports);
-
-      // Try to load from API
-      async function loadReportsFromAPI() {
+      // Load reports from MCF API
+      async function loadReports() {
+        const container = document.getElementById('reports-list');
+        container.innerHTML = `
+          <div class="text-center py-8 text-zinc-600">
+            <iconify-icon icon="solar:refresh-bold" class="text-3xl mb-2 animate-spin"></iconify-icon>
+            <div class="text-[11px]">Loading reports...</div>
+          </div>
+        `;
+        
         try {
-          const res = await fetch(`${API_BASE}/api/reports`);
+          const res = await fetch(`${API_BASE}/api/mcf/reports?limit=100`);
           if (res.ok) {
             const data = await res.json();
-            if (data.reports && data.reports.length > 0) {
-              renderReports(data.reports);
+            if (data.success && data.reports && data.reports.length > 0) {
+              allReports = data.reports.map(mapReport);
+              renderReports(allReports);
+              updateCategoryCounts();
+              console.log(`[RESEARCH] Loaded ${allReports.length} reports`);
+            } else {
+              renderReports([]);
             }
+          } else {
+            throw new Error('API error');
           }
         } catch (e) {
-          console.log('[RESEARCH] Using sample reports');
+          console.error('[RESEARCH] Failed to load reports:', e);
+          container.innerHTML = `
+            <div class="text-center py-12 text-zinc-600">
+              <iconify-icon icon="solar:danger-triangle-bold" class="text-4xl mb-3 text-red-500/50"></iconify-icon>
+              <div class="text-[12px] mb-1">Failed to load reports</div>
+              <div class="text-[10px] mb-3">Check API connection</div>
+              <button onclick="loadReports()" class="px-4 py-1.5 text-[10px] bg-purple-600 text-white rounded hover:bg-purple-700">Retry</button>
+            </div>
+          `;
         }
       }
-      loadReportsFromAPI();
+      
+      // Update category counts in sidebar
+      function updateCategoryCounts() {
+        const el = (id) => document.getElementById(id);
+        if (el('count-all')) el('count-all').textContent = allReports.length;
+        if (el('count-market')) el('count-market').textContent = allReports.filter(r => r.rawType === 'market_structure').length;
+        if (el('count-onchain')) el('count-onchain').textContent = allReports.filter(r => r.rawType === 'on_chain_intel').length;
+        if (el('count-whale')) el('count-whale').textContent = allReports.filter(r => r.rawType === 'whale_intelligence').length;
+        if (el('count-options')) el('count-options').textContent = allReports.filter(r => r.rawType === 'options_flow').length;
+        if (el('count-cycle')) el('count-cycle').textContent = allReports.filter(r => r.rawType === 'cycle_position').length;
+        if (el('count-saved')) el('count-saved').textContent = savedReports.length;
+      }
+
+      // Search functionality
+      document.querySelector('input[placeholder="Search reports..."]')?.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        if (!query) {
+          renderReports(allReports);
+          return;
+        }
+        const filtered = allReports.filter(r => 
+          r.title.toLowerCase().includes(query) || 
+          r.summary.toLowerCase().includes(query) ||
+          r.assets.some(a => a.toLowerCase().includes(query))
+        );
+        renderReports(filtered);
+      });
+
+      // Initialize
+      loadReports();
+      setupFilters();
+      
+      // Auto-refresh every 5 minutes
+      setInterval(loadReports, 300000);
     </script>
 </body>
 </html>
