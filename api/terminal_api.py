@@ -1043,9 +1043,10 @@ async def get_cvd(symbol: str = "BTC"):
     """Get CVD data for a symbol."""
     init_clients()
     import httpx
+    base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            res = await client.get(f"{helsinki.base_url}/quant/cvd/{symbol.upper()}")
+            res = await client.get(f"{base}/quant/cvd/{symbol.upper()}")
             data = res.json()
             logger.info(f"CVD raw for {symbol}: {data}")
             
@@ -1095,6 +1096,7 @@ async def get_funding():
     import httpx
     import asyncio
     
+    base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
     rates = {"BTC": 0, "ETH": 0, "SOL": 0}
     basis = 0
     
@@ -1103,7 +1105,7 @@ async def get_funding():
             # Fetch liquidation-estimate for each symbol (contains funding_rate_pct)
             async def get_funding_for(symbol):
                 try:
-                    res = await client.get(f"{helsinki.base_url}/quant/liquidation-estimate/{symbol}")
+                    res = await client.get(f"{base}/quant/liquidation-estimate/{symbol}")
                     data = res.json()
                     return symbol, data.get("funding_rate_pct", 0) / 100  # Convert from % to decimal
                 except:
@@ -1120,7 +1122,7 @@ async def get_funding():
             
             # Get basis from BTC
             try:
-                basis_res = await client.get(f"{helsinki.base_url}/quant/basis/BTC")
+                basis_res = await client.get(f"{base}/quant/basis/BTC")
                 basis_data = basis_res.json()
                 basis = basis_data.get("basis_percent", basis_data.get("basis", 0))
             except:
@@ -1144,9 +1146,10 @@ async def get_open_interest(symbol: str = "BTC"):
     """Get open interest data."""
     init_clients()
     import httpx
+    base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            res = await client.get(f"{helsinki.base_url}/quant/open-interest/{symbol.upper()}")
+            res = await client.get(f"{base}/quant/open-interest/{symbol.upper()}")
             data = res.json()
             logger.info(f"OI raw for {symbol}: {data}")
             
@@ -1170,13 +1173,23 @@ async def get_fear_greed():
     init_clients()
     try:
         import httpx
+        base = helsinki.base_url if helsinki else "http://77.42.29.188:5002"
         async with httpx.AsyncClient(timeout=5.0) as client:
-            res = await client.get(f"{helsinki.base_url}/sentiment/fear-greed")
+            res = await client.get(f"{base}/sentiment/fear-greed")
             data = res.json()
-            return data
+            if data.get("value"):
+                return data
+            # Fallback to alternative.me API
+            alt_res = await client.get("https://api.alternative.me/fng/?limit=1")
+            alt_data = alt_res.json()
+            if alt_data.get("data"):
+                return {
+                    "value": int(alt_data["data"][0]["value"]),
+                    "label": alt_data["data"][0]["value_classification"].upper()
+                }
     except Exception as e:
         logger.error(f"Fear/Greed fetch error: {e}")
-        return {"value": 50, "label": "Neutral"}
+    return {"value": 50, "label": "Neutral"}
 
 
 # =============================================================================
