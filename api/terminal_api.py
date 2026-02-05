@@ -13,6 +13,7 @@ import asyncio
 import json
 import time
 import random
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -1374,9 +1375,14 @@ def _format_market_data_for_iros(symbol: str, market_data: dict) -> str:
     
     # Options max pain
     if market_data.get("max_pain"):
-        lines.append("\nOPTIONS MAX PAIN BY EXPIRY:")
-        for opt in market_data["max_pain"][:3]:
-            lines.append(f"- {opt.get('expirationDate', 'Unknown')}: Max Pain ${opt.get('maxPain', 0):,.0f}")
+        max_pain_data = market_data["max_pain"]
+        if isinstance(max_pain_data, list):
+            lines.append("\nOPTIONS MAX PAIN BY EXPIRY:")
+            for opt in max_pain_data[:3]:
+                if isinstance(opt, dict):
+                    lines.append(f"- {opt.get('expirationDate', 'Unknown')}: Max Pain ${opt.get('maxPain', 0):,.0f}")
+        elif isinstance(max_pain_data, dict):
+            lines.append(f"\nMAX PAIN: ${max_pain_data.get('maxPain', 0):,.0f}")
     
     return "\n".join(lines) if lines else "No live market data available."
 
@@ -1501,7 +1507,9 @@ CRITICAL RULES:
 LIVE DATA:
 {full_context}"""
             
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            model_api_key = os.getenv("BASTION_MODEL_API_KEY", "5c37b5e8e6c2480813aa0cfd4de5c903544b7a000bff729e1c99d9b4538eb34d")
+            
+            async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
                     f"{model_url}/v1/chat/completions",
                     json={
@@ -1513,7 +1521,10 @@ LIVE DATA:
                         "max_tokens": 1500,
                         "temperature": 0.7
                     },
-                    headers={"Content-Type": "application/json"}
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {model_api_key}"
+                    }
                 )
                 
                 if response.status_code == 200:
@@ -1537,7 +1548,8 @@ LIVE DATA:
                             "data_sources": data_sources
                         }
                 else:
-                    logger.error(f"IROS model error: {response.status_code} - {response.text}")
+                    logger.error(f"IROS model error: {response.status_code} - {response.text[:500]}")
+                    logger.error(f"IROS URL: {model_url}, Headers sent: {list(response.request.headers.keys())}")
                     
         except Exception as e:
             logger.error(f"IROS call failed: {e}")
