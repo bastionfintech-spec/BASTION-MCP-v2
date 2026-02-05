@@ -1,5 +1,12 @@
 # IROS → MCF Labs Integration Guide
 
+> **✅ STATUS: IMPLEMENTED** (Feb 2026)
+> 
+> This integration is now complete. See:
+> - `mcf_labs/iros_generator.py` - IROS-powered report generator
+> - `mcf_labs/scheduler.py` - Updated with IROS support
+> - `api/terminal_api.py` - MCF API endpoints added
+
 ## Overview
 
 This guide shows how to wire IROS (the intelligent analysis brain) into the MCF Labs report generation system for the BASTION terminal.

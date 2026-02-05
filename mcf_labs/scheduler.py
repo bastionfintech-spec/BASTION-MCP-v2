@@ -1,7 +1,8 @@
 """
 MCF Labs Report Scheduler
 =========================
-Automated scheduling for report generation
+Automated scheduling for report generation.
+Supports both rule-based and IROS-powered generation.
 """
 
 import asyncio
@@ -9,13 +10,16 @@ import logging
 import json
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 
 # Global scheduler instance
 _scheduler = None
 _running = False
+
+# Supported coins for multi-coin reports
+SUPPORTED_COINS = ["BTC", "ETH", "SOL", "BNB", "XRP", "AVAX", "LINK", "ARB", "OP"]
 
 
 class ReportScheduler:
@@ -64,10 +68,10 @@ class ReportScheduler:
         logger.info(f"Saved report: {file_path}")
         return file_path
     
-    async def run_market_structure(self):
+    async def run_market_structure(self, symbol: str = "BTC"):
         """Generate and save market structure report"""
         try:
-            report = await self.generator.generate_market_structure("BTC")
+            report = await self.generator.generate_market_structure(symbol)
             await self.save_report(report)
             logger.info(f"Generated market structure report: {report.id}")
             return report
@@ -75,10 +79,24 @@ class ReportScheduler:
             logger.error(f"Failed to generate market structure report: {e}")
             return None
     
-    async def run_whale_report(self):
+    async def run_all_market_structure(self):
+        """Generate market structure reports for all supported coins"""
+        reports = []
+        for symbol in SUPPORTED_COINS:
+            try:
+                report = await self.generator.generate_market_structure(symbol)
+                if report:
+                    await self.save_report(report)
+                    reports.append(report)
+            except Exception as e:
+                logger.error(f"Failed to generate market structure for {symbol}: {e}")
+        logger.info(f"Generated {len(reports)} market structure reports")
+        return reports
+    
+    async def run_whale_report(self, symbol: str = "BTC"):
         """Generate and save whale intelligence report"""
         try:
-            report = await self.generator.generate_whale_report("BTC")
+            report = await self.generator.generate_whale_report(symbol)
             await self.save_report(report)
             logger.info(f"Generated whale report: {report.id}")
             return report
@@ -86,10 +104,24 @@ class ReportScheduler:
             logger.error(f"Failed to generate whale report: {e}")
             return None
     
-    async def run_options_report(self):
+    async def run_all_whale_reports(self):
+        """Generate whale reports for all supported coins"""
+        reports = []
+        for symbol in SUPPORTED_COINS:
+            try:
+                report = await self.generator.generate_whale_report(symbol)
+                if report:
+                    await self.save_report(report)
+                    reports.append(report)
+            except Exception as e:
+                logger.error(f"Failed to generate whale report for {symbol}: {e}")
+        logger.info(f"Generated {len(reports)} whale reports")
+        return reports
+    
+    async def run_options_report(self, symbol: str = "BTC"):
         """Generate and save options flow report"""
         try:
-            report = await self.generator.generate_options_report("BTC")
+            report = await self.generator.generate_options_report(symbol)
             await self.save_report(report)
             logger.info(f"Generated options report: {report.id}")
             return report
@@ -97,10 +129,10 @@ class ReportScheduler:
             logger.error(f"Failed to generate options report: {e}")
             return None
     
-    async def run_cycle_report(self):
+    async def run_cycle_report(self, symbol: str = "BTC"):
         """Generate and save cycle position report"""
         try:
-            report = await self.generator.generate_cycle_report("BTC")
+            report = await self.generator.generate_cycle_report(symbol)
             await self.save_report(report)
             logger.info(f"Generated cycle report: {report.id}")
             return report
@@ -159,17 +191,55 @@ class ReportScheduler:
         logger.info("MCF Labs scheduler stopped")
 
 
-async def start_scheduler(coinglass_client, helsinki_client=None, whale_alert_client=None):
-    """Start the report scheduler"""
+async def start_scheduler(
+    coinglass_client,
+    helsinki_client=None,
+    whale_alert_client=None,
+    use_iros: bool = True,
+    model_url: str = None,
+    model_api_key: str = None
+):
+    """
+    Start the report scheduler.
+    
+    Args:
+        coinglass_client: Initialized CoinglassClient
+        helsinki_client: Optional HelsinkiClient
+        whale_alert_client: Optional WhaleAlertClient
+        use_iros: If True, use IROS-powered generator (default)
+        model_url: Vast.ai model URL for IROS
+        model_api_key: Optional API key for IROS
+    """
     global _scheduler
     
-    from .generator import ReportGenerator
-    
-    generator = ReportGenerator(
-        coinglass_client=coinglass_client,
-        helsinki_client=helsinki_client,
-        whale_alert_client=whale_alert_client
-    )
+    # Choose generator type
+    if use_iros and model_url:
+        try:
+            from .iros_generator import create_iros_generator
+            generator = create_iros_generator(
+                coinglass_client=coinglass_client,
+                helsinki_client=helsinki_client,
+                whale_alert_client=whale_alert_client,
+                model_url=model_url,
+                model_api_key=model_api_key
+            )
+            logger.info("[MCF] Using IROS-powered report generator")
+        except Exception as e:
+            logger.warning(f"[MCF] IROS generator failed, falling back to rule-based: {e}")
+            from .generator import ReportGenerator
+            generator = ReportGenerator(
+                coinglass_client=coinglass_client,
+                helsinki_client=helsinki_client,
+                whale_alert_client=whale_alert_client
+            )
+    else:
+        from .generator import ReportGenerator
+        generator = ReportGenerator(
+            coinglass_client=coinglass_client,
+            helsinki_client=helsinki_client,
+            whale_alert_client=whale_alert_client
+        )
+        logger.info("[MCF] Using rule-based report generator")
     
     _scheduler = ReportScheduler(generator)
     

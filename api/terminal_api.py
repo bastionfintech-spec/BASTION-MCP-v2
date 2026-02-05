@@ -1331,6 +1331,56 @@ async def get_alerts(limit: int = 10):
 # NEURAL ASSISTANT API
 # =============================================================================
 
+def _format_market_data_for_iros(symbol: str, market_data: dict) -> str:
+    """Format market data into a clean context string for IROS."""
+    lines = []
+    
+    # Current market overview
+    if market_data.get("coins_markets"):
+        for coin in market_data["coins_markets"][:5]:
+            if coin.get("symbol", "").upper() == symbol.upper():
+                lines.append(f"""
+{symbol} CURRENT METRICS:
+- Price: ${coin.get('price', 'N/A'):,.2f}
+- 24h Change: {coin.get('priceChangePercent24h', 0):.2f}%
+- Open Interest: ${coin.get('openInterest', 0)/1e9:.2f}B
+- OI 24h Change: {coin.get('oiChangePercent24h', 0):.2f}%
+- Funding Rate: {coin.get('fundingRate', 0)*100:.4f}%
+- Long/Short Ratio: {coin.get('longRate', 50):.1f}% / {coin.get('shortRate', 50):.1f}%
+- 24h Liquidations Long: ${coin.get('liquidationH24Long', 0)/1e6:.2f}M
+- 24h Liquidations Short: ${coin.get('liquidationH24Short', 0)/1e6:.2f}M
+""")
+                break
+    
+    # Whale positions (Hyperliquid)
+    if market_data.get("whale_positions"):
+        lines.append("\nHYPERLIQUID WHALE POSITIONS:")
+        for whale in market_data["whale_positions"][:5]:
+            lines.append(f"- {whale.get('account', 'Unknown')[:8]}...: {whale.get('side', '?').upper()} ${whale.get('positionValue', 0)/1e6:.1f}M, {whale.get('leverage', 1):.1f}x leverage, PnL: ${whale.get('unrealizedPnl', 0)/1e3:.1f}K")
+    
+    # Funding rates by exchange
+    if market_data.get("funding"):
+        lines.append("\nFUNDING RATES BY EXCHANGE:")
+        for ex in market_data["funding"][:5]:
+            lines.append(f"- {ex.get('exchange', 'Unknown')}: {float(ex.get('rate', 0))*100:.4f}%")
+    
+    # L/S ratio
+    if market_data.get("ls_ratio"):
+        ls_data = market_data["ls_ratio"]
+        if isinstance(ls_data, list) and ls_data:
+            ls_data = ls_data[0]
+        if isinstance(ls_data, dict):
+            lines.append(f"\nLONG/SHORT RATIO: {ls_data.get('longRate', 50):.1f}% long / {ls_data.get('shortRate', 50):.1f}% short")
+    
+    # Options max pain
+    if market_data.get("max_pain"):
+        lines.append("\nOPTIONS MAX PAIN BY EXPIRY:")
+        for opt in market_data["max_pain"][:3]:
+            lines.append(f"- {opt.get('expirationDate', 'Unknown')}: Max Pain ${opt.get('maxPain', 0):,.0f}")
+    
+    return "\n".join(lines) if lines else "No live market data available."
+
+
 @app.post("/api/neural/chat")
 async def neural_chat(request: Dict[str, Any]):
     """Chat with the Bastion AI - includes user position context."""
@@ -1371,53 +1421,130 @@ async def neural_chat(request: Dict[str, Any]):
 - ETH-PERP SHORT: Entry $3,245, Current $3,198, P&L +$244 (+1.47%)
 - SOL-PERP LONG: Entry $142.80, Current $141.20, P&L -$80 (-1.12%)"""
     
-    # Build full context for AI (would be sent to actual AI model)
+    # Fetch live market data for IROS
+    import asyncio
+    
+    market_data = {}
+    data_sources = []
+    
+    try:
+        # Fetch Coinglass data in parallel
+        cg_results = await asyncio.gather(
+            coinglass.get_coins_markets(),
+            coinglass.get_hyperliquid_whale_positions(symbol),
+            coinglass.get_funding_rates(symbol),
+            coinglass.get_long_short_ratio(symbol),
+            coinglass.get_options_max_pain(symbol),
+            return_exceptions=True
+        )
+        
+        # Parse results
+        if hasattr(cg_results[0], 'data') and cg_results[0].data:
+            market_data["coins_markets"] = cg_results[0].data
+            data_sources.append("Coinglass:markets")
+        
+        if hasattr(cg_results[1], 'data') and cg_results[1].data:
+            market_data["whale_positions"] = cg_results[1].data
+            data_sources.append("Hyperliquid:whales")
+        
+        if hasattr(cg_results[2], 'data') and cg_results[2].data:
+            market_data["funding"] = cg_results[2].data
+            data_sources.append("Coinglass:funding")
+        
+        if hasattr(cg_results[3], 'data') and cg_results[3].data:
+            market_data["ls_ratio"] = cg_results[3].data
+            data_sources.append("Coinglass:ls-ratio")
+        
+        if hasattr(cg_results[4], 'data') and cg_results[4].data:
+            market_data["max_pain"] = cg_results[4].data
+            data_sources.append("Coinglass:options")
+            
+    except Exception as e:
+        logger.error(f"Failed to fetch market data: {e}")
+    
+    # Format market data for IROS prompt
+    market_context = _format_market_data_for_iros(symbol, market_data)
+    
+    # Build full context for IROS
     full_context = f"""
-Query: {query}
-Symbol Focus: {symbol}
+USER QUERY: {query}
+SYMBOL: {symbol}
 
 {position_context}
 
-Market Data Available:
-- Helsinki VM: CVD, volatility, liquidation estimates, options data
-- Coinglass: OI, funding, long/short ratio, liquidations
-- Whale Alert: Large transaction monitoring
+LIVE MARKET DATA:
+{market_context}
 """
     
-    # For now, return a contextual mock response
-    # In production, this would call the actual AI model with full_context
+    # Call IROS model
+    model_url = os.getenv("BASTION_MODEL_URL")
     
-    # Check if query is about positions
-    position_related = any(word in query.lower() for word in ["position", "trade", "holding", "exposure", "risk"])
+    if model_url:
+        try:
+            import httpx
+            
+            system_prompt = f"""You are BASTION, a senior quant analyst for a $500M+ hedge fund. Provide institutional-grade analysis.
+
+CRITICAL RULES:
+- USE THE CURRENT PRICE FROM THE DATA. NEVER MAKE UP PRICES.
+- No emojis. Use probabilities and confidence scores.
+- Be precise, quantified, actionable.
+- Reject bad setups with clear reasoning.
+- Reference SPECIFIC data points (whale positions, funding rates, max pain, etc.)
+
+LIVE DATA:
+{full_context}"""
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{model_url}/v1/chat/completions",
+                    json={
+                        "model": "bastion-32b",
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": query}
+                        ],
+                        "max_tokens": 1500,
+                        "temperature": 0.7
+                    },
+                    headers={"Content-Type": "application/json"}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    ai_response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    
+                    if ai_response:
+                        data_sources.append("IROS:32B-LLM")
+                        return {
+                            "success": True,
+                            "response": ai_response,
+                            "context": {
+                                "symbol": context.symbol,
+                                "capital": context.capital,
+                                "timeframe": context.timeframe,
+                                "intent": context.query_intent,
+                                "has_positions": len(user_positions) > 0,
+                                "position_count": len(user_positions)
+                            },
+                            "user_positions": user_positions,
+                            "data_sources": data_sources
+                        }
+                else:
+                    logger.error(f"IROS model error: {response.status_code} - {response.text}")
+                    
+        except Exception as e:
+            logger.error(f"IROS call failed: {e}")
     
-    if position_related and user_positions:
-        response = f"""**Position Analysis**
+    # Fallback if IROS unavailable
+    response = f"""**Analysis for {symbol}**
 
-Based on your current positions:
-{position_context}
+⚠️ IROS model not available. Using rule-based fallback.
 
-**Risk Assessment:**
-- Total Exposure: ${sum(abs(p['current'] * 0.5) for p in user_positions):,.0f}
-- Net P&L: ${sum(p['pnl'] for p in user_positions):,.2f}
-- Win Rate: 2/3 positions in profit
+Market Data Summary:
+{market_context if market_context else 'Unable to fetch live data.'}
 
-**Recommendations:**
-1. Your BTC long is performing well - consider trailing stop
-2. ETH short approaching T1 target - prepare for partial take
-3. SOL position at risk - stop loss proximity alert active
-
-⚠️ Monitor funding rates on short positions."""
-    else:
-        response = f"""**Analysis for {symbol}**
-
-Based on current market conditions:
-- Smart Money Bias: BULLISH (78%)
-- Volatility Regime: NORMAL
-- CVD 1H: +2.4M (accumulation)
-
-**Recommendation:** Hold current position. Momentum trailing active at 2.3x slope strength.
-
-⚠️ CVD divergence forming on daily. Consider partial exit at T2 ($98,200)."""
+**Recommendation:** Check BASTION_MODEL_URL configuration."""
     
     return {
         "success": True,
@@ -1431,7 +1558,8 @@ Based on current market conditions:
             "position_count": len(user_positions)
         },
         "user_positions": user_positions,
-        "data_sources": ["Helsinki:smart-money", "Helsinki:cvd", "Helsinki:volatility", "Exchange:positions"]
+        "data_sources": data_sources,
+        "fallback": True
     }
 
 
@@ -1484,6 +1612,230 @@ async def partial_close(request: Dict[str, Any]):
     return {
         "success": True,
         "message": f"Closed {percentage}% of {position_id}"
+    }
+
+
+# =============================================================================
+# MCF LABS REPORTS API
+# =============================================================================
+
+# Global MCF Labs instances
+_mcf_generator = None
+_mcf_storage = None
+
+
+def _init_mcf():
+    """Initialize MCF Labs components on first use"""
+    global _mcf_generator, _mcf_storage
+    
+    if _mcf_storage is None:
+        try:
+            from mcf_labs.storage import get_storage
+            _mcf_storage = get_storage()
+            logger.info("[MCF] Report storage initialized")
+        except Exception as e:
+            logger.warning(f"[MCF] Storage init failed: {e}")
+    
+    if _mcf_generator is None and coinglass is not None:
+        try:
+            import os
+            model_url = os.getenv("BASTION_MODEL_URL")
+            
+            if model_url:
+                from mcf_labs.iros_generator import create_iros_generator
+                _mcf_generator = create_iros_generator(
+                    coinglass_client=coinglass,
+                    helsinki_client=helsinki,
+                    whale_alert_client=whale_alert,
+                    model_url=model_url,
+                    model_api_key=os.getenv("BASTION_MODEL_API_KEY")
+                )
+                logger.info("[MCF] IROS generator initialized")
+            else:
+                from mcf_labs.generator import ReportGenerator
+                _mcf_generator = ReportGenerator(
+                    coinglass_client=coinglass,
+                    helsinki_client=helsinki,
+                    whale_alert_client=whale_alert
+                )
+                logger.info("[MCF] Rule-based generator initialized")
+        except Exception as e:
+            logger.warning(f"[MCF] Generator init failed: {e}")
+
+
+@app.get("/api/mcf/reports")
+async def get_mcf_reports(
+    type: Optional[str] = None,
+    symbol: Optional[str] = None,
+    bias: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0
+):
+    """
+    Get MCF Labs reports for Research Terminal.
+    
+    Query params:
+        type: Filter by report type (market_structure, whale_intelligence, etc.)
+        symbol: Filter by symbol tag (btc, eth, sol)
+        bias: Filter by bias (BULLISH, BEARISH, NEUTRAL)
+        limit: Number of reports to return (default 20)
+        offset: Pagination offset
+    """
+    _init_mcf()
+    
+    if _mcf_storage is None:
+        return {"success": False, "error": "Report storage not initialized", "reports": []}
+    
+    try:
+        from mcf_labs.models import ReportType
+        
+        # Convert type string to enum if provided
+        report_type = None
+        if type:
+            try:
+                report_type = ReportType(type)
+            except ValueError:
+                pass
+        
+        reports = _mcf_storage.list_reports(
+            report_type=report_type,
+            limit=limit + offset,
+            bias=bias
+        )
+        
+        # Filter by symbol if provided
+        if symbol:
+            symbol_lower = symbol.lower()
+            reports = [r for r in reports if symbol_lower in r.tags]
+        
+        # Apply offset
+        reports = reports[offset:offset + limit]
+        
+        return {
+            "success": True,
+            "reports": [r.to_dict() for r in reports],
+            "count": len(reports)
+        }
+        
+    except Exception as e:
+        logger.error(f"[MCF] Get reports error: {e}")
+        return {"success": False, "error": str(e), "reports": []}
+
+
+@app.get("/api/mcf/reports/latest")
+async def get_latest_mcf_reports():
+    """Get the most recent report of each type"""
+    _init_mcf()
+    
+    if _mcf_storage is None:
+        return {"success": False, "error": "Report storage not initialized"}
+    
+    try:
+        latest = _mcf_storage.get_latest_by_type()
+        
+        return {
+            "success": True,
+            "reports": {
+                k: v.to_dict() if v else None 
+                for k, v in latest.items()
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"[MCF] Get latest reports error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/mcf/reports/{report_id}")
+async def get_mcf_report_detail(report_id: str):
+    """Get a specific report by ID"""
+    _init_mcf()
+    
+    if _mcf_storage is None:
+        return {"success": False, "error": "Report storage not initialized"}
+    
+    try:
+        report = _mcf_storage.get_report(report_id)
+        
+        if report:
+            return {"success": True, "report": report.to_dict()}
+        return {"success": False, "error": "Report not found"}
+        
+    except Exception as e:
+        logger.error(f"[MCF] Get report error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/mcf/generate/{report_type}")
+async def generate_mcf_report(
+    report_type: str,
+    symbol: str = "BTC"
+):
+    """
+    Manually trigger report generation.
+    
+    Args:
+        report_type: Type of report (market_structure, whale, options, cycle)
+        symbol: Symbol to generate for (default BTC)
+    """
+    _init_mcf()
+    
+    if _mcf_generator is None:
+        return {"success": False, "error": "Report generator not initialized"}
+    
+    try:
+        report = None
+        
+        if report_type == "market_structure":
+            report = await _mcf_generator.generate_market_structure(symbol)
+        elif report_type in ["whale", "whale_intelligence"]:
+            report = await _mcf_generator.generate_whale_report(symbol)
+        elif report_type in ["options", "options_flow"]:
+            report = await _mcf_generator.generate_options_report(symbol)
+        elif report_type in ["cycle", "cycle_position"]:
+            report = await _mcf_generator.generate_cycle_report(symbol)
+        else:
+            return {"success": False, "error": f"Unknown report type: {report_type}"}
+        
+        if report:
+            # Save report if storage is available
+            if _mcf_storage:
+                try:
+                    from mcf_labs.scheduler import ReportScheduler
+                    scheduler = ReportScheduler(_mcf_generator)
+                    await scheduler.save_report(report)
+                except Exception as e:
+                    logger.warning(f"[MCF] Could not save report: {e}")
+            
+            return {
+                "success": True,
+                "report": report.to_dict(),
+                "message": f"Generated {report_type} report for {symbol}"
+            }
+        
+        return {"success": False, "error": "Report generation failed"}
+        
+    except Exception as e:
+        logger.error(f"[MCF] Generate report error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/mcf/status")
+async def get_mcf_status():
+    """Get MCF Labs system status"""
+    _init_mcf()
+    
+    import os
+    
+    return {
+        "success": True,
+        "status": {
+            "storage_initialized": _mcf_storage is not None,
+            "generator_initialized": _mcf_generator is not None,
+            "iros_enabled": os.getenv("BASTION_MODEL_URL") is not None,
+            "coinglass_available": coinglass is not None,
+            "helsinki_available": helsinki is not None
+        }
     }
 
 
