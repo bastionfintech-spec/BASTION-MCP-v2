@@ -48,7 +48,7 @@ try:
     from iros_integration.services.query_processor import QueryProcessor
     from iros_integration.services.whale_alert import WhaleAlertClient
     from iros_integration.services.coinglass import CoinglassClient, CoinglassResponse
-    from iros_integration.services.exchange_connector import user_context, Position, UserContext
+    from iros_integration.services.exchange_connector import user_context, Position, UserContextService as UserContext
     logger.info("IROS integration modules loaded successfully")
 except ImportError as e:
     logger.error(f"Import error: {e}")
