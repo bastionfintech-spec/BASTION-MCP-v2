@@ -2721,23 +2721,23 @@ async def get_position(position_id: str):
 
 @app.get("/api/price/{symbol}")
 async def get_live_price(symbol: str = "BTC"):
-    """Get real-time price with multiple source fallback."""
+    """Get real-time price with multiple source fallback - optimized for 500ms updates."""
     import httpx
     
     sym = symbol.upper()
     cache_key = f"price_{sym}"
     now = time.time()
     
-    # Check cache
+    # Check cache - very short TTL for live trading
     if cache_key in price_cache:
         cached = price_cache[cache_key]
-        if now - cached["time"] < cache_ttl:
+        if now - cached["time"] < cache_ttl:  # 0.5 seconds
             return cached["data"]
     
     result = None
     
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        # Try 1: Kraken (no geo-restrictions)
+    async with httpx.AsyncClient(timeout=3.0) as client:  # Shorter timeout for speed
+        # Try 1: Kraken (no geo-restrictions, provides 24h open for change calc)
         try:
             kraken_symbol = "XXBTZUSD" if sym == "BTC" else f"X{sym}ZUSD" if sym == "ETH" else f"{sym}USD"
             url = f"https://api.kraken.com/0/public/Ticker?pair={kraken_symbol}"
@@ -2746,43 +2746,64 @@ async def get_live_price(symbol: str = "BTC"):
             
             if data.get("result"):
                 for key, ticker in data["result"].items():
+                    current_price = float(ticker["c"][0])  # Last trade price
+                    open_24h = float(ticker["o"])  # 24h opening price
+                    
+                    # Calculate 24h change percentage
+                    change_24h = ((current_price - open_24h) / open_24h * 100) if open_24h > 0 else 0
+                    
                     result = {
                         "symbol": sym,
-                        "price": float(ticker["c"][0]),  # Last trade price
-                        "change_24h": 0,  # Would need separate calc
+                        "price": current_price,
+                        "change_24h": round(change_24h, 2),
+                        "open_24h": open_24h,
                         "high_24h": float(ticker["h"][1]),
                         "low_24h": float(ticker["l"][1]),
                         "volume_24h": float(ticker["v"][1]),
+                        "source": "kraken"
                     }
                     break
         except Exception as e:
             logger.warning(f"Kraken price error: {e}")
         
-        # Try 2: Coinbase if Kraken failed
+        # Try 2: Coinbase if Kraken failed (also get 24h stats)
         if not result:
             try:
                 coinbase_symbol = f"{sym}-USD"
-                url = f"https://api.exchange.coinbase.com/products/{coinbase_symbol}/ticker"
-                res = await client.get(url)
-                data = res.json()
+                # Get ticker
+                ticker_url = f"https://api.exchange.coinbase.com/products/{coinbase_symbol}/ticker"
+                # Get 24h stats
+                stats_url = f"https://api.exchange.coinbase.com/products/{coinbase_symbol}/stats"
                 
-                if data.get("price"):
+                ticker_res = await client.get(ticker_url)
+                ticker_data = ticker_res.json()
+                
+                stats_res = await client.get(stats_url)
+                stats_data = stats_res.json()
+                
+                if ticker_data.get("price"):
+                    current_price = float(ticker_data["price"])
+                    open_24h = float(stats_data.get("open", current_price))
+                    change_24h = ((current_price - open_24h) / open_24h * 100) if open_24h > 0 else 0
+                    
                     result = {
                         "symbol": sym,
-                        "price": float(data["price"]),
-                        "change_24h": 0,
-                        "high_24h": 0,
-                        "low_24h": 0,
-                        "volume_24h": float(data.get("volume", 0)),
+                        "price": current_price,
+                        "change_24h": round(change_24h, 2),
+                        "open_24h": open_24h,
+                        "high_24h": float(stats_data.get("high", 0)),
+                        "low_24h": float(stats_data.get("low", 0)),
+                        "volume_24h": float(ticker_data.get("volume", 0)),
+                        "source": "coinbase"
                     }
             except Exception as e:
                 logger.warning(f"Coinbase price error: {e}")
         
-        # Try 3: CoinGecko as last resort
+        # Try 3: CoinGecko as last resort (has built-in 24h change)
         if not result:
             try:
-                coin_id = {"BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana"}.get(sym, sym.lower())
-                url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd&include_24hr_change=true"
+                coin_id = {"BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana", "DOGE": "dogecoin", "XRP": "ripple"}.get(sym, sym.lower())
+                url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true"
                 res = await client.get(url)
                 data = res.json()
                 
@@ -2790,10 +2811,11 @@ async def get_live_price(symbol: str = "BTC"):
                     result = {
                         "symbol": sym,
                         "price": float(data[coin_id]["usd"]),
-                        "change_24h": float(data[coin_id].get("usd_24h_change", 0)),
+                        "change_24h": round(float(data[coin_id].get("usd_24h_change", 0)), 2),
                         "high_24h": 0,
                         "low_24h": 0,
-                        "volume_24h": 0,
+                        "volume_24h": float(data[coin_id].get("usd_24h_vol", 0)),
+                        "source": "coingecko"
                     }
             except Exception as e:
                 logger.warning(f"CoinGecko price error: {e}")
@@ -2817,10 +2839,10 @@ async def get_klines(symbol: str = "BTC", interval: str = "15m", limit: int = 10
     cache_key = f"klines_{sym}_{interval}"
     now = time.time()
     
-    # Check cache - fast updates for live trading (2 second TTL for charts)
+    # Check cache - ultra-fast for live candle updates (1 second TTL)
     if cache_key in price_cache:
         cached = price_cache[cache_key]
-        if now - cached["time"] < 2:  # 2 seconds for chart data
+        if now - cached["time"] < 1:  # 1 second for live chart data
             return cached["data"]
     
     candles = []
