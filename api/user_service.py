@@ -221,26 +221,31 @@ class UserService:
                     logger.warning(f"[UserService] User already exists: {email}")
                     return None
                 
-                # Build data dict manually to avoid extra fields
+                # Build MINIMAL data dict - only essential fields
+                # The table may not have all columns, so only include what we know exists
                 data = {
                     'id': user.id,
                     'email': user.email,
                     'password_hash': password_hash,
                     'display_name': user.display_name,
                     'created_at': user.created_at,
-                    'timezone': user.timezone,
-                    'currency': user.currency,
-                    'trading_experience': user.trading_experience,
-                    'trading_style': user.trading_style,
-                    'theme': user.theme,
                     'totp_enabled': False
                 }
                 
+                logger.info(f"[UserService] Attempting DB insert with data: {list(data.keys())}")
                 result = self.client.table(self.users_table).insert(data).execute()
-                logger.info(f"[UserService] Created user in database: {email}")
-                return user
+                logger.info(f"[UserService] DB insert result: {result}")
+                
+                if result.data:
+                    logger.info(f"[UserService] Created user in database: {email}")
+                    return user
+                else:
+                    logger.error(f"[UserService] DB insert returned no data for: {email}")
+                    # Fall through to in-memory
             except Exception as e:
-                logger.error(f"[UserService] Database failed, falling back to in-memory: {e}")
+                logger.error(f"[UserService] Database insert failed: {e}")
+                import traceback
+                logger.error(f"[UserService] Traceback: {traceback.format_exc()}")
                 # Check if it's a duplicate key error
                 if "duplicate" in str(e).lower() or "unique" in str(e).lower():
                     logger.warning(f"[UserService] Duplicate email detected: {email}")

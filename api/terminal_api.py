@@ -1331,9 +1331,52 @@ async def auth_debug():
                 status["error"] = str(e)
         else:
             # In-memory users
-            status["user_count"] = len([k for k in user_service._memory_users.keys() if not k.startswith("email:")])
+            in_memory_count = len([k for k in user_service._memory_users.keys() if not k.startswith("email:")])
+            status["user_count"] = in_memory_count
+            status["storage"] = "in-memory"
+        
+        # Always show in-memory state for debugging
+        in_memory_users = [k for k in user_service._memory_users.keys() if not k.startswith("email:")]
+        status["in_memory_users"] = in_memory_users
+        status["in_memory_count"] = len(in_memory_users)
     
     return status
+
+
+@app.get("/api/auth/test-db")
+async def test_database_insert():
+    """Test if database inserts work."""
+    if not user_service or not user_service.is_db_available:
+        return {"success": False, "error": "Database not available"}
+    
+    try:
+        # Try to insert a test row with minimal fields
+        test_id = f"test_{secrets.token_urlsafe(8)}"
+        data = {
+            'id': test_id,
+            'email': f'test_{test_id}@test.com',
+            'password_hash': 'testhash',
+            'display_name': 'TestUser',
+            'created_at': datetime.utcnow().isoformat()
+        }
+        
+        result = user_service.client.table("bastion_users").insert(data).execute()
+        
+        # Delete the test row
+        user_service.client.table("bastion_users").delete().eq("id", test_id).execute()
+        
+        return {
+            "success": True,
+            "message": "Database insert works!",
+            "test_result": result.data
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
 
 
 @app.delete("/api/auth/user/{email}")
