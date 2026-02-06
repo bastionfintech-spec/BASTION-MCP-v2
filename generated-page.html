@@ -5124,52 +5124,52 @@ Esc    - Close Dialogs
       
       let exchangeConnections = {};
 
-      // Auto-connect exchanges from localStorage
+      // Auto-connect exchanges from localStorage and load positions
       async function loadAndAutoConnectExchanges() {
         const stored = localStorage.getItem('bastion_exchange_credentials');
-        if (!stored) {
-          console.log('[POSITIONS] No stored exchange credentials');
-          return;
+        
+        if (stored) {
+          try {
+            const credentials = JSON.parse(stored);
+            console.log('[POSITIONS] Found stored credentials for:', Object.keys(credentials));
+            
+            for (const [exchange, creds] of Object.entries(credentials)) {
+              try {
+                const payload = {
+                  exchange: exchange,
+                  api_key: creds.apiKey,
+                  api_secret: creds.apiSecret,
+                  passphrase: creds.passphrase || '',
+                  read_only: creds.readOnly !== false
+                };
+                
+                console.log(`[POSITIONS] Auto-connecting ${exchange}...`);
+                const res = await fetch('/api/exchange/connect', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data.success || data.balance !== undefined) {
+                    exchangeConnections[exchange] = true;
+                    console.log(`[POSITIONS] ✓ Connected ${exchange}`);
+                  }
+                }
+              } catch (e) {
+                console.error(`[POSITIONS] Failed to auto-connect ${exchange}:`, e);
+              }
+            }
+          } catch (e) {
+            console.error('[POSITIONS] Error parsing stored credentials:', e);
+          }
+        } else {
+          console.log('[POSITIONS] No stored exchange credentials, checking server session...');
         }
         
-        try {
-          const credentials = JSON.parse(stored);
-          console.log('[POSITIONS] Found stored credentials for:', Object.keys(credentials));
-          
-          for (const [exchange, creds] of Object.entries(credentials)) {
-            try {
-              const payload = {
-                exchange: exchange,
-                api_key: creds.apiKey,
-                api_secret: creds.apiSecret,
-                passphrase: creds.passphrase || '',
-                read_only: creds.readOnly !== false
-              };
-              
-              console.log(`[POSITIONS] Auto-connecting ${exchange}...`);
-              const res = await fetch('/api/exchange/connect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              });
-              
-              if (res.ok) {
-                const data = await res.json();
-                if (data.success || data.balance !== undefined) {
-                  exchangeConnections[exchange] = true;
-                  console.log(`[POSITIONS] ✓ Connected ${exchange}`);
-                }
-              }
-            } catch (e) {
-              console.error(`[POSITIONS] Failed to auto-connect ${exchange}:`, e);
-            }
-          }
-          
-          // Now load positions
-          await loadPositions();
-        } catch (e) {
-          console.error('[POSITIONS] Error parsing stored credentials:', e);
-        }
+        // ALWAYS load positions (they may exist on server via session)
+        await loadPositions();
       }
       
       // Load positions from API
