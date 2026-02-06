@@ -176,8 +176,38 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown."""
     logger.info("BASTION Terminal API starting...")
     init_clients()
+    
+    # Start MCF Labs scheduler in background
+    try:
+        import os
+        from mcf_labs.scheduler import start_scheduler
+        model_url = os.getenv("BASTION_MODEL_URL")
+        
+        if coinglass:
+            await start_scheduler(
+                coinglass_client=coinglass,
+                helsinki_client=helsinki,
+                whale_alert_client=whale_alert,
+                use_iros=bool(model_url),
+                model_url=model_url,
+                model_api_key=os.getenv("BASTION_MODEL_API_KEY")
+            )
+            logger.info("[MCF] Scheduler started - generating reports in background")
+        else:
+            logger.warning("[MCF] Scheduler not started - Coinglass not available")
+    except Exception as e:
+        logger.warning(f"[MCF] Scheduler startup failed: {e}")
+    
     logger.info("BASTION Terminal API LIVE")
     yield
+    
+    # Stop scheduler on shutdown
+    try:
+        from mcf_labs.scheduler import stop_scheduler
+        await stop_scheduler()
+        logger.info("[MCF] Scheduler stopped")
+    except:
+        pass
     logger.info("BASTION Terminal API shutting down...")
 
 
@@ -1575,9 +1605,13 @@ def _init_mcf():
     
     if _mcf_storage is None:
         try:
-            from mcf_labs.storage import get_storage
-            _mcf_storage = get_storage()
-            logger.info("[MCF] Report storage initialized")
+            # Use hybrid storage (Supabase + filesystem) for persistence across deploys
+            from mcf_labs.storage import get_hybrid_storage
+            _mcf_storage = get_hybrid_storage()
+            if hasattr(_mcf_storage, 'supabase_available') and _mcf_storage.supabase_available:
+                logger.info("[MCF] Report storage initialized (Supabase + filesystem)")
+            else:
+                logger.info("[MCF] Report storage initialized (filesystem only)")
         except Exception as e:
             logger.warning(f"[MCF] Storage init failed: {e}")
     

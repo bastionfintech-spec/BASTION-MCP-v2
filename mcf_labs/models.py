@@ -122,3 +122,4 @@ class WhalePosition:
     pnl_percent: float
     liquidation_price: float
 
+

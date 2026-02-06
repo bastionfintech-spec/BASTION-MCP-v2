@@ -739,3 +739,4 @@ class ReportGenerator:
         }
         return recommendations.get(phase, "Monitor market conditions.")
 
+

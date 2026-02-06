@@ -318,3 +318,4 @@ def get_supabase_storage() -> SupabaseStorage:
         _supabase_storage = SupabaseStorage()
     return _supabase_storage
 
+

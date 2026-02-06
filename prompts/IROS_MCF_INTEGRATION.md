@@ -881,3 +881,4 @@ The generator already has the scaffolding - your agent just needs to:
 2. Add the API endpoints to terminal_api.py
 3. Ensure scheduler starts on app startup
 
+
