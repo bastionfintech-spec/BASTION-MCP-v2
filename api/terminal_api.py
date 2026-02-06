@@ -3919,6 +3919,14 @@ async def get_oi_changes():
             if result.success and result.data:
                 coins = result.data
                 
+                # Debug: Log the first coin's fields to understand structure
+                if coins and len(coins) > 0:
+                    first_coin = coins[0] if isinstance(coins[0], dict) else {}
+                    logger.info(f"[OI] First coin keys: {list(first_coin.keys())[:20]}")
+                    # Log OI-related fields specifically
+                    oi_fields = {k: v for k, v in first_coin.items() if 'oi' in k.lower() or 'open' in k.lower()}
+                    logger.info(f"[OI] OI-related fields: {oi_fields}")
+                
                 # Extract OI change data
                 oi_data = []
                 for coin in coins:
@@ -3926,10 +3934,10 @@ async def get_oi_changes():
                         symbol = coin.get("symbol", "")
                         
                         # Try different field names for OI change
-                        oi_change_24h = coin.get("openInterestChange24h") or coin.get("oiChange24h") or coin.get("oi_change_24h") or 0
-                        oi_change_pct = coin.get("openInterestChangePercent24h") or coin.get("oiChangePercent") or 0
-                        oi_total = coin.get("openInterest") or coin.get("oi") or 0
-                        price = coin.get("price") or 0
+                        oi_change_24h = coin.get("openInterestChange24h") or coin.get("oiChange24h") or coin.get("oi_change_24h") or coin.get("oiCh24") or 0
+                        oi_change_pct = coin.get("openInterestChangePercent24h") or coin.get("oiChangePercent") or coin.get("oiChPercent") or coin.get("h24OiChangePercent") or 0
+                        oi_total = coin.get("openInterest") or coin.get("oi") or coin.get("openInterestUsd") or 0
+                        price = coin.get("price") or coin.get("lastPrice") or 0
                         
                         # Convert to float
                         try:
@@ -3937,6 +3945,13 @@ async def get_oi_changes():
                             oi_change_pct = float(oi_change_pct) if oi_change_pct else 0
                             oi_total = float(oi_total) if oi_total else 0
                             price = float(price) if price else 0
+                            
+                            # CALCULATE percentage if not provided but we have change and total
+                            if oi_change_pct == 0 and oi_change_24h != 0 and oi_total > 0:
+                                # Previous OI = current OI - change
+                                prev_oi = oi_total - oi_change_24h
+                                if prev_oi > 0:
+                                    oi_change_pct = (oi_change_24h / prev_oi) * 100
                         except:
                             continue
                         
