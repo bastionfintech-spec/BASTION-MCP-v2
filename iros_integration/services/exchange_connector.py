@@ -265,6 +265,7 @@ class BitunixClient(BaseExchangeClient):
     async def get_positions(self) -> List[Position]:
         """Fetch open positions from Bitunix Futures - BOTH cross and isolated margin."""
         positions = []
+        seen_ids = set()  # Track position IDs to avoid duplicates
         
         try:
             async with httpx.AsyncClient() as client:
@@ -324,8 +325,18 @@ class BitunixClient(BaseExchangeClient):
                                         # PnL percentage
                                         pnl_pct = (unrealized_pnl / margin * 100) if margin > 0 else 0
                                         
+                                        # Get position ID and deduplicate
+                                        position_id = pos.get("positionId", f"bitunix_{symbol}_{direction}_{margin_mode}")
+                                        
+                                        # Skip if we've already seen this position
+                                        if position_id in seen_ids:
+                                            logger.debug(f"[BITUNIX] Skipping duplicate position: {position_id}")
+                                            continue
+                                        
+                                        seen_ids.add(position_id)
+                                        
                                         positions.append(Position(
-                                            id=pos.get("positionId", f"bitunix_{symbol}_{direction}_{margin_mode}"),
+                                            id=position_id,
                                             symbol=symbol,
                                             direction=direction,
                                             entry_price=entry_price,
