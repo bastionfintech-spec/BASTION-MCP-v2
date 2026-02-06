@@ -5762,12 +5762,15 @@ Esc    - Close Dialogs
     // Load exchanges from Supabase cloud
     async function loadCloudExchanges(token) {
       try {
+        console.log('[CLOUD] Loading exchanges from cloud...');
         const res = await fetch(`${API_BASE}/api/auth/load-exchanges`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token })
         });
         const data = await res.json();
+        
+        console.log('[CLOUD] Response:', data);
         
         if (data.success && data.loaded > 0) {
           console.log(`[CLOUD] Loaded ${data.loaded} exchanges from cloud:`, data.exchanges);
@@ -5777,10 +5780,19 @@ Esc    - Close Dialogs
             const existing = JSON.parse(localStorage.getItem('bastion_exchange_credentials') || '{}');
             Object.assign(existing, data.credentials);
             localStorage.setItem('bastion_exchange_credentials', JSON.stringify(existing));
-            console.log('[CLOUD] Saved cloud credentials to localStorage');
+            console.log('[CLOUD] Saved cloud credentials to localStorage:', Object.keys(data.credentials));
           }
           
+          // Update exchange indicator
           updateExchangeIndicator();
+          
+          // Refresh positions since we now have exchanges connected
+          console.log('[CLOUD] Triggering position refresh...');
+          if (typeof loadPositions === 'function') {
+            await loadPositions();
+          }
+        } else {
+          console.log('[CLOUD] No exchanges found in cloud or already loaded');
         }
       } catch (e) {
         console.log('[CLOUD] Could not load cloud exchanges:', e);

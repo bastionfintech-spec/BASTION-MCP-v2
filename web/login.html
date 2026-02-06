@@ -410,16 +410,38 @@
             storage.setItem('bastion_token', data.token);
             storage.setItem('bastion_user', JSON.stringify(data.user));
             
-            showStatus('login-status', 'Authentication successful. Redirecting...', false);
+            showStatus('login-status', 'Loading your data...', false);
             
             // Reset 2FA state
             document.getElementById('2fa-input-section').classList.add('hidden');
             document.getElementById('login-2fa-code').value = '';
             pending2FA = { email: null, password: null };
             
+            // Load exchanges from cloud BEFORE redirecting
+            try {
+              const cloudRes = await fetch('/api/auth/load-exchanges', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: data.token })
+              });
+              const cloudData = await cloudRes.json();
+              
+              if (cloudData.success && cloudData.credentials) {
+                // Save credentials to localStorage for auto-connect on terminal
+                const existing = JSON.parse(localStorage.getItem('bastion_exchange_credentials') || '{}');
+                Object.assign(existing, cloudData.credentials);
+                localStorage.setItem('bastion_exchange_credentials', JSON.stringify(existing));
+                console.log('[LOGIN] Pre-loaded', Object.keys(cloudData.credentials).length, 'exchanges from cloud');
+              }
+            } catch (e) {
+              console.log('[LOGIN] Could not pre-load exchanges:', e);
+            }
+            
+            showStatus('login-status', 'Redirecting to terminal...', false);
+            
             setTimeout(() => {
               window.location.href = '/frontend';
-            }, 1000);
+            }, 500);
           } else {
             showStatus('login-status', data.detail || 'Authentication failed', true);
             resetLoginBtn();
