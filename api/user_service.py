@@ -81,6 +81,10 @@ class User:
     totp_enabled: bool = False
     totp_secret: Optional[str] = None
     
+    # Personalization
+    corner_gif: Optional[str] = None  # Base64 data URL
+    corner_gif_settings: Optional[Dict] = None  # {position, size, opacity}
+    
     def __post_init__(self):
         if self.trading_style is None:
             self.trading_style = ["day_trading"]
@@ -138,6 +142,8 @@ class User:
             research_alerts=data.get('research_alerts', True),
             totp_enabled=data.get('totp_enabled', False),
             totp_secret=data.get('totp_secret'),
+            corner_gif=data.get('corner_gif'),
+            corner_gif_settings=data.get('corner_gif_settings'),
         )
 
 
@@ -452,7 +458,8 @@ class UserService:
             'push_notifications', 'telegram_enabled', 'telegram_chat_id', 'discord_enabled',
             'discord_webhook', 'sound_alerts', 'whale_alerts', 'price_alerts', 'funding_alerts',
             'liquidation_alerts', 'iros_signals', 'position_alerts', 'oi_alerts', 'research_alerts',
-            'totp_enabled', 'totp_secret'
+            'totp_enabled', 'totp_secret',
+            'corner_gif', 'corner_gif_settings'
         }
         filtered = {k: v for k, v in updates.items() if k in allowed}
         
