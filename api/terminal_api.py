@@ -650,6 +650,244 @@ async def get_usage_stats():
 
 
 # =============================================================================
+# TELEGRAM ALERTS API
+# =============================================================================
+
+# Telegram bot configuration
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "BastionAlertsBot")
+
+# Connected Telegram users (would use DB in production)
+telegram_users: Dict[str, Dict] = {}
+pending_telegram_codes: Dict[str, str] = {}  # code -> user_id mapping
+
+
+async def send_telegram_message(chat_id: str, message: str, parse_mode: str = "HTML") -> bool:
+    """Send a message via Telegram bot."""
+    if not TELEGRAM_BOT_TOKEN:
+        logger.warning("[TELEGRAM] Bot token not configured")
+        return False
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                json={
+                    "chat_id": chat_id,
+                    "text": message,
+                    "parse_mode": parse_mode,
+                    "disable_web_page_preview": True
+                }
+            )
+            data = res.json()
+            if data.get("ok"):
+                logger.info(f"[TELEGRAM] Message sent to {chat_id}")
+                return True
+            else:
+                logger.error(f"[TELEGRAM] Failed: {data}")
+                return False
+    except Exception as e:
+        logger.error(f"[TELEGRAM] Error sending message: {e}")
+        return False
+
+
+@app.get("/api/alerts/telegram/connect")
+async def telegram_connect():
+    """Generate a connection link for Telegram."""
+    import secrets
+    
+    if not TELEGRAM_BOT_TOKEN:
+        return {
+            "success": False,
+            "error": "Telegram bot not configured. Set TELEGRAM_BOT_TOKEN environment variable.",
+            "setup_instructions": {
+                "1": "Create a bot via @BotFather on Telegram",
+                "2": "Get the bot token and set TELEGRAM_BOT_TOKEN env var",
+                "3": "Set TELEGRAM_BOT_USERNAME to your bot's username"
+            }
+        }
+    
+    # Generate a unique verification code
+    code = secrets.token_urlsafe(8)
+    
+    # Store pending code (expires in 10 minutes - would use Redis in production)
+    pending_telegram_codes[code] = {
+        "created_at": datetime.now().isoformat(),
+        "user_id": None  # Will be set when user sends /start with code
+    }
+    
+    connect_url = f"https://t.me/{TELEGRAM_BOT_USERNAME}?start={code}"
+    
+    return {
+        "success": True,
+        "connect_url": connect_url,
+        "code": code,
+        "bot_username": TELEGRAM_BOT_USERNAME,
+        "instructions": f"Click the link or open Telegram and message @{TELEGRAM_BOT_USERNAME} with /start {code}"
+    }
+
+
+@app.post("/api/alerts/telegram/verify")
+async def telegram_verify(data: dict):
+    """Verify Telegram connection with code."""
+    code = data.get("code")
+    
+    if not code or code not in pending_telegram_codes:
+        return {"success": False, "error": "Invalid or expired code"}
+    
+    pending = pending_telegram_codes[code]
+    
+    if pending.get("user_id"):
+        # User has connected
+        chat_id = pending["user_id"]
+        telegram_users[chat_id] = {
+            "chat_id": chat_id,
+            "connected_at": datetime.now().isoformat(),
+            "alerts_enabled": True
+        }
+        
+        # Clean up
+        del pending_telegram_codes[code]
+        
+        # Update user settings
+        user_settings["alerts"]["telegram_connected"] = True
+        user_settings["alerts"]["telegram_chat_id"] = chat_id
+        
+        return {"success": True, "message": "Telegram connected successfully!", "chat_id": chat_id}
+    
+    return {"success": False, "error": "Waiting for Telegram connection. Please message the bot."}
+
+
+@app.post("/api/alerts/telegram/webhook")
+async def telegram_webhook(data: dict):
+    """Handle incoming Telegram bot messages."""
+    message = data.get("message", {})
+    chat_id = str(message.get("chat", {}).get("id", ""))
+    text = message.get("text", "")
+    
+    if not chat_id or not text:
+        return {"ok": True}
+    
+    # Handle /start command with verification code
+    if text.startswith("/start"):
+        parts = text.split()
+        if len(parts) > 1:
+            code = parts[1]
+            if code in pending_telegram_codes:
+                pending_telegram_codes[code]["user_id"] = chat_id
+                
+                # Send welcome message
+                await send_telegram_message(
+                    chat_id,
+                    "<b>✅ BASTION Connected!</b>\n\n"
+                    "You'll now receive trading alerts here.\n\n"
+                    "<b>Alert Types:</b>\n"
+                    "🐋 Whale Movements\n"
+                    "💰 Price Targets\n"
+                    "📊 Funding Rate Spikes\n"
+                    "🔥 Liquidation Clusters\n"
+                    "📈 Open Interest Changes\n\n"
+                    "Use /settings to customize your alerts."
+                )
+                return {"ok": True}
+        
+        # No code - just welcome
+        await send_telegram_message(
+            chat_id,
+            "<b>👋 Welcome to BASTION Alerts!</b>\n\n"
+            "To connect your account, go to:\n"
+            "BASTION → Account → Alert Preferences → Connect Telegram\n\n"
+            "Then click the link provided."
+        )
+    
+    elif text == "/settings":
+        await send_telegram_message(
+            chat_id,
+            "<b>⚙️ Alert Settings</b>\n\n"
+            "Manage your alerts at:\n"
+            "BASTION → Account → Alert Preferences"
+        )
+    
+    elif text == "/test":
+        await send_telegram_message(
+            chat_id,
+            "🔔 <b>Test Alert</b>\n\n"
+            "If you see this, alerts are working!"
+        )
+    
+    return {"ok": True}
+
+
+@app.post("/api/alerts/test")
+async def send_test_alert(data: dict):
+    """Send a test alert to configured channels."""
+    channel = data.get("channel", "all")
+    results = {"push": False, "telegram": False}
+    
+    # Test Telegram
+    if channel in ["all", "telegram"]:
+        chat_id = user_settings["alerts"].get("telegram_chat_id")
+        if chat_id:
+            results["telegram"] = await send_telegram_message(
+                chat_id,
+                "🔔 <b>BASTION Test Alert</b>\n\n"
+                f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+                "Your alerts are configured correctly!"
+            )
+    
+    return {"success": True, "results": results}
+
+
+@app.post("/api/alerts/send")
+async def send_alert(data: dict):
+    """Send an alert to all configured channels."""
+    alert_type = data.get("type", "general")
+    title = data.get("title", "BASTION Alert")
+    message = data.get("message", "")
+    symbol = data.get("symbol", "")
+    
+    # Check if user wants this alert type
+    alert_types = user_settings["alerts"].get("alert_types", [])
+    type_map = {
+        "whale": "whales",
+        "price": "price_targets",
+        "funding": "funding",
+        "liquidation": "liquidations",
+        "oi": "oi_spikes"
+    }
+    
+    if alert_type != "general" and type_map.get(alert_type) not in alert_types:
+        return {"success": True, "sent": False, "reason": "Alert type disabled"}
+    
+    # Format message for Telegram
+    emoji_map = {
+        "whale": "🐋",
+        "price": "💰",
+        "funding": "📊",
+        "liquidation": "🔥",
+        "oi": "📈",
+        "general": "🔔"
+    }
+    emoji = emoji_map.get(alert_type, "🔔")
+    
+    telegram_msg = f"{emoji} <b>{title}</b>\n\n"
+    if symbol:
+        telegram_msg += f"Symbol: <code>{symbol}</code>\n"
+    telegram_msg += f"{message}\n\n"
+    telegram_msg += f"<i>{datetime.now().strftime('%H:%M:%S UTC')}</i>"
+    
+    sent = False
+    
+    # Send to Telegram
+    if user_settings["alerts"].get("telegram_connected"):
+        chat_id = user_settings["alerts"].get("telegram_chat_id")
+        if chat_id:
+            sent = await send_telegram_message(chat_id, telegram_msg)
+    
+    return {"success": True, "sent": sent}
+
+
+# =============================================================================
 # REPORTS API
 # =============================================================================
 
