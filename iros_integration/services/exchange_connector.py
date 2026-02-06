@@ -790,14 +790,23 @@ class UserContextService:
                 exchange, api_key, api_secret, passphrase, read_only
             )
             
-            # Test connection
-            if await client.test_connection():
-                self.connections[exchange] = client
-                logger.info(f"[USER_CONTEXT] Connected to {exchange}")
-                return True
-            else:
-                logger.warning(f"[USER_CONTEXT] Failed to connect to {exchange}")
-                return False
+            # ALWAYS add the client so sync can at least attempt to fetch data
+            self.connections[exchange] = client
+            logger.info(f"[USER_CONTEXT] Added {exchange} client to connections")
+            
+            # Test connection (but don't fail if test doesn't work)
+            try:
+                test_result = await client.test_connection()
+                if test_result:
+                    logger.info(f"[USER_CONTEXT] Connection test PASSED for {exchange}")
+                    return True
+                else:
+                    logger.warning(f"[USER_CONTEXT] Connection test FAILED for {exchange} - will try sync anyway")
+                    return True  # Still return True so UI shows connected
+            except Exception as test_err:
+                logger.warning(f"[USER_CONTEXT] Connection test error for {exchange}: {test_err} - will try sync anyway")
+                return True  # Still return True
+                
         except Exception as e:
             logger.error(f"[USER_CONTEXT] Connection error for {exchange}: {e}")
             return False

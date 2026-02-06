@@ -493,37 +493,83 @@ async def sync_exchange(exchange_name: str):
     if exchange_name not in connected_exchanges:
         raise HTTPException(status_code=404, detail="Exchange not connected")
     
+    logger.info(f"[SYNC] Starting sync for {exchange_name}")
+    logger.info(f"[SYNC] Connected exchanges in user_context: {list(user_context.connections.keys())}")
+    
     try:
         if exchange_name in user_context.connections:
             client = user_context.connections[exchange_name]
+            logger.info(f"[SYNC] Found client for {exchange_name}: {type(client).__name__}")
             
             # Clear cache to force refresh
             if exchange_name in user_context.cache_timestamp:
                 del user_context.cache_timestamp[exchange_name]
             
-            # Fetch fresh data
-            positions = await client.get_positions()
-            balance = await client.get_balance()
+            # Fetch fresh data with detailed error handling
+            positions = []
+            balance = None
+            position_error = None
+            balance_error = None
+            
+            try:
+                logger.info(f"[SYNC] Fetching positions for {exchange_name}...")
+                positions = await client.get_positions()
+                logger.info(f"[SYNC] Got {len(positions)} positions from {exchange_name}")
+            except Exception as pe:
+                position_error = str(pe)
+                logger.error(f"[SYNC] Position fetch error: {pe}")
+            
+            try:
+                logger.info(f"[SYNC] Fetching balance for {exchange_name}...")
+                balance = await client.get_balance()
+                logger.info(f"[SYNC] Got balance from {exchange_name}: equity={balance.total_equity}")
+            except Exception as be:
+                balance_error = str(be)
+                logger.error(f"[SYNC] Balance fetch error: {be}")
+            
+            if balance is None:
+                from iros_integration.services.exchange_connector import ExchangeBalance
+                balance = ExchangeBalance(0, 0, 0, 0)
             
             return {
                 "success": True,
                 "exchange": exchange_name,
                 "positions_count": len(positions),
+                "positions": [
+                    {
+                        "symbol": p.symbol,
+                        "direction": p.direction,
+                        "size": p.size,
+                        "entry_price": p.entry_price,
+                        "pnl": p.pnl
+                    } for p in positions
+                ],
                 "balance": {
                     "total_equity": balance.total_equity,
                     "available_balance": balance.available_balance,
+                    "margin_used": balance.margin_used,
                     "unrealized_pnl": balance.unrealized_pnl
+                },
+                "errors": {
+                    "positions": position_error,
+                    "balance": balance_error
                 },
                 "timestamp": datetime.now().isoformat()
             }
+        else:
+            logger.error(f"[SYNC] No client found for {exchange_name} in user_context.connections")
+            return {
+                "success": False,
+                "error": f"No client found. Available: {list(user_context.connections.keys())}"
+            }
     except Exception as e:
-        logger.error(f"Sync error for {exchange_name}: {e}")
+        logger.error(f"[SYNC] Sync error for {exchange_name}: {e}")
+        import traceback
+        traceback.print_exc()
         return {
             "success": False,
             "error": str(e)
         }
-    
-    return {"success": False, "error": "Exchange not properly connected"}
 
 
 @app.get("/api/balance/total")
