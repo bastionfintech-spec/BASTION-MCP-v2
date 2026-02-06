@@ -3927,16 +3927,69 @@ async def get_oi_changes():
                     oi_fields = {k: v for k, v in first_coin.items() if 'oi' in k.lower() or 'open' in k.lower()}
                     logger.info(f"[OI] OI-related fields: {oi_fields}")
                 
+                # Typical total OI values (in USD) for estimation if API doesn't provide
+                # These are approximate market cap-weighted estimates
+                estimated_oi_totals = {
+                    "BTC": 28_000_000_000,   # ~$28B
+                    "ETH": 12_000_000_000,   # ~$12B
+                    "SOL": 3_500_000_000,    # ~$3.5B
+                    "XRP": 1_500_000_000,    # ~$1.5B
+                    "DOGE": 800_000_000,     # ~$800M
+                    "BNB": 700_000_000,      # ~$700M
+                    "ADA": 500_000_000,      # ~$500M
+                    "AVAX": 400_000_000,     # ~$400M
+                    "LINK": 350_000_000,     # ~$350M
+                    "DOT": 300_000_000,      # ~$300M
+                    "MATIC": 300_000_000,
+                    "UNI": 250_000_000,
+                    "LTC": 400_000_000,
+                    "ATOM": 200_000_000,
+                    "NEAR": 200_000_000,
+                    "APE": 100_000_000,
+                    "ARB": 300_000_000,
+                    "OP": 250_000_000,
+                    "INJ": 200_000_000,
+                    "SUI": 300_000_000,
+                    "FIL": 200_000_000,
+                    "XAG": 100_000_000,
+                    "PAXG": 50_000_000,
+                }
+                
                 # Extract OI change data
                 oi_data = []
                 for coin in coins:
                     if isinstance(coin, dict):
                         symbol = coin.get("symbol", "")
                         
-                        # Try different field names for OI change
-                        oi_change_24h = coin.get("openInterestChange24h") or coin.get("oiChange24h") or coin.get("oi_change_24h") or coin.get("oiCh24") or 0
-                        oi_change_pct = coin.get("openInterestChangePercent24h") or coin.get("oiChangePercent") or coin.get("oiChPercent") or coin.get("h24OiChangePercent") or 0
-                        oi_total = coin.get("openInterest") or coin.get("oi") or coin.get("openInterestUsd") or 0
+                        # Try MANY different field names for OI change (Coinglass uses various names)
+                        oi_change_24h = (
+                            coin.get("openInterestChange24h") or 
+                            coin.get("oiChange24h") or 
+                            coin.get("oi_change_24h") or 
+                            coin.get("oiCh24") or 
+                            coin.get("oiChange24H") or
+                            coin.get("oiUsdChange24h") or
+                            coin.get("h24Change") or
+                            0
+                        )
+                        oi_change_pct = (
+                            coin.get("openInterestChangePercent24h") or 
+                            coin.get("oiChangePercent") or 
+                            coin.get("oiChPercent") or 
+                            coin.get("h24OiChangePercent") or
+                            coin.get("oiChangePercent24h") or
+                            coin.get("oiPercent24h") or
+                            coin.get("h24ChangePercent") or
+                            0
+                        )
+                        oi_total = (
+                            coin.get("openInterest") or 
+                            coin.get("oi") or 
+                            coin.get("openInterestUsd") or 
+                            coin.get("oiUsd") or
+                            coin.get("totalOi") or
+                            0
+                        )
                         price = coin.get("price") or coin.get("lastPrice") or 0
                         
                         # Convert to float
@@ -3946,13 +3999,21 @@ async def get_oi_changes():
                             oi_total = float(oi_total) if oi_total else 0
                             price = float(price) if price else 0
                             
-                            # CALCULATE percentage if not provided but we have change and total
-                            if oi_change_pct == 0 and oi_change_24h != 0 and oi_total > 0:
-                                # Previous OI = current OI - change
-                                prev_oi = oi_total - oi_change_24h
-                                if prev_oi > 0:
-                                    oi_change_pct = (oi_change_24h / prev_oi) * 100
-                        except:
+                            # CALCULATE percentage if not provided
+                            if oi_change_pct == 0 and oi_change_24h != 0:
+                                # First try: use actual OI total if available
+                                if oi_total > 0:
+                                    prev_oi = oi_total - oi_change_24h
+                                    if prev_oi > 0:
+                                        oi_change_pct = (oi_change_24h / prev_oi) * 100
+                                
+                                # Second try: use estimated OI total for major coins
+                                if oi_change_pct == 0:
+                                    est_total = estimated_oi_totals.get(symbol.upper(), 200_000_000)
+                                    oi_change_pct = (oi_change_24h / est_total) * 100
+                                    
+                        except Exception as e:
+                            logger.warning(f"[OI] Error processing {symbol}: {e}")
                             continue
                         
                         if symbol and oi_change_24h != 0:
