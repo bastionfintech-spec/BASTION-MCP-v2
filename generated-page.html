@@ -1861,15 +1861,20 @@
                     <iconify-icon icon="solar:magic-stick-3-bold"></iconify-icon>
                     ASK BASTION
                   </span>
-                  <span class="text-[8px] bg-crimson-600 text-white px-1.5 py-0.5 rounded animate-pulse">AI</span>
+                  <div class="flex items-center gap-2">
+                    <span id="neural-loading" class="hidden text-[8px] text-amber-400 animate-pulse">Thinking...</span>
+                    <span class="text-[8px] bg-crimson-600 text-white px-1.5 py-0.5 rounded animate-pulse">AI</span>
+                  </div>
                 </div>
-                <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50 max-h-32 overflow-y-auto no-scrollbar">
+                <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50 min-h-[60px] max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
                   <span class="text-crimson-500">&gt;&gt;</span>
                   Ready for your query...
                 </div>
-                <div class="mt-2 relative">
-                  <input data-input="neural" type="text" placeholder="Ask BASTION anything..." class="w-full bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-700 font-mono rounded-sm">
-                  <iconify-icon data-action="neural-send" icon="solar:plain-linear" class="absolute right-2 top-1.5 text-zinc-600 cursor-pointer hover:text-white"></iconify-icon>
+                <div class="mt-2 relative flex gap-2">
+                  <input data-input="neural" type="text" placeholder="Ask BASTION anything..." class="flex-1 bg-zinc-900 border border-zinc-800 text-[10px] text-white px-2 py-1.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-700 font-mono rounded-sm">
+                  <button data-action="neural-send" class="bg-crimson-600 hover:bg-crimson-500 text-white px-3 py-1.5 rounded-sm transition-colors flex items-center gap-1 text-[9px] font-bold">
+                    <iconify-icon icon="solar:plain-linear"></iconify-icon> SEND
+                  </button>
                 </div>
                 <!-- Expand to full panel -->
                 <button data-action="expand-neural" class="text-[8px] text-zinc-600 hover:text-crimson-400 text-center transition-colors mt-1">
@@ -2336,6 +2341,17 @@
         input.value = '';
         input.disabled = true;
         
+        const responseEl = document.querySelector('[data-neural="response"]');
+        const loadingEl = document.getElementById('neural-loading');
+        const sendBtn = document.querySelector('[data-action="neural-send"]');
+        
+        // Show loading state
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        if (sendBtn) sendBtn.disabled = true;
+        if (responseEl) {
+          responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> <span class="text-amber-400">Processing: "${query.substring(0,50)}..."</span>`;
+        }
+        
         // Extract symbol from query or use current selected symbol
         const symbolMatch = query.toUpperCase().match(/\b(BTC|ETH|SOL|BNB|XRP|AVAX|LINK|ARB|OP|DOGE|ADA|MATIC|DOT|ATOM)\b/);
         const symbol = symbolMatch ? symbolMatch[1] : currentSymbol;
@@ -2349,14 +2365,28 @@
           const data = await res.json();
           
           // Update neural response
-          const responseEl = document.querySelector('[data-neural="response"]');
-          if (responseEl && data.response) {
-            responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> ${data.response.replace(/\n/g, '<br>')}`;
+          if (responseEl) {
+            if (data.response) {
+              // Format response nicely
+              let formatted = data.response
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                .replace(/`(.*?)`/g, '<code class="bg-zinc-800 px-1 rounded text-crimson-400">$1</code>');
+              responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> ${formatted}`;
+            } else if (data.error) {
+              responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> <span class="text-red-400">Error: ${data.error}</span>`;
+            }
           }
         } catch (e) {
           console.error('Neural chat failed:', e);
+          if (responseEl) {
+            responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> <span class="text-red-400">Connection error - try again</span>`;
+          }
         } finally {
           input.disabled = false;
+          if (loadingEl) loadingEl.classList.add('hidden');
+          if (sendBtn) sendBtn.disabled = false;
+          input.focus();
         }
       }
 
@@ -2597,6 +2627,15 @@ Esc    - Close Dialogs
           console.error('Chart container or library not found');
           return;
         }
+        
+        // Get chart colors from settings
+        const chartSettings = (window.BastionSettings && BastionSettings.getChartColors) 
+          ? BastionSettings.getChartColors() 
+          : { upColor: '#22c55e', downColor: '#ef4444', showVolume: true, showGrid: true };
+        
+        const upColor = chartSettings.upColor || '#22c55e';
+        const downColor = chartSettings.downColor || '#ef4444';
+        const showGrid = chartSettings.showGrid !== false;
 
         chart = LightweightCharts.createChart(container, {
           width: container.clientWidth,
@@ -2606,8 +2645,8 @@ Esc    - Close Dialogs
             textColor: '#71717a',
           },
           grid: {
-            vertLines: { color: '#1f1f23' },
-            horzLines: { color: '#1f1f23' },
+            vertLines: { color: showGrid ? '#1f1f23' : 'transparent' },
+            horzLines: { color: showGrid ? '#1f1f23' : 'transparent' },
           },
           crosshair: {
             mode: LightweightCharts.CrosshairMode.Normal,
@@ -2626,12 +2665,12 @@ Esc    - Close Dialogs
         });
 
         candleSeries = chart.addCandlestickSeries({
-          upColor: '#22c55e',
-          downColor: '#dc2626',
-          borderUpColor: '#22c55e',
-          borderDownColor: '#dc2626',
-          wickUpColor: '#22c55e',
-          wickDownColor: '#dc2626',
+          upColor: upColor,
+          downColor: downColor,
+          borderUpColor: upColor,
+          borderDownColor: downColor,
+          wickUpColor: upColor,
+          wickDownColor: downColor,
         });
 
         volumeSeries = chart.addHistogramSeries({
@@ -2640,6 +2679,11 @@ Esc    - Close Dialogs
           priceScaleId: '',
           scaleMargins: { top: 0.92, bottom: 0 },
         });
+        
+        // Hide volume if setting is off
+        if (!chartSettings.showVolume) {
+          volumeSeries.applyOptions({ visible: false });
+        }
 
         // Resize handler
         window.addEventListener('resize', () => {
@@ -2647,9 +2691,62 @@ Esc    - Close Dialogs
             chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
           }
         });
+        
+        // Listen for settings changes
+        window.addEventListener('bastionThemeChange', () => {
+          // Theme change - chart background stays dark, no action needed
+        });
+        
+        window.addEventListener('storage', (e) => {
+          // Reload chart when settings change from another tab/page
+          if (e.key === 'bastionAppearance' || e.key === 'bastionSettings') {
+            console.log('[CHART] Settings changed, updating...');
+            updateChartColors();
+          }
+        });
 
         // Load initial data
         loadChartData();
+      }
+      
+      // Update chart colors from settings
+      function updateChartColors() {
+        if (!candleSeries || !volumeSeries) return;
+        
+        const chartSettings = (window.BastionSettings && BastionSettings.getChartColors) 
+          ? BastionSettings.getChartColors() 
+          : { upColor: '#22c55e', downColor: '#ef4444', showVolume: true, showGrid: true };
+        
+        const upColor = chartSettings.upColor || '#22c55e';
+        const downColor = chartSettings.downColor || '#ef4444';
+        
+        // Update candle colors
+        candleSeries.applyOptions({
+          upColor: upColor,
+          downColor: downColor,
+          borderUpColor: upColor,
+          borderDownColor: downColor,
+          wickUpColor: upColor,
+          wickDownColor: downColor,
+        });
+        
+        // Update grid
+        if (chart) {
+          chart.applyOptions({
+            grid: {
+              vertLines: { color: chartSettings.showGrid ? '#1f1f23' : 'transparent' },
+              horzLines: { color: chartSettings.showGrid ? '#1f1f23' : 'transparent' },
+            }
+          });
+        }
+        
+        // Update volume visibility
+        volumeSeries.applyOptions({ visible: chartSettings.showVolume !== false });
+        
+        // Reload data to update volume bar colors
+        loadChartData();
+        
+        console.log('[CHART] Colors updated:', { upColor, downColor });
       }
 
       async function loadChartData() {
@@ -2660,11 +2757,18 @@ Esc    - Close Dialogs
           if (data.candles && candleSeries) {
             candleSeries.setData(data.candles);
             
+            // Get chart colors from settings for volume bars
+            const chartSettings = (window.BastionSettings && BastionSettings.getChartColors) 
+              ? BastionSettings.getChartColors() 
+              : { upColor: '#22c55e', downColor: '#ef4444' };
+            const upColor = chartSettings.upColor || '#22c55e';
+            const downColor = chartSettings.downColor || '#ef4444';
+            
             // Volume data
             const volData = data.candles.map(c => ({
               time: c.time,
               value: c.volume,
-              color: c.close >= c.open ? '#22c55e40' : '#dc262640',
+              color: c.close >= c.open ? upColor + '40' : downColor + '40',
             }));
             volumeSeries.setData(volData);
 
@@ -5200,8 +5304,84 @@ Esc    - Close Dialogs
         
         // Auto-refresh every 30 seconds
         setInterval(loadPositions, 30000);
+        
+        // Load corner GIF if user has one
+        loadCornerGif();
       });
     })();
+    
+    // =====================================================
+    // CORNER GIF PERSONALIZATION
+    // =====================================================
+    function loadCornerGif() {
+      const gifUrl = localStorage.getItem('cornerGif');
+      if (!gifUrl) return;
+      
+      // Get settings
+      let settings = { position: 'bottom-right', size: 'medium', opacity: 80 };
+      try {
+        const saved = localStorage.getItem('cornerGifSettings');
+        if (saved) settings = JSON.parse(saved);
+      } catch (e) {}
+      
+      // Create container if doesn't exist
+      let container = document.getElementById('corner-gif-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'corner-gif-container';
+        container.className = 'fixed z-50 pointer-events-none';
+        document.body.appendChild(container);
+      }
+      
+      // Position
+      container.style.top = '';
+      container.style.bottom = '';
+      container.style.left = '';
+      container.style.right = '';
+      
+      switch (settings.position) {
+        case 'bottom-right':
+          container.style.bottom = '80px';
+          container.style.right = '20px';
+          break;
+        case 'bottom-left':
+          container.style.bottom = '80px';
+          container.style.left = '20px';
+          break;
+        case 'top-right':
+          container.style.top = '80px';
+          container.style.right = '20px';
+          break;
+        case 'top-left':
+          container.style.top = '80px';
+          container.style.left = '20px';
+          break;
+      }
+      
+      // Size
+      let sizePx = 80;
+      switch (settings.size) {
+        case 'small': sizePx = 50; break;
+        case 'medium': sizePx = 80; break;
+        case 'large': sizePx = 120; break;
+      }
+      
+      // Opacity
+      const opacity = (settings.opacity || 80) / 100;
+      
+      container.innerHTML = `
+        <img src="${gifUrl}" 
+             style="width: ${sizePx}px; height: ${sizePx}px; object-fit: contain; opacity: ${opacity};"
+             alt="Custom GIF">
+      `;
+    }
+    
+    // Listen for storage changes (if user updates in another tab)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'cornerGif' || e.key === 'cornerGifSettings') {
+        loadCornerGif();
+      }
+    });
     </script>
   
 </body></html>

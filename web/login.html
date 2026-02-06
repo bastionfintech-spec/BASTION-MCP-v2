@@ -327,7 +327,7 @@
         }
       }
 
-      function handleLogin(event) {
+      async function handleLogin(event) {
         event.preventDefault();
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
@@ -343,19 +343,50 @@
         document.getElementById('login-btn-icon').setAttribute('icon', 'solar:refresh-circle-linear');
         document.getElementById('login-btn-icon').classList.add('animate-spin');
 
-        // Store login state in localStorage for demo purposes
-        // In production, this would call a real auth API
-        setTimeout(() => {
-          localStorage.setItem('bastion_user', JSON.stringify({ email, loggedIn: true }));
-          showStatus('login-status', 'Authentication successful. Redirecting...', false);
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
           
-          setTimeout(() => {
-            window.location.href = '/frontend';
-          }, 1000);
-        }, 1500);
+          const data = await res.json();
+          
+          if (data.success && data.token) {
+            // Store session
+            const storage = remember ? localStorage : sessionStorage;
+            storage.setItem('bastion_token', data.token);
+            storage.setItem('bastion_user', JSON.stringify(data.user));
+            
+            showStatus('login-status', 'Authentication successful. Redirecting...', false);
+            
+            setTimeout(() => {
+              window.location.href = '/frontend';
+            }, 1000);
+          } else {
+            showStatus('login-status', data.detail || 'Authentication failed', true);
+            resetLoginBtn();
+          }
+        } catch (e) {
+          console.error('Login error:', e);
+          showStatus('login-status', 'Connection error - please try again', true);
+          resetLoginBtn();
+        }
+      }
+      
+      function resetLoginBtn() {
+        document.getElementById('login-btn-text').textContent = 'Authenticate';
+        document.getElementById('login-btn-icon').setAttribute('icon', 'solar:arrow-right-linear');
+        document.getElementById('login-btn-icon').classList.remove('animate-spin');
+      }
+      
+      function resetRegisterBtn() {
+        document.getElementById('register-btn-text').textContent = 'Create Account';
+        document.getElementById('register-btn-icon').setAttribute('icon', 'solar:user-plus-linear');
+        document.getElementById('register-btn-icon').classList.remove('animate-spin');
       }
 
-      function handleRegister(event) {
+      async function handleRegister(event) {
         event.preventDefault();
         const username = document.getElementById('reg-username').value;
         const email = document.getElementById('reg-email').value;
@@ -365,6 +396,11 @@
 
         if (!username || !email || !password) {
           showStatus('register-status', 'Please fill in all fields', true);
+          return;
+        }
+        
+        if (password.length < 8) {
+          showStatus('register-status', 'Password must be at least 8 characters', true);
           return;
         }
 
@@ -383,15 +419,34 @@
         document.getElementById('register-btn-icon').setAttribute('icon', 'solar:refresh-circle-linear');
         document.getElementById('register-btn-icon').classList.add('animate-spin');
 
-        // Store registration in localStorage for demo purposes
-        setTimeout(() => {
-          localStorage.setItem('bastion_user', JSON.stringify({ email, username, loggedIn: true }));
-          showStatus('register-status', 'Account created. Redirecting...', false);
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, display_name: username })
+          });
           
-          setTimeout(() => {
-            window.location.href = '/frontend';
-          }, 1000);
-        }, 1500);
+          const data = await res.json();
+          
+          if (data.success && data.token) {
+            // Store session
+            localStorage.setItem('bastion_token', data.token);
+            localStorage.setItem('bastion_user', JSON.stringify(data.user));
+            
+            showStatus('register-status', 'Account created. Redirecting...', false);
+            
+            setTimeout(() => {
+              window.location.href = '/frontend';
+            }, 1000);
+          } else {
+            showStatus('register-status', data.detail || 'Registration failed', true);
+            resetRegisterBtn();
+          }
+        } catch (e) {
+          console.error('Register error:', e);
+          showStatus('register-status', 'Connection error - please try again', true);
+          resetRegisterBtn();
+        }
       }
 
       function socialLogin(provider) {

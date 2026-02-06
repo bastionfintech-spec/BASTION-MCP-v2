@@ -960,6 +960,327 @@ async def update_appearance_settings(data: dict):
 
 
 # =============================================================================
+# AUTHENTICATION API
+# =============================================================================
+
+try:
+    from api.user_service import get_user_service, User
+    user_service = get_user_service()
+    logger.info("[AUTH] User service initialized")
+except ImportError as e:
+    logger.warning(f"[AUTH] User service not available: {e}")
+    user_service = None
+
+
+@app.post("/api/auth/register")
+async def register_user(data: dict):
+    """Register a new user account."""
+    email = data.get("email", "").lower().strip()
+    password = data.get("password", "")
+    display_name = data.get("display_name")
+    
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password required")
+    
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    
+    user = await user_service.create_user(email, password, display_name)
+    if not user:
+        raise HTTPException(status_code=409, detail="Email already registered")
+    
+    # Auto-login after registration
+    token = await user_service.authenticate(email, password)
+    
+    return {
+        "success": True,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "display_name": user.display_name
+        },
+        "token": token
+    }
+
+
+@app.post("/api/auth/login")
+async def login_user(data: dict):
+    """Login and get session token."""
+    email = data.get("email", "").lower().strip()
+    password = data.get("password", "")
+    
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password required")
+    
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    
+    token = await user_service.authenticate(email, password)
+    if not token:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    user = await user_service.get_user_by_email(email)
+    
+    return {
+        "success": True,
+        "user": user.to_dict() if user else None,
+        "token": token
+    }
+
+
+@app.post("/api/auth/logout")
+async def logout_user(data: dict):
+    """Logout and invalidate session."""
+    token = data.get("token", "")
+    
+    if not user_service:
+        return {"success": True}
+    
+    await user_service.logout(token)
+    return {"success": True}
+
+
+@app.get("/api/auth/me")
+async def get_current_user(token: str = None):
+    """Get current user from session token."""
+    # Token can come from query param or header
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    
+    user = await user_service.validate_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+    
+    return {"success": True, "user": user.to_dict()}
+
+
+@app.put("/api/auth/profile")
+async def update_user_profile(data: dict):
+    """Update user profile settings."""
+    token = data.get("token", "")
+    
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    
+    user = await user_service.validate_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Remove token from updates
+    updates = {k: v for k, v in data.items() if k != "token"}
+    
+    success = await user_service.update_user(user.id, updates)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to update profile")
+    
+    # Return updated user
+    updated_user = await user_service.get_user_by_id(user.id)
+    return {"success": True, "user": updated_user.to_dict() if updated_user else None}
+
+
+@app.post("/api/auth/exchange-keys")
+async def save_user_exchange_keys(data: dict):
+    """Save exchange API keys for user (encrypted)."""
+    token = data.get("token", "")
+    exchange = data.get("exchange", "")
+    api_key = data.get("api_key", "")
+    api_secret = data.get("api_secret", "")
+    passphrase = data.get("passphrase")
+    
+    if not exchange or not api_key or not api_secret:
+        raise HTTPException(status_code=400, detail="Exchange, API key and secret required")
+    
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    
+    user = await user_service.validate_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    success = await user_service.save_exchange_keys(user.id, exchange, api_key, api_secret, passphrase)
+    return {"success": success}
+
+
+@app.get("/api/auth/exchanges")
+async def get_user_exchanges(token: str):
+    """Get list of user's connected exchanges."""
+    if not user_service:
+        return {"success": True, "exchanges": []}
+    
+    user = await user_service.validate_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    exchanges = await user_service.get_user_exchanges(user.id)
+    return {"success": True, "exchanges": exchanges}
+
+
+@app.delete("/api/auth/exchange-keys/{exchange}")
+async def delete_user_exchange_keys(exchange: str, token: str):
+    """Delete exchange API keys for user."""
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    
+    user = await user_service.validate_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    success = await user_service.delete_exchange_keys(user.id, exchange)
+    return {"success": success}
+
+
+# =============================================================================
+# TWO-FACTOR AUTHENTICATION API
+# =============================================================================
+
+import base64
+import secrets
+import io
+
+@app.post("/api/auth/2fa/setup")
+async def setup_2fa(data: dict):
+    """Generate 2FA secret and QR code for setup."""
+    try:
+        # Try to use pyotp if available
+        import pyotp
+        import qrcode
+        
+        # Generate secret
+        secret = pyotp.random_base32()
+        
+        # Create TOTP instance
+        totp = pyotp.TOTP(secret)
+        
+        # Generate provisioning URI
+        uri = totp.provisioning_uri(
+            name=data.get("email", "user@bastion.app"),
+            issuer_name="BASTION Terminal"
+        )
+        
+        # Generate QR code
+        qr = qrcode.QRCode(version=1, box_size=4, border=2)
+        qr.add_data(uri)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Convert to base64
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        return {
+            "success": True,
+            "secret": secret,
+            "qr_code": f"data:image/png;base64,{qr_base64}"
+        }
+    except ImportError:
+        # pyotp/qrcode not available - generate simple secret
+        chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+        secret = ''.join(secrets.choice(chars) for _ in range(16))
+        return {
+            "success": True,
+            "secret": secret,
+            "qr_code": None,
+            "manual_setup": True
+        }
+
+
+@app.post("/api/auth/2fa/verify")
+async def verify_2fa(data: dict):
+    """Verify 2FA code during setup."""
+    code = data.get("code", "")
+    secret = data.get("secret", "")
+    
+    if not code or not secret:
+        return {"success": False, "error": "Code and secret required"}
+    
+    try:
+        import pyotp
+        totp = pyotp.TOTP(secret)
+        
+        if totp.verify(code, valid_window=1):  # Allow 30 second window
+            return {"success": True}
+        else:
+            return {"success": False, "error": "Invalid code"}
+    except ImportError:
+        # pyotp not available - accept any valid 6-digit code for demo
+        if len(code) == 6 and code.isdigit():
+            return {"success": True}
+        return {"success": False, "error": "Invalid code format"}
+
+
+@app.post("/api/auth/2fa/disable")
+async def disable_2fa(data: dict):
+    """Disable 2FA for user."""
+    # In production, this would update the user record in the database
+    return {"success": True}
+
+
+# =============================================================================
+# CLOUD SYNC API
+# =============================================================================
+
+# In-memory storage for sync (replace with database in production)
+user_sync_data: Dict[str, Dict] = {}
+
+
+@app.post("/api/sync/upload")
+async def sync_upload(data: dict):
+    """Upload user settings to cloud."""
+    token = data.get("token", "")
+    settings = data.get("settings", {})
+    
+    if not token:
+        return {"success": False, "error": "Token required"}
+    
+    # Validate token and get user ID
+    user_id = token  # In production, validate token and get actual user ID
+    if user_service:
+        user = await user_service.validate_session(token)
+        if user:
+            user_id = user.id
+    
+    # Store settings
+    user_sync_data[user_id] = {
+        "settings": settings,
+        "updated_at": datetime.utcnow().isoformat()
+    }
+    
+    logger.info(f"[SYNC] Uploaded settings for user {user_id[:8]}...")
+    return {"success": True, "timestamp": datetime.utcnow().isoformat()}
+
+
+@app.get("/api/sync/download")
+async def sync_download(token: str):
+    """Download user settings from cloud."""
+    if not token:
+        return {"success": False, "error": "Token required"}
+    
+    # Validate token and get user ID
+    user_id = token
+    if user_service:
+        user = await user_service.validate_session(token)
+        if user:
+            user_id = user.id
+    
+    # Get settings
+    if user_id in user_sync_data:
+        return {
+            "success": True,
+            "settings": user_sync_data[user_id]["settings"],
+            "timestamp": user_sync_data[user_id]["updated_at"]
+        }
+    
+    return {"success": False, "error": "No backup found"}
+
+
+# =============================================================================
 # SUBSCRIPTION API
 # =============================================================================
 

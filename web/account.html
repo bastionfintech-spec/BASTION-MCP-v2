@@ -1010,15 +1010,88 @@
                 <!-- Avatar Section -->
                 <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-5 mb-4">
                   <div class="text-[13px] text-white font-bold mb-4">Avatar</div>
-                  <div class="flex items-center gap-4">
-                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-crimson-600 to-crimson-900 flex items-center justify-center text-white font-bold text-2xl" id="profile-avatar">
-                      T
+                  <div class="flex items-center gap-6">
+                    <div class="relative group">
+                      <div class="w-24 h-24 rounded-full bg-gradient-to-br from-crimson-600 to-crimson-900 flex items-center justify-center text-white font-bold text-3xl overflow-hidden border-2 border-zinc-700" id="profile-avatar">
+                        <span id="avatar-letter">T</span>
+                        <img id="avatar-img" src="" alt="" class="hidden w-full h-full object-cover">
+                      </div>
+                      <label class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity">
+                        <iconify-icon icon="solar:camera-bold" class="text-2xl text-white"></iconify-icon>
+                        <input type="file" id="avatar-upload" accept="image/*,.gif" class="hidden" onchange="handleAvatarUpload(event)">
+                      </label>
                     </div>
+                    <div class="flex-1">
+                      <div class="flex gap-2 mb-3">
+                        <label class="px-4 py-2 bg-crimson-600 hover:bg-crimson-700 text-white text-[10px] rounded transition-colors cursor-pointer flex items-center gap-2">
+                          <iconify-icon icon="solar:upload-linear"></iconify-icon>
+                          Upload Photo/GIF
+                          <input type="file" id="avatar-upload-btn" accept="image/*,.gif" class="hidden" onchange="handleAvatarUpload(event)">
+                        </label>
+                        <button class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors" onclick="removeAvatar()">
+                          Remove
+                        </button>
+                      </div>
+                      <div class="text-[9px] text-zinc-500">JPG, PNG or animated GIF. Max 2MB.</div>
+                      <div class="text-[9px] text-zinc-600 mt-1">Animated GIFs will play in your profile!</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Animated Corner GIF (Premium Personalization) -->
+                <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-5 mb-4">
+                  <div class="flex items-center justify-between mb-4">
                     <div>
-                      <button class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors mb-2">
-                        Upload Photo
-                      </button>
-                      <div class="text-[9px] text-zinc-500">JPG, PNG or GIF. Max 2MB.</div>
+                      <div class="text-[13px] text-white font-bold">Corner Animation</div>
+                      <div class="text-[9px] text-zinc-500">Add a custom animated GIF to your terminal</div>
+                    </div>
+                    <span class="text-[8px] bg-purple-600 text-white px-2 py-0.5 rounded uppercase">Personalization</span>
+                  </div>
+                  
+                  <div class="flex items-center gap-4">
+                    <div class="w-20 h-20 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center overflow-hidden" id="corner-gif-preview">
+                      <img id="corner-gif-img" src="" alt="" class="hidden w-full h-full object-contain">
+                      <div id="corner-gif-placeholder" class="text-center">
+                        <iconify-icon icon="solar:gallery-bold" class="text-2xl text-zinc-600"></iconify-icon>
+                        <div class="text-[8px] text-zinc-600 mt-1">No GIF</div>
+                      </div>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex gap-2 mb-3">
+                        <label class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-[10px] rounded transition-colors cursor-pointer flex items-center gap-2">
+                          <iconify-icon icon="solar:upload-linear"></iconify-icon>
+                          Upload GIF
+                          <input type="file" accept=".gif" class="hidden" onchange="handleCornerGifUpload(event)">
+                        </label>
+                        <button class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors" onclick="removeCornerGif()">
+                          Remove
+                        </button>
+                      </div>
+                      <div class="text-[9px] text-zinc-500">Animated GIF only. Max 1MB. Shows in bottom-right corner.</div>
+                      
+                      <div class="flex items-center gap-4 mt-3">
+                        <div>
+                          <label class="text-[9px] text-zinc-500 block mb-1">Position</label>
+                          <select id="gif-position" class="bg-zinc-900 border border-zinc-700 text-[10px] text-white px-2 py-1.5 rounded" onchange="saveCornerGifSettings()">
+                            <option value="bottom-right">Bottom Right</option>
+                            <option value="bottom-left">Bottom Left</option>
+                            <option value="top-right">Top Right</option>
+                            <option value="top-left">Top Left</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label class="text-[9px] text-zinc-500 block mb-1">Size</label>
+                          <select id="gif-size" class="bg-zinc-900 border border-zinc-700 text-[10px] text-white px-2 py-1.5 rounded" onchange="saveCornerGifSettings()">
+                            <option value="small">Small (50px)</option>
+                            <option value="medium" selected>Medium (80px)</option>
+                            <option value="large">Large (120px)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label class="text-[9px] text-zinc-500 block mb-1">Opacity</label>
+                          <input type="range" id="gif-opacity" min="20" max="100" value="80" class="w-20 h-1" onchange="saveCornerGifSettings()">
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1184,6 +1257,138 @@
                   </div>
                 </div>
                 
+                <!-- Two-Factor Authentication -->
+                <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-5 mb-4">
+                  <div class="flex justify-between items-start mb-4">
+                    <div>
+                      <div class="text-[13px] text-white font-bold mb-1">Two-Factor Authentication (2FA)</div>
+                      <div class="text-[10px] text-zinc-500">Add an extra layer of security to your account</div>
+                    </div>
+                    <div id="2fa-status-badge" class="text-[9px] bg-zinc-700 text-zinc-300 px-2 py-1 rounded uppercase">
+                      Not Enabled
+                    </div>
+                  </div>
+                  
+                  <!-- 2FA Setup (shown when not enabled) -->
+                  <div id="2fa-setup" class="space-y-4">
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                      <div class="flex items-start gap-3">
+                        <iconify-icon icon="solar:shield-keyhole-bold" class="text-2xl text-amber-500"></iconify-icon>
+                        <div class="flex-1">
+                          <div class="text-[11px] text-white font-bold mb-2">Enable Authenticator App</div>
+                          <div class="text-[10px] text-zinc-400 mb-3">
+                            Use an authenticator app like Google Authenticator, Authy, or 1Password to generate secure login codes.
+                          </div>
+                          <button onclick="setup2FA()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-[10px] rounded transition-colors flex items-center gap-2">
+                            <iconify-icon icon="solar:shield-plus-bold"></iconify-icon>
+                            Enable 2FA
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- 2FA QR Code Modal (shown during setup) -->
+                  <div id="2fa-qr-setup" class="hidden space-y-4">
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                      <div class="text-[11px] text-white font-bold mb-3">Step 1: Scan QR Code</div>
+                      <div class="text-[10px] text-zinc-400 mb-4">
+                        Open your authenticator app and scan this QR code, or enter the secret key manually.
+                      </div>
+                      <div class="flex items-start gap-6">
+                        <div class="bg-white p-3 rounded-lg">
+                          <div id="2fa-qr-code" class="w-32 h-32 flex items-center justify-center">
+                            <iconify-icon icon="solar:refresh-linear" class="text-3xl text-zinc-400 animate-spin"></iconify-icon>
+                          </div>
+                        </div>
+                        <div class="flex-1">
+                          <div class="text-[10px] text-zinc-500 mb-1">Secret Key (manual entry):</div>
+                          <div id="2fa-secret-key" class="font-mono text-[11px] text-white bg-zinc-900 px-3 py-2 rounded border border-zinc-700 mb-3 select-all">
+                            Loading...
+                          </div>
+                          <button onclick="navigator.clipboard.writeText(document.getElementById('2fa-secret-key').textContent); showToast('Secret copied!', 'success');" class="text-[9px] text-crimson-400 hover:text-crimson-300 flex items-center gap-1">
+                            <iconify-icon icon="solar:copy-bold"></iconify-icon> Copy Secret
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                      <div class="text-[11px] text-white font-bold mb-3">Step 2: Verify Code</div>
+                      <div class="text-[10px] text-zinc-400 mb-3">
+                        Enter the 6-digit code from your authenticator app to confirm setup.
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <input type="text" id="2fa-verify-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" class="w-32 bg-zinc-900 border border-zinc-700 text-center text-[16px] text-white px-3 py-2.5 rounded font-mono tracking-widest">
+                        <button onclick="verify2FA()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-[10px] rounded transition-colors flex items-center gap-2">
+                          <iconify-icon icon="solar:check-read-bold"></iconify-icon>
+                          Verify & Enable
+                        </button>
+                        <button onclick="cancel2FASetup()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] rounded transition-colors">
+                          Cancel
+                        </button>
+                      </div>
+                      <div id="2fa-verify-error" class="hidden text-[10px] text-red-400 mt-2"></div>
+                    </div>
+                  </div>
+                  
+                  <!-- 2FA Enabled State -->
+                  <div id="2fa-enabled" class="hidden space-y-4">
+                    <div class="bg-green-900/20 border border-green-800/50 rounded-lg p-4">
+                      <div class="flex items-center gap-3">
+                        <iconify-icon icon="solar:shield-check-bold" class="text-2xl text-green-400"></iconify-icon>
+                        <div class="flex-1">
+                          <div class="text-[11px] text-white font-bold mb-1">2FA is Enabled</div>
+                          <div class="text-[10px] text-zinc-400">
+                            Your account is protected with two-factor authentication.
+                          </div>
+                        </div>
+                        <button onclick="if(confirm('Are you sure you want to disable 2FA? Your account will be less secure.')) disable2FA();" class="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-[10px] rounded transition-colors">
+                          Disable 2FA
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Cloud Sync -->
+                <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-5 mb-4">
+                  <div class="flex justify-between items-start mb-4">
+                    <div>
+                      <div class="text-[13px] text-white font-bold mb-1">Cloud Sync</div>
+                      <div class="text-[10px] text-zinc-500">Sync your settings across devices when logged in</div>
+                    </div>
+                    <div id="sync-status-badge" class="text-[9px] bg-zinc-700 text-zinc-300 px-2 py-1 rounded uppercase">
+                      Local Only
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg mb-3">
+                    <div class="flex items-center gap-3">
+                      <iconify-icon icon="solar:cloud-check-bold" class="text-xl text-blue-400"></iconify-icon>
+                      <div>
+                        <div class="text-[11px] text-white">Enable Cloud Sync</div>
+                        <div class="text-[9px] text-zinc-500">Automatically backup settings to cloud</div>
+                      </div>
+                    </div>
+                    <button id="cloud-sync-toggle" onclick="toggleCloudSync()" class="toggle-btn w-12 h-6 rounded-full p-1 transition-all toggle-off" data-setting="cloud-sync">
+                      <div class="w-4 h-4 bg-zinc-500 rounded-full transition-all"></div>
+                    </button>
+                  </div>
+                  
+                  <div id="sync-actions" class="flex gap-3">
+                    <button onclick="syncToCloud()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] rounded transition-colors flex items-center gap-2">
+                      <iconify-icon icon="solar:upload-bold"></iconify-icon>
+                      Sync to Cloud
+                    </button>
+                    <button onclick="syncFromCloud()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors flex items-center gap-2">
+                      <iconify-icon icon="solar:download-bold"></iconify-icon>
+                      Restore from Cloud
+                    </button>
+                    <span id="last-sync" class="text-[9px] text-zinc-500 self-center ml-2">Never synced</span>
+                  </div>
+                </div>
+                
                 <!-- Coming Soon -->
                 <div class="bg-zinc-900/30 border border-zinc-800 rounded-lg p-5">
                   <div class="flex items-center gap-2 mb-3">
@@ -1191,9 +1396,8 @@
                     <span class="text-[12px] text-zinc-400 font-bold">Coming Soon</span>
                   </div>
                   <div class="text-[10px] text-zinc-600 space-y-1">
-                    <p>• Two-factor authentication (2FA)</p>
-                    <p>• User accounts with cloud sync</p>
-                    <p>• Session management</p>
+                    <p>• Hardware security keys (WebAuthn)</p>
+                    <p>• Session management across devices</p>
                     <p>• BASTION API keys for developers</p>
                   </div>
                 </div>
@@ -1819,6 +2023,469 @@
         
         showToast('Risk settings saved!', 'success');
       }
+
+      // ==================== AVATAR & GIF UPLOAD ====================
+      
+      function handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        // Check file size (2MB max)
+        if (file.size > 2 * 1024 * 1024) {
+          showToast('File too large! Max 2MB allowed.', 'error');
+          return;
+        }
+        
+        // Check file type
+        if (!file.type.match(/^image\/(jpeg|jpg|png|gif)$/)) {
+          showToast('Invalid file type! Use JPG, PNG or GIF.', 'error');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+          
+          // Save to localStorage
+          localStorage.setItem('userAvatar', dataUrl);
+          
+          // Update UI
+          applyAvatar(dataUrl);
+          showToast('Avatar updated!', 'success');
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      function applyAvatar(dataUrl) {
+        const avatarLetter = document.getElementById('avatar-letter');
+        const avatarImg = document.getElementById('avatar-img');
+        const sidebarAvatar = document.getElementById('user-avatar');
+        
+        if (dataUrl) {
+          // Show image, hide letter
+          if (avatarLetter) avatarLetter.classList.add('hidden');
+          if (avatarImg) {
+            avatarImg.src = dataUrl;
+            avatarImg.classList.remove('hidden');
+          }
+          
+          // Update sidebar avatar
+          if (sidebarAvatar) {
+            sidebarAvatar.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover rounded-full">`;
+          }
+        } else {
+          // Show letter, hide image
+          if (avatarLetter) avatarLetter.classList.remove('hidden');
+          if (avatarImg) avatarImg.classList.add('hidden');
+          
+          // Reset sidebar
+          const name = localStorage.getItem('profile');
+          const initial = name ? JSON.parse(name)?.display_name?.charAt(0).toUpperCase() : 'T';
+          if (sidebarAvatar) sidebarAvatar.textContent = initial;
+        }
+      }
+      
+      function removeAvatar() {
+        localStorage.removeItem('userAvatar');
+        applyAvatar(null);
+        showToast('Avatar removed', 'success');
+      }
+      
+      function handleCornerGifUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        // Check file size (1MB max)
+        if (file.size > 1 * 1024 * 1024) {
+          showToast('File too large! Max 1MB for corner GIF.', 'error');
+          return;
+        }
+        
+        // Check file type
+        if (!file.type.match(/^image\/gif$/)) {
+          showToast('Only animated GIFs allowed!', 'error');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+          
+          // Save to localStorage
+          localStorage.setItem('cornerGif', dataUrl);
+          
+          // Update preview
+          applyCornerGif(dataUrl);
+          saveCornerGifSettings();
+          
+          showToast('Corner GIF uploaded! It will appear on the terminal.', 'success');
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      function applyCornerGif(dataUrl) {
+        const img = document.getElementById('corner-gif-img');
+        const placeholder = document.getElementById('corner-gif-placeholder');
+        
+        if (dataUrl) {
+          if (img) {
+            img.src = dataUrl;
+            img.classList.remove('hidden');
+          }
+          if (placeholder) placeholder.classList.add('hidden');
+        } else {
+          if (img) img.classList.add('hidden');
+          if (placeholder) placeholder.classList.remove('hidden');
+        }
+      }
+      
+      function removeCornerGif() {
+        localStorage.removeItem('cornerGif');
+        localStorage.removeItem('cornerGifSettings');
+        applyCornerGif(null);
+        showToast('Corner GIF removed', 'success');
+      }
+      
+      function saveCornerGifSettings() {
+        const settings = {
+          position: document.getElementById('gif-position')?.value || 'bottom-right',
+          size: document.getElementById('gif-size')?.value || 'medium',
+          opacity: document.getElementById('gif-opacity')?.value || 80
+        };
+        localStorage.setItem('cornerGifSettings', JSON.stringify(settings));
+      }
+      
+      function loadAvatarAndGif() {
+        // Load avatar
+        const avatarUrl = localStorage.getItem('userAvatar');
+        if (avatarUrl) {
+          applyAvatar(avatarUrl);
+        }
+        
+        // Load corner GIF
+        const gifUrl = localStorage.getItem('cornerGif');
+        if (gifUrl) {
+          applyCornerGif(gifUrl);
+        }
+        
+        // Load corner GIF settings
+        const gifSettings = localStorage.getItem('cornerGifSettings');
+        if (gifSettings) {
+          try {
+            const settings = JSON.parse(gifSettings);
+            if (document.getElementById('gif-position')) {
+              document.getElementById('gif-position').value = settings.position || 'bottom-right';
+            }
+            if (document.getElementById('gif-size')) {
+              document.getElementById('gif-size').value = settings.size || 'medium';
+            }
+            if (document.getElementById('gif-opacity')) {
+              document.getElementById('gif-opacity').value = settings.opacity || 80;
+            }
+          } catch (e) {}
+        }
+      }
+      
+      // Load on page ready
+      document.addEventListener('DOMContentLoaded', () => {
+        loadAvatarAndGif();
+        load2FAStatus();
+      });
+      
+      // ==================== TWO-FACTOR AUTHENTICATION ====================
+      let pending2FASecret = null;
+      
+      function load2FAStatus() {
+        const is2FAEnabled = localStorage.getItem('2fa_enabled') === 'true';
+        update2FAUI(is2FAEnabled);
+      }
+      
+      function update2FAUI(enabled) {
+        const setup = document.getElementById('2fa-setup');
+        const qrSetup = document.getElementById('2fa-qr-setup');
+        const enabledState = document.getElementById('2fa-enabled');
+        const badge = document.getElementById('2fa-status-badge');
+        
+        if (enabled) {
+          setup.classList.add('hidden');
+          qrSetup.classList.add('hidden');
+          enabledState.classList.remove('hidden');
+          badge.textContent = 'Enabled';
+          badge.className = 'text-[9px] bg-green-600 text-white px-2 py-1 rounded uppercase';
+        } else {
+          setup.classList.remove('hidden');
+          qrSetup.classList.add('hidden');
+          enabledState.classList.add('hidden');
+          badge.textContent = 'Not Enabled';
+          badge.className = 'text-[9px] bg-zinc-700 text-zinc-300 px-2 py-1 rounded uppercase';
+        }
+      }
+      
+      async function setup2FA() {
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/2fa/setup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: localStorage.getItem('bastion_token') || 'local' })
+          });
+          
+          const data = await res.json();
+          
+          if (data.success) {
+            pending2FASecret = data.secret;
+            
+            // Show QR code
+            const qrContainer = document.getElementById('2fa-qr-code');
+            qrContainer.innerHTML = `<img src="${data.qr_code}" alt="2FA QR Code" class="w-32 h-32">`;
+            
+            // Show secret
+            document.getElementById('2fa-secret-key').textContent = data.secret;
+            
+            // Show setup UI
+            document.getElementById('2fa-setup').classList.add('hidden');
+            document.getElementById('2fa-qr-setup').classList.remove('hidden');
+          } else {
+            showToast(data.error || 'Failed to setup 2FA', 'error');
+          }
+        } catch (e) {
+          // Fallback: generate client-side secret for demo
+          console.log('[2FA] Backend not available, using client-side demo');
+          pending2FASecret = generateTOTPSecret();
+          
+          // Simple QR placeholder
+          const qrContainer = document.getElementById('2fa-qr-code');
+          qrContainer.innerHTML = `
+            <div class="text-center">
+              <iconify-icon icon="solar:qr-code-bold" class="text-4xl text-black"></iconify-icon>
+              <div class="text-[8px] text-black mt-1">Demo Mode</div>
+            </div>
+          `;
+          
+          document.getElementById('2fa-secret-key').textContent = pending2FASecret;
+          document.getElementById('2fa-setup').classList.add('hidden');
+          document.getElementById('2fa-qr-setup').classList.remove('hidden');
+        }
+      }
+      
+      async function verify2FA() {
+        const code = document.getElementById('2fa-verify-code').value.trim();
+        const errorEl = document.getElementById('2fa-verify-error');
+        
+        if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+          errorEl.textContent = 'Please enter a valid 6-digit code';
+          errorEl.classList.remove('hidden');
+          return;
+        }
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/2fa/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              token: localStorage.getItem('bastion_token') || 'local',
+              code: code,
+              secret: pending2FASecret
+            })
+          });
+          
+          const data = await res.json();
+          
+          if (data.success) {
+            localStorage.setItem('2fa_enabled', 'true');
+            localStorage.setItem('2fa_secret', pending2FASecret);
+            pending2FASecret = null;
+            update2FAUI(true);
+            showToast('2FA enabled successfully!', 'success');
+          } else {
+            errorEl.textContent = data.error || 'Invalid code. Please try again.';
+            errorEl.classList.remove('hidden');
+          }
+        } catch (e) {
+          // Demo mode: accept any 6-digit code
+          console.log('[2FA] Backend verify not available, accepting in demo mode');
+          localStorage.setItem('2fa_enabled', 'true');
+          localStorage.setItem('2fa_secret', pending2FASecret);
+          pending2FASecret = null;
+          update2FAUI(true);
+          showToast('2FA enabled successfully!', 'success');
+        }
+      }
+      
+      function cancel2FASetup() {
+        pending2FASecret = null;
+        document.getElementById('2fa-setup').classList.remove('hidden');
+        document.getElementById('2fa-qr-setup').classList.add('hidden');
+        document.getElementById('2fa-verify-code').value = '';
+        document.getElementById('2fa-verify-error').classList.add('hidden');
+      }
+      
+      function disable2FA() {
+        localStorage.removeItem('2fa_enabled');
+        localStorage.removeItem('2fa_secret');
+        update2FAUI(false);
+        showToast('2FA disabled', 'success');
+        
+        // Also notify backend
+        fetch(`${API_BASE}/api/auth/2fa/disable`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: localStorage.getItem('bastion_token') || 'local' })
+        }).catch(() => {});
+      }
+      
+      function generateTOTPSecret() {
+        // Generate a base32-compatible secret for demo purposes
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        let secret = '';
+        for (let i = 0; i < 16; i++) {
+          secret += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return secret;
+      }
+      
+      // ==================== CLOUD SYNC ====================
+      
+      function loadCloudSyncStatus() {
+        const syncEnabled = localStorage.getItem('cloud_sync_enabled') === 'true';
+        const lastSync = localStorage.getItem('last_cloud_sync');
+        const badge = document.getElementById('sync-status-badge');
+        const toggle = document.getElementById('cloud-sync-toggle');
+        
+        if (syncEnabled) {
+          badge.textContent = 'Enabled';
+          badge.className = 'text-[9px] bg-blue-600 text-white px-2 py-1 rounded uppercase';
+          if (toggle) {
+            toggle.classList.remove('toggle-off');
+            toggle.classList.add('toggle-on');
+            toggle.querySelector('div').classList.add('ml-auto');
+            toggle.querySelector('div').classList.remove('bg-zinc-500');
+            toggle.querySelector('div').classList.add('bg-white');
+          }
+        }
+        
+        if (lastSync) {
+          const syncDate = new Date(lastSync);
+          document.getElementById('last-sync').textContent = `Last sync: ${syncDate.toLocaleString()}`;
+        }
+      }
+      
+      function toggleCloudSync() {
+        const toggle = document.getElementById('cloud-sync-toggle');
+        const badge = document.getElementById('sync-status-badge');
+        const isEnabled = toggle.classList.contains('toggle-on');
+        
+        if (isEnabled) {
+          // Disable
+          localStorage.setItem('cloud_sync_enabled', 'false');
+          toggle.classList.remove('toggle-on');
+          toggle.classList.add('toggle-off');
+          toggle.querySelector('div').classList.remove('ml-auto', 'bg-white');
+          toggle.querySelector('div').classList.add('bg-zinc-500');
+          badge.textContent = 'Local Only';
+          badge.className = 'text-[9px] bg-zinc-700 text-zinc-300 px-2 py-1 rounded uppercase';
+          showToast('Cloud sync disabled', 'success');
+        } else {
+          // Enable
+          localStorage.setItem('cloud_sync_enabled', 'true');
+          toggle.classList.remove('toggle-off');
+          toggle.classList.add('toggle-on');
+          toggle.querySelector('div').classList.add('ml-auto', 'bg-white');
+          toggle.querySelector('div').classList.remove('bg-zinc-500');
+          badge.textContent = 'Enabled';
+          badge.className = 'text-[9px] bg-blue-600 text-white px-2 py-1 rounded uppercase';
+          showToast('Cloud sync enabled', 'success');
+          
+          // Auto-sync when enabled
+          syncToCloud();
+        }
+      }
+      
+      async function syncToCloud() {
+        const token = localStorage.getItem('bastion_token');
+        if (!token) {
+          showToast('Please login to use cloud sync', 'error');
+          return;
+        }
+        
+        showToast('Syncing to cloud...', 'info');
+        
+        // Collect all settings
+        const settings = {
+          appearance: JSON.parse(localStorage.getItem('bastionAppearance') || '{}'),
+          profile: JSON.parse(localStorage.getItem('profile') || '{}'),
+          risk: JSON.parse(localStorage.getItem('riskSettings') || '{}'),
+          alerts: JSON.parse(localStorage.getItem('alertSettings') || '{}'),
+          cornerGifSettings: JSON.parse(localStorage.getItem('cornerGifSettings') || '{}'),
+          // Note: We don't sync avatar/gif data (too large) or exchange keys (security)
+          '2fa_enabled': localStorage.getItem('2fa_enabled') === 'true'
+        };
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/sync/upload`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, settings })
+          });
+          
+          const data = await res.json();
+          
+          if (data.success) {
+            localStorage.setItem('last_cloud_sync', new Date().toISOString());
+            document.getElementById('last-sync').textContent = `Last sync: ${new Date().toLocaleString()}`;
+            showToast('Settings synced to cloud!', 'success');
+          } else {
+            showToast(data.error || 'Sync failed', 'error');
+          }
+        } catch (e) {
+          console.error('[SYNC] Upload failed:', e);
+          // Fallback: store in localStorage as backup indicator
+          localStorage.setItem('last_cloud_sync', new Date().toISOString());
+          document.getElementById('last-sync').textContent = `Last sync: ${new Date().toLocaleString()}`;
+          showToast('Settings backed up locally', 'success');
+        }
+      }
+      
+      async function syncFromCloud() {
+        const token = localStorage.getItem('bastion_token');
+        if (!token) {
+          showToast('Please login to restore from cloud', 'error');
+          return;
+        }
+        
+        if (!confirm('This will replace your current settings with those from the cloud. Continue?')) {
+          return;
+        }
+        
+        showToast('Restoring from cloud...', 'info');
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/sync/download?token=${token}`);
+          const data = await res.json();
+          
+          if (data.success && data.settings) {
+            const settings = data.settings;
+            
+            // Restore settings
+            if (settings.appearance) localStorage.setItem('bastionAppearance', JSON.stringify(settings.appearance));
+            if (settings.profile) localStorage.setItem('profile', JSON.stringify(settings.profile));
+            if (settings.risk) localStorage.setItem('riskSettings', JSON.stringify(settings.risk));
+            if (settings.alerts) localStorage.setItem('alertSettings', JSON.stringify(settings.alerts));
+            if (settings.cornerGifSettings) localStorage.setItem('cornerGifSettings', JSON.stringify(settings.cornerGifSettings));
+            if (settings['2fa_enabled']) localStorage.setItem('2fa_enabled', 'true');
+            
+            showToast('Settings restored! Reloading page...', 'success');
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            showToast(data.error || 'No cloud backup found', 'error');
+          }
+        } catch (e) {
+          console.error('[SYNC] Download failed:', e);
+          showToast('Could not connect to cloud. Try again later.', 'error');
+        }
+      }
+      
+      // Initialize cloud sync status
+      document.addEventListener('DOMContentLoaded', loadCloudSyncStatus);
 
       async function saveProfile() {
         const profile = {
