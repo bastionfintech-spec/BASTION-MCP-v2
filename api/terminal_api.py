@@ -525,22 +525,56 @@ async def serve_volume_profile_js():
 
 
 # =============================================================================
-# EXCHANGE API KEY MANAGEMENT
+# EXCHANGE API KEY MANAGEMENT (USER-SCOPED)
 # =============================================================================
 
-# In-memory storage for demo (would use encrypted DB in production)
-connected_exchanges: Dict[str, Dict] = {}
+# Per-user exchange connections: { user_id: { exchange_name: connection_info } }
+# For guests, user_id = "guest_<session_id>" 
+user_exchanges: Dict[str, Dict[str, Dict]] = {}
+
+# Per-user context managers for position fetching
+user_contexts: Dict[str, Any] = {}
+
+def get_user_id_from_token(token: Optional[str]) -> str:
+    """Get user ID from token, or return guest ID."""
+    if not token:
+        return "guest"
+    # For actual tokens, we'll validate in the endpoint
+    return token[:16]  # Use first 16 chars as identifier for quick lookup
+
+
+async def get_user_scope(token: Optional[str] = None, session_id: Optional[str] = None) -> tuple:
+    """Get user scope ID and context. Returns (scope_id, user_context, user_exchanges_dict)."""
+    user_id = None
+    if token and user_service:
+        try:
+            user = await user_service.validate_session(token)
+            if user:
+                user_id = user.id
+        except:
+            pass
+    
+    scope_id = user_id or f"guest_{session_id or 'default'}"
+    
+    # Initialize if needed
+    if scope_id not in user_exchanges:
+        user_exchanges[scope_id] = {}
+    if scope_id not in user_contexts:
+        user_contexts[scope_id] = UserContext()
+    
+    return scope_id, user_contexts[scope_id], user_exchanges[scope_id]
 
 
 @app.post("/api/exchange/connect")
 async def connect_exchange(data: dict):
-    """Connect a new exchange via API keys."""
+    """Connect a new exchange via API keys (user-scoped)."""
     exchange = data.get("exchange")
     api_key = data.get("api_key")
     api_secret = data.get("api_secret")
     passphrase = data.get("passphrase")
     read_only = data.get("read_only", True)
-    token = data.get("token")  # Optional user token for Supabase storage
+    token = data.get("token")  # User token for auth
+    session_id = data.get("session_id", "guest")  # Client session for guests
     
     if not exchange or not api_key or not api_secret:
         raise HTTPException(status_code=400, detail="Missing required fields")
@@ -550,9 +584,30 @@ async def connect_exchange(data: dict):
     if exchange not in valid_exchanges:
         raise HTTPException(status_code=400, detail=f"Invalid exchange: {exchange}")
     
-    # Try to connect using the exchange connector service
+    # Determine user scope
+    user_id = None
+    if token and user_service:
+        try:
+            user = await user_service.validate_session(token)
+            if user:
+                user_id = user.id
+        except Exception as e:
+            logger.warning(f"[EXCHANGE] Token validation failed: {e}")
+    
+    # Use session_id for guests
+    scope_id = user_id or f"guest_{session_id}"
+    
+    # Initialize user's exchange dict if needed
+    if scope_id not in user_exchanges:
+        user_exchanges[scope_id] = {}
+    
+    # Initialize user context if needed
+    if scope_id not in user_contexts:
+        user_contexts[scope_id] = UserContext()
+    
+    # Try to connect using the user's context
     try:
-        success = await user_context.connect_exchange(
+        success = await user_contexts[scope_id].connect_exchange(
             exchange=exchange,
             api_key=api_key,
             api_secret=api_secret,
@@ -561,13 +616,12 @@ async def connect_exchange(data: dict):
         )
         
         if not success:
-            # Still store for demo mode even if connection fails
             logger.warning(f"[EXCHANGE] Connection test failed for {exchange}, storing in demo mode")
     except Exception as e:
         logger.warning(f"[EXCHANGE] Connection error: {e}, storing in demo mode")
     
-    # Store connection info (masked)
-    connected_exchanges[exchange] = {
+    # Store connection info (masked) - USER SCOPED
+    user_exchanges[scope_id][exchange] = {
         "exchange": exchange,
         "api_key": api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***",
         "read_only": read_only,
@@ -577,58 +631,88 @@ async def connect_exchange(data: dict):
     
     # If user is logged in, save to Supabase for persistence
     saved_to_cloud = False
-    if token and user_service:
+    if user_id and user_service:
         try:
-            user = await user_service.validate_session(token)
-            if user:
-                saved_to_cloud = await user_service.save_exchange_keys(
-                    user.id, exchange, api_key, api_secret, passphrase
-                )
-                if saved_to_cloud:
-                    logger.info(f"[EXCHANGE] Saved {exchange} keys to cloud for user {user.id[:8]}...")
+            saved_to_cloud = await user_service.save_exchange_keys(
+                user_id, exchange, api_key, api_secret, passphrase
+            )
+            if saved_to_cloud:
+                logger.info(f"[EXCHANGE] Saved {exchange} keys to cloud for user {user_id[:8]}...")
         except Exception as e:
             logger.warning(f"[EXCHANGE] Failed to save to cloud: {e}")
     
-    logger.info(f"[EXCHANGE] Connected to {exchange}")
+    logger.info(f"[EXCHANGE] Connected {exchange} for scope {scope_id[:12]}...")
     
     return {
         "success": True,
         "message": f"Successfully connected to {exchange}",
-        "exchange": connected_exchanges[exchange],
+        "exchange": user_exchanges[scope_id][exchange],
         "saved_to_cloud": saved_to_cloud
     }
 
 
 @app.get("/api/exchange/list")
-async def list_exchanges():
-    """List all connected exchanges."""
+async def list_exchanges(token: Optional[str] = None, session_id: Optional[str] = None):
+    """List connected exchanges for current user."""
+    # Determine user scope
+    user_id = None
+    if token and user_service:
+        try:
+            user = await user_service.validate_session(token)
+            if user:
+                user_id = user.id
+        except:
+            pass
+    
+    scope_id = user_id or f"guest_{session_id or 'default'}"
+    
+    exchanges = user_exchanges.get(scope_id, {})
     return {
         "success": True,
-        "exchanges": list(connected_exchanges.values())
+        "exchanges": list(exchanges.values())
     }
 
 
 @app.delete("/api/exchange/{exchange_name}")
-async def disconnect_exchange(exchange_name: str):
-    """Disconnect an exchange."""
-    if exchange_name not in connected_exchanges:
+async def disconnect_exchange(exchange_name: str, token: Optional[str] = None, session_id: Optional[str] = None):
+    """Disconnect an exchange for current user."""
+    # Determine user scope
+    user_id = None
+    if token and user_service:
+        try:
+            user = await user_service.validate_session(token)
+            if user:
+                user_id = user.id
+        except:
+            pass
+    
+    scope_id = user_id or f"guest_{session_id or 'default'}"
+    
+    if scope_id not in user_exchanges or exchange_name not in user_exchanges[scope_id]:
         raise HTTPException(status_code=404, detail="Exchange not connected")
     
-    del connected_exchanges[exchange_name]
-    logger.info(f"[EXCHANGE] Disconnected from {exchange_name}")
+    del user_exchanges[scope_id][exchange_name]
+    
+    # Also disconnect from user context
+    if scope_id in user_contexts:
+        await user_contexts[scope_id].disconnect(exchange_name)
+    
+    logger.info(f"[EXCHANGE] Disconnected {exchange_name} for scope {scope_id[:12]}...")
     
     return {"success": True, "message": f"Disconnected from {exchange_name}"}
 
 
 @app.get("/api/exchange/{exchange_name}/positions")
-async def get_exchange_positions(exchange_name: str):
-    """Get live positions from a connected exchange."""
-    if exchange_name not in connected_exchanges:
-        raise HTTPException(status_code=404, detail="Exchange not connected")
+async def get_exchange_positions(exchange_name: str, token: Optional[str] = None, session_id: Optional[str] = None):
+    """Get live positions from a connected exchange (user-scoped)."""
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    
+    if exchange_name not in exchanges:
+        raise HTTPException(status_code=404, detail="Exchange not connected for this user")
     
     # Try to get live positions
     try:
-        all_positions = await user_context.get_all_positions()
+        all_positions = await ctx.get_all_positions()
         exchange_positions = [
             {
                 "id": p.id,
@@ -672,14 +756,16 @@ async def get_exchange_positions(exchange_name: str):
 
 
 @app.get("/api/exchange/{exchange_name}/balance")
-async def get_exchange_balance(exchange_name: str):
-    """Get balance from a connected exchange."""
-    if exchange_name not in connected_exchanges:
-        raise HTTPException(status_code=404, detail="Exchange not connected")
+async def get_exchange_balance(exchange_name: str, token: Optional[str] = None, session_id: Optional[str] = None):
+    """Get balance from a connected exchange (user-scoped)."""
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    
+    if exchange_name not in exchanges:
+        raise HTTPException(status_code=404, detail="Exchange not connected for this user")
     
     try:
-        if exchange_name in user_context.connections:
-            client = user_context.connections[exchange_name]
+        if exchange_name in ctx.connections:
+            client = ctx.connections[exchange_name]
             balance = await client.get_balance()
             return {
                 "success": True,
@@ -714,22 +800,24 @@ async def get_exchange_balance(exchange_name: str):
 
 
 @app.post("/api/exchange/{exchange_name}/sync")
-async def sync_exchange(exchange_name: str):
-    """Force sync positions and balance from an exchange."""
-    if exchange_name not in connected_exchanges:
-        raise HTTPException(status_code=404, detail="Exchange not connected")
+async def sync_exchange(exchange_name: str, token: Optional[str] = None, session_id: Optional[str] = None):
+    """Force sync positions and balance from an exchange (user-scoped)."""
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
     
-    logger.info(f"[SYNC] Starting sync for {exchange_name}")
-    logger.info(f"[SYNC] Connected exchanges in user_context: {list(user_context.connections.keys())}")
+    if exchange_name not in exchanges:
+        raise HTTPException(status_code=404, detail="Exchange not connected for this user")
+    
+    logger.info(f"[SYNC] Starting sync for {exchange_name} (scope: {scope_id[:12]}...)")
+    logger.info(f"[SYNC] Connected exchanges in context: {list(ctx.connections.keys())}")
     
     try:
-        if exchange_name in user_context.connections:
-            client = user_context.connections[exchange_name]
+        if exchange_name in ctx.connections:
+            client = ctx.connections[exchange_name]
             logger.info(f"[SYNC] Found client for {exchange_name}: {type(client).__name__}")
             
             # Clear cache to force refresh
-            if exchange_name in user_context.cache_timestamp:
-                del user_context.cache_timestamp[exchange_name]
+            if exchange_name in ctx.cache_timestamp:
+                del ctx.cache_timestamp[exchange_name]
             
             # Fetch fresh data with detailed error handling
             positions = []
@@ -783,10 +871,10 @@ async def sync_exchange(exchange_name: str):
                 "timestamp": datetime.now().isoformat()
             }
         else:
-            logger.error(f"[SYNC] No client found for {exchange_name} in user_context.connections")
+            logger.error(f"[SYNC] No client found for {exchange_name} in ctx.connections")
             return {
                 "success": False,
-                "error": f"No client found. Available: {list(user_context.connections.keys())}"
+                "error": f"No client found. Available: {list(ctx.connections.keys())}"
             }
     except Exception as e:
         logger.error(f"[SYNC] Sync error for {exchange_name}: {e}")
@@ -799,14 +887,16 @@ async def sync_exchange(exchange_name: str):
 
 
 @app.get("/api/balance/total")
-async def get_total_balance():
-    """Get aggregated balance across all connected exchanges."""
+async def get_total_balance(token: Optional[str] = None, session_id: Optional[str] = None):
+    """Get aggregated balance across all connected exchanges (user-scoped)."""
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    
     try:
-        balance_data = await user_context.get_total_balance()
+        balance_data = await ctx.get_total_balance()
         return {
             "success": True,
             "balance": balance_data,
-            "exchanges_connected": list(connected_exchanges.keys()),
+            "exchanges_connected": list(exchanges.keys()),
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
@@ -818,10 +908,12 @@ async def get_total_balance():
 
 
 @app.get("/api/positions/all")
-async def get_all_positions():
-    """Get positions from all connected exchanges."""
+async def get_all_positions(token: Optional[str] = None, session_id: Optional[str] = None):
+    """Get positions from all connected exchanges (user-scoped)."""
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    
     try:
-        all_positions = await user_context.get_all_positions()
+        all_positions = await ctx.get_all_positions()
         
         if all_positions:
             return {
@@ -844,7 +936,7 @@ async def get_all_positions():
                     }
                     for p in all_positions
                 ],
-                "exchanges": list(connected_exchanges.keys()),
+                "exchanges": list(exchanges.keys()),
                 "timestamp": datetime.now().isoformat(),
                 "source": "live"
             }
@@ -855,7 +947,7 @@ async def get_all_positions():
     return {
         "success": True,
         "positions": MOCK_POSITIONS,
-        "exchanges": list(connected_exchanges.keys()),
+        "exchanges": list(exchanges.keys()),
         "timestamp": datetime.now().isoformat(),
         "source": "demo"
     }
@@ -1168,6 +1260,15 @@ async def load_user_exchanges(data: dict):
     if not user:
         return {"success": False, "loaded": 0}
     
+    # Get user scope
+    scope_id = user.id
+    if scope_id not in user_exchanges:
+        user_exchanges[scope_id] = {}
+    if scope_id not in user_contexts:
+        user_contexts[scope_id] = UserContext()
+    
+    ctx = user_contexts[scope_id]
+    
     # Get list of saved exchanges
     exchange_names = await user_service.get_user_exchanges(user.id)
     loaded = 0
@@ -1177,8 +1278,8 @@ async def load_user_exchanges(data: dict):
             # Get the keys
             keys = await user_service.get_exchange_keys(user.id, exchange_name)
             if keys:
-                # Auto-connect
-                success = await user_context.connect_exchange(
+                # Auto-connect using user's context
+                success = await ctx.connect_exchange(
                     exchange=exchange_name,
                     api_key=keys["api_key"],
                     api_secret=keys["api_secret"],
@@ -1186,8 +1287,8 @@ async def load_user_exchanges(data: dict):
                     read_only=True
                 )
                 
-                # Store in connected_exchanges
-                connected_exchanges[exchange_name] = {
+                # Store in user's exchange dict
+                user_exchanges[scope_id][exchange_name] = {
                     "exchange": exchange_name,
                     "api_key": keys["api_key"][:8] + "...",
                     "read_only": True,
@@ -1196,11 +1297,11 @@ async def load_user_exchanges(data: dict):
                     "from_cloud": True
                 }
                 loaded += 1
-                logger.info(f"[EXCHANGE] Auto-loaded {exchange_name} from cloud")
+                logger.info(f"[EXCHANGE] Auto-loaded {exchange_name} from cloud for user {scope_id[:8]}...")
         except Exception as e:
             logger.error(f"[EXCHANGE] Failed to load {exchange_name}: {e}")
     
-    return {"success": True, "loaded": loaded, "exchanges": list(connected_exchanges.keys())}
+    return {"success": True, "loaded": loaded, "exchanges": list(user_exchanges[scope_id].keys())}
 
 
 @app.delete("/api/auth/exchange-keys/{exchange}")
@@ -1501,8 +1602,10 @@ async def get_subscription():
 
 
 @app.get("/api/subscription/usage")
-async def get_usage_stats():
-    """Get API usage statistics."""
+async def get_usage_stats(token: Optional[str] = None, session_id: Optional[str] = None):
+    """Get API usage statistics (user-scoped)."""
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    
     return {
         "success": True,
         "usage": {
@@ -1512,7 +1615,7 @@ async def get_usage_stats():
                 "percent": round((subscription_info["api_calls_used"] / subscription_info["api_calls_limit"]) * 100, 1)
             },
             "exchanges": {
-                "connected": len(connected_exchanges),
+                "connected": len(exchanges),
                 "limit": subscription_info["exchanges_limit"]
             },
             "period_start": "2026-02-05",

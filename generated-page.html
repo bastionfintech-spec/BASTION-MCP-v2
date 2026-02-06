@@ -1970,6 +1970,31 @@
       let fearGreedHistory = []; // 7-day history
       
       // =================================================================
+      // AUTH HELPERS - For user-scoped API calls
+      // =================================================================
+      function getAuthToken() {
+        return localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token') || '';
+      }
+      
+      function getSessionId() {
+        let sid = localStorage.getItem('bastion_session_id');
+        if (!sid) {
+          sid = 'guest_' + Math.random().toString(36).substring(2, 15);
+          localStorage.setItem('bastion_session_id', sid);
+        }
+        return sid;
+      }
+      
+      function getAuthParams() {
+        const token = getAuthToken();
+        const sessionId = getSessionId();
+        const params = new URLSearchParams();
+        if (token) params.append('token', token);
+        params.append('session_id', sessionId);
+        return params.toString();
+      }
+      
+      // =================================================================
       // SOUND ALERT SYSTEM - Audio cues for critical signals
       // =================================================================
       const audioContext = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
@@ -5029,7 +5054,7 @@ Esc    - Close Dialogs
         
         async function loadPositionContext() {
           try {
-            const res = await fetch(`${API_BASE}/api/positions/all`);
+            const res = await fetch(`${API_BASE}/api/positions/all?${getAuthParams()}`);
             const data = await res.json();
             
             if (data.positions && data.positions.length > 0) {
@@ -5152,7 +5177,7 @@ Esc    - Close Dialogs
         console.log('[POSITIONS] Fetching positions...');
         
         try {
-          const res = await fetch('/api/positions/all');
+          const res = await fetch(`/api/positions/all?${getAuthParams()}`);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           
           const data = await res.json();

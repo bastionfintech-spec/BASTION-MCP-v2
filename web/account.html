@@ -1525,6 +1525,30 @@
         selectedExchange = null;
       });
 
+      // ==================== AUTH HELPERS ====================
+      function getAuthToken() {
+        return localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token') || '';
+      }
+      
+      function getSessionId() {
+        // Generate or retrieve a session ID for guest users
+        let sid = localStorage.getItem('bastion_session_id');
+        if (!sid) {
+          sid = 'guest_' + Math.random().toString(36).substring(2, 15);
+          localStorage.setItem('bastion_session_id', sid);
+        }
+        return sid;
+      }
+      
+      function getAuthParams() {
+        const token = getAuthToken();
+        const sessionId = getSessionId();
+        const params = new URLSearchParams();
+        if (token) params.append('token', token);
+        params.append('session_id', sessionId);
+        return params.toString();
+      }
+
       // ==================== EXCHANGE CREDENTIALS STORAGE ====================
       const CREDS_STORAGE_KEY = 'bastion_exchange_credentials';
       
@@ -1569,7 +1593,8 @@
           
           try {
             // Get user token if logged in
-            const userToken = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+            const userToken = getAuthToken();
+            const sessionId = getSessionId();
             
             const res = await fetch(`${API_BASE}/api/exchange/connect`, {
               method: 'POST',
@@ -1580,7 +1605,8 @@
                 api_secret: creds.api_secret,
                 passphrase: creds.passphrase,
                 read_only: creds.read_only,
-                token: userToken  // Pass token to save to cloud if logged in
+                token: userToken,  // Pass token to save to cloud if logged in
+                session_id: sessionId  // For guest user scoping
               })
             });
             
@@ -1622,7 +1648,8 @@
         
         try {
           // Get user token if logged in
-          const userToken = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+          const userToken = getAuthToken();
+          const sessionId = getSessionId();
           
           const res = await fetch(`${API_BASE}/api/exchange/connect`, {
             method: 'POST',
@@ -1633,7 +1660,8 @@
               api_secret: config.isWalletBased ? apiKey : apiSecret, // For wallet-based, use address as both
               passphrase: passphrase || null,
               read_only: readOnly,
-              token: userToken  // Pass token to save to cloud if logged in
+              token: userToken,  // Pass token to save to cloud if logged in
+              session_id: sessionId  // For guest user scoping
             })
           });
           
@@ -1744,7 +1772,7 @@
         
         try {
           console.log(`[SYNC] Starting sync for ${exchange}...`);
-          const response = await fetch(`${API_BASE}/api/exchange/${exchange}/sync`, { method: 'POST' });
+          const response = await fetch(`${API_BASE}/api/exchange/${exchange}/sync?${getAuthParams()}`, { method: 'POST' });
           const data = await response.json();
           console.log(`[SYNC] Response:`, data);
           
@@ -2924,7 +2952,7 @@
         
         // Fallback: try to load from API (for backward compatibility)
         try {
-          const res = await fetch(`${API_BASE}/api/exchange/list`);
+          const res = await fetch(`${API_BASE}/api/exchange/list?${getAuthParams()}`);
           if (res.ok) {
             const data = await res.json();
             if (data.exchanges && data.exchanges.length > 0) {
