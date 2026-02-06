@@ -2898,6 +2898,12 @@ Esc    - Close Dialogs
         if (newSymbol === currentSymbol) return;
         
         console.log(`[SYMBOL] Switching from ${currentSymbol} to ${newSymbol}`);
+        
+        // Clear position lines from OLD symbol before switching
+        if (typeof clearPositionLines === 'function') {
+          clearPositionLines();
+        }
+        
         currentSymbol = newSymbol;
         
         // Update UI
@@ -6338,24 +6344,46 @@ Esc    - Close Dialogs
     // =================================================================
     // POSITION LINES ON CHART
     // =================================================================
-    let positionLines = [];
+    let positionPriceLines = []; // Store references to remove later
+    
+    function clearPositionLines() {
+      // Remove all existing position price lines from chart
+      if (candleSeries && positionPriceLines.length > 0) {
+        positionPriceLines.forEach(line => {
+          try {
+            candleSeries.removePriceLine(line);
+          } catch (e) {}
+        });
+        positionPriceLines = [];
+        console.log('[CHART] Cleared existing position lines');
+      }
+    }
     
     function updatePositionLinesOnChart() {
-      // Clear existing lines
+      // FIRST: Clear any existing lines to prevent stacking
+      clearPositionLines();
+      
+      // Clear DOM overlay too
       const overlay = document.getElementById('chart-levels');
-      if (!overlay) return;
-      overlay.innerHTML = '';
+      if (overlay) overlay.innerHTML = '';
+      
+      if (!candleSeries) {
+        console.log('[CHART] No candle series, skipping position lines');
+        return;
+      }
       
       // Get positions matching current chart symbol
       const chartSymbol = currentSymbol.toUpperCase();
       const positionCards = document.querySelectorAll('.position-card');
       
       const matchingPositions = [];
+      const seenEntries = new Set(); // Prevent duplicate entries
+      
       positionCards.forEach(card => {
         const symbolEl = card.querySelector('.font-bold.text-white');
         if (symbolEl) {
-          const posSymbol = symbolEl.textContent.replace('-PERP', '').replace('USDT', '').toUpperCase();
-          if (posSymbol === chartSymbol || posSymbol.includes(chartSymbol)) {
+          const posSymbol = symbolEl.textContent.replace('-PERP', '').replace('USDT', '').toUpperCase().trim();
+          if (posSymbol === chartSymbol || posSymbol.includes(chartSymbol) || chartSymbol.includes(posSymbol)) {
             // Extract entry price and other data
             const entryEl = card.querySelector('[data-position-entry]') || card.querySelector('.text-zinc-300');
             if (entryEl) {
@@ -6364,74 +6392,69 @@ Esc    - Close Dialogs
               if (match) {
                 const entry = parseFloat(match[1].replace(',', ''));
                 const isLong = card.querySelector('.text-green-500') !== null;
-                matchingPositions.push({ entry, isLong, symbol: posSymbol });
+                
+                // Create unique key to prevent duplicates
+                const key = `${posSymbol}-${entry}-${isLong}`;
+                if (!seenEntries.has(key)) {
+                  seenEntries.add(key);
+                  matchingPositions.push({ entry, isLong, symbol: posSymbol });
+                }
               }
             }
           }
         }
       });
       
-      if (matchingPositions.length === 0) return;
+      if (matchingPositions.length === 0) {
+        console.log('[CHART] No positions match current symbol:', chartSymbol);
+        return;
+      }
       
       // Get current price range from chart
       const container = document.getElementById('tv-chart');
       if (!chart || !container) return;
       
       try {
-        const priceScale = chart.priceScale('right');
-        
         matchingPositions.forEach(pos => {
-          // We'll use lightweight-charts markers instead of DOM overlay
-          if (candleSeries) {
-            // Create a price line for entry
-            candleSeries.createPriceLine({
-              price: pos.entry,
-              color: '#3b82f6',
-              lineWidth: 1,
-              lineStyle: 2, // Dashed
-              axisLabelVisible: true,
-              title: `ENTRY ${pos.isLong ? '▲' : '▼'}`,
-            });
-            
-            // Calculate SL (15% from entry based on direction)
-            const slPrice = pos.isLong ? pos.entry * 0.85 : pos.entry * 1.15;
-            candleSeries.createPriceLine({
-              price: slPrice,
-              color: '#ef4444',
-              lineWidth: 1,
-              lineStyle: 0, // Solid
-              axisLabelVisible: true,
-              title: 'SL',
-            });
-            
-            // Calculate TP (30% from entry)
-            const tpPrice = pos.isLong ? pos.entry * 1.30 : pos.entry * 0.70;
-            candleSeries.createPriceLine({
-              price: tpPrice,
-              color: '#22c55e',
-              lineWidth: 1,
-              lineStyle: 0,
-              axisLabelVisible: true,
-              title: 'TP',
-            });
-          }
+          // Create a price line for entry and STORE the reference
+          const entryLine = candleSeries.createPriceLine({
+            price: pos.entry,
+            color: '#3b82f6',
+            lineWidth: 1,
+            lineStyle: 2, // Dashed
+            axisLabelVisible: true,
+            title: `ENTRY ${pos.isLong ? '▲' : '▼'}`,
+          });
+          positionPriceLines.push(entryLine);
+          
+          // Calculate SL (15% from entry based on direction)
+          const slPrice = pos.isLong ? pos.entry * 0.85 : pos.entry * 1.15;
+          const slLine = candleSeries.createPriceLine({
+            price: slPrice,
+            color: '#ef4444',
+            lineWidth: 1,
+            lineStyle: 0, // Solid
+            axisLabelVisible: true,
+            title: 'SL',
+          });
+          positionPriceLines.push(slLine);
+          
+          // Calculate TP (30% from entry)
+          const tpPrice = pos.isLong ? pos.entry * 1.30 : pos.entry * 0.70;
+          const tpLine = candleSeries.createPriceLine({
+            price: tpPrice,
+            color: '#22c55e',
+            lineWidth: 1,
+            lineStyle: 0,
+            axisLabelVisible: true,
+            title: 'TP',
+          });
+          positionPriceLines.push(tpLine);
         });
         
-        console.log('[CHART] Added position lines for', matchingPositions.length, 'positions');
+        console.log('[CHART] Added', positionPriceLines.length, 'price lines for', matchingPositions.length, 'positions');
       } catch (e) {
         console.warn('[CHART] Could not add position lines:', e);
-      }
-    }
-    
-    // Clear position lines when symbol changes
-    function clearPositionLines() {
-      if (candleSeries) {
-        // Remove all price lines
-        try {
-          // Get all price lines and remove them
-          // Note: Lightweight Charts doesn't have a direct "remove all" method
-          // We'll recreate the series if needed
-        } catch (e) {}
       }
     }
     
