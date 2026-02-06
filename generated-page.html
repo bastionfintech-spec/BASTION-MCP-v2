@@ -1841,7 +1841,7 @@
             <button data-action="emergency-exit" class="bg-crimson-600 hover:bg-crimson-700 text-white text-[10px] font-bold px-4 py-1.5 rounded-sm shadow-[0_0_10px_rgba(220,38,38,0.3)] font-mono uppercase transition-all animate-pulse">
               ⚠ EMERGENCY EXIT ALL
             </button>
-            <button class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+            <button data-action="flatten-winners" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
               FLATTEN WINNERS
             </button>
             <button data-action="move-to-be" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
@@ -1850,13 +1850,13 @@
           </div>
 
           <div class="flex gap-2">
-            <button class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+            <button data-action="add-shot" class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
               ADD SHOT
             </button>
-            <button class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+            <button data-action="partial-25" class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
               PARTIAL 25%
             </button>
-            <button class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
+            <button data-action="partial-50" class="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-mono border border-zinc-700 transition-colors">
               PARTIAL 50%
             </button>
           </div>
@@ -2229,6 +2229,60 @@
         }
       }
 
+      async function flattenWinners() {
+        if (!confirm('Close all profitable positions?\n\nThis will flatten all positions currently in profit.')) return;
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/actions/flatten-winners`, { method: 'POST' });
+          const data = await res.json();
+          console.log('🏆 Flatten winners:', data);
+          alert(`✅ ${data.message}`);
+          fetchPositions();
+        } catch (e) {
+          console.error('Flatten winners failed:', e);
+          alert('❌ Failed to flatten winners');
+        }
+      }
+
+      async function addShot() {
+        const size = prompt('Enter shot size (e.g., 0.1 BTC):', '0.1');
+        if (!size) return;
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/actions/add-shot`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ size: parseFloat(size) })
+          });
+          const data = await res.json();
+          console.log('🎯 Add shot:', data);
+          alert(`✅ ${data.message}`);
+          fetchPositions();
+        } catch (e) {
+          console.error('Add shot failed:', e);
+          alert('❌ Failed to add shot');
+        }
+      }
+
+      async function partialClose(percentage) {
+        if (!confirm(`Close ${percentage}% of all positions?`)) return;
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/actions/partial-close`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ percentage })
+          });
+          const data = await res.json();
+          console.log(`📉 Partial ${percentage}%:`, data);
+          alert(`✅ ${data.message}`);
+          fetchPositions();
+        } catch (e) {
+          console.error('Partial close failed:', e);
+          alert('❌ Failed to close partial position');
+        }
+      }
+
       async function sendNeuralChat() {
         const input = document.querySelector('[data-input="neural"]');
         if (!input || !input.value.trim()) return;
@@ -2325,6 +2379,21 @@ Esc    - Close Dialogs
         // Move to BE button
         const beBtn = document.querySelector('[data-action="move-to-be"]');
         if (beBtn) beBtn.onclick = moveAllToBreakeven;
+        
+        // Flatten winners button
+        const flattenBtn = document.querySelector('[data-action="flatten-winners"]');
+        if (flattenBtn) flattenBtn.onclick = flattenWinners;
+        
+        // Add shot button
+        const shotBtn = document.querySelector('[data-action="add-shot"]');
+        if (shotBtn) shotBtn.onclick = addShot;
+        
+        // Partial close buttons
+        const partial25Btn = document.querySelector('[data-action="partial-25"]');
+        if (partial25Btn) partial25Btn.onclick = () => partialClose(25);
+        
+        const partial50Btn = document.querySelector('[data-action="partial-50"]');
+        if (partial50Btn) partial50Btn.onclick = () => partialClose(50);
         
         // Neural chat input
         const neuralInput = document.querySelector('[data-input="neural"]');

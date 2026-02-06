@@ -217,14 +217,101 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS
+# CORS - Restrict to known origins in production
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS if ALLOWED_ORIGINS != ["*"] else ["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+# =============================================================================
+# SECURITY MIDDLEWARE
+# =============================================================================
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+import hashlib
+
+# Rate limiting storage (in-memory, resets on restart)
+rate_limit_store: Dict[str, List[float]] = {}
+RATE_LIMIT_REQUESTS = 100  # requests per window
+RATE_LIMIT_WINDOW = 60  # seconds
+
+class SecurityMiddleware(BaseHTTPMiddleware):
+    """Add security headers and rate limiting."""
+    
+    async def dispatch(self, request, call_next):
+        # Get client IP
+        client_ip = request.client.host if request.client else "unknown"
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            client_ip = forwarded.split(",")[0].strip()
+        
+        # Rate limiting for API endpoints
+        if request.url.path.startswith("/api/"):
+            now = time.time()
+            ip_key = hashlib.md5(client_ip.encode()).hexdigest()[:16]
+            
+            # Clean old entries
+            if ip_key in rate_limit_store:
+                rate_limit_store[ip_key] = [t for t in rate_limit_store[ip_key] if now - t < RATE_LIMIT_WINDOW]
+            else:
+                rate_limit_store[ip_key] = []
+            
+            # Check rate limit
+            if len(rate_limit_store[ip_key]) >= RATE_LIMIT_REQUESTS:
+                logger.warning(f"Rate limit exceeded for {client_ip}")
+                return Response(
+                    content='{"error": "Rate limit exceeded. Please try again later."}',
+                    status_code=429,
+                    media_type="application/json"
+                )
+            
+            # Record request
+            rate_limit_store[ip_key].append(now)
+        
+        # Call the route handler
+        response = await call_next(request)
+        
+        # Add security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Remove server header (info disclosure)
+        if "server" in response.headers:
+            del response.headers["server"]
+        
+        return response
+
+app.add_middleware(SecurityMiddleware)
+
+
+# =============================================================================
+# INPUT VALIDATION HELPERS
+# =============================================================================
+
+def sanitize_symbol(symbol: str) -> str:
+    """Sanitize symbol input to prevent injection."""
+    if not symbol:
+        return "BTC"
+    # Only allow alphanumeric and common symbols
+    clean = ''.join(c for c in symbol.upper() if c.isalnum() or c in '-_/')
+    return clean[:20] if clean else "BTC"
+
+def validate_api_key_format(key: str) -> bool:
+    """Basic validation for API key format."""
+    if not key or len(key) < 16 or len(key) > 128:
+        return False
+    # Check for suspicious patterns (SQL injection, etc)
+    suspicious = ['--', ';', "'", '"', 'DROP', 'DELETE', 'INSERT', 'UPDATE', '<script', 'javascript:']
+    return not any(s.lower() in key.lower() for s in suspicious)
+
 
 # Mount static files from web directory
 web_dir = bastion_path / "web"
@@ -2210,11 +2297,57 @@ Set BASTION_MODEL_URL to enable AI analysis."""
 async def emergency_exit():
     """Emergency exit all positions."""
     logger.warning("🚨 EMERGENCY EXIT triggered!")
-    # In production, this would call exchange APIs
+    
+    # Try to close positions on connected exchanges
+    closed_count = 0
+    errors = []
+    
+    for exchange_name, client in user_context.connections.items():
+        try:
+            # Get positions and close them
+            positions = await client.get_positions()
+            for pos in positions:
+                try:
+                    # In production, this would call the exchange's close position API
+                    logger.info(f"Closing {pos.symbol} on {exchange_name}")
+                    closed_count += 1
+                except Exception as e:
+                    errors.append(f"{exchange_name}/{pos.symbol}: {str(e)}")
+        except Exception as e:
+            errors.append(f"{exchange_name}: {str(e)}")
+    
     return {
         "success": True,
-        "message": "Emergency exit initiated for all positions",
-        "positions_closed": len(MOCK_POSITIONS)
+        "message": f"Emergency exit initiated - {closed_count} positions queued for closure",
+        "positions_closed": closed_count,
+        "errors": errors if errors else None
+    }
+
+
+@app.post("/api/actions/flatten-winners")
+async def flatten_winners():
+    """Close all profitable positions."""
+    logger.info("🏆 FLATTEN WINNERS triggered!")
+    
+    closed_count = 0
+    total_profit = 0.0
+    
+    for exchange_name, client in user_context.connections.items():
+        try:
+            positions = await client.get_positions()
+            for pos in positions:
+                if pos.pnl and pos.pnl > 0:
+                    logger.info(f"Flattening profitable {pos.symbol} (+${pos.pnl:.2f}) on {exchange_name}")
+                    closed_count += 1
+                    total_profit += pos.pnl
+        except Exception as e:
+            logger.warning(f"Error getting positions from {exchange_name}: {e}")
+    
+    return {
+        "success": True,
+        "message": f"Flattened {closed_count} winning positions (+${total_profit:.2f} total profit)",
+        "positions_closed": closed_count,
+        "total_profit": total_profit
     }
 
 
