@@ -2509,9 +2509,9 @@ async def generate_market_alerts(data: dict = None):
             logger.warning(f"[ALERTS] Volatility check error: {e}")
         
         # 5. GENERATE "MOMENTUM" ALERTS for active trading feel
-        # These fire occasionally and DO push to Telegram for engagement
+        # These fire occasionally and ALWAYS push to Telegram for engagement
         import random
-        if random.random() < 0.08:  # 8% chance each check (~every 10 mins on avg)
+        if random.random() < 0.06:  # 6% chance each check (~every 12 mins on avg)
             momentum_alerts = [
                 ("🎯 TARGET ZONE", f"BTC at ${last_alert_check.get('btc_price', 70000):,.0f} - Approaching key resistance.", "green"),
                 ("📊 MOMENTUM", "4H momentum building. Watch for continuation or reversal.", "cyan"),
@@ -2522,9 +2522,8 @@ async def generate_market_alerts(data: dict = None):
             choice = random.choice(momentum_alerts)
             alert = add_live_alert("momentum", choice[0], choice[1], choice[2])
             
-            # Push momentum alerts to Telegram too (but less frequently)
-            if random.random() < 0.5:  # 50% of momentum alerts go to Telegram
-                await push_channel_alert("momentum", choice[0], choice[1])
+            # ALWAYS push momentum alerts to Telegram now
+            await push_channel_alert("momentum", choice[0], choice[1])
         
         return {
             "success": True,
