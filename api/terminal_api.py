@@ -13,7 +13,6 @@ import asyncio
 import json
 import time
 import random
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -78,9 +77,6 @@ helsinki: HelsinkiClient = None
 query_processor: QueryProcessor = None
 whale_alert: WhaleAlertClient = None
 coinglass: CoinglassClient = None
-
-# Global scheduler
-mcf_scheduler = None
 
 # WebSocket connections
 active_connections: List[WebSocket] = []
@@ -176,42 +172,10 @@ def init_clients():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown."""
-    global mcf_scheduler
     logger.info("BASTION Terminal API starting...")
     init_clients()
-    
-    # Start MCF Labs report scheduler
-    try:
-        from mcf_labs.scheduler import start_scheduler, stop_scheduler
-        model_url = os.getenv("BASTION_MODEL_URL")
-        model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
-        
-        if coinglass and model_url:
-            mcf_scheduler = await start_scheduler(
-                coinglass_client=coinglass,
-                helsinki_client=helsinki,
-                whale_alert_client=whale_alert,
-                use_iros=True,
-                model_url=model_url,
-                model_api_key=model_api_key
-            )
-            logger.info("[MCF] Report scheduler started - auto-generating reports")
-        else:
-            logger.warning("[MCF] Scheduler not started - missing coinglass or model_url")
-    except Exception as e:
-        logger.error(f"[MCF] Failed to start scheduler: {e}")
-    
     logger.info("BASTION Terminal API LIVE")
     yield
-    
-    # Stop scheduler on shutdown
-    try:
-        from mcf_labs.scheduler import stop_scheduler
-        await stop_scheduler()
-        logger.info("[MCF] Report scheduler stopped")
-    except Exception as e:
-        logger.error(f"[MCF] Error stopping scheduler: {e}")
-    
     logger.info("BASTION Terminal API shutting down...")
 
 
@@ -267,59 +231,6 @@ async def get_status():
 async def health_check():
     """Simple health check - no client init."""
     return {"status": "ok"}
-
-
-@app.get("/api/iros-test")
-async def test_iros_connection():
-    """Test IROS model connection directly."""
-    import httpx
-    
-    model_url = os.getenv("BASTION_MODEL_URL")
-    model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
-    
-    if not model_url:
-        return {"success": False, "error": "BASTION_MODEL_URL not set", "url": None}
-    
-    results = {"url": model_url, "tests": {}}
-    
-    # Test 1: Can we reach the models endpoint?
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(f"{model_url}/v1/models")
-            results["tests"]["models_endpoint"] = {
-                "status": resp.status_code,
-                "success": resp.status_code == 200,
-                "body_preview": resp.text[:200] if resp.status_code == 200 else resp.text
-            }
-    except Exception as e:
-        results["tests"]["models_endpoint"] = {"success": False, "error": str(e)}
-    
-    # Test 2: Can we do a chat completion?
-    try:
-        headers = {"Content-Type": "application/json"}
-        if model_api_key:
-            headers["Authorization"] = f"Bearer {model_api_key}"
-            
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                f"{model_url}/v1/chat/completions",
-                headers=headers,
-                json={
-                    "model": "iros",
-                    "messages": [{"role": "user", "content": "test"}],
-                    "max_tokens": 10
-                }
-            )
-            results["tests"]["chat_completion"] = {
-                "status": resp.status_code,
-                "success": resp.status_code == 200,
-                "body_preview": resp.text[:300]
-            }
-    except Exception as e:
-        results["tests"]["chat_completion"] = {"success": False, "error": str(e)}
-    
-    results["success"] = all(t.get("success", False) for t in results["tests"].values())
-    return results
 
 
 # =============================================================================
@@ -1420,67 +1331,9 @@ async def get_alerts(limit: int = 10):
 # NEURAL ASSISTANT API
 # =============================================================================
 
-def _format_market_data_for_iros(symbol: str, market_data: dict) -> str:
-    """Format market data into a clean context string for IROS."""
-    lines = []
-    
-    lines.append("## VERIFIED LIVE DATA - DO NOT HALLUCINATE")
-    lines.append(f"## USE ONLY THESE {symbol} NUMBERS\n")
-    
-    # Current market overview
-    price_found = False
-    if market_data.get("coins_markets"):
-        for coin in market_data["coins_markets"]:
-            if coin.get("symbol", "").upper() == symbol.upper():
-                price = coin.get('price', 0)
-                if price > 0:
-                    price_found = True
-                    lines.append(f"""
-**{symbol} CURRENT PRICE: ${price:,.2f}**
-- 24h Change: {coin.get('priceChangePercent24h', 0):.2f}%
-- Open Interest: ${coin.get('openInterest', 0)/1e9:.2f}B
-- Funding Rate: {coin.get('fundingRate', 0)*100:.4f}%
-- Long/Short: {coin.get('longRate', 50):.1f}% / {coin.get('shortRate', 50):.1f}%
-""")
-                break
-    
-    if not price_found:
-        lines.append(f"**WARNING: Price data missing for {symbol}**")
-    
-    # Whale positions - CORRECT FIELD NAMES
-    if market_data.get("whale_positions"):
-        all_pos = market_data["whale_positions"]
-        sym_pos = [p for p in all_pos if p.get("symbol", "").upper() == symbol.upper()]
-        if sym_pos:
-            total_long = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) > 0)
-            total_short = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) < 0)
-            lines.append(f"\n**WHALES ({len(sym_pos)}):** Long ${total_long/1e6:.1f}M | Short ${total_short/1e6:.1f}M")
-            sorted_pos = sorted(sym_pos, key=lambda x: abs(x.get("positionValueUsd", 0)), reverse=True)
-            for i, w in enumerate(sorted_pos[:5]):
-                side = "LONG" if w.get("positionSize", 0) > 0 else "SHORT"
-                val = abs(w.get("positionValueUsd", 0)) / 1e6
-                lines.append(f"  {i+1}. {side} ${val:.1f}M @ ${w.get('entryPrice', 0):,.0f}")
-    
-    # Funding - handle nested structure
-    if market_data.get("funding"):
-        fd = market_data["funding"]
-        rates = []
-        if isinstance(fd, dict):
-            for ml in ["usdtOrUsdMarginList", "tokenMarginList"]:
-                for item in fd.get(ml, []):
-                    r = item.get("rate", 0) or item.get("fundingRate", 0)
-                    if r: rates.append(f"{item.get('exchangeName', '?')}: {r*100:.4f}%")
-        if rates:
-            lines.append("\n**FUNDING:** " + " | ".join(rates[:3]))
-    
-    return "\n".join(lines) if lines else "No data"
-
-
 @app.post("/api/neural/chat")
 async def neural_chat(request: Dict[str, Any]):
     """Chat with the Bastion AI - includes user position context."""
-    init_clients()  # Ensure clients are ready
-    
     query = request.get("query", "")
     symbol = request.get("symbol", "BTC")
     include_positions = request.get("include_positions", True)
@@ -1512,203 +1365,108 @@ async def neural_chat(request: Dict[str, Any]):
                 ]
         except Exception as e:
             logger.warning(f"Could not fetch user positions: {e}")
-            # Fall back to mock positions if no exchange connected
-            position_context = """User's Current Positions (Demo):
-- BTC-PERP LONG: Entry $95,120, Current $96,847, P&L +$776 (+1.82%)
-- ETH-PERP SHORT: Entry $3,245, Current $3,198, P&L +$244 (+1.47%)
-- SOL-PERP LONG: Entry $142.80, Current $141.20, P&L -$80 (-1.12%)"""
+            # No mock positions - they confuse the model with wrong prices
+            position_context = "(No exchange connected - no positions)"
     
-    # Fetch live market data for IROS
+    # Fetch REAL market data from Coinglass
     import asyncio
+    import httpx
     
     market_data = {}
     data_sources = []
     
     try:
-        if coinglass is None:
-            logger.warning("Coinglass client not initialized")
-            raise ValueError("Coinglass not available")
+        init_clients()
+        if coinglass:
+            cg_results = await asyncio.gather(
+                coinglass.get_coins_markets(),
+                coinglass.get_hyperliquid_whale_positions(symbol),
+                coinglass.get_funding_rates(symbol),
+                return_exceptions=True
+            )
             
-        # Fetch Coinglass data in parallel
-        cg_results = await asyncio.gather(
-            coinglass.get_coins_markets(),
-            coinglass.get_hyperliquid_whale_positions(symbol),
-            coinglass.get_funding_rates(symbol),
-            coinglass.get_long_short_ratio(symbol),
-            coinglass.get_options_max_pain(symbol),
-            return_exceptions=True
-        )
-        
-        # Parse results
-        if hasattr(cg_results[0], 'data') and cg_results[0].data:
-            market_data["coins_markets"] = cg_results[0].data
-            data_sources.append("Coinglass:markets")
-        
-        if hasattr(cg_results[1], 'data') and cg_results[1].data:
-            market_data["whale_positions"] = cg_results[1].data
-            data_sources.append("Hyperliquid:whales")
-        
-        if hasattr(cg_results[2], 'data') and cg_results[2].data:
-            market_data["funding"] = cg_results[2].data
-            data_sources.append("Coinglass:funding")
-        
-        if hasattr(cg_results[3], 'data') and cg_results[3].data:
-            market_data["ls_ratio"] = cg_results[3].data
-            data_sources.append("Coinglass:ls-ratio")
-        
-        if hasattr(cg_results[4], 'data') and cg_results[4].data:
-            market_data["max_pain"] = cg_results[4].data
-            data_sources.append("Coinglass:options")
-            
+            if hasattr(cg_results[0], 'data') and cg_results[0].data:
+                market_data["coins_markets"] = cg_results[0].data
+                data_sources.append("Coinglass")
+            if hasattr(cg_results[1], 'data') and cg_results[1].data:
+                market_data["whale_positions"] = cg_results[1].data
+                data_sources.append("Hyperliquid")
     except Exception as e:
         logger.error(f"Failed to fetch market data: {e}")
     
-    # Format market data for IROS prompt
-    market_context = _format_market_data_for_iros(symbol, market_data)
+    # Build verified data context
+    price_line = "PRICE DATA UNAVAILABLE"
+    whale_line = ""
     
-    # Build full context for IROS (truncate to avoid exceeding 8K token limit)
-    # Rough estimate: 4 chars = 1 token, so max ~20K chars for safety
-    truncated_context = market_context[:15000] if len(market_context) > 15000 else market_context
+    if market_data.get("coins_markets"):
+        for coin in market_data["coins_markets"]:
+            if coin.get("symbol", "").upper() == symbol.upper():
+                price = coin.get('price', 0)
+                if price > 0:
+                    change = coin.get('priceChangePercent24h', 0) or 0
+                    oi = coin.get('openInterest', 0) or 0
+                    price_line = f"CURRENT PRICE: ${price:,.2f} (24h: {change:+.1f}%, OI: ${oi/1e9:.2f}B)"
+                break
     
-    full_context = f"""
-USER QUERY: {query}
-SYMBOL: {symbol}
-
-{position_context[:2000] if position_context else ''}
-
-LIVE MARKET DATA:
-{truncated_context}
-"""
+    if market_data.get("whale_positions"):
+        sym_pos = [p for p in market_data["whale_positions"] if p.get("symbol", "").upper() == symbol.upper()]
+        if sym_pos:
+            longs = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) > 0)
+            shorts = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) < 0)
+            whale_line = f"WHALES: Longs ${longs/1e6:.1f}M | Shorts ${shorts/1e6:.1f}M | Bias: {'LONG' if longs > shorts else 'SHORT'}"
     
     # Call IROS model
     model_url = os.getenv("BASTION_MODEL_URL")
+    response = ""
     
     if model_url:
         try:
-            import httpx
-            
-            # Keep prompt minimal - model has 8K context limit
-            # Extract just key metrics for the prompt
-            price_line = ""
-            if market_data.get("coins_markets"):
-                # Search ALL coins, not just first 3
-                for coin in market_data["coins_markets"]:
-                    coin_symbol = coin.get("symbol", "").upper().replace("USDT", "").replace("USD", "")
-                    if coin_symbol == symbol.upper():
-                        price = float(coin.get('price', 0) or 0)
-                        change = float(coin.get('priceChangePercent24h', 0) or 0)
-                        oi = float(coin.get('openInterest', 0) or 0)
-                        funding = float(coin.get('fundingRate', 0) or 0)
-                        price_line = f"CURRENT PRICE: ${price:,.2f}, 24h Change: {change:+.1f}%, Open Interest: ${oi/1e9:.2f}B, Funding: {funding*100:.4f}%"
-                        logger.info(f"Found {symbol} price: ${price:,.2f}")
-                        break
-            
-            if not price_line:
-                logger.warning(f"Price not found for {symbol} in coins_markets")
-            
-            # Build data summary from Coinglass
-            whale_summary = ""
-            if market_data.get("whale_positions"):
-                longs = sum(float(p.get("positionValueUsd", 0) or 0) for p in market_data["whale_positions"] if float(p.get("positionSize", 0) or 0) > 0)
-                shorts = sum(abs(float(p.get("positionValueUsd", 0) or 0)) for p in market_data["whale_positions"] if float(p.get("positionSize", 0) or 0) < 0)
-                whale_summary = f"Whale Longs: ${longs/1e6:.1f}M, Whale Shorts: ${shorts/1e6:.1f}M"
-            
-            funding_summary = ""
-            if market_data.get("funding"):
-                for f in market_data["funding"][:5]:
-                    if f.get("exchangeName") == "Binance":
-                        funding_summary = f"Binance Funding: {float(f.get('rate', 0))*100:.4f}%"
-                        break
-            
-            system_prompt = f"""You are BASTION, an institutional crypto trading analyst.
+            system_prompt = f"""You are BASTION, an institutional crypto analyst. 
+CRITICAL: Use ONLY the verified data below. DO NOT invent prices. NO EMOJIS.
 
-CRITICAL: Your training data is OUTDATED. USE ONLY the data provided below. DO NOT make up prices or statistics.
-
-## VERIFIED {symbol} DATA (LIVE FROM COINGLASS)
+## VERIFIED {symbol} DATA (LIVE)
 {price_line}
-{whale_summary}
-{funding_summary}
+{whale_line}
+{position_context if position_context else ''}
 
-RULES:
-1. ONLY use the exact numbers provided above
-2. DO NOT invent prices, whale positions, or market data
-3. If data is missing, say "data unavailable" - do NOT guess
-4. Be concise but accurate
+Provide analysis based ONLY on this data."""
 
-USER QUERY: {query}"""
-            
-            logger.info(f"IROS prompt: {len(system_prompt)} chars")
-            
-            model_api_key = os.getenv("BASTION_MODEL_API_KEY", "5c37b5e8e6c2480813aa0cfd4de5c903544b7a000bff729e1c99d9b4538eb34d")
-            
-            async with httpx.AsyncClient(timeout=120.0) as client:  # 2 min timeout for slower responses
-                response = await client.post(
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
+                headers = {"Content-Type": "application/json"}
+                if model_api_key:
+                    headers["Authorization"] = f"Bearer {model_api_key}"
+                
+                resp = await client.post(
                     f"{model_url}/v1/chat/completions",
+                    headers=headers,
                     json={
                         "model": "iros",
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": query}
                         ],
-                        "max_tokens": 800,
+                        "max_tokens": 1000,
                         "temperature": 0.7
-                    },
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {model_api_key}"
                     }
                 )
                 
-                if response.status_code == 200:
-                    result = response.json()
-                    logger.info(f"IROS raw response keys: {result.keys()}")
-                    
-                    choices = result.get("choices", [])
-                    if choices and len(choices) > 0:
-                        message = choices[0].get("message", {})
-                        ai_response = message.get("content", "")
-                        
-                        logger.info(f"IROS content length: {len(ai_response) if ai_response else 0}")
-                        
-                        if ai_response:
-                            data_sources.append("IROS:32B-LLM")
-                            return {
-                                "success": True,
-                                "response": ai_response,
-                                "context": {
-                                    "symbol": context.symbol,
-                                    "capital": context.capital,
-                                    "timeframe": context.timeframe,
-                                    "intent": context.query_intent,
-                                    "has_positions": len(user_positions) > 0,
-                                    "position_count": len(user_positions)
-                                },
-                                "user_positions": user_positions,
-                                "data_sources": data_sources
-                            }
-                        else:
-                            iros_error = f"Empty content in response. Message: {message}"
-                    else:
-                        iros_error = f"No choices in response. Result: {str(result)[:200]}"
+                if resp.status_code == 200:
+                    result = resp.json()
+                    response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    data_sources.append("IROS-32B")
                 else:
-                    logger.error(f"IROS model error: {response.status_code} - {response.text[:500]}")
-                    iros_error = f"HTTP {response.status_code}: {response.text[:200]}"
+                    response = f"Model error: {resp.status_code}"
                     
         except Exception as e:
-            logger.error(f"IROS call failed: {e}")
-            # Include error in fallback for debugging
-            iros_error = str(e)
-    
-    # Fallback if IROS unavailable
-    error_info = f"\nDebug: {iros_error}" if 'iros_error' in dir() else ""
-    response = f"""**Analysis for {symbol}**
+            response = f"Model unavailable: {str(e)[:100]}"
+    else:
+        response = f"""**{symbol} Analysis** (No IROS - using data only)
 
-⚠️ IROS model not available. Using rule-based fallback.
+{price_line}
+{whale_line}
 
-Market Data Summary:
-{market_context if market_context else 'Unable to fetch live data.'}
-
-**Recommendation:** Check BASTION_MODEL_URL configuration.{error_info}"""
+Set BASTION_MODEL_URL to enable AI analysis."""
     
     return {
         "success": True,
@@ -1723,7 +1481,7 @@ Market Data Summary:
         },
         "user_positions": user_positions,
         "data_sources": data_sources,
-        "fallback": True
+        "verified_data": {"price_line": price_line, "whale_line": whale_line}
     }
 
 
@@ -1794,14 +1552,9 @@ def _init_mcf():
     
     if _mcf_storage is None:
         try:
-            # Use hybrid storage (Supabase + filesystem)
-            from mcf_labs.storage import get_hybrid_storage
-            _mcf_storage = get_hybrid_storage()
-            
-            if _mcf_storage.supabase_available:
-                logger.info("[MCF] Report storage initialized with Supabase")
-            else:
-                logger.info("[MCF] Report storage initialized (filesystem only)")
+            from mcf_labs.storage import get_storage
+            _mcf_storage = get_storage()
+            logger.info("[MCF] Report storage initialized")
         except Exception as e:
             logger.warning(f"[MCF] Storage init failed: {e}")
     
@@ -1995,118 +1748,16 @@ async def get_mcf_status():
     _init_mcf()
     
     import os
-    from mcf_labs.scheduler import get_scheduler, _running
-    
-    scheduler = get_scheduler()
-    
-    # Check Supabase status
-    supabase_status = False
-    if _mcf_storage and hasattr(_mcf_storage, 'supabase_available'):
-        supabase_status = _mcf_storage.supabase_available
-    
-    # Count reports
-    report_count = 0
-    if _mcf_storage:
-        try:
-            report_count = _mcf_storage.count_reports()
-        except:
-            pass
     
     return {
         "success": True,
         "status": {
             "storage_initialized": _mcf_storage is not None,
-            "supabase_connected": supabase_status,
-            "report_count": report_count,
             "generator_initialized": _mcf_generator is not None,
-            "scheduler_running": _running,
-            "scheduler_initialized": scheduler is not None,
             "iros_enabled": os.getenv("BASTION_MODEL_URL") is not None,
             "coinglass_available": coinglass is not None,
             "helsinki_available": helsinki is not None
         }
-    }
-
-
-@app.post("/api/mcf/sync-supabase")
-async def sync_reports_to_supabase():
-    """Sync all filesystem reports to Supabase"""
-    _init_mcf()
-    
-    if _mcf_storage is None:
-        return {"success": False, "error": "Storage not initialized"}
-    
-    if not hasattr(_mcf_storage, 'sync_to_supabase'):
-        return {"success": False, "error": "Hybrid storage not available"}
-    
-    if not _mcf_storage.supabase_available:
-        return {"success": False, "error": "Supabase not connected - check SUPABASE_URL and SUPABASE_KEY"}
-    
-    try:
-        synced = _mcf_storage.sync_to_supabase()
-        return {"success": True, "synced_count": synced, "message": f"Synced {synced} reports to Supabase"}
-    except Exception as e:
-        logger.error(f"[MCF] Sync error: {e}")
-        return {"success": False, "error": str(e)}
-
-
-@app.post("/api/mcf/generate-all")
-async def generate_all_mcf_reports(background_tasks: "BackgroundTasks" = None):
-    """Trigger generation of all report types for all supported coins"""
-    from fastapi import BackgroundTasks
-    from mcf_labs.scheduler import get_scheduler, SUPPORTED_COINS
-    
-    _init_mcf()
-    scheduler = get_scheduler()
-    
-    if scheduler is None and _mcf_generator is not None:
-        # Create a temporary scheduler if none running
-        from mcf_labs.scheduler import ReportScheduler
-        scheduler = ReportScheduler(_mcf_generator)
-    
-    if scheduler is None:
-        return {"success": False, "error": "No scheduler or generator available"}
-    
-    # Run generation in background
-    async def generate_batch():
-        results = {"market_structure": [], "whale_intelligence": [], "cycle": []}
-        
-        # Generate market structure for all coins
-        for symbol in SUPPORTED_COINS:
-            try:
-                report = await scheduler.run_market_structure(symbol)
-                if report:
-                    results["market_structure"].append(symbol)
-            except Exception as e:
-                logger.error(f"Failed market structure for {symbol}: {e}")
-        
-        # Generate whale reports for all coins  
-        for symbol in SUPPORTED_COINS:
-            try:
-                report = await scheduler.run_whale_report(symbol)
-                if report:
-                    results["whale_intelligence"].append(symbol)
-            except Exception as e:
-                logger.error(f"Failed whale report for {symbol}: {e}")
-        
-        # Generate cycle report for BTC
-        try:
-            report = await scheduler.run_cycle_report("BTC")
-            if report:
-                results["cycle"].append("BTC")
-        except Exception as e:
-            logger.error(f"Failed cycle report: {e}")
-        
-        logger.info(f"[MCF] Batch generation complete: {results}")
-        return results
-    
-    # Start generation
-    asyncio.create_task(generate_batch())
-    
-    return {
-        "success": True,
-        "message": "Batch report generation started in background",
-        "coins": SUPPORTED_COINS
     }
 
 
