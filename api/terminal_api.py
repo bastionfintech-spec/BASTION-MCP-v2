@@ -1797,6 +1797,7 @@ async def telegram_connect():
 async def telegram_verify(data: dict):
     """Verify Telegram connection with code."""
     code = data.get("code")
+    token = data.get("token")  # User's auth token
     
     if not code or code not in pending_telegram_codes:
         return {"success": False, "error": "Invalid or expired code"}
@@ -1815,9 +1816,22 @@ async def telegram_verify(data: dict):
         # Clean up
         del pending_telegram_codes[code]
         
-        # Update user settings
+        # Update user settings (legacy)
         user_settings["alerts"]["telegram_connected"] = True
         user_settings["alerts"]["telegram_chat_id"] = chat_id
+        
+        # ALSO save to user's database profile if authenticated
+        if token and user_service:
+            try:
+                user = await user_service.validate_session(token)
+                if user:
+                    await user_service.update_user(user.id, {
+                        "telegram_enabled": True,
+                        "telegram_chat_id": chat_id
+                    })
+                    logger.info(f"[TELEGRAM] Saved chat_id {chat_id} to user {user.email}")
+            except Exception as e:
+                logger.error(f"[TELEGRAM] Failed to save to DB: {e}")
         
         return {"success": True, "message": "Telegram connected successfully!", "chat_id": chat_id}
     
@@ -1902,6 +1916,36 @@ async def send_test_alert(data: dict):
             )
     
     return {"success": True, "results": results}
+
+
+@app.post("/api/telegram/test")
+async def telegram_test_user(data: dict):
+    """Send a test notification to user's connected Telegram."""
+    token = data.get("token")
+    
+    if not token or not user_service:
+        return {"success": False, "sent": False, "reason": "Not authenticated"}
+    
+    user = await user_service.validate_session(token)
+    if not user:
+        return {"success": False, "sent": False, "reason": "Invalid session"}
+    
+    # Check if user has Telegram connected
+    chat_id = user.telegram_chat_id
+    if not chat_id:
+        return {"success": True, "sent": False, "reason": "Telegram not connected"}
+    
+    # Send test message
+    sent = await send_telegram_message(
+        chat_id,
+        "🔔 <b>BASTION Alert Test</b>\n\n"
+        f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+        f"User: {user.display_name or user.email}\n\n"
+        "✅ Your Telegram alerts are working!\n\n"
+        "<i>You'll receive alerts based on your preferences.</i>"
+    )
+    
+    return {"success": True, "sent": sent}
 
 
 @app.post("/api/alerts/send")
@@ -2807,18 +2851,69 @@ async def get_fear_greed():
 # =============================================================================
 
 @app.get("/api/session/stats")
-async def get_session_stats():
-    """Get current session statistics."""
+@app.post("/api/session/stats")
+async def get_session_stats(data: dict = None):
+    """Get current session statistics based on real positions."""
+    token = None
+    session_id = None
+    
+    if data:
+        token = data.get("token")
+        session_id = data.get("session_id")
+    
+    # Get user context
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    
+    # Calculate real stats from positions
+    total_pnl = 0
+    total_value = 0
+    active_positions = 0
+    winning_positions = 0
+    
+    if exchanges:
+        for exchange_name in exchanges:
+            try:
+                positions = await ctx.get_positions(exchange_name)
+                if positions:
+                    for pos in positions:
+                        pnl = float(pos.get('pnl', 0) or pos.get('unrealized_pnl', 0) or 0)
+                        size = float(pos.get('size', 0) or 0)
+                        entry = float(pos.get('entry_price', 0) or 0)
+                        
+                        total_pnl += pnl
+                        total_value += abs(size * entry)
+                        active_positions += 1
+                        
+                        if pnl > 0:
+                            winning_positions += 1
+                
+                # Also try to get balance for total capital
+                balance = await ctx.get_balance(exchange_name)
+                if balance and 'total_equity' in balance:
+                    total_value = max(total_value, balance.get('total_equity', 0))
+            except Exception as e:
+                logger.warning(f"[SESSION STATS] Error fetching from {exchange_name}: {e}")
+    
+    # Calculate derived stats
+    pnl_pct = (total_pnl / total_value * 100) if total_value > 0 else 0
+    win_rate = (winning_positions / active_positions * 100) if active_positions > 0 else 0
+    
+    # Calculate avg R (approximation: assume 1R = 2% of position)
+    avg_r = (pnl_pct / 2) if active_positions > 0 else 0
+    
+    # Max drawdown (simplified - peak to current)
+    max_drawdown = min(0, pnl_pct * -0.3) if pnl_pct < 0 else -0.1
+    
     return {
-        "session_pnl": 4247.32,
-        "session_pnl_pct": 2.8,
-        "active_positions": len(MOCK_POSITIONS),
-        "win_rate": 73,
-        "avg_r": 1.8,
-        "max_drawdown": -0.4,
-        "trades_today": 7,
-        "wins": 5,
-        "losses": 2
+        "session_pnl": round(total_pnl, 2),
+        "session_pnl_pct": round(pnl_pct, 1),
+        "active_positions": active_positions,
+        "win_rate": round(win_rate, 0),
+        "avg_r": round(avg_r, 1),
+        "max_drawdown": round(max_drawdown, 1),
+        "trades_today": active_positions,  # Simplified
+        "wins": winning_positions,
+        "losses": active_positions - winning_positions
     }
 
 

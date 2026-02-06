@@ -391,15 +391,16 @@
                   </div>
                   
                   <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-4">
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center opacity-50">
                       <div>
-                        <div class="text-[12px] text-white font-bold flex items-center gap-2">
-                          <iconify-icon icon="logos:discord-icon" class="text-lg"></iconify-icon>
+                        <div class="text-[12px] text-zinc-400 font-bold flex items-center gap-2">
+                          <iconify-icon icon="logos:discord-icon" class="text-lg grayscale"></iconify-icon>
                           Discord Alerts
+                          <span class="text-[8px] bg-zinc-700 text-zinc-400 px-1.5 py-0.5 rounded uppercase">Coming Soon</span>
                         </div>
-                        <div class="text-[10px] text-zinc-500">Receive alerts in your Discord server</div>
+                        <div class="text-[10px] text-zinc-600">Receive alerts in your Discord server</div>
                       </div>
-                      <button class="px-3 py-1.5 bg-[#5865F2] hover:bg-[#4752c4] text-white text-[10px] rounded transition-colors flex items-center gap-1">
+                      <button disabled class="px-3 py-1.5 bg-zinc-700 text-zinc-500 text-[10px] rounded cursor-not-allowed flex items-center gap-1">
                         <iconify-icon icon="solar:link-bold"></iconify-icon>
                         Connect Discord
                       </button>
@@ -423,56 +424,56 @@
                   
                   <div class="grid grid-cols-2 gap-3">
                     <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                      <input type="checkbox" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600">
+                      <input type="checkbox" id="alert-whale" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600" onchange="saveAlertTypes()">
                       <div>
                         <div class="text-[11px] text-white">Whale Movements</div>
                         <div class="text-[9px] text-zinc-500">Large transactions > $10M</div>
                       </div>
                     </div>
                     <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                      <input type="checkbox" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600">
+                      <input type="checkbox" id="alert-price" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600" onchange="saveAlertTypes()">
                       <div>
                         <div class="text-[11px] text-white">Price Targets</div>
                         <div class="text-[9px] text-zinc-500">Custom price alerts</div>
                       </div>
                     </div>
                     <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                      <input type="checkbox" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600">
+                      <input type="checkbox" id="alert-funding" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600" onchange="saveAlertTypes()">
                       <div>
                         <div class="text-[11px] text-white">Funding Rate Spikes</div>
                         <div class="text-[9px] text-zinc-500">Extreme funding rates</div>
                       </div>
                     </div>
                     <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                      <input type="checkbox" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600">
+                      <input type="checkbox" id="alert-liquidation" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600" onchange="saveAlertTypes()">
                       <div>
                         <div class="text-[11px] text-white">Liquidation Clusters</div>
                         <div class="text-[9px] text-zinc-500">Large liquidation events</div>
                       </div>
                     </div>
                     <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                      <input type="checkbox" class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600">
+                      <input type="checkbox" id="alert-iros" class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600" onchange="saveAlertTypes()">
                       <div>
                         <div class="text-[11px] text-white">IROS AI Signals</div>
                         <div class="text-[9px] text-zinc-500">AI-generated trade signals</div>
                       </div>
                     </div>
                     <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                      <input type="checkbox" class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600">
+                      <input type="checkbox" id="alert-position" class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600" onchange="saveAlertTypes()">
                       <div>
                         <div class="text-[11px] text-white">Position Alerts</div>
                         <div class="text-[9px] text-zinc-500">Stop loss / take profit hit</div>
                       </div>
                     </div>
                     <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                      <input type="checkbox" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600">
+                      <input type="checkbox" id="alert-oi" checked class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600" onchange="saveAlertTypes()">
                       <div>
                         <div class="text-[11px] text-white">Open Interest Spikes</div>
                         <div class="text-[9px] text-zinc-500">> 5% OI change in 1 hour</div>
                       </div>
                     </div>
                     <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-3 flex items-center gap-3">
-                      <input type="checkbox" class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600">
+                      <input type="checkbox" id="alert-research" class="alert-checkbox w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-crimson-600 focus:ring-crimson-600" onchange="saveAlertTypes()">
                       <div>
                         <div class="text-[11px] text-white">New Research Reports</div>
                         <div class="text-[9px] text-zinc-500">MCF Labs publications</div>
@@ -482,7 +483,7 @@
                   
                   <!-- Save Button -->
                   <div class="pt-4">
-                    <button class="bg-crimson-600 hover:bg-crimson-700 text-white text-[11px] font-bold px-6 py-2.5 rounded transition-colors">
+                    <button onclick="saveAlertPreferences()" class="bg-crimson-600 hover:bg-crimson-700 text-white text-[11px] font-bold px-6 py-2.5 rounded transition-colors">
                       Save Alert Preferences
                     </button>
                   </div>
@@ -2349,6 +2350,9 @@
               BastionSettings.applyTheme(user.theme);
             }
             
+            // Alert settings
+            applyAlertSettingsFromProfile(user);
+            
             showToast('Profile loaded from cloud', 'success');
           } else {
             console.log('[PROFILE] No user data from backend, using localStorage');
@@ -2994,6 +2998,105 @@
         });
       });
 
+      // ==================== ALERT PREFERENCES ====================
+      const alertTypeIds = ['alert-whale', 'alert-price', 'alert-funding', 'alert-liquidation', 'alert-iros', 'alert-position', 'alert-oi', 'alert-research'];
+      
+      function saveAlertTypes() {
+        const alertSettings = {};
+        alertTypeIds.forEach(id => {
+          const checkbox = document.getElementById(id);
+          if (checkbox) alertSettings[id] = checkbox.checked;
+        });
+        localStorage.setItem('alertTypes', JSON.stringify(alertSettings));
+        
+        // Also sync to cloud if logged in
+        const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+        if (token) {
+          fetch(`${API_BASE}/api/auth/profile`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              token,
+              whale_alerts: alertSettings['alert-whale'],
+              price_alerts: alertSettings['alert-price'],
+              funding_alerts: alertSettings['alert-funding'],
+              liquidation_alerts: alertSettings['alert-liquidation'],
+              iros_signals: alertSettings['alert-iros'],
+              position_alerts: alertSettings['alert-position'],
+              oi_alerts: alertSettings['alert-oi'],
+              research_alerts: alertSettings['alert-research']
+            })
+          }).catch(e => console.error('[ALERTS] Cloud sync failed:', e));
+        }
+      }
+      
+      function loadAlertTypes() {
+        // First try localStorage
+        const saved = localStorage.getItem('alertTypes');
+        if (saved) {
+          try {
+            const settings = JSON.parse(saved);
+            alertTypeIds.forEach(id => {
+              const checkbox = document.getElementById(id);
+              if (checkbox && settings[id] !== undefined) {
+                checkbox.checked = settings[id];
+              }
+            });
+          } catch (e) {}
+        }
+      }
+      
+      // Apply alert settings from user profile data
+      function applyAlertSettingsFromProfile(user) {
+        const mapping = {
+          'alert-whale': 'whale_alerts',
+          'alert-price': 'price_alerts',
+          'alert-funding': 'funding_alerts',
+          'alert-liquidation': 'liquidation_alerts',
+          'alert-iros': 'iros_signals',
+          'alert-position': 'position_alerts',
+          'alert-oi': 'oi_alerts',
+          'alert-research': 'research_alerts'
+        };
+        
+        alertTypeIds.forEach(id => {
+          const checkbox = document.getElementById(id);
+          const key = mapping[id];
+          if (checkbox && user[key] !== undefined) {
+            checkbox.checked = user[key];
+          }
+        });
+      }
+      
+      async function saveAlertPreferences() {
+        saveAlertTypes();
+        
+        // Also send Telegram test notification if connected
+        const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+        if (token) {
+          try {
+            const res = await fetch(`${API_BASE}/api/telegram/test`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            if (data.success && data.sent) {
+              showToast('Alert preferences saved! Test notification sent to Telegram.', 'success');
+            } else {
+              showToast('Alert preferences saved!', 'success');
+            }
+          } catch (e) {
+            showToast('Alert preferences saved!', 'success');
+          }
+        } else {
+          showToast('Alert preferences saved!', 'success');
+        }
+      }
+      
+      // Load on page ready
+      document.addEventListener('DOMContentLoaded', loadAlertTypes);
+      
       // ==================== TOAST NOTIFICATIONS ====================
       function showToast(message, type = 'info') {
         const toast = document.createElement('div');

@@ -2201,7 +2201,13 @@
 
       async function fetchSessionStats() {
         try {
-          const res = await fetch(`${API_BASE}/api/session/stats`);
+          const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+          const sessionId = localStorage.getItem('bastion_session_id');
+          const res = await fetch(`${API_BASE}/api/session/stats`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, session_id: sessionId })
+          });
           sessionStats = await res.json();
           renderSessionStats();
         } catch (e) {
