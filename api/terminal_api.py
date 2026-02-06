@@ -4885,7 +4885,7 @@ async def run_monte_carlo(data: dict = None):
         "tp1": 0.15,  # 15% profit on margin
         "tp2": 0.50,  # 50% profit on margin
         "tp3": 0.80,  # 80% profit on margin
-        "stop": -0.50  # 50% loss on margin
+        "stop": -0.15  # 15% loss on margin (tight stop)
     }
     
     # Calculate target prices
