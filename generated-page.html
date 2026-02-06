@@ -1462,7 +1462,7 @@
                 </div>
               </div>
               <!-- SPOOFING ALERT -->
-              <div class="p-2">
+              <div class="p-2 border-b border-zinc-800/50">
                 <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between">
                   <span>Spoof Detection</span>
                   <span data-flow="spoof-status" class="text-green-400">CLEAR</span>
@@ -1470,6 +1470,37 @@
                 <div data-flow="spoof-container" class="space-y-1 text-[8px] font-mono">
                   <div class="text-center py-2 bg-zinc-900/50 rounded border border-zinc-800/50 text-zinc-500">
                     No spoofing detected
+                  </div>
+                </div>
+              </div>
+              
+              <!-- OI CHANGES - TOP MOVERS -->
+              <div class="p-2">
+                <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
+                  <span class="flex items-center gap-1">
+                    <iconify-icon icon="solar:chart-2-bold" class="text-cyan-400"></iconify-icon>
+                    OI Changes
+                  </span>
+                  <span class="text-[7px] text-cyan-400">COINGLASS</span>
+                </div>
+                
+                <!-- OI Increases -->
+                <div class="mb-2">
+                  <div class="text-[7px] text-green-400 font-bold mb-1">▲ TOP INCREASES</div>
+                  <div data-oi="increases" class="space-y-0.5 text-[8px] font-mono">
+                    <div class="flex justify-between text-zinc-500">
+                      <span>Loading...</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- OI Decreases -->
+                <div>
+                  <div class="text-[7px] text-red-400 font-bold mb-1">▼ TOP DECREASES</div>
+                  <div data-oi="decreases" class="space-y-0.5 text-[8px] font-mono">
+                    <div class="flex justify-between text-zinc-500">
+                      <span>Loading...</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -6158,6 +6189,44 @@ Esc    - Close Dialogs
     }
     
     // =================================================================
+    // OI CHANGES - TOP MOVERS
+    // =================================================================
+    async function fetchOIChanges() {
+      try {
+        const res = await fetch(`${API_BASE}/api/oi-changes`);
+        const data = await res.json();
+        
+        if (data.success) {
+          // Render increases
+          const increasesEl = document.querySelector('[data-oi="increases"]');
+          if (increasesEl && data.increases) {
+            increasesEl.innerHTML = data.increases.slice(0, 5).map(coin => `
+              <div class="flex justify-between items-center py-0.5 border-l border-green-500/50 pl-1">
+                <span class="text-white font-bold">${coin.symbol}</span>
+                <span class="text-green-400">${coin.oi_change_formatted}</span>
+              </div>
+            `).join('');
+          }
+          
+          // Render decreases
+          const decreasesEl = document.querySelector('[data-oi="decreases"]');
+          if (decreasesEl && data.decreases) {
+            decreasesEl.innerHTML = data.decreases.slice(0, 5).map(coin => `
+              <div class="flex justify-between items-center py-0.5 border-l border-red-500/50 pl-1">
+                <span class="text-white font-bold">${coin.symbol}</span>
+                <span class="text-red-400">${coin.oi_change_formatted}</span>
+              </div>
+            `).join('');
+          }
+          
+          console.log('[OI CHANGES] Updated:', data.increases?.length, 'increases,', data.decreases?.length, 'decreases');
+        }
+      } catch (e) {
+        console.error('[OI CHANGES] Fetch error:', e);
+      }
+    }
+    
+    // =================================================================
     // PRE-TRADE CALCULATOR
     // =================================================================
     async function runPreTradeCalculator() {
@@ -6357,6 +6426,10 @@ Esc    - Close Dialogs
       // Fetch USDT dominance
       fetchUsdtDominance();
       setInterval(fetchUsdtDominance, 60000); // Every minute
+      
+      // Fetch OI changes
+      fetchOIChanges();
+      setInterval(fetchOIChanges, 30000); // Every 30 seconds
     });
     </script>
   
