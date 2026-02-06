@@ -1590,14 +1590,51 @@ LIVE MARKET DATA:
             # Extract just key metrics for the prompt
             price_line = ""
             if market_data.get("coins_markets"):
-                for coin in market_data["coins_markets"][:3]:
-                    if coin.get("symbol", "").upper() == symbol.upper():
-                        price_line = f"Price: ${coin.get('price', 0):,.2f}, 24h: {coin.get('priceChangePercent24h', 0):.1f}%, OI: ${coin.get('openInterest', 0)/1e9:.1f}B, Funding: {coin.get('fundingRate', 0)*100:.4f}%"
+                # Search ALL coins, not just first 3
+                for coin in market_data["coins_markets"]:
+                    coin_symbol = coin.get("symbol", "").upper().replace("USDT", "").replace("USD", "")
+                    if coin_symbol == symbol.upper():
+                        price = float(coin.get('price', 0) or 0)
+                        change = float(coin.get('priceChangePercent24h', 0) or 0)
+                        oi = float(coin.get('openInterest', 0) or 0)
+                        funding = float(coin.get('fundingRate', 0) or 0)
+                        price_line = f"CURRENT PRICE: ${price:,.2f}, 24h Change: {change:+.1f}%, Open Interest: ${oi/1e9:.2f}B, Funding: {funding*100:.4f}%"
+                        logger.info(f"Found {symbol} price: ${price:,.2f}")
                         break
             
-            system_prompt = f"""You are BASTION, crypto analyst. Answer concisely.
-{symbol} Data: {price_line}
-Query: {query}"""
+            if not price_line:
+                logger.warning(f"Price not found for {symbol} in coins_markets")
+            
+            # Build data summary from Coinglass
+            whale_summary = ""
+            if market_data.get("whale_positions"):
+                longs = sum(float(p.get("positionValueUsd", 0) or 0) for p in market_data["whale_positions"] if float(p.get("positionSize", 0) or 0) > 0)
+                shorts = sum(abs(float(p.get("positionValueUsd", 0) or 0)) for p in market_data["whale_positions"] if float(p.get("positionSize", 0) or 0) < 0)
+                whale_summary = f"Whale Longs: ${longs/1e6:.1f}M, Whale Shorts: ${shorts/1e6:.1f}M"
+            
+            funding_summary = ""
+            if market_data.get("funding"):
+                for f in market_data["funding"][:5]:
+                    if f.get("exchangeName") == "Binance":
+                        funding_summary = f"Binance Funding: {float(f.get('rate', 0))*100:.4f}%"
+                        break
+            
+            system_prompt = f"""You are BASTION, an institutional crypto trading analyst.
+
+CRITICAL: Your training data is OUTDATED. USE ONLY the data provided below. DO NOT make up prices or statistics.
+
+## VERIFIED {symbol} DATA (LIVE FROM COINGLASS)
+{price_line}
+{whale_summary}
+{funding_summary}
+
+RULES:
+1. ONLY use the exact numbers provided above
+2. DO NOT invent prices, whale positions, or market data
+3. If data is missing, say "data unavailable" - do NOT guess
+4. Be concise but accurate
+
+USER QUERY: {query}"""
             
             logger.info(f"IROS prompt: {len(system_prompt)} chars")
             
