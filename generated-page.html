@@ -2332,11 +2332,15 @@
         input.value = '';
         input.disabled = true;
         
+        // Extract symbol from query or use current selected symbol
+        const symbolMatch = query.toUpperCase().match(/\b(BTC|ETH|SOL|BNB|XRP|AVAX|LINK|ARB|OP|DOGE|ADA|MATIC|DOT|ATOM)\b/);
+        const symbol = symbolMatch ? symbolMatch[1] : currentSymbol;
+        
         try {
           const res = await fetch(`${API_BASE}/api/neural/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, symbol: 'BTC' })
+            body: JSON.stringify({ query, symbol })
           });
           const data = await res.json();
           
@@ -4804,6 +4808,10 @@ Esc    - Close Dialogs
           addMessage('user', query);
           modalInput.value = '';
           
+          // Extract symbol from query or use current selected symbol
+          const symbolMatch = query.toUpperCase().match(/\b(BTC|ETH|SOL|BNB|XRP|AVAX|LINK|ARB|OP|DOGE|ADA|MATIC|DOT|ATOM)\b/);
+          const symbol = symbolMatch ? symbolMatch[1] : currentSymbol;
+          
           // Show typing indicator
           const typingId = addMessage('assistant', '<span class="animate-pulse">Thinking...</span>', true);
           
@@ -4813,7 +4821,7 @@ Esc    - Close Dialogs
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 query: query,
-                symbol: currentSymbol,
+                symbol: symbol,
                 include_positions: true
               })
             });
