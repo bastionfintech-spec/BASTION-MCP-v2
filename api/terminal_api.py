@@ -13,6 +13,8 @@ import asyncio
 import json
 import time
 import random
+import os
+import httpx
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -1369,9 +1371,6 @@ async def neural_chat(request: Dict[str, Any]):
             position_context = "(No exchange connected - no positions)"
     
     # Fetch REAL market data from Coinglass
-    import asyncio
-    import httpx
-    
     market_data = {}
     data_sources = []
     
