@@ -200,10 +200,12 @@ class UserService:
     
     async def create_user(self, email: str, password: str, display_name: Optional[str] = None) -> Optional[User]:
         """Create a new user"""
+        logger.info(f"[UserService] Attempting to create user: {email}")
+        
         # Check if email exists
         existing = await self.get_user_by_email(email)
         if existing:
-            logger.warning(f"User already exists: {email}")
+            logger.warning(f"[UserService] User already exists: {email}")
             return None
         
         user_id = secrets.token_urlsafe(16)
@@ -218,16 +220,33 @@ class UserService:
         
         if self.is_db_available:
             try:
-                data = user.to_dict()
-                data['password_hash'] = password_hash
-                self.client.table(self.users_table).insert(data).execute()
+                # Build data dict manually to avoid extra fields
+                data = {
+                    'id': user.id,
+                    'email': user.email,
+                    'password_hash': password_hash,
+                    'display_name': user.display_name,
+                    'created_at': user.created_at,
+                    'timezone': user.timezone,
+                    'currency': user.currency,
+                    'trading_experience': user.trading_experience,
+                    'trading_style': user.trading_style,
+                    'theme': user.theme,
+                    'totp_enabled': False
+                }
+                
+                result = self.client.table(self.users_table).insert(data).execute()
                 logger.info(f"[UserService] Created user: {email}")
                 return user
             except Exception as e:
                 logger.error(f"[UserService] Failed to create user: {e}")
+                # Check if it's a duplicate key error
+                if "duplicate" in str(e).lower() or "unique" in str(e).lower():
+                    logger.warning(f"[UserService] Duplicate email detected: {email}")
                 return None
         else:
             # In-memory fallback
+            logger.info(f"[UserService] Using in-memory storage for user: {email}")
             self._memory_users[user_id] = user
             self._memory_users[f"email:{email}"] = {"user_id": user_id, "password_hash": password_hash}
             return user
@@ -239,12 +258,14 @@ class UserService:
                 result = self.client.table(self.users_table)\
                     .select("*")\
                     .eq("email", email)\
-                    .single()\
                     .execute()
-                if result.data:
-                    return User.from_dict(result.data)
+                # Check if we got any results (don't use .single() as it throws on no results)
+                if result.data and len(result.data) > 0:
+                    return User.from_dict(result.data[0])
+                return None
             except Exception as e:
-                logger.debug(f"User not found: {email}")
+                logger.error(f"[UserService] Error checking email {email}: {e}")
+                return None
         else:
             # In-memory
             ref = self._memory_users.get(f"email:{email}")

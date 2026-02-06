@@ -979,6 +979,8 @@ async def register_user(data: dict):
     password = data.get("password", "")
     display_name = data.get("display_name")
     
+    logger.info(f"[AUTH] Registration attempt for: {email}")
+    
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email and password required")
     
@@ -986,24 +988,38 @@ async def register_user(data: dict):
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
     
     if not user_service:
-        raise HTTPException(status_code=503, detail="User service unavailable")
+        logger.error("[AUTH] User service not available")
+        raise HTTPException(status_code=503, detail="User service unavailable - check database connection")
     
-    user = await user_service.create_user(email, password, display_name)
-    if not user:
-        raise HTTPException(status_code=409, detail="Email already registered")
+    # Check if database is connected
+    if not user_service.is_db_available:
+        logger.warning("[AUTH] Database not available, using in-memory storage")
     
-    # Auto-login after registration
-    token = await user_service.authenticate(email, password)
-    
-    return {
-        "success": True,
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "display_name": user.display_name
-        },
-        "token": token
-    }
+    try:
+        user = await user_service.create_user(email, password, display_name)
+        if not user:
+            logger.warning(f"[AUTH] Registration failed for {email} - email may exist")
+            raise HTTPException(status_code=409, detail="Email already registered")
+        
+        logger.info(f"[AUTH] User created successfully: {email}")
+        
+        # Auto-login after registration
+        token = await user_service.authenticate(email, password)
+        
+        return {
+            "success": True,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "display_name": user.display_name
+            },
+            "token": token
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[AUTH] Registration error: {e}")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 
 @app.post("/api/auth/login")
@@ -1012,10 +1028,13 @@ async def login_user(data: dict):
     email = data.get("email", "").lower().strip()
     password = data.get("password", "")
     
+    logger.info(f"[AUTH] Login attempt for: {email}")
+    
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email and password required")
     
     if not user_service:
+        logger.error("[AUTH] User service not available for login")
         raise HTTPException(status_code=503, detail="User service unavailable")
     
     token = await user_service.authenticate(email, password)
@@ -1220,6 +1239,33 @@ async def disable_2fa(data: dict):
     """Disable 2FA for user."""
     # In production, this would update the user record in the database
     return {"success": True}
+
+
+@app.get("/api/auth/debug")
+async def auth_debug():
+    """Debug endpoint to check auth system status."""
+    status = {
+        "user_service_loaded": user_service is not None,
+        "database_connected": False,
+        "users_table": "bastion_users",
+        "can_query": False,
+        "user_count": 0,
+        "error": None
+    }
+    
+    if user_service:
+        status["database_connected"] = user_service.is_db_available
+        
+        if user_service.is_db_available:
+            try:
+                # Try to count users
+                result = user_service.client.table("bastion_users").select("id", count="exact").execute()
+                status["can_query"] = True
+                status["user_count"] = result.count if hasattr(result, 'count') else len(result.data or [])
+            except Exception as e:
+                status["error"] = str(e)
+    
+    return status
 
 
 # =============================================================================

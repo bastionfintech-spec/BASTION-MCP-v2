@@ -150,24 +150,7 @@
             <iconify-icon id="login-btn-icon" icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
           </button>
 
-          <div class="relative flex items-center py-2">
-            <div class="flex-grow border-t border-[#27272a]"></div>
-            <span class="flex-shrink-0 mx-4 text-[10px] text-zinc-600 font-mono uppercase tracking-widest">Or Access With</span>
-            <div class="flex-grow border-t border-[#27272a]"></div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <button type="button" onclick="socialLogin('google')" class="flex items-center justify-center gap-2 py-2.5 border border-[#3f3f46] hover:border-zinc-500 hover:bg-[#18181b] transition-all text-white text-xs font-medium uppercase">
-              <iconify-icon icon="flat-color-icons:google" width="16"></iconify-icon>
-              Google
-            </button>
-            <button type="button" onclick="socialLogin('discord')" class="flex items-center justify-center gap-2 py-2.5 border border-[#3f3f46] hover:border-zinc-500 hover:bg-[#18181b] transition-all text-white text-xs font-medium uppercase">
-              <iconify-icon icon="logos:discord-icon" width="16"></iconify-icon>
-              Discord
-            </button>
-          </div>
-
-          <div class="text-center mt-2">
+          <div class="text-center mt-4">
             <a href="/frontend" class="text-xs text-zinc-500 hover:text-white font-mono uppercase tracking-wide group flex items-center justify-center gap-1 transition-colors">
               Continue as Guest 
               <iconify-icon icon="solar:arrow-right-linear" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
@@ -449,15 +432,6 @@
         }
       }
 
-      function socialLogin(provider) {
-        // For demo purposes, just redirect to terminal
-        // In production, this would initiate OAuth flow
-        showStatus('login-status', `Connecting to ${provider}...`, false);
-        setTimeout(() => {
-          localStorage.setItem('bastion_user', JSON.stringify({ provider, loggedIn: true }));
-          window.location.href = '/frontend';
-        }, 1500);
-      }
     </script>
 </body>
 </html>
