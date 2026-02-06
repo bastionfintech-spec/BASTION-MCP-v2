@@ -237,7 +237,7 @@ import hashlib
 
 # Rate limiting storage (in-memory, resets on restart)
 rate_limit_store: Dict[str, List[float]] = {}
-RATE_LIMIT_REQUESTS = 100  # requests per window
+RATE_LIMIT_REQUESTS = 500  # requests per window (increased for heavy UI polling)
 RATE_LIMIT_WINDOW = 60  # seconds
 
 class SecurityMiddleware(BaseHTTPMiddleware):

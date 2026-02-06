@@ -263,76 +263,95 @@ class BitunixClient(BaseExchangeClient):
             return False
     
     async def get_positions(self) -> List[Position]:
-        """Fetch open positions from Bitunix Futures using official API."""
+        """Fetch open positions from Bitunix Futures - BOTH cross and isolated margin."""
         positions = []
         
         try:
             async with httpx.AsyncClient() as client:
-                # Use official endpoint for pending (open) positions
-                headers = self._get_headers()
-                res = await client.get(
-                    f"{self.base_url}/api/v1/futures/position/get_pending_positions",
-                    headers=headers,
-                    timeout=10.0
-                )
+                # Query for BOTH margin modes to get all positions
+                margin_modes = ["cross", "isolated"]
                 
-                logger.info(f"[BITUNIX] Positions response: {res.status_code}")
-                
-                if res.status_code == 200:
-                    data = res.json()
-                    logger.info(f"[BITUNIX] Positions data: {json.dumps(data)[:500]}")
-                    
-                    if data.get("code") == 0:
-                        pos_list = data.get("data", [])
-                        logger.info(f"[BITUNIX] Found {len(pos_list)} open positions")
+                for margin_mode in margin_modes:
+                    try:
+                        # Build params for this margin mode
+                        params = {"marginMode": margin_mode}
+                        query_string = self._sort_params(params)
+                        headers = self._get_headers(query_params=query_string)
                         
-                        for pos in pos_list:
-                            try:
-                                qty = float(pos.get("qty", 0))
-                                if qty == 0:
-                                    continue
+                        res = await client.get(
+                            f"{self.base_url}/api/v1/futures/position/get_pending_positions",
+                            params=params,
+                            headers=headers,
+                            timeout=10.0
+                        )
+                        
+                        logger.info(f"[BITUNIX] Positions ({margin_mode}) response: {res.status_code}")
+                        
+                        if res.status_code == 200:
+                            data = res.json()
+                            logger.info(f"[BITUNIX] Positions ({margin_mode}) data: {json.dumps(data)[:800]}")
+                            
+                            if data.get("code") == 0:
+                                pos_list = data.get("data", [])
+                                logger.info(f"[BITUNIX] Found {len(pos_list)} {margin_mode} positions")
                                 
-                                symbol = pos.get("symbol", "")
-                                side = pos.get("side", "").upper()
-                                direction = "long" if side == "BUY" else "short"
-                                entry_price = float(pos.get("avgOpenPrice", 0))
-                                unrealized_pnl = float(pos.get("unrealizedPNL", 0))
-                                margin = float(pos.get("margin", 0))
-                                leverage = float(pos.get("leverage", 1))
-                                liq_price = float(pos.get("liqPrice", 0)) or None
-                                
-                                # Calculate current price from entry value and qty
-                                entry_value = float(pos.get("entryValue", 0))
-                                current_price = entry_price  # Will be updated if we have better data
-                                
-                                # PnL percentage
-                                pnl_pct = (unrealized_pnl / margin * 100) if margin > 0 else 0
-                                
-                                positions.append(Position(
-                                    id=pos.get("positionId", f"bitunix_{symbol}_{direction}"),
-                                    symbol=symbol,
-                                    direction=direction,
-                                    entry_price=entry_price,
-                                    current_price=current_price,
-                                    size=qty,
-                                    size_usd=entry_value,
-                                    pnl=unrealized_pnl,
-                                    pnl_pct=pnl_pct,
-                                    leverage=leverage,
-                                    margin=margin,
-                                    liquidation_price=liq_price,
-                                    exchange=self.exchange_name,
-                                    updated_at=datetime.now().isoformat()
-                                ))
-                                logger.info(f"[BITUNIX] Added position: {symbol} {direction} qty={qty} pnl={unrealized_pnl}")
-                            except Exception as pe:
-                                logger.error(f"[BITUNIX] Error parsing position: {pe}")
-                    else:
-                        logger.warning(f"[BITUNIX] API error: {data.get('msg')}")
+                                for pos in pos_list:
+                                    try:
+                                        # Try multiple qty field names
+                                        qty = float(pos.get("qty", 0) or pos.get("positionAmt", 0) or pos.get("size", 0) or pos.get("positionSize", 0))
+                                        
+                                        # Skip truly empty positions but log for debug
+                                        if qty == 0:
+                                            logger.info(f"[BITUNIX] Skipping zero-qty position: {pos}")
+                                            continue
+                                        
+                                        symbol = pos.get("symbol", "")
+                                        side = pos.get("side", "").upper()
+                                        direction = "long" if side in ["BUY", "LONG"] else "short"
+                                        entry_price = float(pos.get("avgOpenPrice", 0) or pos.get("entryPrice", 0) or pos.get("avgPrice", 0))
+                                        unrealized_pnl = float(pos.get("unrealizedPNL", 0) or pos.get("unrealizedProfit", 0) or pos.get("pnl", 0))
+                                        margin = float(pos.get("margin", 0) or pos.get("isolatedMargin", 0) or pos.get("positionMargin", 0))
+                                        leverage = float(pos.get("leverage", 1))
+                                        liq_price = float(pos.get("liqPrice", 0) or pos.get("liquidationPrice", 0)) or None
+                                        
+                                        # Entry value / position value
+                                        entry_value = float(pos.get("entryValue", 0) or pos.get("positionValue", 0) or pos.get("notional", 0))
+                                        if entry_value == 0 and qty > 0 and entry_price > 0:
+                                            entry_value = qty * entry_price
+                                        
+                                        current_price = entry_price
+                                        
+                                        # PnL percentage
+                                        pnl_pct = (unrealized_pnl / margin * 100) if margin > 0 else 0
+                                        
+                                        positions.append(Position(
+                                            id=pos.get("positionId", f"bitunix_{symbol}_{direction}_{margin_mode}"),
+                                            symbol=symbol,
+                                            direction=direction,
+                                            entry_price=entry_price,
+                                            current_price=current_price,
+                                            size=qty,
+                                            size_usd=entry_value,
+                                            pnl=unrealized_pnl,
+                                            pnl_pct=pnl_pct,
+                                            leverage=leverage,
+                                            margin=margin,
+                                            liquidation_price=liq_price,
+                                            exchange=self.exchange_name,
+                                            updated_at=datetime.now().isoformat()
+                                        ))
+                                        logger.info(f"[BITUNIX] Added {margin_mode} position: {symbol} {direction} qty={qty} pnl={unrealized_pnl}")
+                                    except Exception as pe:
+                                        logger.error(f"[BITUNIX] Error parsing position: {pe}, raw: {pos}")
+                            else:
+                                logger.warning(f"[BITUNIX] API error for {margin_mode}: {data.get('msg')}")
+                    except Exception as me:
+                        logger.error(f"[BITUNIX] Error fetching {margin_mode} positions: {me}")
                         
         except Exception as e:
             logger.error(f"[BITUNIX] get_positions error: {e}")
         
+        logger.info(f"[BITUNIX] Total positions found: {len(positions)}")
         return positions
     
     
