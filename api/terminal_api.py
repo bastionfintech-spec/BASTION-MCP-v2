@@ -2654,10 +2654,10 @@ async def get_klines(symbol: str = "BTC", interval: str = "15m", limit: int = 10
     cache_key = f"klines_{sym}_{interval}"
     now = time.time()
     
-    # Check cache (30 second TTL for Vercel - longer cache for serverless)
+    # Check cache - fast updates for live trading (2 second TTL for charts)
     if cache_key in price_cache:
         cached = price_cache[cache_key]
-        if now - cached["time"] < 30:
+        if now - cached["time"] < 2:  # 2 seconds for chart data
             return cached["data"]
     
     candles = []
