@@ -43,11 +43,16 @@ class ReportGenerator:
         
         # Parse data
         current_price = self._get_current_price(coins_markets, symbol)
-        whale_analysis = self._analyze_whales(whale_positions)
+        whale_analysis = self._analyze_whales(whale_positions, symbol)
         max_pain_price = self._get_max_pain(max_pain)
         liq_analysis = self._analyze_liquidations(liq_data, current_price)
-        funding_rate = self._get_funding(funding)
+        funding_rate = self._get_funding(funding, symbol)
         long_short = self._get_ls_ratio(ls_ratio)
+        oi_data = self._get_oi(coins_markets, symbol)
+        
+        # VALIDATION: Require valid price data
+        if current_price <= 0:
+            raise ValueError(f"Invalid price data for {symbol}: price={current_price}")
         
         # Determine bias
         bias = self._calculate_bias(
@@ -67,7 +72,7 @@ class ReportGenerator:
         )
         
         # Build report
-        report_id = f"MS-{datetime.utcnow().strftime('%Y%m%d-%H')}"
+        report_id = f"MS-{symbol}-{datetime.utcnow().strftime('%Y%m%d-%H')}"
         
         return Report(
             id=report_id,
@@ -89,7 +94,7 @@ class ReportGenerator:
                     }
                 },
                 "derivatives": {
-                    "open_interest": self._get_oi(coins_markets, symbol),
+                    "open_interest": oi_data,
                     "funding_rate": funding_rate,
                     "long_short_ratio": long_short
                 },
@@ -112,26 +117,34 @@ class ReportGenerator:
         
         whale_positions, exchange_flow = results
         
-        # Parse whale data
-        positions = self._parse_whale_positions(whale_positions)
+        # Parse whale data - filter by symbol
+        positions = self._parse_whale_positions(whale_positions, symbol)
         aggregate = self._aggregate_whale_stats(positions)
         flow_analysis = self._analyze_exchange_flow(exchange_flow)
+        
+        # VALIDATION: Require minimum valid positions
+        valid_positions = [p for p in positions if p.get('size_usd', 0) > 0]
+        if len(valid_positions) < 3:
+            raise ValueError(
+                f"Insufficient whale data for {symbol}: only {len(valid_positions)} valid positions found. "
+                f"Need at least 3 positions with size > 0."
+            )
         
         # Determine alert level
         alert_level = self._calculate_alert_level(aggregate, flow_analysis)
         
-        report_id = f"WI-{datetime.utcnow().strftime('%Y%m%d-%H')}"
+        report_id = f"WI-{symbol}-{datetime.utcnow().strftime('%Y%m%d-%H')}"
         
         return Report(
             id=report_id,
             type=ReportType.WHALE_INTELLIGENCE,
-            title=f"Hyperliquid Whale Activity: {aggregate['dominant_side']} Dominant",
+            title=f"{symbol} Whale Activity: {aggregate['dominant_side']} Dominant",
             generated_at=datetime.utcnow(),
             bias=Bias.BULLISH if aggregate['net_exposure'] > 0 else Bias.BEARISH,
-            confidence=Confidence.HIGH if len(positions) >= 10 else Confidence.MEDIUM,
-            summary=self._generate_whale_summary(aggregate, flow_analysis),
+            confidence=Confidence.HIGH if len(valid_positions) >= 10 else Confidence.MEDIUM,
+            summary=self._generate_whale_summary(aggregate, flow_analysis, symbol),
             sections={
-                "top_positions": positions[:10],
+                "top_positions": valid_positions[:10],
                 "aggregate_stats": aggregate,
                 "exchange_flows": flow_analysis,
                 "actionable_insight": self._generate_whale_insight(aggregate, flow_analysis)
@@ -259,20 +272,47 @@ class ReportGenerator:
             return data.data.get("price", 0)
         return 0
     
-    def _analyze_whales(self, data) -> Dict[str, Any]:
+    def _analyze_whales(self, data, symbol: str = None) -> Dict[str, Any]:
+        """
+        Analyze Hyperliquid whale positions.
+        
+        Note: Hyperliquid API returns ALL positions. We filter by symbol.
+        Fields: positionSize (positive=LONG, negative=SHORT), positionValueUsd, unrealizedPnL
+        """
         if not hasattr(data, 'success') or not data.success:
-            return {"net_bias": "UNKNOWN", "total_long_usd": 0, "total_short_usd": 0}
+            return {"net_bias": "UNKNOWN", "total_long_usd": 0, "total_short_usd": 0, "position_count": 0}
         
         positions = data.data if isinstance(data.data, list) else []
         
-        total_long = sum(p.get("sizeUsd", 0) for p in positions if p.get("side") == "LONG")
-        total_short = sum(p.get("sizeUsd", 0) for p in positions if p.get("side") == "SHORT")
+        # Filter by symbol if provided
+        if symbol:
+            positions = [p for p in positions if p.get("symbol", "").upper() == symbol.upper()]
+        
+        if not positions:
+            return {"net_bias": "UNKNOWN", "total_long_usd": 0, "total_short_usd": 0, "position_count": 0}
+        
+        # Hyperliquid uses positionSize: positive = LONG, negative = SHORT
+        total_long = sum(
+            abs(p.get("positionValueUsd", 0)) 
+            for p in positions 
+            if p.get("positionSize", 0) > 0
+        )
+        total_short = sum(
+            abs(p.get("positionValueUsd", 0)) 
+            for p in positions 
+            if p.get("positionSize", 0) < 0
+        )
+        
+        # Get top positions by size
+        sorted_positions = sorted(positions, key=lambda x: abs(x.get("positionValueUsd", 0)), reverse=True)
+        notable = sorted_positions[:5] if sorted_positions else []
         
         return {
             "net_bias": "LONG" if total_long > total_short else "SHORT",
             "total_long_usd": total_long,
             "total_short_usd": total_short,
-            "notable_positions": positions[:5] if positions else []
+            "position_count": len(positions),
+            "notable_positions": notable
         }
     
     def _get_max_pain(self, data) -> float:
@@ -289,11 +329,43 @@ class ReportGenerator:
             "shorts": {"price": current_price * 1.05, "usd": 0}
         }
     
-    def _get_funding(self, data) -> Dict[str, float]:
-        if hasattr(data, 'success') and data.success and data.data:
-            # Parse funding rates by coin
-            return {"btc": 0.0001, "eth": 0.0001, "sol": 0.0001}
-        return {"btc": 0, "eth": 0, "sol": 0}
+    def _get_funding(self, data, symbol: str = "BTC") -> Dict[str, Any]:
+        """Parse funding rates from Coinglass response"""
+        result = {"rate": 0, "exchange_rates": [], "avg_rate": 0}
+        
+        if not hasattr(data, 'success') or not data.success or not data.data:
+            return result
+        
+        rates_list = []
+        
+        # Handle nested structure with usdtOrUsdMarginList/tokenMarginList
+        if isinstance(data.data, dict):
+            for margin_list in ["usdtOrUsdMarginList", "tokenMarginList"]:
+                items = data.data.get(margin_list, [])
+                if isinstance(items, list):
+                    for item in items:
+                        exchange = item.get("exchangeName", "Unknown")
+                        rate = item.get("rate", 0) or item.get("fundingRate", 0)
+                        if rate:
+                            rates_list.append({"exchange": exchange, "rate": rate})
+        
+        elif isinstance(data.data, list):
+            for item in data.data:
+                exchange = item.get("exchangeName", item.get("exchange", "Unknown"))
+                rate = item.get("rate", 0) or item.get("fundingRate", 0)
+                if rate:
+                    rates_list.append({"exchange": exchange, "rate": rate})
+        
+        if rates_list:
+            avg_rate = sum(r["rate"] for r in rates_list) / len(rates_list)
+            result = {
+                "rate": avg_rate,
+                "exchange_rates": rates_list[:5],  # Top 5 exchanges
+                "avg_rate": avg_rate,
+                "btc": avg_rate  # For backward compatibility
+            }
+        
+        return result
     
     def _get_ls_ratio(self, data) -> float:
         if hasattr(data, 'success') and data.success and data.data:
@@ -386,8 +458,28 @@ class ReportGenerator:
             {"price": liq_analysis.get("longs", {}).get("price", 0), "reason": "Long Liquidations"}
         ]
     
-    def _get_oi(self, data, symbol) -> Dict[str, Any]:
-        return {"value": 0, "change_24h": 0}
+    def _get_oi(self, data, symbol: str) -> Dict[str, Any]:
+        """Extract Open Interest from coins_markets response"""
+        result = {"value": 0, "change_24h": 0, "change_percent_24h": 0}
+        
+        if not hasattr(data, 'success') or not data.success or not data.data:
+            return result
+        
+        coins = data.data if isinstance(data.data, list) else []
+        
+        for coin in coins:
+            if coin.get("symbol", "").upper() == symbol.upper():
+                oi = coin.get("openInterest", 0)
+                oi_change = coin.get("oiChg24h", 0) or coin.get("openInterestChange24h", 0)
+                oi_change_pct = coin.get("oiChgPercent24h", 0) or coin.get("oiChg24hPercent", 0)
+                
+                return {
+                    "value": oi,
+                    "change_24h": oi_change,
+                    "change_percent_24h": oi_change_pct
+                }
+        
+        return result
     
     def _generate_tags(self, symbol, bias, whales) -> List[str]:
         tags = [symbol.lower(), bias.value.lower()]
@@ -395,22 +487,60 @@ class ReportGenerator:
             tags.append("whale-heavy")
         return tags
     
-    def _parse_whale_positions(self, data) -> List[Dict]:
+    def _parse_whale_positions(self, data, symbol: str = None) -> List[Dict]:
+        """
+        Parse Hyperliquid whale positions with correct field mapping.
+        
+        Hyperliquid fields:
+        - positionSize: positive = LONG, negative = SHORT
+        - positionValueUsd: position value in USD
+        - unrealizedPnL: PnL in USD
+        - entryPrice, markPrice, leverage
+        """
         if not hasattr(data, 'success') or not data.success:
             return []
+        
         positions = data.data if isinstance(data.data, list) else []
-        return [
-            {
+        
+        # Filter by symbol if provided
+        if symbol:
+            positions = [p for p in positions if p.get("symbol", "").upper() == symbol.upper()]
+        
+        if not positions:
+            return []
+        
+        # Sort by position size (largest first)
+        sorted_positions = sorted(positions, key=lambda x: abs(x.get("positionValueUsd", 0)), reverse=True)
+        
+        result = []
+        for i, p in enumerate(sorted_positions):
+            pos_size = p.get("positionSize", 0)
+            pos_value = abs(p.get("positionValueUsd", 0))
+            entry_price = p.get("entryPrice", 0)
+            pnl = p.get("unrealizedPnL", 0)
+            
+            # Skip positions with invalid data
+            if pos_value == 0 or entry_price == 0:
+                continue
+            
+            # Calculate PnL percent
+            margin = p.get("marginBalance", pos_value)
+            pnl_percent = (pnl / margin * 100) if margin > 0 else 0
+            
+            result.append({
                 "rank": i + 1,
-                "side": p.get("side", "UNKNOWN"),
-                "size_usd": p.get("sizeUsd", 0),
-                "entry_price": p.get("entryPrice", 0),
-                "leverage": p.get("leverage", 0),
-                "pnl_usd": p.get("pnl", 0),
-                "pnl_percent": p.get("pnlPercent", 0)
-            }
-            for i, p in enumerate(positions)
-        ]
+                "side": "LONG" if pos_size > 0 else "SHORT",
+                "size_usd": pos_value,
+                "entry_price": entry_price,
+                "mark_price": p.get("markPrice", 0),
+                "leverage": p.get("leverage", 1),
+                "pnl_usd": pnl,
+                "pnl_percent": round(pnl_percent, 2),
+                "liquidation_price": p.get("liqPrice", 0),
+                "symbol": p.get("symbol", "UNKNOWN")
+            })
+        
+        return result
     
     def _aggregate_whale_stats(self, positions: List[Dict]) -> Dict[str, Any]:
         total_long = sum(p["size_usd"] for p in positions if p["side"] == "LONG")
@@ -445,10 +575,17 @@ class ReportGenerator:
             return "MODERATE"
         return "LOW"
     
-    def _generate_whale_summary(self, aggregate, flow) -> str:
+    def _generate_whale_summary(self, aggregate, flow, symbol: str = "BTC") -> str:
         dominant = aggregate.get("dominant_side", "UNKNOWN")
         net = abs(aggregate.get("net_exposure", 0)) / 1e6
-        return f"Whale positioning heavily {dominant} with ${net:.1f}M net exposure."
+        total_long = aggregate.get("total_long_exposure", 0) / 1e6
+        total_short = aggregate.get("total_short_exposure", 0) / 1e6
+        
+        return (
+            f"{symbol} Hyperliquid whales {dominant} dominant with ${net:.1f}M net exposure. "
+            f"Longs: ${total_long:.1f}M | Shorts: ${total_short:.1f}M. "
+            f"Flow: {flow.get('direction', 'UNKNOWN')}."
+        )
     
     def _generate_whale_insight(self, aggregate, flow) -> str:
         if aggregate.get("dominant_side") == "LONGS" and aggregate.get("longs_pnl", 0) < 0:

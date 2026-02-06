@@ -111,14 +111,18 @@ class IROSReportGenerator(ReportGenerator):
         
         coins_markets, whale_positions, max_pain, liq_data, funding, ls_ratio, taker = results
         
-        # 2. Parse data
+        # 2. Parse data - pass symbol for filtering
         current_price = self._get_current_price(coins_markets, symbol)
-        whale_analysis = self._analyze_whales(whale_positions)
+        whale_analysis = self._analyze_whales(whale_positions, symbol)
         max_pain_price = self._get_max_pain(max_pain)
         liq_analysis = self._analyze_liquidations(liq_data, current_price)
-        funding_rate = self._get_funding(funding)
+        funding_rate = self._get_funding(funding, symbol)
         long_short = self._get_ls_ratio(ls_ratio)
         taker_flow = self._parse_taker_flow(taker)
+        
+        # VALIDATION: Require valid price
+        if current_price <= 0:
+            raise ValueError(f"Invalid price data for {symbol}: price={current_price}")
         
         # 3. Build IROS prompt with structured data
         iros_analysis = None
@@ -212,80 +216,45 @@ class IROSReportGenerator(ReportGenerator):
     ) -> str:
         """Build IROS prompt for market structure analysis"""
         
-        # Calculate derived metrics
-        whale_net = whales.get('total_long_usd', 0) - whales.get('total_short_usd', 0)
-        whale_net_pct = (whale_net / max(whales.get('total_long_usd', 1) + whales.get('total_short_usd', 1), 1)) * 100
-        max_pain_delta = ((max_pain - price) / price) * 100 if price else 0
-        taker_delta = taker.get('buy', 0) - taker.get('sell', 0) if taker else 0
+        # Format whale data
+        whale_text = f"""WHALE POSITIONS (Hyperliquid):
+- Net Bias: {whales.get('net_bias', 'UNKNOWN')}
+- Total Long Exposure: ${whales.get('total_long_usd', 0)/1e6:.1f}M
+- Total Short Exposure: ${whales.get('total_short_usd', 0)/1e6:.1f}M"""
         
-        # Funding rate annualized
+        # Format funding
         btc_funding = funding.get("btc", 0)
-        funding_annual = btc_funding * 3 * 365 * 100  # 8hr funding * 3 * 365
+        funding_text = f"FUNDING: BTC {btc_funding*100:.4f}%"
         
-        return f"""You are an institutional quant analyst. Generate a professional MARKET STRUCTURE ANALYSIS for {symbol}.
+        # Format taker flow
+        taker_text = ""
+        if taker:
+            taker_text = f"TAKER FLOW: Buy ${taker.get('buy', 0)/1e6:.1f}M / Sell ${taker.get('sell', 0)/1e6:.1f}M"
+        
+        return f"""Generate a MARKET STRUCTURE ANALYSIS for {symbol}.
 
-=== CURRENT MARKET STATE ===
-Price: ${price:,.2f}
-24h Trend: Analyze from derivatives positioning
+LIVE DATA:
+- Current Price: ${price:,.0f}
+- Max Pain (Options): ${max_pain:,.0f}
+- Long/Short Ratio: {ls_ratio:.2f}
 
-=== DERIVATIVES POSITIONING ===
-• Open Interest L/S Ratio: {ls_ratio:.2f}
-  → {ls_ratio > 1.1 and "Crowded Long - increased squeeze risk" or ls_ratio < 0.9 and "Crowded Short - potential short squeeze" or "Balanced - watch for breakout direction"}
-  
-• Funding Rate: {btc_funding*100:.4f}% ({funding_annual:.1f}% annualized)
-  → {"ELEVATED - longs paying premium, correction risk" if btc_funding > 0.01 else "NEGATIVE - shorts paying, reversal signal" if btc_funding < -0.005 else "NEUTRAL - no directional pressure"}
+{whale_text}
 
-• Taker Flow Imbalance: ${taker_delta/1e6:+.2f}M (Buy: ${taker.get('buy', 0)/1e6:.1f}M | Sell: ${taker.get('sell', 0)/1e6:.1f}M)
-  → {"AGGRESSIVE BUYING - smart money loading" if taker_delta > 50e6 else "AGGRESSIVE SELLING - distribution phase" if taker_delta < -50e6 else "Mixed flow - no clear conviction"}
+{funding_text}
+{taker_text}
 
-=== WHALE INTELLIGENCE (Hyperliquid) ===
-• Net Exposure: ${whale_net/1e6:+.2f}M ({whale_net_pct:+.1f}% skew)
-• Long Exposure: ${whales.get('total_long_usd', 0)/1e6:.1f}M
-• Short Exposure: ${whales.get('total_short_usd', 0)/1e6:.1f}M
-• Dominant Bias: {whales.get('net_bias', 'UNKNOWN')}
-  → {"WHALES LOADING LONGS - follow institutional flow" if whale_net_pct > 20 else "WHALES LOADING SHORTS - potential downturn" if whale_net_pct < -20 else "Balanced whale positioning"}
+LIQUIDATION ZONES:
+- Longs at risk below: ${liq.get('longs', {}).get('price', price*0.95):,.0f}
+- Shorts at risk above: ${liq.get('shorts', {}).get('price', price*1.05):,.0f}
 
-=== OPTIONS MARKET ===
-• Max Pain: ${max_pain:,.0f} (current price {max_pain_delta:+.1f}% from max pain)
-  → {"PRICE ABOVE MAX PAIN - gravitational pull down likely" if max_pain_delta < -3 else "PRICE BELOW MAX PAIN - potential upward magnet" if max_pain_delta > 3 else "Near max pain - expect pin/range"}
+INSTRUCTIONS:
+1. Analyze the confluence of signals
+2. Identify if whales are positioned for a specific move
+3. Determine the "pain trade" direction
+4. Generate a trade scenario with entry/stop/targets
+5. Assign BULLISH/BEARISH/NEUTRAL bias with confidence
 
-=== LIQUIDATION MAP ===
-• Long Liquidation Cluster: ${liq.get('longs', {}).get('price', price*0.95):,.0f} (${liq.get('longs', {}).get('volume', 0)/1e6:.1f}M at risk)
-• Short Liquidation Cluster: ${liq.get('shorts', {}).get('price', price*1.05):,.0f} (${liq.get('shorts', {}).get('volume', 0)/1e6:.1f}M at risk)
-• Pain Trade Direction: {"SQUEEZE SHORTS" if liq.get('shorts', {}).get('volume', 0) > liq.get('longs', {}).get('volume', 0) else "FLUSH LONGS"}
-
-=== REQUIRED OUTPUT FORMAT ===
-
-**MARKET STRUCTURE VERDICT: [BULLISH/BEARISH/NEUTRAL]**
-**CONFIDENCE: [HIGH/MEDIUM/LOW] - [XX]%**
-
-**SIGNAL CONFLUENCE:**
-1. [Signal 1 with specific data point]
-2. [Signal 2 with specific data point]  
-3. [Signal 3 with specific data point]
-
-**INSTITUTIONAL FLOW ANALYSIS:**
-[2-3 sentences on what smart money is doing based on whale + taker data]
-
-**KEY PRICE LEVELS:**
-- Resistance 1: $X (reason)
-- Resistance 2: $X (reason)  
-- Support 1: $X (reason)
-- Support 2: $X (reason)
-- Invalidation: $X
-
-**TRADE SCENARIO:**
-- Direction: [LONG/SHORT]
-- Entry Zone: $X - $X
-- Stop Loss: $X (X% risk)
-- Target 1: $X (X:1 R/R)
-- Target 2: $X (X:1 R/R)
-- Position Size: X% of portfolio (based on volatility)
-
-**24-72H OUTLOOK:**
-[Specific scenario with price targets and probabilities]
-
-NO EMOJIS. USE PRECISE NUMBERS. REJECT TRADE IF NO EDGE EXISTS."""
+Be specific with price levels and percentages."""
     
     def _parse_taker_flow(self, data) -> Dict[str, float]:
         """Parse taker buy/sell volume"""
@@ -315,9 +284,18 @@ NO EMOJIS. USE PRECISE NUMBERS. REJECT TRADE IF NO EDGE EXISTS."""
         
         whale_positions, exchange_flow = results
         
-        positions = self._parse_whale_positions(whale_positions)
+        # Parse with symbol filtering
+        positions = self._parse_whale_positions(whale_positions, symbol)
         aggregate = self._aggregate_whale_stats(positions)
         flow_analysis = self._analyze_exchange_flow(exchange_flow)
+        
+        # VALIDATION: Require minimum valid positions
+        valid_positions = [p for p in positions if p.get('size_usd', 0) > 0]
+        if len(valid_positions) < 3:
+            raise ValueError(
+                f"Insufficient whale data for {symbol}: only {len(valid_positions)} valid positions. "
+                f"Need at least 3 positions with size > 0."
+            )
         
         # IROS analysis
         iros_analysis = None
@@ -336,7 +314,7 @@ NO EMOJIS. USE PRECISE NUMBERS. REJECT TRADE IF NO EDGE EXISTS."""
         alert_level = self._calculate_alert_level(aggregate, flow_analysis)
         report_id = f"WI-{symbol}-{datetime.utcnow().strftime('%Y%m%d-%H')}"
         
-        summary = iros_analysis[:500] if iros_analysis else self._generate_whale_summary(aggregate, flow_analysis)
+        summary = iros_analysis[:500] if iros_analysis else self._generate_whale_summary(aggregate, flow_analysis, symbol)
         
         return Report(
             id=report_id,
@@ -344,11 +322,11 @@ NO EMOJIS. USE PRECISE NUMBERS. REJECT TRADE IF NO EDGE EXISTS."""
             title=f"{symbol} Whale Activity: {aggregate['dominant_side']} Dominant",
             generated_at=datetime.utcnow(),
             bias=Bias.BULLISH if aggregate['net_exposure'] > 0 else Bias.BEARISH,
-            confidence=Confidence.HIGH if len(positions) >= 10 else Confidence.MEDIUM,
+            confidence=Confidence.HIGH if len(valid_positions) >= 10 else Confidence.MEDIUM,
             summary=summary,
             sections={
                 "iros_analysis": iros_analysis,
-                "top_positions": positions[:10],
+                "top_positions": valid_positions[:10],
                 "aggregate_stats": aggregate,
                 "exchange_flows": flow_analysis,
                 "actionable_insight": self._generate_whale_insight(aggregate, flow_analysis)
@@ -360,80 +338,36 @@ NO EMOJIS. USE PRECISE NUMBERS. REJECT TRADE IF NO EDGE EXISTS."""
     def _build_whale_prompt(self, symbol: str, positions: List, aggregate: Dict, flow: Dict) -> str:
         """Build IROS prompt for whale analysis"""
         
-        # Calculate derived metrics
-        total_exposure = aggregate['total_long_exposure'] + aggregate['total_short_exposure']
-        long_pct = (aggregate['total_long_exposure'] / max(total_exposure, 1)) * 100
-        net_pnl = aggregate['longs_pnl'] + aggregate['shorts_pnl']
-        avg_leverage = sum(p['leverage'] for p in positions[:10]) / max(len(positions[:10]), 1) if positions else 1
+        # Format top positions
+        pos_text = "\n".join([
+            f"{p['rank']}. {p['side']} ${p['size_usd']/1e6:.1f}M @ ${p['entry_price']:,.0f} ({p['leverage']}x) PnL: ${p['pnl_usd']/1e6:.2f}M"
+            for p in positions[:5]
+        ])
         
-        # Format detailed positions
-        pos_text = ""
-        for p in positions[:10]:
-            pnl_pct = (p['pnl_usd'] / max(p['size_usd'], 1)) * 100
-            risk_emoji = "🔴" if pnl_pct < -10 else "🟢" if pnl_pct > 10 else "⚪"
-            pos_text += f"""
-{p['rank']}. {p['side'].upper()} ${p['size_usd']/1e6:.2f}M
-   Entry: ${p['entry_price']:,.0f} | Current PnL: ${p['pnl_usd']/1e3:+,.0f}K ({pnl_pct:+.1f}%)
-   Leverage: {p['leverage']}x | Liq. Price: ~${p['entry_price']*(1-1/p['leverage']) if p['side']=='long' else p['entry_price']*(1+1/p['leverage']):,.0f}"""
-        
-        # Underwater analysis
-        underwater_longs = [p for p in positions if p['side'] == 'long' and p['pnl_usd'] < 0]
-        underwater_shorts = [p for p in positions if p['side'] == 'short' and p['pnl_usd'] < 0]
-        underwater_long_vol = sum(p['size_usd'] for p in underwater_longs)
-        underwater_short_vol = sum(p['size_usd'] for p in underwater_shorts)
-        
-        return f"""You are an institutional analyst tracking smart money flow. Generate a WHALE INTELLIGENCE REPORT for {symbol}.
+        return f"""Analyze WHALE POSITIONING for {symbol}.
 
-=== TOP 10 WHALE POSITIONS (Hyperliquid) ===
+TOP 5 POSITIONS:
 {pos_text}
 
-=== AGGREGATE STATISTICS ===
-• Total Long Exposure: ${aggregate['total_long_exposure']/1e6:.2f}M ({long_pct:.1f}% of total)
-• Total Short Exposure: ${aggregate['total_short_exposure']/1e6:.2f}M ({100-long_pct:.1f}% of total)
-• Net Whale Bias: ${aggregate['net_exposure']/1e6:+.2f}M ({aggregate['dominant_side']})
-• Average Leverage: {avg_leverage:.1f}x
+AGGREGATE:
+- Long Exposure: ${aggregate['total_long_exposure']/1e6:.1f}M
+- Short Exposure: ${aggregate['total_short_exposure']/1e6:.1f}M
+- Net: ${aggregate['net_exposure']/1e6:.1f}M
+- Longs PnL: ${aggregate['longs_pnl']/1e6:.2f}M
+- Shorts PnL: ${aggregate['shorts_pnl']/1e6:.2f}M
+- Dominant: {aggregate['dominant_side']}
 
-=== PNL ANALYSIS ===
-• Longs Aggregate PnL: ${aggregate['longs_pnl']/1e6:+.2f}M
-• Shorts Aggregate PnL: ${aggregate['shorts_pnl']/1e6:+.2f}M  
-• Net Whale PnL: ${net_pnl/1e6:+.2f}M
-• {"WHALES WINNING" if net_pnl > 0 else "WHALES UNDERWATER - POTENTIAL FORCED LIQUIDATIONS"}
+EXCHANGE FLOW:
+- Direction: {flow.get('direction', 'UNKNOWN')}
+- Net 24h: ${flow.get('net_24h', 0)/1e6:.1f}M
 
-=== RISK EXPOSURE ===
-• Underwater Long Positions: ${underwater_long_vol/1e6:.2f}M at risk
-• Underwater Short Positions: ${underwater_short_vol/1e6:.2f}M at risk
-• Higher Cascade Risk: {"LONG LIQUIDATIONS" if underwater_long_vol > underwater_short_vol else "SHORT SQUEEZE"}
+ANALYZE:
+1. Who is winning - longs or shorts?
+2. Are underwater positions at risk of liquidation?
+3. What does the exchange flow tell us about accumulation/distribution?
+4. What's the likely next move based on whale positioning?
 
-=== EXCHANGE FLOW (24H) ===
-• Net Flow: ${flow.get('net_24h', 0)/1e6:+.2f}M
-• Interpretation: {flow.get('direction', 'NEUTRAL')}
-  → {"ACCUMULATION - coins leaving exchanges to cold storage" if flow.get('net_24h', 0) < -50e6 else "DISTRIBUTION - coins moving to exchanges (selling pressure)" if flow.get('net_24h', 0) > 50e6 else "Neutral flow - no clear accumulation/distribution"}
-
-=== REQUIRED OUTPUT FORMAT ===
-
-**WHALE SIGNAL: [BULLISH/BEARISH/NEUTRAL]**
-**CONFIDENCE: [HIGH/MEDIUM/LOW]**
-
-**SMART MONEY ANALYSIS:**
-[2-3 sentences on what institutional traders are doing based on positioning]
-
-**POSITION BREAKDOWN:**
-• Largest Long: [Analysis of top long whale - entry quality, risk level]
-• Largest Short: [Analysis of top short whale - entry quality, risk level]
-• PnL Leaders: [Who's winning and why]
-• At-Risk Positions: [Which whales might get liquidated]
-
-**EXCHANGE FLOW INTERPRETATION:**
-[What does the on-chain flow tell us about accumulation vs distribution?]
-
-**PAIN TRADE SCENARIO:**
-• If price moves UP: [Which shorts are at risk, $ amount, cascade potential]
-• If price moves DOWN: [Which longs are at risk, $ amount, cascade potential]
-
-**ACTIONABLE INSIGHT:**
-[Specific trade idea based on whale positioning - follow or fade?]
-
-NO EMOJIS. PRECISE NUMBERS ONLY."""
+Provide actionable trading insight."""
     
     # =========================================================================
     # IROS-ENHANCED CYCLE REPORT
@@ -464,56 +398,26 @@ NO EMOJIS. PRECISE NUMBERS ONLY."""
         iros_analysis = None
         if self._iros_available:
             try:
-                iros_prompt = f"""You are a macro cycle analyst. Generate a BITCOIN CYCLE POSITION REPORT.
+                iros_prompt = f"""Analyze BITCOIN CYCLE POSITION.
 
-=== ON-CHAIN CYCLE INDICATORS ===
+CYCLE INDICATORS:
+1. Bubble Index: {bubble_value:.2f}
+   - Below 0 = Undervalued, Above 3 = Overvalued, Above 6 = Bubble
 
-1. BUBBLE INDEX: {bubble_value:.2f}
-   Scale: < 0 = Deep undervalued | 0-1.5 = Undervalued | 1.5-3 = Fair | 3-5 = Overheated | > 6 = BUBBLE
-   Current Reading: {"DEEP VALUE ZONE - historical buy signal" if bubble_value < 0 else "UNDERVALUED" if bubble_value < 1.5 else "FAIR VALUE" if bubble_value < 3 else "OVERHEATED - reduce exposure" if bubble_value < 5 else "BUBBLE TERRITORY - extreme caution"}
+2. AHR999: {ahr999_value:.3f}
+   - Below 0.45 = Strong Buy, 0.45-0.8 = Buy, 0.8-1.2 = Hold, Above 1.2 = Sell
 
-2. AHR999 INDEX: {ahr999_value:.3f}
-   Scale: < 0.45 = Strong Buy | 0.45-0.8 = Buy Zone | 0.8-1.2 = Hold | > 1.2 = Take Profit Zone
-   Current Reading: {"STRONG BUY - historically optimal DCA zone" if ahr999_value < 0.45 else "BUY ZONE - accumulate aggressively" if ahr999_value < 0.8 else "HOLD ZONE - standard DCA" if ahr999_value < 1.2 else "PROFIT TAKING ZONE - reduce DCA, consider trimming"}
+3. Puell Multiple: {puell_value:.3f}
+   - Below 0.5 = Miner capitulation, 0.5-1.0 = Undervalued, 1.0-2.0 = Fair, Above 4 = Top
 
-3. PUELL MULTIPLE: {puell_value:.3f}
-   Scale: < 0.5 = Miner capitulation | 0.5-1.0 = Undervalued | 1.0-2.0 = Fair | 2.0-4.0 = Overheated | > 4.0 = Cycle Top
-   Current Reading: {"MINER CAPITULATION - generational buy" if puell_value < 0.5 else "UNDERVALUED - strong accumulation zone" if puell_value < 1.0 else "FAIR VALUE" if puell_value < 2.0 else "OVERHEATED - reduce miner exposure" if puell_value < 4.0 else "CYCLE TOP SIGNAL - extreme distribution"}
+WEIGHTED SCORE: {weighted_score}
+CALCULATED PHASE: {cycle_phase}
 
-=== COMPOSITE ANALYSIS ===
-• Weighted Score: {weighted_score:.2f}/10
-• System Phase Detection: {cycle_phase}
-
-=== REQUIRED OUTPUT FORMAT ===
-
-**CYCLE PHASE: [ACCUMULATION/MARKUP/DISTRIBUTION/MARKDOWN]**
-**CONFIDENCE: [XX]%**
-
-**INDICATOR CONFLUENCE:**
-• Agreement Level: [How many indicators align?]
-• Primary Signal: [Which indicator is most reliable right now?]
-• Divergences: [Any conflicting readings?]
-
-**HISTORICAL CONTEXT:**
-[Compare current readings to previous cycle phases - 2017, 2021, 2023]
-
-**ALLOCATION STRATEGY:**
-• Recommended BTC Allocation: [X]% of crypto portfolio
-• DCA Intensity: [AGGRESSIVE/NORMAL/REDUCED/PAUSE]
-• Lump Sum Opportunity: [YES/NO - why?]
-
-**RISK ASSESSMENT:**
-• Probability of Being at Cycle Top: [X]%
-• Probability of Being at Cycle Bottom: [X]%
-• Max Expected Drawdown from Here: [X]%
-
-**12-MONTH OUTLOOK:**
-[Specific price scenarios with probabilities based on cycle position]
-
-**ACTIONABLE RECOMMENDATION:**
-[Clear guidance for portfolio allocation]
-
-USE PRECISE PERCENTAGES. REFERENCE HISTORICAL DATA."""
+INSTRUCTIONS:
+1. Interpret all 3 indicators together
+2. Determine cycle phase (Accumulation, Markup, Distribution, Markdown)
+3. Provide DCA strategy recommendation
+4. Estimate probability of being at a cycle extreme"""
                 
                 iros_result = await self.iros.process_query(iros_prompt, comprehensive=False)
                 if iros_result.success:

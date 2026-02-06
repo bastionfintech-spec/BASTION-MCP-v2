@@ -239,13 +239,52 @@
       let currentFilter = { type: null, symbol: null, bias: null };
       let savedReports = JSON.parse(localStorage.getItem('savedReports') || '[]');
       
-      // Update time
+      // Update time - runs every second
       function updateTime() {
         const now = new Date();
-        document.getElementById('current-time').textContent = now.toUTCString().slice(17, 25) + ' UTC';
+        const hours = String(now.getUTCHours()).padStart(2, '0');
+        const mins = String(now.getUTCMinutes()).padStart(2, '0');
+        const secs = String(now.getUTCSeconds()).padStart(2, '0');
+        const el = document.getElementById('current-time');
+        if (el) el.textContent = `${hours}:${mins}:${secs} UTC`;
       }
       setInterval(updateTime, 1000);
       updateTime();
+
+      // Format time ago from timestamp
+      function formatTimeAgo(timestamp) {
+        if (!timestamp) return 'just now';
+        
+        let created;
+        // Handle different timestamp formats
+        if (typeof timestamp === 'number') {
+          // Unix timestamp (seconds or milliseconds)
+          created = new Date(timestamp > 1e12 ? timestamp : timestamp * 1000);
+        } else if (typeof timestamp === 'string') {
+          // ISO string or other date string
+          created = new Date(timestamp);
+        } else {
+          return 'just now';
+        }
+        
+        // Check if valid date
+        if (isNaN(created.getTime())) return 'just now';
+        
+        const now = new Date();
+        const diffMs = now - created;
+        
+        // If negative or very small, show "just now"
+        if (diffMs < 60000) return 'just now';
+        
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHrs = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHrs < 24) return `${diffHrs}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return created.toLocaleDateString();
+      }
 
       // Map API report to display format
       function mapReport(r) {
@@ -259,13 +298,7 @@
         };
         
         // Calculate time ago
-        const created = new Date(r.generated_at);
-        const now = new Date();
-        const diffMs = now - created;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHrs = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        let timeAgo = diffMins < 60 ? `${diffMins}m ago` : diffHrs < 24 ? `${diffHrs}h ago` : `${diffDays}d ago`;
+        let timeAgo = formatTimeAgo(r.generated_at);
         
         // Extract assets from tags
         const assets = (r.tags || []).filter(t => ['btc', 'eth', 'sol', 'bnb', 'xrp', 'avax', 'link', 'arb', 'op'].includes(t.toLowerCase())).map(t => t.toUpperCase());

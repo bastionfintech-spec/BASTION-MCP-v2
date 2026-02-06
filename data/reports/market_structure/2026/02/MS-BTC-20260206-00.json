@@ -1,0 +1,172 @@
+{
+  "id": "MS-BTC-20260206-00",
+  "type": "market_structure",
+  "title": "BTC Market Structure: Bears in Control",
+  "generated_at": "2026-02-06T00:20:55.465899",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "BTC trading at $60,471. Hyperliquid whales net SHORT ($460.4M long vs $554.9M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "iros_analysis": null,
+    "key_levels": {
+      "current_price": 60471.0,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 63494.55,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 57447.45,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 57447.45,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 63494.55,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 45284923156.3933,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0,
+      "taker_flow": {
+        "buy": 0,
+        "sell": 0
+      }
+    },
+    "whale_positioning": {
+      "net_bias": "SHORT",
+      "total_long_usd": 460433893.0845003,
+      "total_short_usd": 554876716.752,
+      "position_count": 228,
+      "notable_positions": [
+        {
+          "user": "0x7fdafde5cfb5465924316eced2d3715494c517d1",
+          "symbol": "BTC",
+          "positionSize": -839.53497,
+          "entryPrice": 72204.5,
+          "markPrice": 60419.0,
+          "liqPrice": 98738.2349,
+          "leverage": 20,
+          "marginBalance": 2535899.3304,
+          "positionValueUsd": 50717986.6076,
+          "unrealizedPnL": 9900280.4342,
+          "fundingFee": -20552.8346,
+          "marginMode": "cross",
+          "createTime": 1741665503000,
+          "updateTime": 1770337002000
+        },
+        {
+          "user": "0x1b526ff54f9f66c777fd34b7a802bb8d216ed41b",
+          "symbol": "BTC",
+          "positionSize": -800.49761,
+          "entryPrice": 91823.4,
+          "markPrice": 60419.0,
+          "liqPrice": 98533.6772,
+          "leverage": 20,
+          "marginBalance": 2414861.1401,
+          "positionValueUsd": 48297222.8017,
+          "unrealizedPnL": 25207225.503,
+          "fundingFee": -5405414.6,
+          "marginMode": "cross",
+          "createTime": 1744571715000,
+          "updateTime": 1770336868000
+        },
+        {
+          "user": "0x218a65e21eddeece7a9df38c6bbdd89f692b7da2",
+          "symbol": "BTC",
+          "positionSize": -717.63843,
+          "entryPrice": 71262.8,
+          "markPrice": 60419.0,
+          "liqPrice": 77755.1285,
+          "leverage": 14,
+          "marginBalance": 3108194.5601,
+          "positionValueUsd": 43514723.8415,
+          "unrealizedPnL": 7626201.2983,
+          "fundingFee": -16295.17,
+          "marginMode": "cross",
+          "createTime": 1770154225000,
+          "updateTime": 1770336832000
+        },
+        {
+          "user": "0x8def9f50456c6c4e37fa5d3d57f108ed23992dae",
+          "symbol": "BTC",
+          "positionSize": 552.88697,
+          "entryPrice": 63258.8,
+          "markPrice": 60419.0,
+          "liqPrice": 6373.6565,
+          "leverage": 20,
+          "marginBalance": 1662807.5623,
+          "positionValueUsd": 33256151.2455,
+          "unrealizedPnL": -1718843.4673,
+          "fundingFee": 1545.0784,
+          "marginMode": "cross",
+          "createTime": 1770140354000,
+          "updateTime": 1770336948000
+        },
+        {
+          "user": "0x8af700ba841f30e0a3fcb0ee4c4a9d223e1efa05",
+          "symbol": "BTC",
+          "positionSize": 366.83883,
+          "entryPrice": 100837.8,
+          "markPrice": 60419.0,
+          "liqPrice": 27604.3776,
+          "leverage": 40,
+          "marginBalance": 553220.4686,
+          "positionValueUsd": 22128818.7421,
+          "unrealizedPnL": -14862404.1187,
+          "fundingFee": 2376818.199,
+          "marginMode": "cross",
+          "createTime": 1741699822000,
+          "updateTime": 1770336864000
+        }
+      ]
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        59866.29,
+        61075.71
+      ],
+      "stop_loss": 63494.55,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $63,495",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "btc",
+    "bearish",
+    "whale-heavy"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}
