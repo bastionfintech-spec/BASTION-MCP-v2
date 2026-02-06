@@ -37,7 +37,7 @@
         background: linear-gradient(to bottom, transparent, rgba(220, 38, 38, 0.05), transparent);
         animation: scan 8s linear infinite;
         pointer-events: none;
-        z-index: 50;
+        z-index: 5;
       }
       @keyframes scan {
         0% { transform: translateY(-100%); }
@@ -57,8 +57,7 @@
 </head>
 <body class="min-h-screen flex flex-col relative overflow-hidden text-zinc-400">
     
-    <!-- Ambient Red Glow (Top) -->
-    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#DC2626] opacity-[0.08] blur-[120px] rounded-full pointer-events-none z-0"></div>
+    <!-- Background Effects -->
     <div class="fixed inset-0 tactical-grid z-0"></div>
     <div class="scanline"></div>
 
