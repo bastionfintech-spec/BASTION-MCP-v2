@@ -5,6 +5,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="settings.js"></script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
       body { font-family: 'Inter', sans-serif; }
@@ -37,6 +38,28 @@
       z-index: 50;
       opacity: 0.3;
       }
+      /* Panel Loading Spinner */
+      .panel-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        color: #71717a;
+        font-size: 10px;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .panel-loading iconify-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .panel-loading.hidden { display: none; }
+      
       /* Glitch Animation */
       .glitch-text {
       position: relative;
@@ -334,6 +357,12 @@
               <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
             </div>
             <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="market-pulse">
+              <!-- Loading State -->
+              <div id="market-pulse-loading" class="panel-loading">
+                <iconify-icon icon="solar:refresh-linear"></iconify-icon>
+                <span>Loading market data...</span>
+              </div>
+              <div id="market-pulse-content">
               <div class="p-2 border-b border-zinc-800/50">
                 <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
                   <span>Liquidation Radar</span>
@@ -522,6 +551,11 @@
               <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span>
           </div>
             <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="onchain">
+              <!-- Loading State -->
+              <div id="onchain-loading" class="panel-loading">
+                <iconify-icon icon="solar:refresh-linear"></iconify-icon>
+                <span>Loading on-chain data...</span>
+              </div>
               <!-- EXCHANGE RESERVES -->
               <div class="p-2 border-b border-zinc-800/50">
                 <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
@@ -1100,6 +1134,11 @@
               <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
             </div>
             <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="orderflow">
+              <!-- Loading State -->
+              <div id="orderflow-loading" class="panel-loading">
+                <iconify-icon icon="solar:refresh-linear"></iconify-icon>
+                <span>Loading order flow...</span>
+              </div>
               <!-- BID/ASK IMBALANCE -->
               <div class="p-2 border-b border-zinc-800/50">
                 <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
@@ -1240,6 +1279,11 @@
               <iconify-icon icon="solar:graph-up-bold" class="text-zinc-500"></iconify-icon>
             </div>
             <div class="flex-1 overflow-y-auto no-scrollbar" data-panel="intelligence">
+              <!-- Loading State -->
+              <div id="intelligence-loading" class="panel-loading">
+                <iconify-icon icon="solar:refresh-linear"></iconify-icon>
+                <span>Loading intelligence...</span>
+              </div>
               <div class="p-2 border-b border-zinc-800/50">
                 <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide">
                   Order Flow (BTC)
@@ -4475,6 +4519,18 @@ Esc    - Close Dialogs
         }
       }
 
+      // Hide loading spinner for a panel
+      function hideLoading(panelId) {
+        const loading = document.getElementById(panelId);
+        if (loading) loading.classList.add('hidden');
+      }
+      
+      // Hide all loading spinners after initial data load
+      function hideAllLoadingStates() {
+        ['market-pulse-loading', 'orderflow-loading', 'onchain-loading', 'intelligence-loading', 'positions-loading'].forEach(hideLoading);
+        console.log('[BASTION] All panels loaded');
+      }
+
       // Start live data polling
       // HIGH-FREQUENCY MODE: 300 requests/min = 5/sec available
       function startLiveDataStream() {
@@ -4482,8 +4538,8 @@ Esc    - Close Dialogs
         
         // Fetch immediately - ALL data sources
         fetchLivePrice();
-        fetchLiveMarketData();
-        fetchLiveCVD();
+        fetchLiveMarketData().then(() => hideLoading('market-pulse-loading'));
+        fetchLiveCVD().then(() => hideLoading('intelligence-loading'));
         fetchFundingRates();
         fetchOpenInterest();
         fetchFearGreed();
@@ -4501,8 +4557,8 @@ Esc    - Close Dialogs
         fetchMMMagnet();
         fetchVolRegime();
         // New ultrawide panels
-        fetchOnChain();
-        fetchOrderFlow();
+        fetchOnChain().then(() => hideLoading('onchain-loading'));
+        fetchOrderFlow().then(() => hideLoading('orderflow-loading'));
         // Session & Risk panels
         fetchSession();
         fetchMacro();
