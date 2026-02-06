@@ -298,3 +298,142 @@ def get_storage(storage_path: str = "data/reports") -> ReportStorage:
         _storage = ReportStorage(storage_path)
     return _storage
 
+
+# Hybrid storage - uses Supabase if available, falls back to filesystem
+class HybridStorage:
+    """
+    Hybrid storage that saves to both Supabase (persistent) and filesystem (cache).
+    Reads from Supabase first if available.
+    """
+    
+    def __init__(self, storage_path: str = "data/reports"):
+        self.file_storage = ReportStorage(storage_path)
+        
+        # Try to init Supabase
+        try:
+            from .supabase_storage import get_supabase_storage
+            self.supabase = get_supabase_storage()
+        except Exception as e:
+            logger.warning(f"Supabase not available: {e}")
+            self.supabase = None
+    
+    @property
+    def supabase_available(self) -> bool:
+        return self.supabase is not None and self.supabase.is_available
+    
+    def save_report(self, report: Report) -> bool:
+        """Save to both Supabase and filesystem"""
+        # Always save to filesystem as cache
+        file_saved = self.file_storage.save_report(report)
+        
+        # Also save to Supabase if available
+        if self.supabase_available:
+            self.supabase.save_report(report)
+        
+        return file_saved
+    
+    def get_report(self, report_id: str) -> Optional[Report]:
+        """Get from Supabase first, fallback to filesystem"""
+        if self.supabase_available:
+            report = self.supabase.get_report(report_id)
+            if report:
+                return report
+        
+        return self.file_storage.get_report(report_id)
+    
+    def list_reports(
+        self,
+        report_type: Optional[ReportType] = None,
+        limit: int = 50,
+        offset: int = 0,
+        since: Optional[datetime] = None,
+        bias: Optional[str] = None
+    ) -> List[Report]:
+        """List from Supabase first, fallback to filesystem"""
+        if self.supabase_available:
+            reports = self.supabase.list_reports(
+                report_type=report_type,
+                bias=bias,
+                limit=limit,
+                offset=offset
+            )
+            if reports:
+                return reports
+        
+        return self.file_storage.list_reports(
+            report_type=report_type,
+            limit=limit,
+            offset=offset,
+            since=since,
+            bias=bias
+        )
+    
+    def get_reports_for_research_terminal(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get formatted reports for UI"""
+        if self.supabase_available:
+            reports = self.supabase.get_reports_for_research_terminal(limit)
+            if reports:
+                return reports
+        
+        return self.file_storage.get_reports_for_research_terminal(limit)
+    
+    def get_latest_by_type(self) -> Dict[str, Optional[Report]]:
+        """Get latest of each type"""
+        if self.supabase_available:
+            return self.supabase.get_latest_by_type()
+        
+        return self.file_storage.get_latest_by_type()
+    
+    def count_reports(self, report_type: Optional[ReportType] = None) -> int:
+        """Count reports"""
+        if self.supabase_available:
+            return self.supabase.count_reports(report_type)
+        
+        return self.file_storage.count_reports(report_type)
+    
+    def delete_report(self, report_id: str) -> bool:
+        """Delete from both storages"""
+        file_deleted = self.file_storage.delete_report(report_id)
+        
+        if self.supabase_available:
+            self.supabase.delete_report(report_id)
+        
+        return file_deleted
+    
+    def clear_bad_reports(self) -> int:
+        """Clear bad reports from both storages"""
+        file_deleted = self.file_storage.clear_bad_reports()
+        
+        if self.supabase_available:
+            self.supabase.clear_bad_reports()
+        
+        return file_deleted
+    
+    def sync_to_supabase(self) -> int:
+        """Sync all filesystem reports to Supabase"""
+        if not self.supabase_available:
+            logger.warning("Supabase not available for sync")
+            return 0
+        
+        synced = 0
+        reports = self.file_storage.list_reports(limit=1000)
+        
+        for report in reports:
+            if self.supabase.save_report(report):
+                synced += 1
+        
+        logger.info(f"[Hybrid] Synced {synced} reports to Supabase")
+        return synced
+
+
+# Global hybrid storage
+_hybrid_storage: Optional[HybridStorage] = None
+
+
+def get_hybrid_storage(storage_path: str = "data/reports") -> HybridStorage:
+    """Get or create hybrid storage (Supabase + filesystem)"""
+    global _hybrid_storage
+    if _hybrid_storage is None:
+        _hybrid_storage = HybridStorage(storage_path)
+    return _hybrid_storage
+

@@ -1756,9 +1756,14 @@ def _init_mcf():
     
     if _mcf_storage is None:
         try:
-            from mcf_labs.storage import get_storage
-            _mcf_storage = get_storage()
-            logger.info("[MCF] Report storage initialized")
+            # Use hybrid storage (Supabase + filesystem)
+            from mcf_labs.storage import get_hybrid_storage
+            _mcf_storage = get_hybrid_storage()
+            
+            if _mcf_storage.supabase_available:
+                logger.info("[MCF] Report storage initialized with Supabase")
+            else:
+                logger.info("[MCF] Report storage initialized (filesystem only)")
         except Exception as e:
             logger.warning(f"[MCF] Storage init failed: {e}")
     
@@ -1956,10 +1961,25 @@ async def get_mcf_status():
     
     scheduler = get_scheduler()
     
+    # Check Supabase status
+    supabase_status = False
+    if _mcf_storage and hasattr(_mcf_storage, 'supabase_available'):
+        supabase_status = _mcf_storage.supabase_available
+    
+    # Count reports
+    report_count = 0
+    if _mcf_storage:
+        try:
+            report_count = _mcf_storage.count_reports()
+        except:
+            pass
+    
     return {
         "success": True,
         "status": {
             "storage_initialized": _mcf_storage is not None,
+            "supabase_connected": supabase_status,
+            "report_count": report_count,
             "generator_initialized": _mcf_generator is not None,
             "scheduler_running": _running,
             "scheduler_initialized": scheduler is not None,
@@ -1968,6 +1988,28 @@ async def get_mcf_status():
             "helsinki_available": helsinki is not None
         }
     }
+
+
+@app.post("/api/mcf/sync-supabase")
+async def sync_reports_to_supabase():
+    """Sync all filesystem reports to Supabase"""
+    _init_mcf()
+    
+    if _mcf_storage is None:
+        return {"success": False, "error": "Storage not initialized"}
+    
+    if not hasattr(_mcf_storage, 'sync_to_supabase'):
+        return {"success": False, "error": "Hybrid storage not available"}
+    
+    if not _mcf_storage.supabase_available:
+        return {"success": False, "error": "Supabase not connected - check SUPABASE_URL and SUPABASE_KEY"}
+    
+    try:
+        synced = _mcf_storage.sync_to_supabase()
+        return {"success": True, "synced_count": synced, "message": f"Synced {synced} reports to Supabase"}
+    except Exception as e:
+        logger.error(f"[MCF] Sync error: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @app.post("/api/mcf/generate-all")

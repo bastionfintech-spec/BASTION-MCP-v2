@@ -29,7 +29,9 @@ class ReportScheduler:
         self.generator = generator
         self.storage_path = storage_path
         self.tasks = []
+        self._storage = None
         self._ensure_storage_dirs()
+        self._init_hybrid_storage()
     
     def _ensure_storage_dirs(self):
         """Create storage directories if they don't exist"""
@@ -45,8 +47,28 @@ class ReportScheduler:
             path = os.path.join(self.storage_path, rt)
             os.makedirs(path, exist_ok=True)
     
+    def _init_hybrid_storage(self):
+        """Initialize hybrid storage (Supabase + filesystem)"""
+        try:
+            from .storage import get_hybrid_storage
+            self._storage = get_hybrid_storage(self.storage_path)
+            if self._storage.supabase_available:
+                logger.info("[Scheduler] Using Supabase + filesystem storage")
+            else:
+                logger.info("[Scheduler] Using filesystem storage only")
+        except Exception as e:
+            logger.warning(f"[Scheduler] Hybrid storage not available: {e}")
+    
     async def save_report(self, report):
-        """Save report to filesystem"""
+        """Save report to hybrid storage (Supabase + filesystem)"""
+        # Use hybrid storage if available
+        if self._storage:
+            success = self._storage.save_report(report)
+            if success:
+                logger.info(f"Saved report via hybrid storage: {report.id}")
+                return report.id
+        
+        # Fallback to filesystem only
         date = report.generated_at
         year = date.strftime("%Y")
         month = date.strftime("%m")
@@ -65,7 +87,7 @@ class ReportScheduler:
         with open(file_path, "w") as f:
             f.write(report.to_json())
         
-        logger.info(f"Saved report: {file_path}")
+        logger.info(f"Saved report to filesystem: {file_path}")
         return file_path
     
     async def run_market_structure(self, symbol: str = "BTC"):

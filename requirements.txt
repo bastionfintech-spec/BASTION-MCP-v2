@@ -12,3 +12,6 @@ pydantic>=2.0.0
 
 # For Vercel serverless
 mangum>=0.17.0
+
+# Supabase for persistent storage
+supabase>=2.0.0
