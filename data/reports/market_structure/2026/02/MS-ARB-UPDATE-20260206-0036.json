@@ -1,0 +1,102 @@
+{
+  "id": "MS-ARB-UPDATE-20260206-0036",
+  "type": "market_structure",
+  "title": "ARB Derivatives Snapshot: Key Levels & Whale Activity",
+  "generated_at": "2026-02-06T00:36:01.241021",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "ARB trading at $0. Hyperliquid whales net SHORT ($0.0M long vs $1.0M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 0.1037,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 0.10888500000000001,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 0.09851499999999999,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 0.09851499999999999,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 0.10888500000000001,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 113748885.9087,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "SHORT",
+      "total_long_usd": 0,
+      "total_short_usd": 1001371.6021,
+      "position_count": 1,
+      "notable_positions": [
+        {
+          "user": "0x023a3d058020fb76cca98f01b3c48c8938a22355",
+          "symbol": "ARB",
+          "positionSize": -1818955.9,
+          "entryPrice": 0.49,
+          "markPrice": 0.1035,
+          "liqPrice": 6.6291,
+          "leverage": 10,
+          "marginBalance": 100137.1602,
+          "positionValueUsd": 1001371.6021,
+          "unrealizedPnL": -110049.2859,
+          "fundingFee": -1203.0846,
+          "marginMode": "cross",
+          "createTime": 1755102439000,
+          "updateTime": 1755102439000
+        }
+      ]
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        0.102663,
+        0.104737
+      ],
+      "stop_loss": 0.10888500000000001,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $0",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "arb",
+    "bearish"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

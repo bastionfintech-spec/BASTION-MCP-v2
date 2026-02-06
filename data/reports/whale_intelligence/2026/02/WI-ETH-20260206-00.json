@@ -1,0 +1,156 @@
+{
+  "id": "WI-ETH-20260206-00",
+  "type": "whale_intelligence",
+  "title": "ETH Whale Activity: SHORTS Dominant",
+  "generated_at": "2026-02-06T00:35:23.825496",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "ETH Hyperliquid whales SHORTS dominant with $16.8M net exposure. Longs: $309.2M | Shorts: $326.0M. Flow: UNKNOWN.",
+  "sections": {
+    "top_positions": [
+      {
+        "rank": 1,
+        "side": "LONG",
+        "size_usd": 107688696.2233,
+        "entry_price": 2239.8,
+        "mark_price": 1828.9,
+        "leverage": 15,
+        "pnl_usd": -26782752.8666,
+        "pnl_percent": -373.06,
+        "liquidation_price": 1493.9292,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 2,
+        "side": "SHORT",
+        "size_usd": 53946000.0,
+        "entry_price": 1975.06,
+        "mark_price": 1828.9,
+        "leverage": 3,
+        "pnl_usd": 5305814.1658,
+        "pnl_percent": 29.51,
+        "liquidation_price": 2921.9851,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 3,
+        "side": "SHORT",
+        "size_usd": 31736314.6562,
+        "entry_price": 3115.9,
+        "mark_price": 1828.9,
+        "leverage": 25,
+        "pnl_usd": 23170542.1957,
+        "pnl_percent": 1825.24,
+        "liquidation_price": 2906.448,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 4,
+        "side": "SHORT",
+        "size_usd": 28836190.8931,
+        "entry_price": 2083.9,
+        "mark_price": 1828.9,
+        "leverage": 15,
+        "pnl_usd": 4321604.4942,
+        "pnl_percent": 224.8,
+        "liquidation_price": 3465.7816,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 5,
+        "side": "SHORT",
+        "size_usd": 23451384.7106,
+        "entry_price": 2166.86,
+        "mark_price": 1828.9,
+        "leverage": 20,
+        "pnl_usd": 4996214.6144,
+        "pnl_percent": 426.09,
+        "liquidation_price": 7075.4573,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 6,
+        "side": "LONG",
+        "size_usd": 20054375.8215,
+        "entry_price": 2364.85,
+        "mark_price": 1828.9,
+        "leverage": 3,
+        "pnl_usd": -6299089.7487,
+        "pnl_percent": -94.23,
+        "liquidation_price": 766.4757,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 7,
+        "side": "SHORT",
+        "size_usd": 18029000.0,
+        "entry_price": 2158.41,
+        "mark_price": 1828.9,
+        "leverage": 20,
+        "pnl_usd": 3555194.8883,
+        "pnl_percent": 394.39,
+        "liquidation_price": 2576.9791,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 8,
+        "side": "LONG",
+        "size_usd": 16855076.6026,
+        "entry_price": 2833.41,
+        "mark_price": 1828.9,
+        "leverage": 25,
+        "pnl_usd": -9511315.0326,
+        "pnl_percent": -1410.75,
+        "liquidation_price": 1409.2611,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 9,
+        "side": "SHORT",
+        "size_usd": 15331113.0,
+        "entry_price": 2978.75,
+        "mark_price": 1828.9,
+        "leverage": 25,
+        "pnl_usd": 10003205.3799,
+        "pnl_percent": 1631.19,
+        "liquidation_price": 2597.1877,
+        "symbol": "ETH"
+      },
+      {
+        "rank": 10,
+        "side": "LONG",
+        "size_usd": 13491728.728,
+        "entry_price": 2065.97,
+        "mark_price": 1828.9,
+        "leverage": 25,
+        "pnl_usd": -1748885.4941,
+        "pnl_percent": -324.07,
+        "liquidation_price": 1275.4159,
+        "symbol": "ETH"
+      }
+    ],
+    "aggregate_stats": {
+      "total_long_exposure": 309206584.4464,
+      "total_short_exposure": 325997052.36590004,
+      "net_exposure": -16790467.919500053,
+      "longs_pnl": -66561570.102699995,
+      "shorts_pnl": 124165069.16070001,
+      "dominant_side": "SHORTS"
+    },
+    "exchange_flows": {
+      "net_24h": 0,
+      "direction": "UNKNOWN"
+    },
+    "actionable_insight": "Monitor for position changes."
+  },
+  "tags": [
+    "whale",
+    "eth",
+    "shorts"
+  ],
+  "data_sources": [
+    "hyperliquid",
+    "coinglass"
+  ],
+  "views": 0
+}

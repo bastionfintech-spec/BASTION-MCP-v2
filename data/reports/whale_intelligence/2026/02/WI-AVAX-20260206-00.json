@@ -1,0 +1,72 @@
+{
+  "id": "WI-AVAX-20260206-00",
+  "type": "whale_intelligence",
+  "title": "AVAX Whale Activity: LONGS Dominant",
+  "generated_at": "2026-02-06T00:35:32.431218",
+  "bias": "BULLISH",
+  "confidence": "MEDIUM",
+  "summary": "AVAX Hyperliquid whales LONGS dominant with $5.9M net exposure. Longs: $7.6M | Shorts: $1.7M. Flow: UNKNOWN.",
+  "sections": {
+    "top_positions": [
+      {
+        "rank": 1,
+        "side": "LONG",
+        "size_usd": 6380240.0,
+        "entry_price": 9.3404,
+        "mark_price": 8.1045,
+        "leverage": 10,
+        "pnl_usd": -1092086.4311,
+        "pnl_percent": -171.17,
+        "liquidation_price": 3.3405,
+        "symbol": "AVAX"
+      },
+      {
+        "rank": 2,
+        "side": "SHORT",
+        "size_usd": 1700789.8886,
+        "entry_price": 22.8759,
+        "mark_price": 8.1045,
+        "leverage": 10,
+        "pnl_usd": 3174121.5442,
+        "pnl_percent": 1866.26,
+        "liquidation_price": 126.3636,
+        "symbol": "AVAX"
+      },
+      {
+        "rank": 3,
+        "side": "LONG",
+        "size_usd": 1196475.0,
+        "entry_price": 9.9302,
+        "mark_price": 8.1045,
+        "leverage": 10,
+        "pnl_usd": -293066.4382,
+        "pnl_percent": -244.94,
+        "liquidation_price": 0.0,
+        "symbol": "AVAX"
+      }
+    ],
+    "aggregate_stats": {
+      "total_long_exposure": 7576715.0,
+      "total_short_exposure": 1700789.8886,
+      "net_exposure": 5875925.1114,
+      "longs_pnl": -1385152.8693,
+      "shorts_pnl": 3174121.5442,
+      "dominant_side": "LONGS"
+    },
+    "exchange_flows": {
+      "net_24h": 0,
+      "direction": "UNKNOWN"
+    },
+    "actionable_insight": "Whale longs underwater - potential capitulation if price drops further."
+  },
+  "tags": [
+    "whale",
+    "avax",
+    "longs"
+  ],
+  "data_sources": [
+    "hyperliquid",
+    "coinglass"
+  ],
+  "views": 0
+}

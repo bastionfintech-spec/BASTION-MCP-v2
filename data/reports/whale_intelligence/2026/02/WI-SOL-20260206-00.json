@@ -1,0 +1,156 @@
+{
+  "id": "WI-SOL-20260206-00",
+  "type": "whale_intelligence",
+  "title": "SOL Whale Activity: SHORTS Dominant",
+  "generated_at": "2026-02-06T00:35:25.941525",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "SOL Hyperliquid whales SHORTS dominant with $15.6M net exposure. Longs: $88.6M | Shorts: $104.2M. Flow: UNKNOWN.",
+  "sections": {
+    "top_positions": [
+      {
+        "rank": 1,
+        "side": "SHORT",
+        "size_usd": 39970551.9072,
+        "entry_price": 142.7815,
+        "mark_price": 73.087,
+        "leverage": 20,
+        "pnl_usd": 39785977.6893,
+        "pnl_percent": 1990.76,
+        "liquidation_price": 101.6088,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 2,
+        "side": "LONG",
+        "size_usd": 12132242.1293,
+        "entry_price": 69.9233,
+        "mark_price": 73.087,
+        "leverage": 20,
+        "pnl_usd": 521506.6294,
+        "pnl_percent": 85.97,
+        "liquidation_price": 45.5953,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 3,
+        "side": "LONG",
+        "size_usd": 11732656.9472,
+        "entry_price": 90.386,
+        "mark_price": 73.087,
+        "leverage": 20,
+        "pnl_usd": -3061821.6482,
+        "pnl_percent": -521.93,
+        "liquidation_price": 0.0,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 4,
+        "side": "LONG",
+        "size_usd": 10065556.9875,
+        "entry_price": 124.3657,
+        "mark_price": 73.087,
+        "leverage": 20,
+        "pnl_usd": -7404414.7065,
+        "pnl_percent": -1471.24,
+        "liquidation_price": 48.316,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 5,
+        "side": "SHORT",
+        "size_usd": 9285334.7868,
+        "entry_price": 68.2003,
+        "mark_price": 73.087,
+        "leverage": 3,
+        "pnl_usd": -618093.1205,
+        "pnl_percent": -19.97,
+        "liquidation_price": 122.9914,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 6,
+        "side": "LONG",
+        "size_usd": 6338618.3671,
+        "entry_price": 75.58,
+        "mark_price": 73.087,
+        "leverage": 20,
+        "pnl_usd": -218274.0133,
+        "pnl_percent": -68.87,
+        "liquidation_price": 0.0,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 7,
+        "side": "SHORT",
+        "size_usd": 6325390.8225,
+        "entry_price": 172.2649,
+        "mark_price": 73.087,
+        "leverage": 20,
+        "pnl_usd": 8908624.4683,
+        "pnl_percent": 2816.78,
+        "liquidation_price": 123.9443,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 8,
+        "side": "SHORT",
+        "size_usd": 6131967.3801,
+        "entry_price": 99.009,
+        "mark_price": 73.087,
+        "leverage": 20,
+        "pnl_usd": 2258194.7952,
+        "pnl_percent": 736.53,
+        "liquidation_price": 175.8104,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 9,
+        "side": "LONG",
+        "size_usd": 5201752.0763,
+        "entry_price": 146.7212,
+        "mark_price": 73.087,
+        "leverage": 2,
+        "pnl_usd": -5422105.8257,
+        "pnl_percent": -208.47,
+        "liquidation_price": 0.0,
+        "symbol": "SOL"
+      },
+      {
+        "rank": 10,
+        "side": "LONG",
+        "size_usd": 4219156.1412,
+        "entry_price": 80.477,
+        "mark_price": 73.087,
+        "leverage": 10,
+        "pnl_usd": -471989.564,
+        "pnl_percent": -111.87,
+        "liquidation_price": 20.0556,
+        "symbol": "SOL"
+      }
+    ],
+    "aggregate_stats": {
+      "total_long_exposure": 88576293.72670001,
+      "total_short_exposure": 104216294.99970002,
+      "net_exposure": -15640001.273000017,
+      "longs_pnl": -25901615.3532,
+      "shorts_pnl": 87031124.45389998,
+      "dominant_side": "SHORTS"
+    },
+    "exchange_flows": {
+      "net_24h": 0,
+      "direction": "UNKNOWN"
+    },
+    "actionable_insight": "Monitor for position changes."
+  },
+  "tags": [
+    "whale",
+    "sol",
+    "shorts"
+  ],
+  "data_sources": [
+    "hyperliquid",
+    "coinglass"
+  ],
+  "views": 0
+}

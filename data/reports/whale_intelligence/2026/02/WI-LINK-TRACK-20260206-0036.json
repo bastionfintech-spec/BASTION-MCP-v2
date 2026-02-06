@@ -1,0 +1,72 @@
+{
+  "id": "WI-LINK-TRACK-20260206-0036",
+  "type": "whale_intelligence",
+  "title": "LINK Smart Money Tracker: Whale Positioning Update",
+  "generated_at": "2026-02-06T00:36:15.193733",
+  "bias": "BULLISH",
+  "confidence": "MEDIUM",
+  "summary": "LINK Hyperliquid whales LONGS dominant with $4.0M net exposure. Longs: $4.0M | Shorts: $0.0M. Flow: UNKNOWN.",
+  "sections": {
+    "top_positions": [
+      {
+        "rank": 1,
+        "side": "LONG",
+        "size_usd": 1857323.118,
+        "entry_price": 13.132,
+        "mark_price": 7.7465,
+        "leverage": 10,
+        "pnl_usd": -1426241.0026,
+        "pnl_percent": -767.9,
+        "liquidation_price": 6.635,
+        "symbol": "LINK"
+      },
+      {
+        "rank": 2,
+        "side": "LONG",
+        "size_usd": 1141575.0,
+        "entry_price": 9.5999,
+        "mark_price": 7.7465,
+        "leverage": 10,
+        "pnl_usd": -298413.0853,
+        "pnl_percent": -261.4,
+        "liquidation_price": 0.0,
+        "symbol": "LINK"
+      },
+      {
+        "rank": 3,
+        "side": "LONG",
+        "size_usd": 1001482.0972,
+        "entry_price": 8.7367,
+        "mark_price": 7.7465,
+        "leverage": 10,
+        "pnl_usd": -166611.6833,
+        "pnl_percent": -166.37,
+        "liquidation_price": 0,
+        "symbol": "LINK"
+      }
+    ],
+    "aggregate_stats": {
+      "total_long_exposure": 4000380.2151999995,
+      "total_short_exposure": 0,
+      "net_exposure": 4000380.2151999995,
+      "longs_pnl": -1891265.7711999998,
+      "shorts_pnl": 0,
+      "dominant_side": "LONGS"
+    },
+    "exchange_flows": {
+      "net_24h": 0,
+      "direction": "UNKNOWN"
+    },
+    "actionable_insight": "Whale longs underwater - potential capitulation if price drops further."
+  },
+  "tags": [
+    "whale",
+    "link",
+    "longs"
+  ],
+  "data_sources": [
+    "hyperliquid",
+    "coinglass"
+  ],
+  "views": 0
+}

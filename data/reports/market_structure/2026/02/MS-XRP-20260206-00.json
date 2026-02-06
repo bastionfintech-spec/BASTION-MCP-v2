@@ -1,0 +1,166 @@
+{
+  "id": "MS-XRP-20260206-00",
+  "type": "market_structure",
+  "title": "XRP Market Structure: Bears in Control",
+  "generated_at": "2026-02-06T00:34:50.356315",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "XRP trading at $1. Hyperliquid whales net SHORT ($13.2M long vs $16.5M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 1.1797,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 1.238685,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 1.120715,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 1.120715,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 1.238685,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 2314488254.6695,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "SHORT",
+      "total_long_usd": 13199656.268400002,
+      "total_short_usd": 16536162.498,
+      "position_count": 12,
+      "notable_positions": [
+        {
+          "user": "0x5b5d51203a0f9079f8aeb098a6523a13f298c060",
+          "symbol": "XRP",
+          "positionSize": -5532159.0,
+          "entryPrice": 1.901,
+          "markPrice": 1.1782,
+          "liqPrice": 2.9471,
+          "leverage": 20,
+          "marginBalance": 321141.83,
+          "positionValueUsd": 6422836.599,
+          "unrealizedPnL": 4093943.3392,
+          "fundingFee": -63318.3513,
+          "marginMode": "cross",
+          "createTime": 1766412293000,
+          "updateTime": 1770338017000
+        },
+        {
+          "user": "0x023a3d058020fb76cca98f01b3c48c8938a22355",
+          "symbol": "XRP",
+          "positionSize": 3992430.0,
+          "entryPrice": 1.4289,
+          "markPrice": 1.1782,
+          "liqPrice": 0.0,
+          "leverage": 20,
+          "marginBalance": 231580.9022,
+          "positionValueUsd": 4631618.043,
+          "unrealizedPnL": -1073363.1348,
+          "fundingFee": -70.0761,
+          "marginMode": "cross",
+          "createTime": 1741786947000,
+          "updateTime": 1770337680000
+        },
+        {
+          "user": "0x469e9a7f624b04c24f0e64edf8d8a277e6bf58a5",
+          "symbol": "XRP",
+          "positionSize": -2500000.0,
+          "entryPrice": 1.4674,
+          "markPrice": 1.1782,
+          "liqPrice": 2.2942,
+          "leverage": 20,
+          "marginBalance": 144987.5,
+          "positionValueUsd": 2899750.0,
+          "unrealizedPnL": 768830.1285,
+          "fundingFee": 9154.4299,
+          "marginMode": "cross",
+          "createTime": 1769876342000,
+          "updateTime": 1770337650000
+        },
+        {
+          "user": "0xb83de012dba672c76a7dbbbf3e459cb59d7d6e36",
+          "symbol": "XRP",
+          "positionSize": -2493272.0,
+          "entryPrice": 1.9642,
+          "markPrice": 1.1782,
+          "liqPrice": 4.3125,
+          "leverage": 20,
+          "marginBalance": 144160.987,
+          "positionValueUsd": 2883219.7408,
+          "unrealizedPnL": 2014108.5555,
+          "fundingFee": -31019.1975,
+          "marginMode": "cross",
+          "createTime": 1760135973000,
+          "updateTime": 1770337733000
+        },
+        {
+          "user": "0x1e37a337ed460039d1b15bd3bc489de789768d5e",
+          "symbol": "XRP",
+          "positionSize": 2470551.0,
+          "entryPrice": 1.2921,
+          "markPrice": 1.1782,
+          "liqPrice": 0.0,
+          "leverage": 20,
+          "marginBalance": 143069.6084,
+          "positionValueUsd": 2861392.1682,
+          "unrealizedPnL": -330781.7987,
+          "fundingFee": 937.314,
+          "marginMode": "cross",
+          "createTime": 1760132112000,
+          "updateTime": 1770337748000
+        }
+      ]
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        1.167903,
+        1.191497
+      ],
+      "stop_loss": 1.238685,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $1",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "xrp",
+    "bearish"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

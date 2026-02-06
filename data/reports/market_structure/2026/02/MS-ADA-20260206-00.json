@@ -1,0 +1,104 @@
+{
+  "id": "MS-ADA-20260206-00",
+  "type": "market_structure",
+  "title": "ADA Market Structure: Consolidation Zone",
+  "generated_at": "2026-02-06T00:35:09.743272",
+  "bias": "NEUTRAL",
+  "confidence": "HIGH",
+  "summary": "ADA trading at $0. Hyperliquid whales net LONG ($2.8M long vs $0.0M short). Max pain at $0 suggests neutral bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 0.2384,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 0.25032,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 0.22648,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 0.22648,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 0.25032,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 460446483.9521,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "LONG",
+      "total_long_usd": 2771036.3159,
+      "total_short_usd": 0,
+      "position_count": 2,
+      "notable_positions": [
+        {
+          "user": "0x123dbca6a27005a3c4ce10cb66ee8ece8fc13bff",
+          "symbol": "ADA",
+          "positionSize": 6921503.0,
+          "entryPrice": 0.4537,
+          "markPrice": 0.23794,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 164800.9864,
+          "positionValueUsd": 1648009.8643,
+          "unrealizedPnL": -1492060.0739,
+          "fundingFee": -198.4086,
+          "marginMode": "cross",
+          "createTime": 1759905505000,
+          "updateTime": 1770338091000
+        },
+        {
+          "user": "0x1e37a337ed460039d1b15bd3bc489de789768d5e",
+          "symbol": "ADA",
+          "positionSize": 4843763.0,
+          "entryPrice": 0.2691,
+          "markPrice": 0.23794,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 112302.6452,
+          "positionValueUsd": 1123026.4516,
+          "unrealizedPnL": -180471.7657,
+          "fundingFee": -619.8351,
+          "marginMode": "cross",
+          "createTime": 1770336989000,
+          "updateTime": 1770337748000
+        }
+      ]
+    },
+    "trade_scenario": null
+  },
+  "tags": [
+    "ada",
+    "neutral"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

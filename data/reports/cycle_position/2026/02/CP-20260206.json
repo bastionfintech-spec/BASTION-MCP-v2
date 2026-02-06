@@ -1,0 +1,40 @@
+{
+  "id": "CP-20260206",
+  "type": "cycle_position",
+  "title": "Bitcoin Cycle: EARLY MARKUP",
+  "generated_at": "2026-02-06T00:37:59.882217",
+  "bias": "BULLISH",
+  "confidence": "HIGH",
+  "summary": "Bitcoin currently in EARLY MARKUP phase. Bubble Index: 0.00 (FAIR), AHR999: 0.271 (STRONG_BUY), Puell: 0.715 (UNDERVALUED).",
+  "sections": {
+    "iros_analysis": null,
+    "indicators": {
+      "bubble_index": {
+        "value": 0,
+        "interpretation": "FAIR"
+      },
+      "ahr999": {
+        "value": 0.2713924475413657,
+        "interpretation": "STRONG_BUY"
+      },
+      "puell_multiple": {
+        "value": 0.7149314598482649,
+        "interpretation": "UNDERVALUED"
+      }
+    },
+    "weighted_assessment": {
+      "score": 35,
+      "phase": "EARLY MARKUP",
+      "recommendation": "Continue accumulating. Hold existing positions."
+    }
+  },
+  "tags": [
+    "cycle",
+    "btc",
+    "early-markup"
+  ],
+  "data_sources": [
+    "coinglass"
+  ],
+  "views": 0
+}

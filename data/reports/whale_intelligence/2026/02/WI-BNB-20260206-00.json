@@ -1,0 +1,96 @@
+{
+  "id": "WI-BNB-20260206-00",
+  "type": "whale_intelligence",
+  "title": "BNB Whale Activity: SHORTS Dominant",
+  "generated_at": "2026-02-06T00:35:28.140038",
+  "bias": "BEARISH",
+  "confidence": "MEDIUM",
+  "summary": "BNB Hyperliquid whales SHORTS dominant with $0.2M net exposure. Longs: $4.1M | Shorts: $4.3M. Flow: UNKNOWN.",
+  "sections": {
+    "top_positions": [
+      {
+        "rank": 1,
+        "side": "SHORT",
+        "size_usd": 3096984.9477,
+        "entry_price": 753.058,
+        "mark_price": 603.96,
+        "leverage": 5,
+        "pnl_usd": 914660.7926,
+        "pnl_percent": 147.67,
+        "liquidation_price": 902.2511,
+        "symbol": "BNB"
+      },
+      {
+        "rank": 2,
+        "side": "LONG",
+        "size_usd": 1839971.5814,
+        "entry_price": 810.709,
+        "mark_price": 603.96,
+        "leverage": 10,
+        "pnl_usd": -631869.837,
+        "pnl_percent": -343.41,
+        "liquidation_price": 0.0,
+        "symbol": "BNB"
+      },
+      {
+        "rank": 3,
+        "side": "SHORT",
+        "size_usd": 1175360.0,
+        "entry_price": 949.221,
+        "mark_price": 603.96,
+        "leverage": 5,
+        "pnl_usd": 723083.4599,
+        "pnl_percent": 307.6,
+        "liquidation_price": 4818.8602,
+        "symbol": "BNB"
+      },
+      {
+        "rank": 4,
+        "side": "LONG",
+        "size_usd": 1127222.7186,
+        "entry_price": 786.454,
+        "mark_price": 603.96,
+        "leverage": 10,
+        "pnl_usd": -376405.728,
+        "pnl_percent": -333.92,
+        "liquidation_price": 0.0,
+        "symbol": "BNB"
+      },
+      {
+        "rank": 5,
+        "side": "LONG",
+        "size_usd": 1090682.9249,
+        "entry_price": 900.353,
+        "mark_price": 603.96,
+        "leverage": 10,
+        "pnl_usd": -555503.6847,
+        "pnl_percent": -509.32,
+        "liquidation_price": 0.0,
+        "symbol": "BNB"
+      }
+    ],
+    "aggregate_stats": {
+      "total_long_exposure": 4057877.2249,
+      "total_short_exposure": 4272344.947699999,
+      "net_exposure": -214467.72279999964,
+      "longs_pnl": -1563779.2497,
+      "shorts_pnl": 1637744.2525,
+      "dominant_side": "SHORTS"
+    },
+    "exchange_flows": {
+      "net_24h": 0,
+      "direction": "UNKNOWN"
+    },
+    "actionable_insight": "Monitor for position changes."
+  },
+  "tags": [
+    "whale",
+    "bnb",
+    "shorts"
+  ],
+  "data_sources": [
+    "hyperliquid",
+    "coinglass"
+  ],
+  "views": 0
+}

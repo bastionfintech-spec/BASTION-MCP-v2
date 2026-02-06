@@ -1,0 +1,120 @@
+{
+  "id": "MS-AVAX-20260206-00",
+  "type": "market_structure",
+  "title": "AVAX Market Structure: Consolidation Zone",
+  "generated_at": "2026-02-06T00:34:53.593773",
+  "bias": "NEUTRAL",
+  "confidence": "HIGH",
+  "summary": "AVAX trading at $8. Hyperliquid whales net LONG ($7.6M long vs $1.7M short). Max pain at $0 suggests neutral bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 8.083,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 8.48715,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 7.67885,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 7.67885,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 8.48715,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 370624846.2662,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "LONG",
+      "total_long_usd": 7576715.0,
+      "total_short_usd": 1700789.8886,
+      "position_count": 3,
+      "notable_positions": [
+        {
+          "user": "0xefffa330cbae8d916ad1d33f0eeb16cfa711fa91",
+          "symbol": "AVAX",
+          "positionSize": 800000.0,
+          "entryPrice": 9.3404,
+          "markPrice": 8.0585,
+          "liqPrice": 3.3405,
+          "leverage": 10,
+          "marginBalance": 638024.0,
+          "positionValueUsd": 6380240.0,
+          "unrealizedPnL": -1092086.4311,
+          "fundingFee": 172.6794,
+          "marginMode": "cross",
+          "createTime": 1770185430000,
+          "updateTime": 1770338039000
+        },
+        {
+          "user": "0x7fdafde5cfb5465924316eced2d3715494c517d1",
+          "symbol": "AVAX",
+          "positionSize": -213102.19,
+          "entryPrice": 22.8759,
+          "markPrice": 8.0585,
+          "liqPrice": 126.3636,
+          "leverage": 10,
+          "marginBalance": 170078.9889,
+          "positionValueUsd": 1700789.8886,
+          "unrealizedPnL": 3174121.5442,
+          "fundingFee": -269727.0088,
+          "marginMode": "cross",
+          "createTime": 1749411108000,
+          "updateTime": 1770338043000
+        },
+        {
+          "user": "0xeadc152ac1014ace57c6b353f89adf5faffe9d55",
+          "symbol": "AVAX",
+          "positionSize": 150000.0,
+          "entryPrice": 9.9302,
+          "markPrice": 8.0585,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 119647.5,
+          "positionValueUsd": 1196475.0,
+          "unrealizedPnL": -293066.4382,
+          "fundingFee": 723.1493,
+          "marginMode": "cross",
+          "createTime": 1770141382000,
+          "updateTime": 1770338018000
+        }
+      ]
+    },
+    "trade_scenario": null
+  },
+  "tags": [
+    "avax",
+    "neutral"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

@@ -1,0 +1,166 @@
+{
+  "id": "MS-SOL-20260206-00",
+  "type": "market_structure",
+  "title": "SOL Market Structure: Bears in Control",
+  "generated_at": "2026-02-06T00:34:42.844803",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "SOL trading at $73. Hyperliquid whales net SHORT ($88.7M long vs $104.1M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 73.02,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 76.67099999999999,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 69.369,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 69.369,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 76.67099999999999,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 4843143526.6196,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "SHORT",
+      "total_long_usd": 88665738.9295,
+      "total_short_usd": 104058848.3286,
+      "position_count": 55,
+      "notable_positions": [
+        {
+          "user": "0x35d1151ef1aab579cbb3109e69fa82f94ff5acb1",
+          "symbol": "SOL",
+          "positionSize": -558591.2,
+          "entryPrice": 142.7815,
+          "markPrice": 72.443,
+          "liqPrice": 101.6088,
+          "leverage": 20,
+          "marginBalance": 1998527.5954,
+          "positionValueUsd": 39970551.9072,
+          "unrealizedPnL": 39785977.6893,
+          "fundingFee": 8654.746,
+          "marginMode": "cross",
+          "createTime": 1760143388000,
+          "updateTime": 1770337967000
+        },
+        {
+          "user": "0x162cc7c861ebd0c06b3d72319201150482518185",
+          "symbol": "SOL",
+          "positionSize": 168853.67,
+          "entryPrice": 69.9153,
+          "markPrice": 72.443,
+          "liqPrice": 46.0851,
+          "leverage": 20,
+          "marginBalance": 614610.4734,
+          "positionValueUsd": 12292209.4687,
+          "unrealizedPnL": 486738.1047,
+          "fundingFee": -27.8934,
+          "marginMode": "cross",
+          "createTime": 1749762386000,
+          "updateTime": 1770338071000
+        },
+        {
+          "user": "0x023a3d058020fb76cca98f01b3c48c8938a22355",
+          "symbol": "SOL",
+          "positionSize": 163681.04,
+          "entryPrice": 90.386,
+          "markPrice": 72.443,
+          "liqPrice": 0.0,
+          "leverage": 20,
+          "marginBalance": 586632.8474,
+          "positionValueUsd": 11732656.9472,
+          "unrealizedPnL": -3061821.6482,
+          "fundingFee": -39753.5852,
+          "marginMode": "cross",
+          "createTime": 1741770596000,
+          "updateTime": 1770337680000
+        },
+        {
+          "user": "0x9c89f595f5515609ad61f6fda94beff85ae6600e",
+          "symbol": "SOL",
+          "positionSize": 140472.5,
+          "entryPrice": 124.3657,
+          "markPrice": 72.443,
+          "liqPrice": 48.316,
+          "leverage": 20,
+          "marginBalance": 503277.8494,
+          "positionValueUsd": 10065556.9875,
+          "unrealizedPnL": -7404414.7065,
+          "fundingFee": -59240.0483,
+          "marginMode": "cross",
+          "createTime": 1769494105000,
+          "updateTime": 1770337685000
+        },
+        {
+          "user": "0xb581d667c53fd8a50bf7ffd817be0e62daa16f4f",
+          "symbol": "SOL",
+          "positionSize": -127084.95,
+          "entryPrice": 68.2003,
+          "markPrice": 72.443,
+          "liqPrice": 115.3207,
+          "leverage": 3,
+          "marginBalance": 3083843.3967,
+          "positionValueUsd": 9251530.1901,
+          "unrealizedPnL": -584288.5238,
+          "fundingFee": 0.0,
+          "marginMode": "cross",
+          "createTime": 1770337366000,
+          "updateTime": 1770338070000
+        }
+      ]
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        72.2898,
+        73.75019999999999
+      ],
+      "stop_loss": 76.67099999999999,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $77",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "sol",
+    "bearish"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

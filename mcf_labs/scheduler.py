@@ -146,7 +146,7 @@ class ReportScheduler:
         pass
     
     async def schedule_loop(self):
-        """Main scheduling loop"""
+        """Main scheduling loop - generates reports for ALL supported coins"""
         global _running
         _running = True
         
@@ -158,18 +158,28 @@ class ReportScheduler:
         last_options = None
         last_cycle = None
         
+        # Generate initial batch on startup (all coins)
+        logger.info("[MCF] Running initial report generation for all coins...")
+        try:
+            await self.run_all_market_structure()
+            await self.run_all_whale_reports()
+            await self.run_cycle_report("BTC")
+            logger.info("[MCF] Initial batch complete")
+        except Exception as e:
+            logger.error(f"[MCF] Initial batch failed: {e}")
+        
         while _running:
             now = datetime.utcnow()
             hour = now.hour
             
-            # Market Structure - every 4 hours (0, 4, 8, 12, 16, 20)
+            # Market Structure - every 4 hours for ALL coins (0, 4, 8, 12, 16, 20)
             if hour % 4 == 0 and last_market_structure != hour:
-                await self.run_market_structure()
+                await self.run_all_market_structure()
                 last_market_structure = hour
             
-            # Whale Intelligence - every 2 hours
+            # Whale Intelligence - every 2 hours for ALL coins
             if hour % 2 == 0 and last_whale != hour:
-                await self.run_whale_report()
+                await self.run_all_whale_reports()
                 last_whale = hour
             
             # Options Flow - every 6 hours (0, 6, 12, 18)

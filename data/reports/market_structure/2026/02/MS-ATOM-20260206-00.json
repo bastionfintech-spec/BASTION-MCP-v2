@@ -1,0 +1,84 @@
+{
+  "id": "MS-ATOM-20260206-00",
+  "type": "market_structure",
+  "title": "ATOM Market Structure: Bears in Control",
+  "generated_at": "2026-02-06T00:35:19.518511",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "ATOM trading at $2. Hyperliquid whales net UNKNOWN ($0.0M long vs $0.0M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 1.759,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 1.8469499999999999,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 1.67105,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 1.67105,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 1.8469499999999999,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 133483053.9787,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "UNKNOWN",
+      "total_long_usd": 0,
+      "total_short_usd": 0,
+      "position_count": 0
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        1.74141,
+        1.77659
+      ],
+      "stop_loss": 1.8469499999999999,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $2",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "atom",
+    "bearish"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

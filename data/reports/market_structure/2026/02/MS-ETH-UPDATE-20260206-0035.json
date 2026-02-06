@@ -1,0 +1,167 @@
+{
+  "id": "MS-ETH-UPDATE-20260206-0035",
+  "type": "market_structure",
+  "title": "ETH Derivatives Snapshot: Key Levels & Whale Activity",
+  "generated_at": "2026-02-06T00:35:51.232744",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "ETH trading at $1,830. Hyperliquid whales net SHORT ($308.4M long vs $326.5M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 1830.07,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 1921.5735,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 1738.5665,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 1738.5665,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 1921.5735,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 22964139831.8424,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "SHORT",
+      "total_long_usd": 308390466.5467,
+      "total_short_usd": 326483956.5122001,
+      "position_count": 114,
+      "notable_positions": [
+        {
+          "user": "0xa5b0edf6b55128e0ddae8e51ac538c3188401d41",
+          "symbol": "ETH",
+          "positionSize": 60037.1836,
+          "entryPrice": 2239.8,
+          "markPrice": 1831.9,
+          "liqPrice": 1493.9292,
+          "leverage": 15,
+          "marginBalance": 7179246.4149,
+          "positionValueUsd": 107688696.2233,
+          "unrealizedPnL": -26782752.8666,
+          "fundingFee": 589995.0332,
+          "marginMode": "cross",
+          "createTime": 1764552321000,
+          "updateTime": 1770337844000
+        },
+        {
+          "user": "0x0ddf9bae2af4b874b96d287a5ad42eb47138a902",
+          "symbol": "ETH",
+          "positionSize": -30000.0,
+          "entryPrice": 1975.06,
+          "markPrice": 1831.9,
+          "liqPrice": 2921.9851,
+          "leverage": 3,
+          "marginBalance": 17982000.0,
+          "positionValueUsd": 53946000.0,
+          "unrealizedPnL": 5305814.1658,
+          "fundingFee": 1728.4915,
+          "marginMode": "cross",
+          "createTime": 1770303964000,
+          "updateTime": 1770337987000
+        },
+        {
+          "user": "0x20c2d95a3dfdca9e9ad12794d5fa6fad99da44f5",
+          "symbol": "ETH",
+          "positionSize": -17621.4962,
+          "entryPrice": 3115.9,
+          "markPrice": 1831.9,
+          "liqPrice": 2906.448,
+          "leverage": 25,
+          "marginBalance": 1269452.5862,
+          "positionValueUsd": 31736314.6562,
+          "unrealizedPnL": 23170542.1957,
+          "fundingFee": -6840044.4499,
+          "marginMode": "cross",
+          "createTime": 1741680802000,
+          "updateTime": 1770337936000
+        },
+        {
+          "user": "0x7fdafde5cfb5465924316eced2d3715494c517d1",
+          "symbol": "ETH",
+          "positionSize": -15911.3783,
+          "entryPrice": 2083.9,
+          "markPrice": 1831.9,
+          "liqPrice": 3436.2339,
+          "leverage": 15,
+          "marginBalance": 1942461.0629,
+          "positionValueUsd": 29136915.943,
+          "unrealizedPnL": 4020879.4443,
+          "fundingFee": -5480.129,
+          "marginMode": "cross",
+          "createTime": 1741763118000,
+          "updateTime": 1770338106000
+        },
+        {
+          "user": "0xfc667adba8d4837586078f4fdcdc29804337ca06",
+          "symbol": "ETH",
+          "positionSize": -13128.4693,
+          "entryPrice": 2166.86,
+          "markPrice": 1831.9,
+          "liqPrice": 7075.4573,
+          "leverage": 20,
+          "marginBalance": 1172569.2355,
+          "positionValueUsd": 23451384.7106,
+          "unrealizedPnL": 4996214.6144,
+          "fundingFee": -6965.6644,
+          "marginMode": "cross",
+          "createTime": 1762276352000,
+          "updateTime": 1770337775000
+        }
+      ]
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        1811.7693,
+        1848.3707
+      ],
+      "stop_loss": 1921.5735,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $1,922",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "eth",
+    "bearish",
+    "whale-heavy"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

@@ -79,6 +79,9 @@ query_processor: QueryProcessor = None
 whale_alert: WhaleAlertClient = None
 coinglass: CoinglassClient = None
 
+# Global scheduler
+mcf_scheduler = None
+
 # WebSocket connections
 active_connections: List[WebSocket] = []
 
@@ -173,10 +176,42 @@ def init_clients():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown."""
+    global mcf_scheduler
     logger.info("BASTION Terminal API starting...")
     init_clients()
+    
+    # Start MCF Labs report scheduler
+    try:
+        from mcf_labs.scheduler import start_scheduler, stop_scheduler
+        model_url = os.getenv("BASTION_MODEL_URL")
+        model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
+        
+        if coinglass and model_url:
+            mcf_scheduler = await start_scheduler(
+                coinglass_client=coinglass,
+                helsinki_client=helsinki,
+                whale_alert_client=whale_alert,
+                use_iros=True,
+                model_url=model_url,
+                model_api_key=model_api_key
+            )
+            logger.info("[MCF] Report scheduler started - auto-generating reports")
+        else:
+            logger.warning("[MCF] Scheduler not started - missing coinglass or model_url")
+    except Exception as e:
+        logger.error(f"[MCF] Failed to start scheduler: {e}")
+    
     logger.info("BASTION Terminal API LIVE")
     yield
+    
+    # Stop scheduler on shutdown
+    try:
+        from mcf_labs.scheduler import stop_scheduler
+        await stop_scheduler()
+        logger.info("[MCF] Report scheduler stopped")
+    except Exception as e:
+        logger.error(f"[MCF] Error stopping scheduler: {e}")
+    
     logger.info("BASTION Terminal API shutting down...")
 
 
@@ -1917,16 +1952,81 @@ async def get_mcf_status():
     _init_mcf()
     
     import os
+    from mcf_labs.scheduler import get_scheduler, _running
+    
+    scheduler = get_scheduler()
     
     return {
         "success": True,
         "status": {
             "storage_initialized": _mcf_storage is not None,
             "generator_initialized": _mcf_generator is not None,
+            "scheduler_running": _running,
+            "scheduler_initialized": scheduler is not None,
             "iros_enabled": os.getenv("BASTION_MODEL_URL") is not None,
             "coinglass_available": coinglass is not None,
             "helsinki_available": helsinki is not None
         }
+    }
+
+
+@app.post("/api/mcf/generate-all")
+async def generate_all_mcf_reports(background_tasks: "BackgroundTasks" = None):
+    """Trigger generation of all report types for all supported coins"""
+    from fastapi import BackgroundTasks
+    from mcf_labs.scheduler import get_scheduler, SUPPORTED_COINS
+    
+    _init_mcf()
+    scheduler = get_scheduler()
+    
+    if scheduler is None and _mcf_generator is not None:
+        # Create a temporary scheduler if none running
+        from mcf_labs.scheduler import ReportScheduler
+        scheduler = ReportScheduler(_mcf_generator)
+    
+    if scheduler is None:
+        return {"success": False, "error": "No scheduler or generator available"}
+    
+    # Run generation in background
+    async def generate_batch():
+        results = {"market_structure": [], "whale_intelligence": [], "cycle": []}
+        
+        # Generate market structure for all coins
+        for symbol in SUPPORTED_COINS:
+            try:
+                report = await scheduler.run_market_structure(symbol)
+                if report:
+                    results["market_structure"].append(symbol)
+            except Exception as e:
+                logger.error(f"Failed market structure for {symbol}: {e}")
+        
+        # Generate whale reports for all coins  
+        for symbol in SUPPORTED_COINS:
+            try:
+                report = await scheduler.run_whale_report(symbol)
+                if report:
+                    results["whale_intelligence"].append(symbol)
+            except Exception as e:
+                logger.error(f"Failed whale report for {symbol}: {e}")
+        
+        # Generate cycle report for BTC
+        try:
+            report = await scheduler.run_cycle_report("BTC")
+            if report:
+                results["cycle"].append("BTC")
+        except Exception as e:
+            logger.error(f"Failed cycle report: {e}")
+        
+        logger.info(f"[MCF] Batch generation complete: {results}")
+        return results
+    
+    # Start generation
+    asyncio.create_task(generate_batch())
+    
+    return {
+        "success": True,
+        "message": "Batch report generation started in background",
+        "coins": SUPPORTED_COINS
     }
 
 

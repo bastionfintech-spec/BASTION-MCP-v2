@@ -1,0 +1,166 @@
+{
+  "id": "MS-BNB-20260206-00",
+  "type": "market_structure",
+  "title": "BNB Market Structure: Bears in Control",
+  "generated_at": "2026-02-06T00:34:46.104202",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "BNB trading at $603. Hyperliquid whales net SHORT ($4.0M long vs $4.3M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 603.13,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 633.2865,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 572.9735,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 572.9735,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 633.2865,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 1111410223.6354,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "SHORT",
+      "total_long_usd": 4038272.2449000003,
+      "total_short_usd": 4272344.947699999,
+      "position_count": 5,
+      "notable_positions": [
+        {
+          "user": "0xf2efcd0bedf771dc63eb655d395c15a9d753550a",
+          "symbol": "BNB",
+          "positionSize": -5327.138,
+          "entryPrice": 753.058,
+          "markPrice": 602.56,
+          "liqPrice": 902.2511,
+          "leverage": 5,
+          "marginBalance": 619396.9895,
+          "positionValueUsd": 3096984.9477,
+          "unrealizedPnL": 914660.7926,
+          "fundingFee": -128.6954,
+          "marginMode": "cross",
+          "createTime": 1769956402000,
+          "updateTime": 1770337331000
+        },
+        {
+          "user": "0x123dbca6a27005a3c4ce10cb66ee8ece8fc13bff",
+          "symbol": "BNB",
+          "positionSize": 3048.986,
+          "entryPrice": 810.709,
+          "markPrice": 602.56,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 182036.6601,
+          "positionValueUsd": 1820366.6014,
+          "unrealizedPnL": -651474.817,
+          "fundingFee": 90558.1785,
+          "marginMode": "cross",
+          "createTime": 1752471061000,
+          "updateTime": 1770338034000
+        },
+        {
+          "user": "0x418aa6bf98a2b2bc93779f810330d88cde488888",
+          "symbol": "BNB",
+          "positionSize": -2000.0,
+          "entryPrice": 949.221,
+          "markPrice": 602.56,
+          "liqPrice": 4818.8602,
+          "leverage": 5,
+          "marginBalance": 235072.0,
+          "positionValueUsd": 1175360.0,
+          "unrealizedPnL": 723083.4599,
+          "fundingFee": -87572.6296,
+          "marginMode": "cross",
+          "createTime": 1753669881000,
+          "updateTime": 1770337772000
+        },
+        {
+          "user": "0x023a3d058020fb76cca98f01b3c48c8938a22355",
+          "symbol": "BNB",
+          "positionSize": 1911.908,
+          "entryPrice": 786.454,
+          "markPrice": 602.56,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 112722.2719,
+          "positionValueUsd": 1127222.7186,
+          "unrealizedPnL": -376405.728,
+          "fundingFee": 459.2408,
+          "marginMode": "cross",
+          "createTime": 1741790200000,
+          "updateTime": 1770337680000
+        },
+        {
+          "user": "0x0c4926daf1250b8da7b9fc339f304d923b94d346",
+          "symbol": "BNB",
+          "positionSize": 1828.379,
+          "entryPrice": 900.353,
+          "markPrice": 602.56,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 109068.2925,
+          "positionValueUsd": 1090682.9249,
+          "unrealizedPnL": -555503.6847,
+          "fundingFee": 3269.8336,
+          "marginMode": "cross",
+          "createTime": 1768923595000,
+          "updateTime": 1770338016000
+        }
+      ]
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        597.0987,
+        609.1613
+      ],
+      "stop_loss": 633.2865,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $633",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "bnb",
+    "bearish"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

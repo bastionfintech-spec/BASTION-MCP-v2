@@ -1,14 +1,14 @@
 {
-  "id": "MS-BTC-20260206-00",
+  "id": "MS-BTC-UPDATE-20260206-0035",
   "type": "market_structure",
-  "title": "BTC Market Structure: Bears in Control",
-  "generated_at": "2026-02-06T00:34:36.385662",
+  "title": "BTC Derivatives Snapshot: Key Levels & Whale Activity",
+  "generated_at": "2026-02-06T00:35:47.910388",
   "bias": "BEARISH",
   "confidence": "HIGH",
-  "summary": "BTC trading at $62,004. Hyperliquid whales net SHORT ($458.5M long vs $571.4M short). Max pain at $0 suggests bearish bias.",
+  "summary": "BTC trading at $62,305. Hyperliquid whales net SHORT ($462.0M long vs $572.3M short). Max pain at $0 suggests bearish bias.",
   "sections": {
     "key_levels": {
-      "current_price": 62003.9,
+      "current_price": 62304.7,
       "max_pain": 0,
       "resistance": [
         {
@@ -16,30 +16,30 @@
           "reason": "Options Max Pain"
         },
         {
-          "price": 65104.095,
+          "price": 65419.935,
           "reason": "Short Liquidations"
         }
       ],
       "support": [
         {
-          "price": 58903.705,
+          "price": 59189.465,
           "reason": "Long Liquidations"
         }
       ],
       "liquidation_clusters": {
         "longs_at_risk": {
-          "price": 58903.705,
+          "price": 59189.465,
           "usd": 0
         },
         "shorts_at_risk": {
-          "price": 65104.095,
+          "price": 65419.935,
           "usd": 0
         }
       }
     },
     "derivatives": {
       "open_interest": {
-        "value": 46648964210.0689,
+        "value": 46870651916.4491,
         "change_24h": 0,
         "change_percent_24h": 0
       },
@@ -52,8 +52,8 @@
     },
     "whale_positioning": {
       "net_bias": "SHORT",
-      "total_long_usd": 458481232.3309999,
-      "total_short_usd": 571429069.3714001,
+      "total_long_usd": 461986144.5037998,
+      "total_short_usd": 572307526.3428998,
       "position_count": 233,
       "notable_positions": [
         {
@@ -61,23 +61,23 @@
           "symbol": "BTC",
           "positionSize": -840.37442,
           "entryPrice": 72193.1,
-          "markPrice": 61897.0,
-          "liqPrice": 93409.388,
+          "markPrice": 62343.0,
+          "liqPrice": 92924.3004,
           "leverage": 20,
-          "marginBalance": 2599740.287,
-          "positionValueUsd": 51994805.7398,
-          "unrealizedPnL": 8674488.8279,
+          "marginBalance": 2618186.5055,
+          "positionValueUsd": 52363730.1102,
+          "unrealizedPnL": 8305564.4575,
           "fundingFee": -20552.8346,
           "marginMode": "cross",
           "createTime": 1741665503000,
-          "updateTime": 1770338043000
+          "updateTime": 1770338106000
         },
         {
           "user": "0x1b526ff54f9f66c777fd34b7a802bb8d216ed41b",
           "symbol": "BTC",
           "positionSize": -800.49761,
           "entryPrice": 91823.4,
-          "markPrice": 61897.0,
+          "markPrice": 62343.0,
           "liqPrice": 98533.6772,
           "leverage": 20,
           "marginBalance": 2473337.4905,
@@ -93,7 +93,7 @@
           "symbol": "BTC",
           "positionSize": -717.63843,
           "entryPrice": 71262.8,
-          "markPrice": 61897.0,
+          "markPrice": 62343.0,
           "liqPrice": 74176.8624,
           "leverage": 14,
           "marginBalance": 3153713.3405,
@@ -109,7 +109,7 @@
           "symbol": "BTC",
           "positionSize": 557.3787,
           "entryPrice": 63232.9,
-          "markPrice": 61897.0,
+          "markPrice": 62343.0,
           "liqPrice": 5661.5326,
           "leverage": 20,
           "marginBalance": 1716949.3475,
@@ -125,7 +125,7 @@
           "symbol": "BTC",
           "positionSize": 366.83883,
           "entryPrice": 100837.8,
-          "markPrice": 61897.0,
+          "markPrice": 62343.0,
           "liqPrice": 27520.3221,
           "leverage": 40,
           "marginBalance": 567132.8312,
@@ -141,16 +141,16 @@
     "trade_scenario": {
       "bias": "SHORT",
       "entry_zone": [
-        61383.861000000004,
-        62623.939
+        61681.653,
+        62927.746999999996
       ],
-      "stop_loss": 65104.095,
+      "stop_loss": 65419.935,
       "targets": [
         0,
         0.0,
         0.0
       ],
-      "invalidation": "Close above $65,104",
+      "invalidation": "Close above $65,420",
       "risk_reward": 20.0
     }
   },

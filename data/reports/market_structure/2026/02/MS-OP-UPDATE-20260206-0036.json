@@ -1,0 +1,84 @@
+{
+  "id": "MS-OP-UPDATE-20260206-0036",
+  "type": "market_structure",
+  "title": "OP Derivatives Snapshot: Key Levels & Whale Activity",
+  "generated_at": "2026-02-06T00:36:04.450055",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "OP trading at $0. Hyperliquid whales net UNKNOWN ($0.0M long vs $0.0M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 0.1731,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 0.181755,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 0.164445,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 0.164445,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 0.181755,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 62889460.9623,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "UNKNOWN",
+      "total_long_usd": 0,
+      "total_short_usd": 0,
+      "position_count": 0
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        0.171369,
+        0.17483100000000001
+      ],
+      "stop_loss": 0.181755,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $0",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "op",
+    "bearish"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

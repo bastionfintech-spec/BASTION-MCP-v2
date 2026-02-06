@@ -1,0 +1,118 @@
+{
+  "id": "MS-DOGE-20260206-00",
+  "type": "market_structure",
+  "title": "DOGE Market Structure: Bears in Control",
+  "generated_at": "2026-02-06T00:35:06.477708",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "DOGE trading at $0. Hyperliquid whales net SHORT ($1.7M long vs $2.5M short). Max pain at $0 suggests bearish bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 0.08562,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 0.08990100000000001,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 0.081339,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 0.081339,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 0.08990100000000001,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 954056392.5467,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "SHORT",
+      "total_long_usd": 1662807.4316,
+      "total_short_usd": 2479108.985,
+      "position_count": 2,
+      "notable_positions": [
+        {
+          "user": "0xecb63caa47c7c4e77f60f1ce858cf28dc2b82b00",
+          "symbol": "DOGE",
+          "positionSize": -29099231.0,
+          "entryPrice": 0.0937,
+          "markPrice": 0.085614,
+          "liqPrice": 0.979,
+          "leverage": 10,
+          "marginBalance": 247910.8985,
+          "positionValueUsd": 2479108.985,
+          "unrealizedPnL": 247349.0895,
+          "fundingFee": -30.404,
+          "marginMode": "cross",
+          "createTime": 1741773997000,
+          "updateTime": 1770338074000
+        },
+        {
+          "user": "0x8af700ba841f30e0a3fcb0ee4c4a9d223e1efa05",
+          "symbol": "DOGE",
+          "positionSize": 19635438.0,
+          "entryPrice": 0.1029,
+          "markPrice": 0.085614,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 166280.7432,
+          "positionValueUsd": 1662807.4316,
+          "unrealizedPnL": -356973.5886,
+          "fundingFee": -1520.4624,
+          "marginMode": "cross",
+          "createTime": 1741699822000,
+          "updateTime": 1770338014000
+        }
+      ]
+    },
+    "trade_scenario": {
+      "bias": "SHORT",
+      "entry_zone": [
+        0.0847638,
+        0.0864762
+      ],
+      "stop_loss": 0.08990100000000001,
+      "targets": [
+        0,
+        0.0,
+        0.0
+      ],
+      "invalidation": "Close above $0",
+      "risk_reward": 20.0
+    }
+  },
+  "tags": [
+    "doge",
+    "bearish"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

@@ -1,0 +1,156 @@
+{
+  "id": "WI-BTC-TRACK-20260206-0036",
+  "type": "whale_intelligence",
+  "title": "BTC Smart Money Tracker: Whale Positioning Update",
+  "generated_at": "2026-02-06T00:36:08.583343",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "BTC Hyperliquid whales SHORTS dominant with $110.8M net exposure. Longs: $461.7M | Shorts: $572.6M. Flow: UNKNOWN.",
+  "sections": {
+    "top_positions": [
+      {
+        "rank": 1,
+        "side": "SHORT",
+        "size_usd": 52363730.1102,
+        "entry_price": 72193.1,
+        "mark_price": 62331.0,
+        "leverage": 20,
+        "pnl_usd": 8305564.4575,
+        "pnl_percent": 317.23,
+        "liquidation_price": 92924.3004,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 2,
+        "side": "SHORT",
+        "size_usd": 49466749.81,
+        "entry_price": 91823.4,
+        "mark_price": 62331.0,
+        "leverage": 20,
+        "pnl_usd": 24037698.4948,
+        "pnl_percent": 971.87,
+        "liquidation_price": 98533.6772,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 3,
+        "side": "SHORT",
+        "size_usd": 44151986.7673,
+        "entry_price": 71262.8,
+        "mark_price": 62331.0,
+        "leverage": 14,
+        "pnl_usd": 6988938.3725,
+        "pnl_percent": 221.61,
+        "liquidation_price": 74176.8624,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 4,
+        "side": "LONG",
+        "size_usd": 34739742.2349,
+        "entry_price": 63232.9,
+        "mark_price": 62331.0,
+        "leverage": 20,
+        "pnl_usd": -504943.2203,
+        "pnl_percent": -29.07,
+        "liquidation_price": 4753.7918,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 5,
+        "side": "LONG",
+        "size_usd": 22685313.2472,
+        "entry_price": 100837.8,
+        "mark_price": 62331.0,
+        "leverage": 40,
+        "pnl_usd": -14305909.6136,
+        "pnl_percent": -2522.5,
+        "liquidation_price": 27520.3221,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 6,
+        "side": "SHORT",
+        "size_usd": 20344218.8861,
+        "entry_price": 78162.1,
+        "mark_price": 62331.0,
+        "leverage": 20,
+        "pnl_usd": 5160575.0308,
+        "pnl_percent": 507.33,
+        "liquidation_price": 86206.384,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 7,
+        "side": "LONG",
+        "size_usd": 19796068.2658,
+        "entry_price": 78286.8,
+        "mark_price": 62331.0,
+        "leverage": 40,
+        "pnl_usd": -5049185.4715,
+        "pnl_percent": -1020.24,
+        "liquidation_price": 49838.6105,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 8,
+        "side": "SHORT",
+        "size_usd": 17092736.5637,
+        "entry_price": 75150.5,
+        "mark_price": 62331.0,
+        "leverage": 40,
+        "pnl_usd": 3856930.844,
+        "pnl_percent": 902.59,
+        "liquidation_price": 92416.0816,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 9,
+        "side": "SHORT",
+        "size_usd": 17084530.6851,
+        "entry_price": 106677.4,
+        "mark_price": 62331.0,
+        "leverage": 20,
+        "pnl_usd": 12147570.2487,
+        "pnl_percent": 1422.05,
+        "liquidation_price": 127277.3137,
+        "symbol": "BTC"
+      },
+      {
+        "rank": 10,
+        "side": "LONG",
+        "size_usd": 16260055.199,
+        "entry_price": 73828.4,
+        "mark_price": 62331.0,
+        "leverage": 40,
+        "pnl_usd": -3024053.6282,
+        "pnl_percent": -743.92,
+        "liquidation_price": 46737.9903,
+        "symbol": "BTC"
+      }
+    ],
+    "aggregate_stats": {
+      "total_long_exposure": 461741759.0309999,
+      "total_short_exposure": 572577344.9812,
+      "net_exposure": -110835585.95020008,
+      "longs_pnl": -89347472.82890001,
+      "shorts_pnl": 170166923.79820013,
+      "dominant_side": "SHORTS"
+    },
+    "exchange_flows": {
+      "net_24h": 0,
+      "direction": "UNKNOWN"
+    },
+    "actionable_insight": "Monitor for position changes."
+  },
+  "tags": [
+    "whale",
+    "btc",
+    "shorts"
+  ],
+  "data_sources": [
+    "hyperliquid",
+    "coinglass"
+  ],
+  "views": 0
+}

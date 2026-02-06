@@ -1,0 +1,88 @@
+{
+  "id": "MS-DOT-20260206-00",
+  "type": "market_structure",
+  "title": "DOT Market Structure: Consolidation Zone",
+  "generated_at": "2026-02-06T00:35:16.298852",
+  "bias": "NEUTRAL",
+  "confidence": "HIGH",
+  "summary": "DOT trading at $1. Hyperliquid whales net LONG ($1.5M long vs $0.0M short). Max pain at $0 suggests neutral bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 1.202,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 1.2621,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 1.1419,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 1.1419,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 1.2621,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 149632956.0066,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "LONG",
+      "total_long_usd": 1476215.9177,
+      "total_short_usd": 0,
+      "position_count": 1,
+      "notable_positions": [
+        {
+          "user": "0x1e37a337ed460039d1b15bd3bc489de789768d5e",
+          "symbol": "DOT",
+          "positionSize": 1273148.7,
+          "entryPrice": 1.3812,
+          "markPrice": 1.1985,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 147621.5918,
+          "positionValueUsd": 1476215.9177,
+          "unrealizedPnL": -282269.4824,
+          "fundingFee": -4122.1405,
+          "marginMode": "cross",
+          "createTime": 1770322807000,
+          "updateTime": 1770337748000
+        }
+      ]
+    },
+    "trade_scenario": null
+  },
+  "tags": [
+    "dot",
+    "neutral"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

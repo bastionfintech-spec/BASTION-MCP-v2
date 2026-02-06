@@ -1,0 +1,119 @@
+{
+  "id": "MS-LINK-20260206-00",
+  "type": "market_structure",
+  "title": "LINK Market Structure: Consolidation Zone",
+  "generated_at": "2026-02-06T00:34:56.836975",
+  "bias": "NEUTRAL",
+  "confidence": "HIGH",
+  "summary": "LINK trading at $8. Hyperliquid whales net LONG ($4.0M long vs $0.0M short). Max pain at $0 suggests neutral bias.",
+  "sections": {
+    "key_levels": {
+      "current_price": 7.705,
+      "max_pain": 0,
+      "resistance": [
+        {
+          "price": 0,
+          "reason": "Options Max Pain"
+        },
+        {
+          "price": 8.090250000000001,
+          "reason": "Short Liquidations"
+        }
+      ],
+      "support": [
+        {
+          "price": 7.31975,
+          "reason": "Long Liquidations"
+        }
+      ],
+      "liquidation_clusters": {
+        "longs_at_risk": {
+          "price": 7.31975,
+          "usd": 0
+        },
+        "shorts_at_risk": {
+          "price": 8.090250000000001,
+          "usd": 0
+        }
+      }
+    },
+    "derivatives": {
+      "open_interest": {
+        "value": 413222256.6611,
+        "change_24h": 0,
+        "change_percent_24h": 0
+      },
+      "funding_rate": {
+        "rate": 0,
+        "exchange_rates": [],
+        "avg_rate": 0
+      },
+      "long_short_ratio": 1.0
+    },
+    "whale_positioning": {
+      "net_bias": "LONG",
+      "total_long_usd": 4000380.2151999995,
+      "total_short_usd": 0,
+      "position_count": 3,
+      "notable_positions": [
+        {
+          "user": "0x73ce82fb75868af2a687e9889fcf058dd1cf8ce9",
+          "symbol": "LINK",
+          "positionSize": 250043.5,
+          "entryPrice": 13.132,
+          "markPrice": 7.7048,
+          "liqPrice": 6.635,
+          "leverage": 10,
+          "marginBalance": 185732.3118,
+          "positionValueUsd": 1857323.118,
+          "unrealizedPnL": -1426241.0026,
+          "fundingFee": 60488.35,
+          "marginMode": "cross",
+          "createTime": 1755223849000,
+          "updateTime": 1770337317000
+        },
+        {
+          "user": "0xeadc152ac1014ace57c6b353f89adf5faffe9d55",
+          "symbol": "LINK",
+          "positionSize": 150000.0,
+          "entryPrice": 9.5999,
+          "markPrice": 7.7048,
+          "liqPrice": 0.0,
+          "leverage": 10,
+          "marginBalance": 114157.5,
+          "positionValueUsd": 1141575.0,
+          "unrealizedPnL": -298413.0853,
+          "fundingFee": 910.6633,
+          "marginMode": "cross",
+          "createTime": 1770119506000,
+          "updateTime": 1770338018000
+        },
+        {
+          "user": "0x1e37a337ed460039d1b15bd3bc489de789768d5e",
+          "symbol": "LINK",
+          "positionSize": 133700.3,
+          "entryPrice": 8.7367,
+          "markPrice": 7.7048,
+          "leverage": 10,
+          "marginBalance": 100148.2097,
+          "positionValueUsd": 1001482.0972,
+          "unrealizedPnL": -166611.6833,
+          "fundingFee": 3533.6353,
+          "marginMode": "cross",
+          "createTime": 1770337747000,
+          "updateTime": 1770337746000
+        }
+      ]
+    },
+    "trade_scenario": null
+  },
+  "tags": [
+    "link",
+    "neutral"
+  ],
+  "data_sources": [
+    "coinglass",
+    "hyperliquid"
+  ],
+  "views": 0
+}

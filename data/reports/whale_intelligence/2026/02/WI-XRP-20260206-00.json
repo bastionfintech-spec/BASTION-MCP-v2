@@ -1,0 +1,156 @@
+{
+  "id": "WI-XRP-20260206-00",
+  "type": "whale_intelligence",
+  "title": "XRP Whale Activity: SHORTS Dominant",
+  "generated_at": "2026-02-06T00:35:30.297144",
+  "bias": "BEARISH",
+  "confidence": "HIGH",
+  "summary": "XRP Hyperliquid whales SHORTS dominant with $3.4M net exposure. Longs: $13.2M | Shorts: $16.6M. Flow: UNKNOWN.",
+  "sections": {
+    "top_positions": [
+      {
+        "rank": 1,
+        "side": "SHORT",
+        "size_usd": 6422836.599,
+        "entry_price": 1.901,
+        "mark_price": 1.1864,
+        "leverage": 20,
+        "pnl_usd": 4093943.3392,
+        "pnl_percent": 1274.81,
+        "liquidation_price": 2.9471,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 2,
+        "side": "LONG",
+        "size_usd": 4631618.043,
+        "entry_price": 1.4289,
+        "mark_price": 1.1864,
+        "leverage": 20,
+        "pnl_usd": -1073363.1348,
+        "pnl_percent": -463.49,
+        "liquidation_price": 0.0,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 3,
+        "side": "SHORT",
+        "size_usd": 2948250.0,
+        "entry_price": 1.4674,
+        "mark_price": 1.1864,
+        "leverage": 20,
+        "pnl_usd": 720330.1285,
+        "pnl_percent": 488.65,
+        "liquidation_price": 2.2929,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 4,
+        "side": "SHORT",
+        "size_usd": 2883219.7408,
+        "entry_price": 1.9642,
+        "mark_price": 1.1864,
+        "leverage": 20,
+        "pnl_usd": 2014108.5555,
+        "pnl_percent": 1397.12,
+        "liquidation_price": 4.3125,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 5,
+        "side": "LONG",
+        "size_usd": 2861392.1682,
+        "entry_price": 1.2921,
+        "mark_price": 1.1864,
+        "leverage": 20,
+        "pnl_usd": -330781.7987,
+        "pnl_percent": -231.2,
+        "liquidation_price": 0.0,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 6,
+        "side": "LONG",
+        "size_usd": 2300978.6006,
+        "entry_price": 1.6306,
+        "mark_price": 1.1864,
+        "leverage": 20,
+        "pnl_usd": -886460.81,
+        "pnl_percent": -770.51,
+        "liquidation_price": 0.0963,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 7,
+        "side": "SHORT",
+        "size_usd": 2070344.8803,
+        "entry_price": 1.9747,
+        "mark_price": 1.1864,
+        "leverage": 20,
+        "pnl_usd": 1396443.5144,
+        "pnl_percent": 1349.0,
+        "liquidation_price": 3.8206,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 8,
+        "side": "SHORT",
+        "size_usd": 1267315.5324,
+        "entry_price": 1.1991,
+        "mark_price": 1.1864,
+        "leverage": 20,
+        "pnl_usd": 36170.5436,
+        "pnl_percent": 57.08,
+        "liquidation_price": 5.6693,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 9,
+        "side": "LONG",
+        "size_usd": 1239371.6414,
+        "entry_price": 1.6271,
+        "mark_price": 1.1864,
+        "leverage": 10,
+        "pnl_usd": -469923.1583,
+        "pnl_percent": -379.16,
+        "liquidation_price": 0.0,
+        "symbol": "XRP"
+      },
+      {
+        "rank": 10,
+        "side": "LONG",
+        "size_usd": 1118537.7052,
+        "entry_price": 1.1703,
+        "mark_price": 1.1864,
+        "leverage": 10,
+        "pnl_usd": 9010.8041,
+        "pnl_percent": 8.06,
+        "liquidation_price": 0.0,
+        "symbol": "XRP"
+      }
+    ],
+    "aggregate_stats": {
+      "total_long_exposure": 13177999.8224,
+      "total_short_exposure": 16611873.848500002,
+      "net_exposure": -3433874.026100002,
+      "longs_pnl": -2759475.7481000004,
+      "shorts_pnl": 9390199.3487,
+      "dominant_side": "SHORTS"
+    },
+    "exchange_flows": {
+      "net_24h": 0,
+      "direction": "UNKNOWN"
+    },
+    "actionable_insight": "Monitor for position changes."
+  },
+  "tags": [
+    "whale",
+    "xrp",
+    "shorts"
+  ],
+  "data_sources": [
+    "hyperliquid",
+    "coinglass"
+  ],
+  "views": 0
+}
