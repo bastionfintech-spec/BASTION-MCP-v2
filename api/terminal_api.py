@@ -4841,121 +4841,143 @@ async def get_kelly_criterion():
 
 
 @app.post("/api/monte-carlo")
-async def run_monte_carlo(data: dict = None, token: Optional[str] = None, session_id: Optional[str] = None):
-    """Run Monte Carlo simulation based on user's actual positions and capital."""
+async def run_monte_carlo(data: dict = None):
+    """Run Monte Carlo simulation for a specific position - calculates profit targets and probabilities."""
     import random
-    import statistics
+    import math
     
-    # Parse body if provided
-    if data:
-        token = data.get("token", token)
-        session_id = data.get("session_id", session_id)
+    if not data:
+        return {"success": False, "error": "No data provided"}
     
-    # Get user context and positions
-    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    position = data.get("position")
+    if not position:
+        return {"success": False, "error": "No position provided"}
     
-    # Default parameters
-    starting_capital = 10000  # Default if no exchange connected
-    current_pnl = 0
-    current_exposure = 0
-    num_positions = 0
-    avg_leverage = 1
+    # Extract position data
+    entry_price = float(position.get("entry_price", 0))
+    current_price = float(position.get("current_price", entry_price))
+    leverage = float(position.get("leverage", 1)) or 1
+    direction = (position.get("direction") or position.get("side") or "long").lower()
+    symbol = position.get("symbol", "BTC").upper()
+    size = float(position.get("size", 0))
     
-    # Try to get real data from connected exchanges
-    if exchanges:
-        total_balance = 0
-        total_pnl = 0
-        total_exposure = 0
-        pos_count = 0
-        
-        for exchange_name in exchanges:
-            try:
-                # Get balance
-                balance = await ctx.get_balance(exchange_name)
-                if balance and 'total_equity' in balance:
-                    total_balance += balance.get('total_equity', 0)
-                    total_pnl += balance.get('unrealized_pnl', 0)
-                
-                # Get positions
-                positions = await ctx.get_positions(exchange_name)
-                if positions:
-                    for pos in positions:
-                        size = abs(float(pos.get('size', 0)))
-                        price = float(pos.get('current_price', 0) or pos.get('entry_price', 0))
-                        total_exposure += size * price
-                        pos_count += 1
-            except:
-                pass
-        
-        if total_balance > 0:
-            starting_capital = total_balance
-            current_pnl = total_pnl
-            current_exposure = total_exposure
-            num_positions = pos_count
-            if starting_capital > 0:
-                avg_leverage = total_exposure / starting_capital if total_exposure > 0 else 1
+    if entry_price <= 0:
+        return {"success": False, "error": "Invalid entry price"}
     
-    # Simulation parameters based on user's profile or defaults
-    win_rate = 0.55  # Conservative assumption
-    avg_win_pct = 2.5  # Average winning trade %
-    avg_loss_pct = 1.5  # Average losing trade %
-    trades_to_simulate = 50  # Next 50 trades
-    position_size_pct = min(avg_leverage * 0.5, 5)  # Half of current leverage, max 5%
+    # Get volatility based on symbol (24h typical move)
+    volatility_map = {
+        "BTC": 3.5, "BTCUSDT": 3.5,
+        "ETH": 4.5, "ETHUSDT": 4.5,
+        "SOL": 6.0, "SOLUSDT": 6.0,
+        "DOGE": 8.0, "DOGEUSDT": 8.0,
+        "XRP": 5.0, "XRPUSDT": 5.0,
+    }
+    base_volatility = volatility_map.get(symbol.replace("USDT", ""), 4.0)  # Default 4%
     
-    final_capitals = []
-    max_drawdowns = []
-    num_sims = min(50000, 50000)
+    # Calculate profit targets based on leverage and direction
+    # For LONG: TP = entry * (1 + target_pct / leverage)
+    # For SHORT: TP = entry * (1 - target_pct / leverage)
+    
+    is_long = direction in ["long", "buy"]
+    
+    # Target percentages (on margin, so divide by leverage for price move needed)
+    targets = {
+        "tp1": 0.15,  # 15% profit on margin
+        "tp2": 0.50,  # 50% profit on margin
+        "tp3": 0.80,  # 80% profit on margin
+        "stop": -0.50  # 50% loss on margin
+    }
+    
+    # Calculate target prices
+    if is_long:
+        tp1_price = entry_price * (1 + targets["tp1"] / leverage)
+        tp2_price = entry_price * (1 + targets["tp2"] / leverage)
+        tp3_price = entry_price * (1 + targets["tp3"] / leverage)
+        stop_price = entry_price * (1 + targets["stop"] / leverage)  # Stop is below entry for long
+    else:
+        tp1_price = entry_price * (1 - targets["tp1"] / leverage)
+        tp2_price = entry_price * (1 - targets["tp2"] / leverage)
+        tp3_price = entry_price * (1 - targets["tp3"] / leverage)
+        stop_price = entry_price * (1 - targets["stop"] / leverage)  # Stop is above entry for short
+    
+    # Run Monte Carlo simulation (10,000 price paths)
+    num_sims = 10000
+    hours_to_simulate = 168  # 1 week
+    hourly_vol = base_volatility / math.sqrt(24)  # Convert daily to hourly
+    
+    tp1_hits = 0
+    tp2_hits = 0
+    tp3_hits = 0
+    stop_hits = 0
     
     for _ in range(num_sims):
-        capital = starting_capital
-        peak = capital
-        max_dd = 0
+        price = current_price
+        hit_tp1 = hit_tp2 = hit_tp3 = hit_stop = False
         
-        for _ in range(trades_to_simulate):
-            if random.random() < win_rate:
-                capital *= (1 + (avg_win_pct * position_size_pct / 100))
-            else:
-                capital *= (1 - (avg_loss_pct * position_size_pct / 100))
+        for _ in range(hours_to_simulate):
+            # Random walk with drift
+            move = random.gauss(0, hourly_vol / 100) * price
+            price += move
             
-            if capital > peak:
-                peak = capital
-            dd = (peak - capital) / peak if peak > 0 else 0
-            if dd > max_dd:
-                max_dd = dd
+            # Check targets
+            if is_long:
+                if price >= tp1_price and not hit_tp1: hit_tp1 = True
+                if price >= tp2_price and not hit_tp2: hit_tp2 = True
+                if price >= tp3_price and not hit_tp3: hit_tp3 = True
+                if price <= stop_price and not hit_stop: hit_stop = True
+            else:
+                if price <= tp1_price and not hit_tp1: hit_tp1 = True
+                if price <= tp2_price and not hit_tp2: hit_tp2 = True
+                if price <= tp3_price and not hit_tp3: hit_tp3 = True
+                if price >= stop_price and not hit_stop: hit_stop = True
+            
+            # If stop hit, break (position would be closed)
+            if hit_stop:
+                break
         
-        final_capitals.append(capital)
-        max_drawdowns.append(max_dd)
+        if hit_tp1: tp1_hits += 1
+        if hit_tp2: tp2_hits += 1
+        if hit_tp3: tp3_hits += 1
+        if hit_stop: stop_hits += 1
     
-    # Calculate statistics
-    final_capitals.sort()
-    ev = statistics.mean(final_capitals) - starting_capital
-    conf_low = final_capitals[int(len(final_capitals) * 0.05)] - starting_capital
-    conf_high = final_capitals[int(len(final_capitals) * 0.95)] - starting_capital
-    ruin_count = sum(1 for c in final_capitals if c < starting_capital * 0.5)
-    ruin_prob = (ruin_count / len(final_capitals)) * 100
-    avg_max_dd = statistics.mean(max_drawdowns) * 100
+    # Calculate probabilities
+    tp1_prob = (tp1_hits / num_sims) * 100
+    tp2_prob = (tp2_hits / num_sims) * 100
+    tp3_prob = (tp3_hits / num_sims) * 100
+    stop_prob = (stop_hits / num_sims) * 100
+    
+    # Expected 24h move
+    expected_move = base_volatility
+    
+    # Volatility description
+    if base_volatility < 3:
+        vol_desc = "Low"
+    elif base_volatility < 5:
+        vol_desc = "Medium"
+    elif base_volatility < 7:
+        vol_desc = "High"
+    else:
+        vol_desc = "Extreme"
     
     return {
         "success": True,
-        "simulations": len(final_capitals),
-        "starting_capital": round(starting_capital, 2),
-        "current_positions": num_positions,
-        "current_exposure": round(current_exposure, 2),
-        "ev": round(ev, 0),
-        "evFormatted": f"+${ev:,.0f}" if ev > 0 else f"-${abs(ev):,.0f}",
-        "confLow": round(conf_low, 0),
-        "confLowFormatted": f"+${conf_low:,.0f}" if conf_low > 0 else f"-${abs(conf_low):,.0f}",
-        "confHigh": round(conf_high, 0),
-        "confHighFormatted": f"+${conf_high:,.0f}",
-        "ruinProb": round(ruin_prob, 1),
-        "maxDrawdown": round(avg_max_dd, 1),
-        "assumptions": {
-            "win_rate": f"{win_rate*100:.0f}%",
-            "avg_win": f"{avg_win_pct}%",
-            "avg_loss": f"{avg_loss_pct}%",
-            "position_size": f"{position_size_pct:.1f}%",
-            "trades_simulated": trades_to_simulate
-        }
+        "symbol": symbol,
+        "direction": direction.upper(),
+        "leverage": leverage,
+        "entry_price": entry_price,
+        "current_price": current_price,
+        "tp1_price": round(tp1_price, 2),
+        "tp1_prob": round(tp1_prob, 1),
+        "tp2_price": round(tp2_price, 2),
+        "tp2_prob": round(tp2_prob, 1),
+        "tp3_price": round(tp3_price, 2),
+        "tp3_prob": round(tp3_prob, 1),
+        "stop_price": round(stop_price, 2),
+        "stop_prob": round(stop_prob, 1),
+        "expected_move": round(expected_move, 1),
+        "volatility": vol_desc,
+        "simulations": num_sims,
+        "timeframe": "7 days"
     }
 
 
