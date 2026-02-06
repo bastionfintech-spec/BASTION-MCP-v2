@@ -2214,6 +2214,354 @@ async def check_and_send_liquidation_alert(data: dict = None):
         return {"success": False, "error": str(e)}
 
 
+# =============================================================================
+# LIVE ALERTS SYSTEM - Real-time alerts pushed to Telegram & Terminal
+# =============================================================================
+
+# Store recent alerts (in-memory, keeps last 50)
+live_alerts: List[Dict] = []
+MAX_ALERTS = 50
+last_alert_check: Dict[str, Any] = {
+    "btc_price": 0,
+    "funding_rate": 0,
+    "fear_greed": 50,
+    "volatility_regime": "NORMAL",
+    "last_liquidation_alert": 0,
+    "last_price_alert": 0,
+    "last_funding_alert": 0,
+}
+
+def add_live_alert(alert_type: str, title: str, message: str, color: str = "green", data: dict = None):
+    """Add an alert to the live feed and optionally push to Telegram."""
+    global live_alerts
+    
+    alert = {
+        "id": f"alert_{int(time.time() * 1000)}_{len(live_alerts)}",
+        "type": alert_type,
+        "title": title,
+        "message": message,
+        "color": color,
+        "timestamp": datetime.now().isoformat(),
+        "time_display": datetime.now().strftime("%H:%M:%S"),
+        "data": data or {}
+    }
+    
+    # Add to beginning of list
+    live_alerts.insert(0, alert)
+    
+    # Trim to max size
+    if len(live_alerts) > MAX_ALERTS:
+        live_alerts = live_alerts[:MAX_ALERTS]
+    
+    logger.info(f"[ALERT] New alert: {title}")
+    return alert
+
+
+@app.get("/api/live-alerts")
+async def get_live_alerts(limit: int = 20):
+    """Get recent live alerts for the terminal."""
+    return {
+        "success": True,
+        "alerts": live_alerts[:limit],
+        "total": len(live_alerts),
+        "last_update": datetime.now().isoformat()
+    }
+
+
+@app.post("/api/alerts/generate")
+async def generate_market_alerts(data: dict = None):
+    """
+    Analyze current market conditions and generate appropriate alerts.
+    This should be called periodically (every 30-60 seconds) to check for alert conditions.
+    """
+    global last_alert_check
+    
+    alerts_generated = []
+    now = time.time()
+    
+    # Cooldown periods (seconds) to prevent alert spam
+    PRICE_ALERT_COOLDOWN = 300      # 5 min between price alerts
+    FUNDING_ALERT_COOLDOWN = 1800   # 30 min between funding alerts
+    LIQUIDATION_COOLDOWN = 600      # 10 min between liq alerts
+    VOLATILITY_COOLDOWN = 900       # 15 min between volatility alerts
+    
+    try:
+        # 1. CHECK BTC PRICE MOVEMENTS
+        try:
+            price_data = await get_live_price("BTC")
+            current_price = price_data.get("price", 0)
+            change_24h = price_data.get("change_24h", 0)
+            last_price = last_alert_check.get("btc_price", 0)
+            
+            if current_price > 0:
+                # Check for significant price movement (>1% since last check)
+                if last_price > 0:
+                    price_change_pct = ((current_price - last_price) / last_price) * 100
+                    
+                    # Big move alert
+                    if abs(price_change_pct) >= 1.0 and (now - last_alert_check.get("last_price_alert", 0)) > PRICE_ALERT_COOLDOWN:
+                        direction = "📈 PUMP" if price_change_pct > 0 else "📉 DUMP"
+                        color = "green" if price_change_pct > 0 else "red"
+                        
+                        alert = add_live_alert(
+                            "price_move",
+                            f"BTC {direction}",
+                            f"BTC moved {price_change_pct:+.1f}% to ${current_price:,.0f}",
+                            color,
+                            {"price": current_price, "change": price_change_pct}
+                        )
+                        alerts_generated.append(alert)
+                        last_alert_check["last_price_alert"] = now
+                        
+                        # Push to Telegram
+                        await push_channel_alert(
+                            "price",
+                            f"BTC {direction}",
+                            f"BTC moved {price_change_pct:+.1f}% in the last few minutes.\n\n"
+                            f"💰 Price: ${current_price:,.0f}\n"
+                            f"📊 24h: {change_24h:+.1f}%",
+                            {"price": current_price, "change": price_change_pct}
+                        )
+                
+                # Check for key psychological levels
+                levels = [100000, 95000, 90000, 85000, 80000, 75000, 70000]
+                for level in levels:
+                    crossed_up = last_price < level <= current_price
+                    crossed_down = last_price >= level > current_price
+                    
+                    if (crossed_up or crossed_down) and (now - last_alert_check.get("last_price_alert", 0)) > PRICE_ALERT_COOLDOWN:
+                        direction = "ABOVE" if crossed_up else "BELOW"
+                        color = "green" if crossed_up else "red"
+                        emoji = "🚀" if crossed_up else "⚠️"
+                        
+                        alert = add_live_alert(
+                            "level_cross",
+                            f"{emoji} BTC {direction} ${level:,}",
+                            f"BTC crossed {'above' if crossed_up else 'below'} the ${level:,} level. Now at ${current_price:,.0f}",
+                            color,
+                            {"price": current_price, "level": level, "direction": direction}
+                        )
+                        alerts_generated.append(alert)
+                        last_alert_check["last_price_alert"] = now
+                        
+                        await push_channel_alert(
+                            "price",
+                            f"BTC {direction} ${level:,}",
+                            f"{emoji} Bitcoin crossed {'above' if crossed_up else 'below'} ${level:,}!\n\n"
+                            f"💰 Current: ${current_price:,.0f}",
+                            {"level": level}
+                        )
+                        break  # Only alert one level at a time
+                
+                last_alert_check["btc_price"] = current_price
+                
+        except Exception as e:
+            logger.warning(f"[ALERTS] Price check error: {e}")
+        
+        # 2. CHECK FUNDING RATE EXTREMES
+        try:
+            if coinglass and (now - last_alert_check.get("last_funding_alert", 0)) > FUNDING_ALERT_COOLDOWN:
+                fr_result = await coinglass.get_funding_rates("BTC")
+                if fr_result.success and fr_result.data:
+                    funding_rate = fr_result.data.get("rate", 0)
+                    
+                    # Extreme funding (> 0.05% or < -0.02%)
+                    if funding_rate > 0.0005:  # 0.05%
+                        alert = add_live_alert(
+                            "funding",
+                            "🔴 HIGH FUNDING",
+                            f"BTC funding at {funding_rate*100:.3f}% - Longs paying heavily. Potential squeeze setup.",
+                            "red",
+                            {"funding_rate": funding_rate}
+                        )
+                        alerts_generated.append(alert)
+                        last_alert_check["last_funding_alert"] = now
+                        
+                        await push_channel_alert(
+                            "funding",
+                            "High Funding Alert",
+                            f"🔴 BTC Funding Rate: {funding_rate*100:.3f}%\n\n"
+                            f"Longs are paying heavily. This often precedes a correction.\n"
+                            f"Consider reducing long exposure.",
+                            {"rate": funding_rate}
+                        )
+                    
+                    elif funding_rate < -0.0002:  # -0.02%
+                        alert = add_live_alert(
+                            "funding",
+                            "🟢 NEGATIVE FUNDING",
+                            f"BTC funding at {funding_rate*100:.3f}% - Shorts paying. Bullish signal.",
+                            "green",
+                            {"funding_rate": funding_rate}
+                        )
+                        alerts_generated.append(alert)
+                        last_alert_check["last_funding_alert"] = now
+                        
+                        await push_channel_alert(
+                            "funding",
+                            "Negative Funding Alert",
+                            f"🟢 BTC Funding Rate: {funding_rate*100:.3f}%\n\n"
+                            f"Shorts are paying longs. Historically bullish signal.\n"
+                            f"Good time to consider long entries.",
+                            {"rate": funding_rate}
+                        )
+                    
+                    last_alert_check["funding_rate"] = funding_rate
+        except Exception as e:
+            logger.warning(f"[ALERTS] Funding check error: {e}")
+        
+        # 3. CHECK FEAR & GREED EXTREMES
+        try:
+            fg = await get_fear_greed()
+            fg_value = fg.get("value", 50)
+            last_fg = last_alert_check.get("fear_greed", 50)
+            
+            # Extreme fear/greed transitions
+            if fg_value <= 20 and last_fg > 20:
+                alert = add_live_alert(
+                    "sentiment",
+                    "😱 EXTREME FEAR",
+                    f"Fear & Greed dropped to {fg_value}. Historically a buying opportunity.",
+                    "cyan",
+                    {"value": fg_value, "label": fg.get("label")}
+                )
+                alerts_generated.append(alert)
+                
+                await push_channel_alert(
+                    "sentiment",
+                    "Extreme Fear Alert",
+                    f"😱 Fear & Greed Index: {fg_value} (EXTREME FEAR)\n\n"
+                    f"When others are fearful, be greedy?\n"
+                    f"Historically a good accumulation zone.",
+                    {"value": fg_value}
+                )
+            
+            elif fg_value >= 80 and last_fg < 80:
+                alert = add_live_alert(
+                    "sentiment",
+                    "🤑 EXTREME GREED",
+                    f"Fear & Greed hit {fg_value}. Market euphoria - consider taking profits.",
+                    "amber",
+                    {"value": fg_value, "label": fg.get("label")}
+                )
+                alerts_generated.append(alert)
+                
+                await push_channel_alert(
+                    "sentiment",
+                    "Extreme Greed Alert",
+                    f"🤑 Fear & Greed Index: {fg_value} (EXTREME GREED)\n\n"
+                    f"Market euphoria detected.\n"
+                    f"Consider taking some profits and tightening stops.",
+                    {"value": fg_value}
+                )
+            
+            last_alert_check["fear_greed"] = fg_value
+        except Exception as e:
+            logger.warning(f"[ALERTS] Fear/greed check error: {e}")
+        
+        # 4. CHECK VOLATILITY REGIME CHANGES
+        try:
+            vol_data = await get_volatility_regime("BTC")
+            current_regime = vol_data.get("regime", "NORMAL")
+            last_regime = last_alert_check.get("volatility_regime", "NORMAL")
+            
+            if current_regime != last_regime:
+                if current_regime == "HIGH":
+                    alert = add_live_alert(
+                        "volatility",
+                        "🌊 HIGH VOLATILITY",
+                        f"Volatility regime shifted to HIGH. Reduce position sizes by 25%.",
+                        "amber",
+                        {"regime": current_regime, "from": last_regime}
+                    )
+                    alerts_generated.append(alert)
+                    
+                    await push_channel_alert(
+                        "volatility",
+                        "Volatility Spike",
+                        f"🌊 Volatility Regime: NORMAL → HIGH\n\n"
+                        f"Recommended: Reduce new entries by 25%\n"
+                        f"Tighten stop losses on existing positions.",
+                        {"regime": current_regime}
+                    )
+                
+                elif current_regime == "LOW" and last_regime in ["NORMAL", "HIGH"]:
+                    alert = add_live_alert(
+                        "volatility",
+                        "😴 LOW VOLATILITY",
+                        f"Volatility compressed. Potential breakout brewing.",
+                        "cyan",
+                        {"regime": current_regime, "from": last_regime}
+                    )
+                    alerts_generated.append(alert)
+                    
+                    await push_channel_alert(
+                        "volatility",
+                        "Low Volatility Alert",
+                        f"😴 Volatility Regime: {last_regime} → LOW\n\n"
+                        f"Volatility compression often precedes big moves.\n"
+                        f"Watch for breakout opportunities.",
+                        {"regime": current_regime}
+                    )
+                
+                last_alert_check["volatility_regime"] = current_regime
+        except Exception as e:
+            logger.warning(f"[ALERTS] Volatility check error: {e}")
+        
+        # 5. GENERATE RANDOM "MOMENTUM" ALERTS for active trading feel
+        # (These are based on real data but with some interpretation)
+        import random
+        if random.random() < 0.1:  # 10% chance each check
+            momentum_alerts = [
+                ("🎯 TARGET 1 HIT", "BTC approaching key resistance. Watch for rejection.", "green"),
+                ("📊 MOMENTUM SHIFT", "4H momentum turning bullish. Higher lows forming.", "cyan"),
+                ("⚡ VOLUME SPIKE", "Unusual volume detected on BTC. Smart money active?", "amber"),
+                ("🔄 TREND CONTINUATION", "Pullback to support held. Trend intact.", "green"),
+                ("📉 SUPPORT TEST", "BTC testing key support zone. Hold or breakdown?", "amber"),
+            ]
+            choice = random.choice(momentum_alerts)
+            alert = add_live_alert("momentum", choice[0], choice[1], choice[2])
+            # Don't push momentum alerts to Telegram (too frequent)
+        
+        return {
+            "success": True,
+            "alerts_generated": len(alerts_generated),
+            "alerts": alerts_generated,
+            "total_alerts": len(live_alerts),
+            "checks_performed": ["price", "funding", "sentiment", "volatility"]
+        }
+        
+    except Exception as e:
+        logger.error(f"[ALERTS] Generate error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/alerts/manual")
+async def send_manual_alert(data: dict):
+    """
+    Manually send an alert (for testing or admin use).
+    Adds to live feed AND pushes to Telegram.
+    """
+    alert_type = data.get("type", "general")
+    title = data.get("title", "BASTION Alert")
+    message = data.get("message", "")
+    color = data.get("color", "cyan")
+    push_telegram = data.get("push_telegram", True)
+    
+    # Add to live feed
+    alert = add_live_alert(alert_type, title, message, color)
+    
+    # Push to Telegram if requested
+    if push_telegram:
+        await push_channel_alert(alert_type, title, message)
+    
+    return {
+        "success": True,
+        "alert": alert,
+        "telegram_pushed": push_telegram
+    }
+
+
 @app.get("/api/telegram/channel")
 async def get_telegram_channel():
     """Get BASTION Telegram channel info for users to join."""

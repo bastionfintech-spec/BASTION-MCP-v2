@@ -1884,57 +1884,11 @@
               </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-0 no-scrollbar">
-              <!-- Alert 1 -->
-              <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors animate-[fadeIn_0.3s_ease-out]">
-                <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
-                  <span class="text-green-500 flex items-center gap-1 font-bold">
-                    🟢 TARGET 1 HIT
-                  </span>
-                  <span class="">14:31:42</span>
-                </div>
-                <p class="text-[10px] text-zinc-300 font-mono">
-                  BTC-PERP reached $96,800 (+1.2R). Stop moved to breakeven.
-                </p>
-              </div>
-
-              <!-- Alert 2 -->
-              <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
-                <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
-                  <span class="text-cyan-500 flex items-center gap-1 font-bold">
-                    🔵 MOMENTUM TP
-                  </span>
-                  <span class="">14:28:17</span>
-                </div>
-                <p class="text-[10px] text-zinc-300 font-mono">
-                  Slope strength: 2.3x. Trailing 0.45% below candle body.
-                </p>
-              </div>
-
-              <!-- Alert 3 -->
-              <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
-                <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
-                  <span class="text-amber-500 flex items-center gap-1 font-bold">
-                    🟡 VOLATILITY
-                  </span>
-                  <span class="">14:25:33</span>
-                </div>
-                <p class="text-[10px] text-zinc-300 font-mono">
-                  Regime: NORMAL → HIGH. Recommended: Reduce new entries 25%.
-                </p>
-              </div>
-
-              <!-- Alert 4 -->
-              <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
-                <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
-                  <span class="text-green-500 flex items-center gap-1 font-bold">
-                    🟢 SHOT 2 EXECUTED
-                  </span>
-                  <span>14:22:08</span>
-                </div>
-                <p class="text-[10px] text-zinc-300 font-mono">
-                  BTC-PERP: Added 0.15 BTC @ $95,890.
-                </p>
+            <div id="live-alerts-container" class="flex-1 overflow-y-auto p-0 no-scrollbar">
+              <!-- Live alerts populated by JavaScript -->
+              <div class="p-4 text-center">
+                <iconify-icon icon="solar:refresh-linear" class="text-zinc-500 text-xl animate-spin"></iconify-icon>
+                <div class="text-[9px] text-zinc-500 mt-2">Loading live alerts...</div>
               </div>
             </div>
             
@@ -6458,6 +6412,125 @@ Esc    - Close Dialogs
       }
     }
     
+    // =================================================================
+    // LIVE ALERTS SYSTEM
+    // =================================================================
+    
+    let lastAlertId = null;
+    let alertsLoaded = false;
+    
+    // Color map for alert types
+    const alertColorMap = {
+      'green': { text: 'text-green-500', emoji: '🟢', bg: 'bg-green-900/10', border: 'border-green-800/30' },
+      'red': { text: 'text-red-500', emoji: '🔴', bg: 'bg-red-900/10', border: 'border-red-800/30' },
+      'amber': { text: 'text-amber-500', emoji: '🟡', bg: 'bg-amber-900/10', border: 'border-amber-800/30' },
+      'cyan': { text: 'text-cyan-500', emoji: '🔵', bg: 'bg-cyan-900/10', border: 'border-cyan-800/30' },
+      'purple': { text: 'text-purple-500', emoji: '🟣', bg: 'bg-purple-900/10', border: 'border-purple-800/30' },
+    };
+    
+    function renderAlert(alert, isNew = false) {
+      const colors = alertColorMap[alert.color] || alertColorMap['cyan'];
+      const animClass = isNew ? 'animate-[fadeIn_0.3s_ease-out,pulse_0.5s_ease-out]' : '';
+      const newBadge = isNew ? '<span class="text-[6px] bg-green-500 text-black px-1 rounded ml-1">NEW</span>' : '';
+      
+      return `
+        <div class="p-3 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors ${animClass} ${isNew ? colors.bg + ' ' + colors.border + ' border' : ''}" data-alert-id="${alert.id}">
+          <div class="flex justify-between text-[9px] text-zinc-500 mb-1 font-mono">
+            <span class="${colors.text} flex items-center gap-1 font-bold">
+              ${colors.emoji} ${alert.title}${newBadge}
+            </span>
+            <span>${alert.time_display || '--:--:--'}</span>
+          </div>
+          <p class="text-[10px] text-zinc-300 font-mono leading-relaxed">
+            ${alert.message}
+          </p>
+        </div>
+      `;
+    }
+    
+    async function fetchLiveAlerts() {
+      try {
+        const res = await fetch(`${API_BASE}/api/live-alerts?limit=15`);
+        const data = await res.json();
+        
+        if (data.success && data.alerts) {
+          const container = document.getElementById('live-alerts-container');
+          if (!container) return;
+          
+          // Check if we have new alerts
+          const hasNewAlerts = data.alerts.length > 0 && data.alerts[0].id !== lastAlertId;
+          const firstLoad = !alertsLoaded;
+          
+          if (data.alerts.length === 0) {
+            container.innerHTML = `
+              <div class="p-4 text-center">
+                <iconify-icon icon="solar:bell-linear" class="text-zinc-600 text-xl"></iconify-icon>
+                <div class="text-[9px] text-zinc-500 mt-2">No alerts yet. Monitoring market...</div>
+              </div>
+            `;
+          } else {
+            // Render alerts
+            container.innerHTML = data.alerts.map((alert, idx) => {
+              const isNew = hasNewAlerts && idx === 0 && !firstLoad;
+              return renderAlert(alert, isNew);
+            }).join('');
+            
+            // Play sound for new alerts (if not first load)
+            if (hasNewAlerts && !firstLoad && typeof playAlertSound === 'function') {
+              const alertType = data.alerts[0].type || 'general';
+              playAlertSound(alertType);
+            }
+            
+            // Flash the alerts header if new
+            if (hasNewAlerts && !firstLoad) {
+              const header = document.querySelector('[data-panel="alerts-header"]');
+              if (header) {
+                header.classList.add('bg-green-900/30');
+                setTimeout(() => header.classList.remove('bg-green-900/30'), 1000);
+              }
+            }
+            
+            lastAlertId = data.alerts[0].id;
+          }
+          
+          alertsLoaded = true;
+          console.log('[ALERTS] Loaded', data.alerts.length, 'alerts');
+        }
+      } catch (e) {
+        console.error('[ALERTS] Fetch error:', e);
+        // Show error state
+        const container = document.getElementById('live-alerts-container');
+        if (container && !alertsLoaded) {
+          container.innerHTML = `
+            <div class="p-4 text-center">
+              <iconify-icon icon="solar:danger-triangle-linear" class="text-amber-500 text-xl"></iconify-icon>
+              <div class="text-[9px] text-zinc-500 mt-2">Could not load alerts</div>
+            </div>
+          `;
+        }
+      }
+    }
+    
+    async function generateAlerts() {
+      // Trigger alert generation on the server
+      try {
+        const res = await fetch(`${API_BASE}/api/alerts/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        
+        if (data.alerts_generated > 0) {
+          console.log('[ALERTS] Generated', data.alerts_generated, 'new alerts');
+          // Immediately fetch to show new alerts
+          await fetchLiveAlerts();
+        }
+      } catch (e) {
+        console.error('[ALERTS] Generate error:', e);
+      }
+    }
+    
     // Initialize user profile on page load
     document.addEventListener('DOMContentLoaded', () => {
       loadUserProfile();
@@ -6474,6 +6547,17 @@ Esc    - Close Dialogs
       // Fetch OI changes
       fetchOIChanges();
       setInterval(fetchOIChanges, 30000); // Every 30 seconds
+      
+      // === LIVE ALERTS ===
+      // Initial load
+      fetchLiveAlerts();
+      
+      // Generate alerts every 45 seconds (checks market conditions)
+      generateAlerts();
+      setInterval(generateAlerts, 45000);
+      
+      // Fetch alerts every 15 seconds (show updates quickly)
+      setInterval(fetchLiveAlerts, 15000);
     });
     </script>
   
