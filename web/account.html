@@ -1241,22 +1241,6 @@
                   </div>
                 </div>
                 
-                <!-- Clear Local Data -->
-                <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-5 mb-4">
-                  <div class="text-[13px] text-white font-bold mb-2">Local Data Management</div>
-                  <div class="text-[10px] text-zinc-500 mb-4">BASTION stores settings and exchange credentials locally in your browser.</div>
-                  
-                  <div class="flex gap-3">
-                    <button onclick="if(confirm('Clear all saved settings and exchange credentials from this browser?')) { localStorage.clear(); alert('✅ Local data cleared. Page will reload.'); location.reload(); }" class="px-4 py-2 bg-amber-900/30 hover:bg-amber-900/50 text-amber-400 text-[10px] rounded transition-colors">
-                      <iconify-icon icon="solar:trash-bin-2-bold" class="mr-1"></iconify-icon>
-                      Clear All Local Data
-                    </button>
-                    <button onclick="localStorage.removeItem('bastion_exchange_credentials'); alert('✅ Exchange credentials cleared.'); location.reload();" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors">
-                      Clear Exchange Keys Only
-                    </button>
-                  </div>
-                </div>
-                
                 <!-- Two-Factor Authentication -->
                 <div class="bg-[#0D0D0D] border border-zinc-800 rounded-lg p-5 mb-4">
                   <div class="flex justify-between items-start mb-4">
@@ -2541,7 +2525,7 @@
       }
       
       async function syncToCloud() {
-        const token = localStorage.getItem('bastion_token');
+        const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
         if (!token) {
           showToast('Please login to use cloud sync', 'error');
           return;
@@ -2586,7 +2570,7 @@
       }
       
       async function syncFromCloud() {
-        const token = localStorage.getItem('bastion_token');
+        const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
         if (!token) {
           showToast('Please login to restore from cloud', 'error');
           return;
