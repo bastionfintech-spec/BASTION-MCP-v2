@@ -18,6 +18,7 @@ import httpx
 
 from ..config.settings import settings
 from .helsinki import HelsinkiClient, AggregatedMarketData
+from .coinglass import CoinglassClient
 from .query_processor import QueryProcessor, QueryContext
 
 
@@ -59,6 +60,9 @@ class BastionAI:
     ):
         # Helsinki client for market data
         self.helsinki = HelsinkiClient(base_url=helsinki_url)
+        
+        # Coinglass client for REAL whale/derivatives data
+        self.coinglass = CoinglassClient()
         
         # Model configuration
         self.model_url = model_url or settings.model.base_url
@@ -120,13 +124,20 @@ class BastionAI:
                 market_context = self._format_liquidation_data(liq_data, context.symbol)
                 data_sources.extend(["Helsinki:liquidation-estimate", "Helsinki:options-iv"])
             else:
-                # General query - fetch priority or comprehensive data
+                # General query - fetch REAL data from Coinglass + Helsinki
+                coinglass_context = await self._fetch_coinglass_data(context.symbol)
+                
                 if comprehensive:
                     market_data = await self.helsinki.fetch_comprehensive_data(context.symbol)
                 else:
                     market_data = await self.helsinki.fetch_full_data(context.symbol)
                 
-                market_context = self.helsinki.format_for_prompt(market_data)
+                helsinki_context = self.helsinki.format_for_prompt(market_data)
+                
+                # Combine: Coinglass (priority) + Helsinki
+                market_context = f"{coinglass_context}\n\n{helsinki_context}"
+                
+                data_sources.append("Coinglass:real-time")
                 data_sources.extend([f"Helsinki:{s}" for s in market_data.meta.get("sources", [])])
             
             data_fetch_time = int((time.time() - data_fetch_start) * 1000)
@@ -164,6 +175,108 @@ class BastionAI:
                 latency={"total": int((time.time() - start_time) * 1000)},
             )
     
+    async def _fetch_coinglass_data(self, symbol: str) -> str:
+        """
+        Fetch REAL market data from Coinglass.
+        This is the source of truth - prevents hallucinations.
+        """
+        import asyncio
+        
+        try:
+            # Fetch key data in parallel
+            results = await asyncio.gather(
+                self.coinglass.get_coins_markets(),
+                self.coinglass.get_hyperliquid_whale_positions(symbol),
+                self.coinglass.get_funding_rates(symbol),
+                self.coinglass.get_open_interest(symbol),
+                return_exceptions=True
+            )
+            
+            coins_markets, whale_positions, funding, oi = results
+            
+            lines = [f"## VERIFIED COINGLASS DATA - {symbol}"]
+            lines.append("[!] USE THESE EXACT NUMBERS. DO NOT INVENT DATA.\n")
+            
+            # Get price from coins_markets
+            price = 0
+            price_change = 0
+            if hasattr(coins_markets, 'success') and coins_markets.success and coins_markets.data:
+                for coin in coins_markets.data if isinstance(coins_markets.data, list) else []:
+                    if coin.get("symbol", "").upper() == symbol.upper():
+                        price = coin.get("price", 0)
+                        price_change = coin.get("priceChangePercent24h", 0) or coin.get("priceChg24h", 0)
+                        break
+            
+            if price > 0:
+                lines.append(f"**CURRENT PRICE: ${price:,.2f}** (24h: {price_change:+.2f}%)")
+            else:
+                lines.append(f"**PRICE: Data unavailable for {symbol}**")
+            
+            # Parse whale positions - filter by symbol
+            if hasattr(whale_positions, 'success') and whale_positions.success and whale_positions.data:
+                positions = whale_positions.data if isinstance(whale_positions.data, list) else []
+                # Filter by symbol
+                symbol_positions = [p for p in positions if p.get("symbol", "").upper() == symbol.upper()]
+                
+                if symbol_positions:
+                    # Calculate totals
+                    total_long = sum(
+                        abs(p.get("positionValueUsd", 0))
+                        for p in symbol_positions
+                        if p.get("positionSize", 0) > 0
+                    )
+                    total_short = sum(
+                        abs(p.get("positionValueUsd", 0))
+                        for p in symbol_positions
+                        if p.get("positionSize", 0) < 0
+                    )
+                    
+                    lines.append(f"\n**HYPERLIQUID WHALE POSITIONS ({len(symbol_positions)} positions):**")
+                    lines.append(f"  Long Exposure: ${total_long/1e6:.1f}M")
+                    lines.append(f"  Short Exposure: ${total_short/1e6:.1f}M")
+                    lines.append(f"  Net Bias: {'LONG' if total_long > total_short else 'SHORT'}")
+                    
+                    # Top 3 positions
+                    sorted_pos = sorted(symbol_positions, key=lambda x: abs(x.get("positionValueUsd", 0)), reverse=True)
+                    lines.append("\n  Top Positions:")
+                    for i, p in enumerate(sorted_pos[:3]):
+                        pos_size = p.get("positionSize", 0)
+                        side = "LONG" if pos_size > 0 else "SHORT"
+                        value = abs(p.get("positionValueUsd", 0)) / 1e6
+                        entry = p.get("entryPrice", 0)
+                        pnl = p.get("unrealizedPnL", 0) / 1e6
+                        leverage = p.get("leverage", 1)
+                        lines.append(f"    {i+1}. {side} ${value:.1f}M @ ${entry:,.0f} ({leverage}x) PnL: ${pnl:+.2f}M")
+            
+            # Funding rates
+            if hasattr(funding, 'success') and funding.success and funding.data:
+                rates = []
+                data = funding.data
+                if isinstance(data, dict):
+                    for margin_list in ["usdtOrUsdMarginList", "tokenMarginList"]:
+                        for item in data.get(margin_list, []):
+                            rate = item.get("rate", 0) or item.get("fundingRate", 0)
+                            if rate:
+                                rates.append(rate)
+                
+                if rates:
+                    avg_rate = sum(rates) / len(rates)
+                    lines.append(f"\n**FUNDING RATE:** {avg_rate*100:.4f}%")
+            
+            # Open Interest
+            if hasattr(oi, 'success') and oi.success and oi.data:
+                oi_data = oi.data
+                if isinstance(oi_data, list):
+                    total_oi = sum(item.get("openInterest", 0) or item.get("oi", 0) for item in oi_data)
+                    if total_oi > 0:
+                        lines.append(f"**OPEN INTEREST:** ${total_oi/1e9:.2f}B")
+            
+            lines.append("\n---")
+            return "\n".join(lines)
+            
+        except Exception as e:
+            return f"## COINGLASS DATA ERROR\nFailed to fetch: {str(e)}\n---"
+    
     def _detect_query_type(self, query: str) -> str:
         """Detect if query is about a specific topic"""
         q = query.lower()
@@ -190,14 +303,19 @@ class BastionAI:
         
         return f"""You are BASTION, a senior quant analyst for a $500M+ hedge fund. Provide institutional-grade analysis.
 {context_block}
-CRITICAL RULES:
-- USE THE CURRENT PRICE FROM THE DATA. NEVER MAKE UP PRICES.
-- No emojis. Use probabilities and confidence scores.
-- Be precise, quantified, actionable.
-- Reject bad setups with clear reasoning.
-- ADAPT YOUR RESPONSE TO THE USER'S CONTEXT (timeframe, risk tolerance, trade type).
-- IF USER ASKS ABOUT EXIT/SELL, focus on exit strategy, not new entries.
-- IF USER ASKS ABOUT DCA, provide accumulation zones with allocation percentages.
+CRITICAL RULES - FOLLOW EXACTLY:
+1. USE ONLY THE PRICES AND DATA PROVIDED BELOW. NEVER INVENT NUMBERS.
+2. If the data shows BTC at $62,000 - use $62,000. If SOL is $73 - use $73.
+3. DO NOT hallucinate prices, volumes, or statistics not in the data.
+4. If data is missing, say "data unavailable" - DO NOT GUESS.
+5. No emojis. Use probabilities and confidence scores.
+6. Be precise, quantified, actionable.
+7. Reject bad setups with clear reasoning.
+8. ADAPT YOUR RESPONSE TO THE USER'S CONTEXT (timeframe, risk tolerance, trade type).
+9. IF USER ASKS ABOUT EXIT/SELL, focus on exit strategy, not new entries.
+10. IF USER ASKS ABOUT DCA, provide accumulation zones with allocation percentages.
+
+HALLUCINATION WARNING: Your training data is outdated. The LIVE DATA below is the ONLY source of truth.
 
 RESPONSE FORMAT:
 
