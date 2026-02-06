@@ -280,9 +280,26 @@
               <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
               LIVE
             </div>
-            <div class="flex items-center gap-2 text-zinc-400">
+            <div class="flex items-center gap-2 text-zinc-400" id="exchange-indicator">
               <iconify-icon icon="solar:link-circle-bold" class="text-green-500"></iconify-icon>
-              BINANCE-FUTURES
+              <span id="connected-exchange-name">BINANCE-FUTURES</span>
+            </div>
+            
+            <!-- USER PROFILE -->
+            <div id="user-profile-bar" class="flex items-center gap-3 px-3 py-1 bg-zinc-800/50 border border-zinc-700/50 rounded-lg ml-2">
+              <div class="relative">
+                <div id="header-avatar" class="w-7 h-7 rounded-full bg-gradient-to-br from-crimson-600 to-crimson-900 flex items-center justify-center text-white font-bold text-xs overflow-hidden border border-crimson-500/50">
+                  <span id="header-avatar-letter">?</span>
+                  <img id="header-avatar-img" src="" class="hidden w-full h-full object-cover">
+                </div>
+                <div id="header-gif-mini" class="hidden absolute -bottom-1 -right-1 w-4 h-4 rounded overflow-hidden border border-zinc-600">
+                  <img id="header-gif-img" src="" class="w-full h-full object-cover">
+                </div>
+              </div>
+              <div class="flex flex-col">
+                <span id="header-username" class="text-white text-[10px] font-bold">Guest</span>
+                <span id="header-user-status" class="text-zinc-500 text-[8px]">Not logged in</span>
+              </div>
             </div>
           </div>
 
@@ -5381,6 +5398,133 @@ Esc    - Close Dialogs
       if (e.key === 'cornerGif' || e.key === 'cornerGifSettings') {
         loadCornerGif();
       }
+      if (e.key === 'bastion_token' || e.key === 'bastion_user') {
+        loadUserProfile();
+      }
+    });
+    
+    // =====================================================
+    // USER PROFILE LOADING
+    // =====================================================
+    async function loadUserProfile() {
+      const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+      const cachedUser = localStorage.getItem('bastion_user') || sessionStorage.getItem('bastion_user');
+      
+      const avatarLetter = document.getElementById('header-avatar-letter');
+      const avatarImg = document.getElementById('header-avatar-img');
+      const username = document.getElementById('header-username');
+      const userStatus = document.getElementById('header-user-status');
+      const headerGifMini = document.getElementById('header-gif-mini');
+      const headerGifImg = document.getElementById('header-gif-img');
+      
+      // Load avatar from localStorage
+      const avatarUrl = localStorage.getItem('userAvatar');
+      if (avatarUrl && avatarImg) {
+        avatarImg.src = avatarUrl;
+        avatarImg.classList.remove('hidden');
+        if (avatarLetter) avatarLetter.classList.add('hidden');
+      }
+      
+      // Load mini GIF preview
+      const gifUrl = localStorage.getItem('cornerGif');
+      if (gifUrl && headerGifMini && headerGifImg) {
+        headerGifImg.src = gifUrl;
+        headerGifMini.classList.remove('hidden');
+      }
+      
+      // If user has cached profile
+      if (cachedUser) {
+        try {
+          const user = JSON.parse(cachedUser);
+          if (username) username.textContent = user.display_name || user.email?.split('@')[0] || 'Trader';
+          if (avatarLetter && !avatarUrl) {
+            avatarLetter.textContent = (user.display_name || user.email || 'T').charAt(0).toUpperCase();
+          }
+          if (userStatus) userStatus.textContent = 'Logged in';
+          userStatus?.classList.remove('text-zinc-500');
+          userStatus?.classList.add('text-green-500');
+        } catch (e) {}
+      }
+      
+      // If logged in, verify with server and load cloud data
+      if (token) {
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/me?token=${token}`);
+          const data = await res.json();
+          
+          if (data.success && data.user) {
+            // Update UI with fresh data
+            if (username) username.textContent = data.user.display_name || data.user.email?.split('@')[0] || 'Trader';
+            if (avatarLetter && !avatarUrl) {
+              avatarLetter.textContent = (data.user.display_name || data.user.email || 'T').charAt(0).toUpperCase();
+            }
+            if (userStatus) {
+              userStatus.textContent = 'Synced';
+              userStatus.classList.remove('text-zinc-500');
+              userStatus.classList.add('text-green-500');
+            }
+            
+            // Update connected exchange indicator
+            updateExchangeIndicator();
+            
+            // Load exchanges from cloud (if not already loaded from localStorage)
+            await loadCloudExchanges(token);
+          }
+        } catch (e) {
+          console.log('[USER] Could not verify session:', e);
+        }
+      } else {
+        // Guest mode
+        if (username) username.textContent = 'Guest';
+        if (userStatus) {
+          userStatus.textContent = 'Not logged in';
+          userStatus.classList.remove('text-green-500');
+          userStatus.classList.add('text-zinc-500');
+        }
+        if (avatarLetter) avatarLetter.textContent = '?';
+      }
+    }
+    
+    // Update exchange indicator based on connected exchanges
+    function updateExchangeIndicator() {
+      const exchangeName = document.getElementById('connected-exchange-name');
+      const saved = localStorage.getItem('bastion_exchange_credentials');
+      
+      if (saved) {
+        try {
+          const exchanges = Object.keys(JSON.parse(saved));
+          if (exchanges.length > 0) {
+            exchangeName.textContent = exchanges.map(e => e.toUpperCase()).join(' + ');
+            return;
+          }
+        } catch (e) {}
+      }
+      
+      exchangeName.textContent = 'NO EXCHANGE';
+    }
+    
+    // Load exchanges from Supabase cloud
+    async function loadCloudExchanges(token) {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/load-exchanges`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        
+        if (data.success && data.loaded > 0) {
+          console.log(`[CLOUD] Loaded ${data.loaded} exchanges from cloud:`, data.exchanges);
+          updateExchangeIndicator();
+        }
+      } catch (e) {
+        console.log('[CLOUD] Could not load cloud exchanges:', e);
+      }
+    }
+    
+    // Initialize user profile on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadUserProfile();
     });
     </script>
   
