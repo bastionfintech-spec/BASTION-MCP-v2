@@ -1436,8 +1436,10 @@
         }
         
         try {
+          console.log(`[SYNC] Starting sync for ${exchange}...`);
           const response = await fetch(`${API_BASE}/api/exchange/${exchange}/sync`, { method: 'POST' });
           const data = await response.json();
+          console.log(`[SYNC] Response:`, data);
           
           if (data.success) {
             // Update balance display
@@ -1457,13 +1459,27 @@
             // Update last sync time
             document.getElementById(`${exchangeId}-last-sync`).textContent = `Synced ${new Date().toLocaleTimeString()}`;
             
+            // Log positions if any
+            if (data.positions && data.positions.length > 0) {
+              console.log(`[SYNC] Positions:`, data.positions);
+            }
+            
+            // Log any API errors
+            if (data.errors) {
+              if (data.errors.positions) console.warn(`[SYNC] Position error: ${data.errors.positions}`);
+              if (data.errors.balance) console.warn(`[SYNC] Balance error: ${data.errors.balance}`);
+            }
+            
             showToast(`${exchangeConfigs[exchange].name} synced! ${data.positions_count} positions`, 'success');
           } else {
-            statusEl.innerHTML = `<span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span> Sync failed - ${data.error || 'Unknown error'}`;
+            console.error(`[SYNC] Failed:`, data);
+            if (statusEl) {
+              statusEl.innerHTML = `<span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span> Sync failed`;
+            }
             showToast(`Sync failed: ${data.error}`, 'error');
           }
         } catch (err) {
-          console.error('Sync error:', err);
+          console.error('[SYNC] Network error:', err);
           showToast('Sync failed - Network error', 'error');
         } finally {
           if (syncBtn) {
