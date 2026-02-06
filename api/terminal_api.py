@@ -335,7 +335,7 @@ async def connect_exchange(data: dict):
         raise HTTPException(status_code=400, detail="Missing required fields")
     
     # Validate exchange name
-    valid_exchanges = ["blofin", "bitunix", "bybit", "okx", "binance", "deribit"]
+    valid_exchanges = ["blofin", "bitunix", "bybit", "okx", "binance", "deribit", "hyperliquid"]
     if exchange not in valid_exchanges:
         raise HTTPException(status_code=400, detail=f"Invalid exchange: {exchange}")
     
@@ -486,6 +486,166 @@ async def get_all_positions():
         "exchanges": list(connected_exchanges.keys()),
         "timestamp": datetime.now().isoformat(),
         "source": "demo"
+    }
+
+
+# =============================================================================
+# USER SETTINGS API
+# =============================================================================
+
+# In-memory storage for user settings (would use DB in production)
+user_settings: Dict[str, Dict] = {
+    "profile": {
+        "display_name": "Trader",
+        "email": "trader@example.com",
+        "timezone": "UTC",
+        "currency": "USD",
+        "experience": "intermediate",
+        "trading_style": "scalping"
+    },
+    "risk": {
+        "max_leverage": 20,
+        "max_position_size": 25,
+        "max_open_positions": 5,
+        "daily_drawdown": 5,
+        "weekly_drawdown": 10,
+        "auto_pause": True
+    },
+    "alerts": {
+        "push_enabled": True,
+        "sound_enabled": False,
+        "telegram_connected": False,
+        "discord_connected": False,
+        "alert_types": ["whales", "price_targets", "funding", "liquidations", "oi_spikes"]
+    },
+    "appearance": {
+        "theme": "crimson",
+        "chart_type": "candles",
+        "up_color": "#22c55e",
+        "down_color": "#ef4444",
+        "show_volume": True,
+        "show_grid": True,
+        "compact_mode": False,
+        "scanlines": True,
+        "animations": True,
+        "font_size": "medium"
+    }
+}
+
+
+@app.get("/api/settings")
+async def get_all_settings():
+    """Get all user settings."""
+    return {"success": True, "settings": user_settings}
+
+
+@app.get("/api/settings/{category}")
+async def get_settings_category(category: str):
+    """Get settings for a specific category."""
+    if category not in user_settings:
+        raise HTTPException(status_code=404, detail=f"Settings category '{category}' not found")
+    return {"success": True, "settings": user_settings[category]}
+
+
+@app.put("/api/settings/{category}")
+async def update_settings(category: str, data: dict):
+    """Update settings for a specific category."""
+    if category not in user_settings:
+        raise HTTPException(status_code=404, detail=f"Settings category '{category}' not found")
+    
+    # Merge new settings with existing
+    user_settings[category].update(data)
+    logger.info(f"[SETTINGS] Updated {category}: {data}")
+    
+    return {"success": True, "settings": user_settings[category]}
+
+
+@app.post("/api/settings/profile")
+async def update_profile(data: dict):
+    """Update user profile."""
+    allowed_fields = ["display_name", "email", "timezone", "currency", "experience", "trading_style"]
+    
+    for field in allowed_fields:
+        if field in data:
+            user_settings["profile"][field] = data[field]
+    
+    logger.info(f"[PROFILE] Updated: {data}")
+    return {"success": True, "profile": user_settings["profile"]}
+
+
+@app.post("/api/settings/risk")
+async def update_risk_settings(data: dict):
+    """Update risk management settings."""
+    allowed_fields = ["max_leverage", "max_position_size", "max_open_positions", 
+                      "daily_drawdown", "weekly_drawdown", "auto_pause"]
+    
+    for field in allowed_fields:
+        if field in data:
+            user_settings["risk"][field] = data[field]
+    
+    logger.info(f"[RISK] Updated: {data}")
+    return {"success": True, "risk": user_settings["risk"]}
+
+
+@app.post("/api/settings/alerts")
+async def update_alert_settings(data: dict):
+    """Update alert preferences."""
+    user_settings["alerts"].update(data)
+    logger.info(f"[ALERTS] Updated: {data}")
+    return {"success": True, "alerts": user_settings["alerts"]}
+
+
+@app.post("/api/settings/appearance")
+async def update_appearance_settings(data: dict):
+    """Update appearance settings."""
+    user_settings["appearance"].update(data)
+    logger.info(f"[APPEARANCE] Updated: {data}")
+    return {"success": True, "appearance": user_settings["appearance"]}
+
+
+# =============================================================================
+# SUBSCRIPTION API
+# =============================================================================
+
+subscription_info = {
+    "tier": "pro",
+    "tier_name": "PRO TIER",
+    "price": 49,
+    "currency": "USD",
+    "billing_cycle": "monthly",
+    "api_calls_limit": 8000,
+    "api_calls_used": 2720,
+    "exchanges_limit": 6,
+    "iros_unlimited": True,
+    "renewal_date": "2026-03-05",
+    "status": "active"
+}
+
+
+@app.get("/api/subscription")
+async def get_subscription():
+    """Get current subscription info."""
+    return {"success": True, "subscription": subscription_info}
+
+
+@app.get("/api/subscription/usage")
+async def get_usage_stats():
+    """Get API usage statistics."""
+    return {
+        "success": True,
+        "usage": {
+            "api_calls": {
+                "used": subscription_info["api_calls_used"],
+                "limit": subscription_info["api_calls_limit"],
+                "percent": round((subscription_info["api_calls_used"] / subscription_info["api_calls_limit"]) * 100, 1)
+            },
+            "exchanges": {
+                "connected": len(connected_exchanges),
+                "limit": subscription_info["exchanges_limit"]
+            },
+            "period_start": "2026-02-05",
+            "period_end": "2026-03-05"
+        }
     }
 
 
