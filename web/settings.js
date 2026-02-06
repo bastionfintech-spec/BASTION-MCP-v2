@@ -1,82 +1,40 @@
 /**
  * BASTION Global Settings Manager
- * Handles appearance, alerts, and user preferences across all pages
+ * Handles appearance settings - BACKGROUND THEMES ONLY
  */
 
 const BastionSettings = {
-  // Theme configurations
+  // Theme background configurations - JUST BACKGROUNDS
   themes: {
     crimson: {
       name: 'Crimson Dark',
-      '--bg': '#0d1117',
-      '--surface': '#161b22',
-      '--surface-2': '#21262d',
-      '--border': '#30363d',
-      '--text': '#c9d1d9',
-      '--dim': '#8b949e',
-      '--accent': '#da3633',
-      '--green': '#238636',
-      '--red': '#da3633',
-      '--gold': '#bb8009',
-      '--blue': '#388bfd',
-      '--orange': '#bd5d12',
-      '--cyan': '#79c0ff',
-      '--glow': 'rgba(220, 38, 38, 0.15)',
-      '--glow-strong': 'rgba(220, 38, 38, 0.3)'
+      bg: '#0a0a0a',
+      bgGradient: 'radial-gradient(ellipse at top, rgba(220, 38, 38, 0.08) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(220, 38, 38, 0.05) 0%, transparent 40%), #0a0a0a'
     },
     midnight: {
       name: 'Midnight Blue',
-      '--bg': '#0a0f1a',
-      '--surface': '#111827',
-      '--surface-2': '#1f2937',
-      '--border': '#374151',
-      '--text': '#e5e7eb',
-      '--dim': '#9ca3af',
-      '--accent': '#3b82f6',
-      '--green': '#10b981',
-      '--red': '#ef4444',
-      '--gold': '#f59e0b',
-      '--blue': '#3b82f6',
-      '--orange': '#f97316',
-      '--cyan': '#22d3ee',
-      '--glow': 'rgba(59, 130, 246, 0.15)',
-      '--glow-strong': 'rgba(59, 130, 246, 0.3)'
+      bg: '#050510',
+      bgGradient: 'radial-gradient(ellipse at top, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(30, 64, 175, 0.08) 0%, transparent 40%), #050510'
     },
     matrix: {
       name: 'Matrix',
-      '--bg': '#0a0f0a',
-      '--surface': '#0f1a0f',
-      '--surface-2': '#142814',
-      '--border': '#1e3a1e',
-      '--text': '#4ade80',
-      '--dim': '#22c55e',
-      '--accent': '#22c55e',
-      '--green': '#4ade80',
-      '--red': '#f87171',
-      '--gold': '#fbbf24',
-      '--blue': '#60a5fa',
-      '--orange': '#fb923c',
-      '--cyan': '#22d3ee',
-      '--glow': 'rgba(34, 197, 94, 0.15)',
-      '--glow-strong': 'rgba(34, 197, 94, 0.3)'
+      bg: '#030a03',
+      bgGradient: 'radial-gradient(ellipse at top, rgba(34, 197, 94, 0.08) 0%, transparent 50%), radial-gradient(ellipse at bottom left, rgba(22, 163, 74, 0.05) 0%, transparent 40%), #030a03'
     },
     stealth: {
       name: 'Stealth',
-      '--bg': '#0f0f0f',
-      '--surface': '#171717',
-      '--surface-2': '#1f1f1f',
-      '--border': '#2a2a2a',
-      '--text': '#a3a3a3',
-      '--dim': '#737373',
-      '--accent': '#525252',
-      '--green': '#4ade80',
-      '--red': '#f87171',
-      '--gold': '#fbbf24',
-      '--blue': '#60a5fa',
-      '--orange': '#fb923c',
-      '--cyan': '#a1a1aa',
-      '--glow': 'rgba(82, 82, 82, 0.15)',
-      '--glow-strong': 'rgba(82, 82, 82, 0.3)'
+      bg: '#0a0a0a',
+      bgGradient: 'linear-gradient(180deg, #0f0f0f 0%, #0a0a0a 50%, #080808 100%)'
+    },
+    abyss: {
+      name: 'Abyss',
+      bg: '#000000',
+      bgGradient: 'radial-gradient(ellipse at center, #0a0a0a 0%, #000000 70%)'
+    },
+    terminal: {
+      name: 'Terminal',
+      bg: '#0c0c0c',
+      bgGradient: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.01) 2px, rgba(0,255,0,0.01) 4px), radial-gradient(ellipse at top, rgba(0, 255, 0, 0.05) 0%, transparent 50%), #0c0c0c'
     }
   },
 
@@ -98,44 +56,40 @@ const BastionSettings = {
       pushEnabled: true,
       soundEnabled: false,
       telegramConnected: false,
-      telegramChatId: null,
-      discordConnected: false,
-      alertTypes: ['whales', 'price_targets', 'funding', 'liquidations', 'oi_spikes']
+      telegramChatId: null
     }
   },
+
+  current: null,
 
   // Initialize settings on page load
   init() {
     this.loadSettings();
     this.applyTheme();
     this.applyAppearance();
-    console.log('[BASTION] Settings initialized with theme:', this.current?.appearance?.theme);
+    console.log('[BASTION] Settings initialized, theme:', this.current?.appearance?.theme || 'crimson');
   },
 
   // Load settings from localStorage
   loadSettings() {
-    // First try the new key
     let stored = localStorage.getItem('bastionAppearance');
     if (stored) {
       try {
         const appearance = JSON.parse(stored);
         this.current = { appearance, alerts: this.defaults.alerts };
-        console.log('[BASTION] Loaded appearance from bastionAppearance:', appearance.theme);
         return this.current;
       } catch (e) {
-        console.warn('[BASTION] Invalid bastionAppearance');
+        console.warn('[BASTION] Invalid settings, using defaults');
       }
     }
     
-    // Try the old key
+    // Try old key
     stored = localStorage.getItem('bastionSettings');
     if (stored) {
       try {
         this.current = JSON.parse(stored);
         return this.current;
-      } catch (e) {
-        console.warn('[BASTION] Invalid bastionSettings');
-      }
+      } catch (e) {}
     }
     
     // Use defaults
@@ -143,112 +97,77 @@ const BastionSettings = {
     return this.current;
   },
 
-  // Save settings to localStorage
+  // Save settings
   saveSettings() {
     localStorage.setItem('bastionSettings', JSON.stringify(this.current));
     if (this.current.appearance) {
       localStorage.setItem('bastionAppearance', JSON.stringify(this.current.appearance));
     }
-    console.log('[BASTION] Settings saved');
   },
 
-  // Apply theme to document
+  // Apply theme - JUST CHANGES THE BACKGROUND
   applyTheme(themeName = null) {
     const theme = themeName || this.current?.appearance?.theme || 'crimson';
-    const themeConfig = this.themes[theme];
+    const config = this.themes[theme];
     
-    if (!themeConfig) {
-      console.warn(`[BASTION] Unknown theme: ${theme}, falling back to crimson`);
-      return this.applyTheme('crimson');
+    if (!config) {
+      console.warn(`[BASTION] Unknown theme: ${theme}`);
+      return;
     }
 
-    const root = document.documentElement;
+    // Apply background to body
+    document.body.style.background = config.bgGradient;
+    document.body.style.backgroundColor = config.bg;
+    document.body.style.minHeight = '100vh';
     
-    // Apply all CSS variables
-    Object.entries(themeConfig).forEach(([key, value]) => {
-      if (key.startsWith('--')) {
-        root.style.setProperty(key, value);
-      }
-    });
-    
-    // Also update body background
-    document.body.style.backgroundColor = themeConfig['--bg'];
-    
-    // Update any elements with hardcoded backgrounds
-    document.querySelectorAll('[style*="background"]').forEach(el => {
-      const style = el.getAttribute('style');
-      if (style && style.includes('#0d1117')) {
-        el.style.backgroundColor = themeConfig['--bg'];
-      }
-    });
+    // Also apply to html element for full coverage
+    document.documentElement.style.background = config.bgGradient;
+    document.documentElement.style.backgroundColor = config.bg;
 
-    // Store current theme
+    // Update current settings
     if (this.current) {
       this.current.appearance = this.current.appearance || {};
       this.current.appearance.theme = theme;
+      this.saveSettings();
     }
-
-    // Dispatch event for components that need to know (like charts)
-    window.dispatchEvent(new CustomEvent('bastionThemeChange', { 
-      detail: { 
-        theme, 
-        config: themeConfig,
-        upColor: this.current?.appearance?.upColor || '#22c55e',
-        downColor: this.current?.appearance?.downColor || '#ef4444'
-      } 
-    }));
     
-    console.log(`[BASTION] Theme applied: ${themeConfig.name}`);
+    console.log(`[BASTION] Background theme applied: ${config.name}`);
+    
+    // Dispatch event
+    window.dispatchEvent(new CustomEvent('bastionThemeChange', { 
+      detail: { theme, config } 
+    }));
   },
 
-  // Apply appearance settings
+  // Apply other appearance settings
   applyAppearance() {
     const app = this.current?.appearance || this.defaults.appearance;
     
-    // Scanlines - find all possible scanline elements
-    document.querySelectorAll('.scanlines, [class*="scanline"], .scanline-overlay').forEach(el => {
+    // Scanlines
+    document.querySelectorAll('.scanlines, .scanline-overlay').forEach(el => {
       el.style.opacity = app.scanlines ? '0.3' : '0';
-      el.style.display = app.scanlines ? 'block' : 'none';
     });
 
     // Compact mode
     if (app.compactMode) {
       document.body.classList.add('compact-mode');
-      document.documentElement.style.setProperty('--spacing-multiplier', '0.75');
     } else {
       document.body.classList.remove('compact-mode');
-      document.documentElement.style.setProperty('--spacing-multiplier', '1');
-    }
-
-    // Font size
-    const fontSizes = { small: '10px', medium: '11px', large: '13px' };
-    const fontSize = fontSizes[app.fontSize] || '11px';
-    document.documentElement.style.setProperty('--base-font-size', fontSize);
-    
-    // Also set on body for pages that don't use the variable
-    if (app.fontSize === 'large') {
-      document.body.style.fontSize = '13px';
-    } else if (app.fontSize === 'small') {
-      document.body.style.fontSize = '10px';
     }
 
     // Animations
     if (!app.animations) {
       document.body.classList.add('no-animations');
-      document.documentElement.style.setProperty('--transition-speed', '0s');
     } else {
       document.body.classList.remove('no-animations');
-      document.documentElement.style.setProperty('--transition-speed', '0.2s');
     }
     
-    // Apply chart colors to CSS variables for any charts
+    // Set chart color CSS variables for any charts that use them
     if (app.upColor) {
       document.documentElement.style.setProperty('--chart-up', app.upColor);
-      document.documentElement.style.setProperty('--green', app.upColor);
     }
     if (app.downColor) {
       document.documentElement.style.setProperty('--chart-down', app.downColor);
-      document.documentElement.style.setProperty('--red', app.downColor);
     }
   },
 
@@ -260,7 +179,6 @@ const BastionSettings = {
     this.current[category][key] = value;
     this.saveSettings();
 
-    // Apply immediately if appearance
     if (category === 'appearance') {
       if (key === 'theme') {
         this.applyTheme(value);
@@ -270,7 +188,7 @@ const BastionSettings = {
     }
   },
 
-  // Get chart colors for trading view
+  // Get chart colors
   getChartColors() {
     const app = this.current?.appearance || this.defaults.appearance;
     return {
@@ -279,138 +197,73 @@ const BastionSettings = {
       showVolume: app.showVolume,
       showGrid: app.showGrid
     };
-  },
-
-  // Get current theme config
-  getThemeConfig() {
-    const theme = this.current?.appearance?.theme || 'crimson';
-    return this.themes[theme];
   }
 };
 
 // ============================================================================
-// TELEGRAM ALERTS
+// ALERTS
 // ============================================================================
 
 const BastionAlerts = {
   API_BASE: window.location.origin,
 
-  // Request push notification permission
   async requestPushPermission() {
-    if (!('Notification' in window)) {
-      console.warn('[ALERTS] Notifications not supported');
-      return false;
-    }
-
+    if (!('Notification' in window)) return false;
     const permission = await Notification.requestPermission();
     return permission === 'granted';
   },
 
-  // Show browser notification
   showNotification(title, body, options = {}) {
     if (Notification.permission !== 'granted') return;
-
     const notification = new Notification(title, {
       body,
       icon: '/favicon.ico',
-      badge: '/favicon.ico',
       tag: options.tag || 'bastion-alert',
       ...options
     });
-
-    if (options.onclick) {
-      notification.onclick = options.onclick;
-    }
-
-    // Auto close after 10 seconds
     setTimeout(() => notification.close(), 10000);
   },
 
-  // Play alert sound
   playSound(type = 'alert') {
     if (!BastionSettings.current?.alerts?.soundEnabled) return;
-
-    // Create audio context for sound
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      
       osc.connect(gain);
       gain.connect(ctx.destination);
-      
       osc.frequency.value = type === 'alert' ? 800 : 1200;
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.3);
-    } catch (e) {
-      console.warn('[ALERTS] Could not play sound:', e);
-    }
+    } catch (e) {}
   },
 
-  // Connect Telegram
   async connectTelegram() {
     try {
       const res = await fetch(`${this.API_BASE}/api/alerts/telegram/connect`);
       const data = await res.json();
-      
       if (data.success && data.connect_url) {
-        // Open Telegram bot link
         window.open(data.connect_url, '_blank');
         return data;
       }
       return null;
     } catch (e) {
-      console.error('[ALERTS] Telegram connect error:', e);
       return null;
-    }
-  },
-
-  // Verify Telegram connection
-  async verifyTelegram(code) {
-    try {
-      const res = await fetch(`${this.API_BASE}/api/alerts/telegram/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
-      });
-      return await res.json();
-    } catch (e) {
-      console.error('[ALERTS] Telegram verify error:', e);
-      return { success: false };
-    }
-  },
-
-  // Send test alert
-  async sendTestAlert(channel = 'all') {
-    try {
-      const res = await fetch(`${this.API_BASE}/api/alerts/test`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel })
-      });
-      return await res.json();
-    } catch (e) {
-      console.error('[ALERTS] Test alert error:', e);
-      return { success: false };
     }
   }
 };
 
 // ============================================================================
-// AUTO-INITIALIZE
+// INITIALIZE
 // ============================================================================
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => BastionSettings.init());
 } else {
   BastionSettings.init();
 }
 
-// Expose globally
 window.BastionSettings = BastionSettings;
 window.BastionAlerts = BastionAlerts;
-
