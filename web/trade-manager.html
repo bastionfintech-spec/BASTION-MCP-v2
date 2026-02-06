@@ -865,6 +865,65 @@
             background: rgba(33, 150, 243, 0.1);
         }
         
+        /* Live Position Cards */
+        .live-position {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+        .live-position.long { border-left: 3px solid var(--green); }
+        .live-position.short { border-left: 3px solid var(--red); }
+        .live-position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .live-position-symbol {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: white;
+        }
+        .live-position-dir {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .live-position-dir.long { background: var(--green); color: black; }
+        .live-position-dir.short { background: var(--red); color: white; }
+        .live-position-pnl {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .live-position-pnl.positive { color: var(--green); }
+        .live-position-pnl.negative { color: var(--red); }
+        .live-position-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            font-size: 0.7rem;
+        }
+        .live-position-stat {
+            display: flex;
+            justify-content: space-between;
+        }
+        .live-position-stat-label { color: var(--dim); }
+        .live-position-stat-value { color: white; font-family: 'JetBrains Mono', monospace; }
+        .live-position-liq {
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid var(--border);
+            font-size: 0.65rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .live-position-liq-label { color: var(--dim); }
+        .live-position-liq-value { color: var(--red); font-family: 'JetBrains Mono', monospace; }
+        
         .stop-name {
             font-size: 0.75rem;
         }
@@ -1111,6 +1170,20 @@
         
         <!-- Right Panel -->
         <div class="panel">
+            <!-- LIVE POSITIONS FROM EXCHANGES -->
+            <div class="section" id="livePositionsSection">
+                <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>POSITIONS <span id="positionsCount" style="background: var(--surface-2); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem;">0</span></span>
+                    <button onclick="loadLivePositions()" style="background: none; border: none; color: var(--dim); cursor: pointer; font-size: 0.7rem;">⟳ Refresh</button>
+                </div>
+                <div id="livePositionsList" style="max-height: 400px; overflow-y: auto;">
+                    <div style="text-align: center; padding: 20px; color: var(--dim); font-size: 0.8rem;">
+                        <div>No exchange connected</div>
+                        <a href="/account" style="color: var(--blue); text-decoration: none; font-size: 0.7rem;">Connect Exchange →</a>
+                    </div>
+                </div>
+            </div>
+            
             <div class="section">
                 <div class="section-title">Exit Priority</div>
                 <div class="exit-priority">
@@ -1252,6 +1325,126 @@
         let lastBarTime = 0;
         let entryMarker;
         
+        // ==================== LIVE POSITIONS ====================
+        async function loadLivePositions() {
+            try {
+                const res = await fetch(`${API}/api/positions`);
+                const data = await res.json();
+                
+                const container = document.getElementById('livePositionsList');
+                const countEl = document.getElementById('positionsCount');
+                
+                if (data.positions && data.positions.length > 0 && data.summary?.source === 'live') {
+                    countEl.textContent = data.positions.length;
+                    
+                    container.innerHTML = data.positions.map(pos => {
+                        const isLong = pos.direction === 'long';
+                        const pnlClass = (pos.pnl || 0) >= 0 ? 'positive' : 'negative';
+                        const pnlSign = (pos.pnl || 0) >= 0 ? '+' : '';
+                        const pnlPctSign = (pos.pnl_pct || 0) >= 0 ? '+' : '';
+                        
+                        return `
+                            <div class="live-position ${pos.direction}">
+                                <div class="live-position-header">
+                                    <div>
+                                        <span class="live-position-symbol">${pos.symbol}</span>
+                                        <span class="live-position-dir ${pos.direction}">${isLong ? 'LONG ▲' : 'SHORT ▼'}</span>
+                                    </div>
+                                    <div class="live-position-pnl ${pnlClass}">
+                                        ${pnlSign}$${(pos.pnl || 0).toFixed(2)}
+                                        <div style="font-size: 0.7rem;">(${pnlPctSign}${(pos.pnl_pct || 0).toFixed(2)}%)</div>
+                                    </div>
+                                </div>
+                                <div class="live-position-stats">
+                                    <div class="live-position-stat">
+                                        <span class="live-position-stat-label">ENTRY</span>
+                                        <span class="live-position-stat-value">$${formatPosPrice(pos.entry_price)}</span>
+                                    </div>
+                                    <div class="live-position-stat">
+                                        <span class="live-position-stat-label">CURRENT</span>
+                                        <span class="live-position-stat-value">$${formatPosPrice(pos.current_price || pos.entry_price)}</span>
+                                    </div>
+                                    <div class="live-position-stat">
+                                        <span class="live-position-stat-label">SIZE</span>
+                                        <span class="live-position-stat-value">$${(pos.size_usd || pos.margin || 0).toFixed(0)}</span>
+                                    </div>
+                                    <div class="live-position-stat">
+                                        <span class="live-position-stat-label">LEVERAGE</span>
+                                        <span class="live-position-stat-value">${pos.leverage || 1}x</span>
+                                    </div>
+                                </div>
+                                ${pos.liquidation_price ? `
+                                <div class="live-position-liq">
+                                    <span class="live-position-liq-label">LIQ PRICE</span>
+                                    <span class="live-position-liq-value">$${formatPosPrice(pos.liquidation_price)}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                } else if (data.summary?.source === 'demo') {
+                    // Show connect prompt for mock data
+                    countEl.textContent = '0';
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: var(--dim); font-size: 0.8rem;">
+                            <div style="margin-bottom: 8px;">No live positions</div>
+                            <a href="/account" style="color: var(--blue); text-decoration: none; font-size: 0.7rem;">Connect Exchange →</a>
+                        </div>
+                    `;
+                } else {
+                    countEl.textContent = '0';
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: var(--dim); font-size: 0.8rem;">
+                            No open positions
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('Failed to load positions:', e);
+            }
+        }
+        
+        function formatPosPrice(price) {
+            if (!price) return '--';
+            if (price >= 1000) return price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            if (price >= 1) return price.toFixed(2);
+            return price.toFixed(6);
+        }
+        
+        // Auto-connect exchanges from localStorage on page load
+        async function autoConnectExchanges() {
+            const CREDS_KEY = 'bastion_exchange_credentials';
+            const saved = JSON.parse(localStorage.getItem(CREDS_KEY) || '{}');
+            const exchanges = Object.keys(saved);
+            
+            if (exchanges.length === 0) return;
+            
+            console.log('[TRADE-MGR] Auto-connecting exchanges:', exchanges);
+            
+            for (const exchange of exchanges) {
+                const creds = saved[exchange];
+                try {
+                    await fetch(`${API}/api/exchange/connect`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            exchange: exchange,
+                            api_key: creds.api_key,
+                            api_secret: creds.api_secret,
+                            passphrase: creds.passphrase,
+                            read_only: creds.read_only
+                        })
+                    });
+                    console.log(`[TRADE-MGR] Connected ${exchange}`);
+                } catch (e) {
+                    console.warn(`[TRADE-MGR] Failed to connect ${exchange}:`, e);
+                }
+            }
+            
+            // Load positions after connecting
+            setTimeout(loadLivePositions, 500);
+        }
+        
         const TIMEFRAME_SECONDS = {
             '15m': 900,
             '1h': 3600,
@@ -1265,6 +1458,12 @@
         // Init
         document.addEventListener('DOMContentLoaded', async () => {
             initChart();
+            
+            // Auto-connect exchanges and load live positions
+            await autoConnectExchanges();
+            
+            // Refresh positions every 30 seconds
+            setInterval(loadLivePositions, 30000);
             
             // Check for saved session before loading market data
             const restored = checkSavedSession();
