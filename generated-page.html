@@ -1474,19 +1474,25 @@
                 </div>
               </div>
               
-              <!-- OI CHANGES - TOP MOVERS -->
+              <!-- OI CHANGES - TOP MOVERS (24H) -->
               <div class="p-2">
                 <div class="text-[9px] text-zinc-500 font-mono mb-2 uppercase tracking-wide flex justify-between items-center">
                   <span class="flex items-center gap-1">
                     <iconify-icon icon="solar:chart-2-bold" class="text-cyan-400"></iconify-icon>
                     OI Changes
                   </span>
-                  <span class="text-[7px] text-cyan-400">COINGLASS</span>
+                  <div class="flex items-center gap-1">
+                    <span data-oi="timeframe" class="text-[7px] bg-cyan-900/50 text-cyan-400 px-1.5 py-0.5 rounded font-bold">24H</span>
+                    <span class="text-[6px] text-zinc-600">COINGLASS</span>
+                  </div>
                 </div>
                 
                 <!-- OI Increases -->
                 <div class="mb-2">
-                  <div class="text-[7px] text-green-400 font-bold mb-1">▲ TOP INCREASES</div>
+                  <div class="text-[7px] text-green-400 font-bold mb-1 flex justify-between">
+                    <span>▲ TOP INCREASES</span>
+                    <span class="text-zinc-600 font-normal">USD Change</span>
+                  </div>
                   <div data-oi="increases" class="space-y-0.5 text-[8px] font-mono">
                     <div class="flex justify-between text-zinc-500">
                       <span>Loading...</span>
@@ -1496,7 +1502,10 @@
                 
                 <!-- OI Decreases -->
                 <div>
-                  <div class="text-[7px] text-red-400 font-bold mb-1">▼ TOP DECREASES</div>
+                  <div class="text-[7px] text-red-400 font-bold mb-1 flex justify-between">
+                    <span>▼ TOP DECREASES</span>
+                    <span class="text-zinc-600 font-normal">USD Change</span>
+                  </div>
                   <div data-oi="decreases" class="space-y-0.5 text-[8px] font-mono">
                     <div class="flex justify-between text-zinc-500">
                       <span>Loading...</span>
@@ -6197,29 +6206,41 @@ Esc    - Close Dialogs
         const data = await res.json();
         
         if (data.success) {
-          // Render increases
+          // Update timeframe badge
+          const timeframeEl = document.querySelector('[data-oi="timeframe"]');
+          if (timeframeEl && data.timeframe) {
+            timeframeEl.textContent = data.timeframe;
+          }
+          
+          // Render increases with percentage
           const increasesEl = document.querySelector('[data-oi="increases"]');
           if (increasesEl && data.increases) {
             increasesEl.innerHTML = data.increases.slice(0, 5).map(coin => `
-              <div class="flex justify-between items-center py-0.5 border-l border-green-500/50 pl-1">
-                <span class="text-white font-bold">${coin.symbol}</span>
-                <span class="text-green-400">${coin.oi_change_formatted}</span>
+              <div class="flex justify-between items-center py-0.5 border-l-2 border-green-500/50 pl-1.5 hover:bg-green-900/10 transition-colors">
+                <div class="flex items-center gap-1">
+                  <span class="text-white font-bold">${coin.symbol}</span>
+                  <span class="text-green-400/60 text-[7px]">${coin.oi_change_pct_formatted || ''}</span>
+                </div>
+                <span class="text-green-400 font-mono">${coin.oi_change_formatted}</span>
               </div>
             `).join('');
           }
           
-          // Render decreases
+          // Render decreases with percentage
           const decreasesEl = document.querySelector('[data-oi="decreases"]');
           if (decreasesEl && data.decreases) {
             decreasesEl.innerHTML = data.decreases.slice(0, 5).map(coin => `
-              <div class="flex justify-between items-center py-0.5 border-l border-red-500/50 pl-1">
-                <span class="text-white font-bold">${coin.symbol}</span>
-                <span class="text-red-400">${coin.oi_change_formatted}</span>
+              <div class="flex justify-between items-center py-0.5 border-l-2 border-red-500/50 pl-1.5 hover:bg-red-900/10 transition-colors">
+                <div class="flex items-center gap-1">
+                  <span class="text-white font-bold">${coin.symbol}</span>
+                  <span class="text-red-400/60 text-[7px]">${coin.oi_change_pct_formatted || ''}</span>
+                </div>
+                <span class="text-red-400 font-mono">${coin.oi_change_formatted}</span>
               </div>
             `).join('');
           }
           
-          console.log('[OI CHANGES] Updated:', data.increases?.length, 'increases,', data.decreases?.length, 'decreases');
+          console.log('[OI CHANGES] Updated:', data.timeframe, '-', data.increases?.length, 'increases,', data.decreases?.length, 'decreases');
         }
       } catch (e) {
         console.error('[OI CHANGES] Fetch error:', e);

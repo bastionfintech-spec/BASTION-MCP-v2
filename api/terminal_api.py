@@ -3606,7 +3606,10 @@ async def get_oi_changes():
                     "increases": [format_change(c) for c in increases],
                     "decreases": [format_change(c) for c in decreases],
                     "total_coins_analyzed": len(oi_data),
-                    "source": "coinglass"
+                    "timeframe": "24H",
+                    "timeframe_hours": 24,
+                    "source": "coinglass",
+                    "updated_at": datetime.now().isoformat()
                 }
         
         # Fallback with mock data
@@ -3640,7 +3643,10 @@ async def get_oi_changes():
             "increases": increases,
             "decreases": decreases,
             "total_coins_analyzed": 50,
-            "source": "estimated"
+            "timeframe": "24H",
+            "timeframe_hours": 24,
+            "source": "estimated",
+            "updated_at": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -5729,17 +5735,75 @@ async def get_macro_correlation():
 # =============================================================================
 
 @app.get("/api/kelly")
-async def get_kelly_criterion():
-    """Calculate Kelly criterion position sizing."""
-    # Using session stats (would use real trade history)
-    win_rate = 0.73
-    avg_win = 2.1  # R-multiple
-    avg_loss = 1.0
+@app.post("/api/kelly")
+async def get_kelly_criterion(data: dict = None):
+    """
+    Calculate Kelly criterion position sizing.
+    
+    Kelly Formula: K% = W - [(1-W) / R]
+    Where:
+    - W = Win rate (probability of winning)
+    - R = Risk/Reward ratio (avg_win / avg_loss)
+    
+    Example: 73% win rate, 2.1R avg win, 1R avg loss
+    K% = 0.73 - (0.27 / 2.1) = 0.73 - 0.129 = 60.1%
+    
+    Capped at 25% max for safety (Kelly is aggressive).
+    Half-Kelly and Quarter-Kelly are recommended for most traders.
+    """
+    # TODO: Calculate from actual trade history when available
+    # For now, using realistic simulation based on position data
+    
+    source = "simulated"
+    
+    # If positions are provided, calculate from them
+    if data and data.get("positions"):
+        positions = data["positions"]
+        winning = [p for p in positions if float(p.get("unrealized_pnl", 0)) > 0]
+        losing = [p for p in positions if float(p.get("unrealized_pnl", 0)) < 0]
+        
+        if len(positions) >= 3:  # Need at least 3 trades
+            total = len(winning) + len(losing)
+            if total > 0:
+                win_rate = len(winning) / total
+                
+                # Calculate average R-multiples
+                avg_win_pct = sum(float(p.get("pnl_pct", 2)) for p in winning) / len(winning) if winning else 2.0
+                avg_loss_pct = abs(sum(float(p.get("pnl_pct", -1)) for p in losing) / len(losing)) if losing else 1.0
+                
+                avg_win = avg_win_pct / avg_loss_pct if avg_loss_pct > 0 else 2.0
+                avg_loss = 1.0
+                source = "live_positions"
+            else:
+                win_rate = 0.73
+                avg_win = 2.1
+                avg_loss = 1.0
+        else:
+            win_rate = 0.73
+            avg_win = 2.1
+            avg_loss = 1.0
+    else:
+        # Default simulation values (conservative assumptions)
+        win_rate = 0.73  # 73% win rate
+        avg_win = 2.1    # Average winning trade = 2.1R
+        avg_loss = 1.0   # Average losing trade = 1R (risk unit)
     
     # Kelly formula: K% = W - [(1-W) / R] where R = avg_win/avg_loss
-    r_ratio = avg_win / avg_loss
+    r_ratio = avg_win / avg_loss if avg_loss > 0 else 2.0
     kelly = win_rate - ((1 - win_rate) / r_ratio)
-    kelly_pct = max(0, min(kelly * 100, 25))  # Cap at 25%
+    kelly_pct = max(0, min(kelly * 100, 25))  # Cap at 25% max
+    
+    # Recommendation based on Kelly size
+    if kelly_pct <= 0:
+        recommendation = "⚠️ Negative edge - Don't trade"
+    elif kelly_pct < 2:
+        recommendation = "Small edge - Size conservatively"
+    elif kelly_pct < 5:
+        recommendation = "Use Quarter-Kelly (safest)"
+    elif kelly_pct < 10:
+        recommendation = "Use Half-Kelly (conservative)"
+    else:
+        recommendation = "Strong edge - Half-Kelly recommended"
     
     return {
         "success": True,
@@ -5747,9 +5811,12 @@ async def get_kelly_criterion():
         "half": round(kelly_pct / 2, 1),
         "quarter": round(kelly_pct / 4, 1),
         "winRate": int(win_rate * 100),
-        "avgWin": f"+{avg_win}R",
-        "avgLoss": f"-{avg_loss}R",
-        "recommendation": "Use Half-Kelly (conservative)" if kelly_pct > 3 else "Size appropriately"
+        "avgWin": f"+{avg_win:.1f}R",
+        "avgLoss": f"-{avg_loss:.1f}R",
+        "rRatio": round(r_ratio, 2),
+        "recommendation": recommendation,
+        "source": source,
+        "formula": "K% = W - [(1-W) / R]"
     }
 
 
