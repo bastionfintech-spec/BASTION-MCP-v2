@@ -1430,6 +1430,7 @@ async def neural_chat(request: Dict[str, Any]):
     
     # Call IROS model
     model_url = os.getenv("BASTION_MODEL_URL")
+    logger.info(f"[NEURAL] Model URL: {model_url}")
     response = ""
     
     if model_url:
@@ -1451,7 +1452,7 @@ async def neural_chat(request: Dict[str, Any]):
 
 Your response MUST reference the EXACT price shown above. Any other price is WRONG."""
 
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=30.0)) as client:
                 model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
                 headers = {"Content-Type": "application/json"}
                 if model_api_key:
@@ -1479,7 +1480,9 @@ Your response MUST reference the EXACT price shown above. Any other price is WRO
                     response = f"Model error: {resp.status_code}"
                     
         except Exception as e:
-            response = f"Model unavailable: {str(e)[:100]}"
+            error_msg = str(e) if str(e) else repr(e)
+            logger.error(f"[NEURAL] Model call failed: {error_msg}")
+            response = f"Model unavailable: {error_msg[:100]}"
     else:
         response = f"""**{symbol} Analysis** (No IROS - using data only)
 
