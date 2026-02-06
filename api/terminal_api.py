@@ -1414,6 +1414,22 @@ async def disable_2fa(data: dict):
     return {"success": True}
 
 
+@app.get("/api/debug/exchanges")
+async def debug_exchanges():
+    """Debug endpoint to check exchange contexts."""
+    return {
+        "user_exchanges_scopes": list(user_exchanges.keys()),
+        "user_contexts_scopes": list(user_contexts.keys()),
+        "exchanges_by_scope": {
+            scope: {
+                "exchanges": list(exchanges.keys()),
+                "connections": list(user_contexts.get(scope, UserContext()).connections.keys())
+            }
+            for scope, exchanges in user_exchanges.items()
+        }
+    }
+
+
 @app.get("/api/auth/debug")
 async def auth_debug():
     """Debug endpoint to check auth system status."""
