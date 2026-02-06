@@ -5128,8 +5128,13 @@ Esc    - Close Dialogs
           // Determine bar width based on PnL (max 100%)
           const barWidth = Math.min(Math.abs(pnlPercent) * 10, 100);
           
+          // Green glow for profitable positions, red glow for losing
+          const cardGlow = isProfitable 
+            ? 'shadow-[0_0_20px_rgba(34,197,94,0.25)] border-green-500/30' 
+            : 'shadow-[0_0_20px_rgba(220,38,38,0.15)] border-red-500/20';
+          
           const card = document.createElement('div');
-          card.className = 'position-card bg-[#141414] border border-zinc-800/50 p-3 hover:border-crimson-600/50 transition-all duration-300 relative group shadow-[0_0_20px_rgba(220,38,38,0.15)] border-crimson-500/20';
+          card.className = `position-card bg-[#141414] border p-3 hover:border-zinc-500/50 transition-all duration-300 relative group ${cardGlow}`;
           
           card.innerHTML = `
             <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-${sideColor}-500 shadow-[0_0_8px_rgba(${isLong ? '34,197,94' : '239,68,68'},0.4)]"></div>
