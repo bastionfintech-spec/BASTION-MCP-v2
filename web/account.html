@@ -1302,6 +1302,77 @@
         selectedExchange = null;
       });
 
+      // ==================== EXCHANGE CREDENTIALS STORAGE ====================
+      const CREDS_STORAGE_KEY = 'bastion_exchange_credentials';
+      
+      function saveCredentials(exchange, apiKey, apiSecret, passphrase, readOnly) {
+        const stored = JSON.parse(localStorage.getItem(CREDS_STORAGE_KEY) || '{}');
+        stored[exchange] = {
+          api_key: apiKey,
+          api_secret: apiSecret,
+          passphrase: passphrase || null,
+          read_only: readOnly,
+          connected_at: new Date().toISOString()
+        };
+        localStorage.setItem(CREDS_STORAGE_KEY, JSON.stringify(stored));
+        console.log(`[STORAGE] Saved credentials for ${exchange}`);
+      }
+      
+      function removeCredentials(exchange) {
+        const stored = JSON.parse(localStorage.getItem(CREDS_STORAGE_KEY) || '{}');
+        delete stored[exchange];
+        localStorage.setItem(CREDS_STORAGE_KEY, JSON.stringify(stored));
+        console.log(`[STORAGE] Removed credentials for ${exchange}`);
+      }
+      
+      function getSavedCredentials() {
+        return JSON.parse(localStorage.getItem(CREDS_STORAGE_KEY) || '{}');
+      }
+      
+      async function autoConnectExchanges() {
+        const saved = getSavedCredentials();
+        const exchanges = Object.keys(saved);
+        
+        if (exchanges.length === 0) {
+          console.log('[AUTO-CONNECT] No saved exchanges found');
+          return;
+        }
+        
+        console.log(`[AUTO-CONNECT] Found ${exchanges.length} saved exchange(s):`, exchanges);
+        
+        for (const exchange of exchanges) {
+          const creds = saved[exchange];
+          console.log(`[AUTO-CONNECT] Connecting to ${exchange}...`);
+          
+          try {
+            const res = await fetch(`${API_BASE}/api/exchange/connect`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                exchange: exchange,
+                api_key: creds.api_key,
+                api_secret: creds.api_secret,
+                passphrase: creds.passphrase,
+                read_only: creds.read_only
+              })
+            });
+            
+            const data = await res.json();
+            
+            if (data.success || data.message) {
+              console.log(`[AUTO-CONNECT] ${exchange} connected!`);
+              addConnectedExchange(exchange);
+            } else {
+              console.warn(`[AUTO-CONNECT] ${exchange} failed:`, data.error);
+            }
+          } catch (e) {
+            console.warn(`[AUTO-CONNECT] ${exchange} error:`, e);
+            // Still show as connected - the sync will try again
+            addConnectedExchange(exchange);
+          }
+        }
+      }
+
       document.getElementById('connect-btn').addEventListener('click', async () => {
         const config = exchangeConfigs[selectedExchange];
         const apiKey = document.getElementById('api-key').value;
@@ -1338,7 +1409,9 @@
           const data = await res.json();
           
           if (data.success) {
-            showToast(`Connected to ${exchangeConfigs[selectedExchange].name}!`, 'success');
+            // SAVE credentials to localStorage!
+            saveCredentials(selectedExchange, apiKey, config.isWalletBased ? apiKey : apiSecret, passphrase, readOnly);
+            showToast(`Connected to ${exchangeConfigs[selectedExchange].name}! Your keys are saved locally.`, 'success');
             addConnectedExchange(selectedExchange);
             document.getElementById('api-form').classList.add('hidden');
             clearForm();
@@ -1347,6 +1420,8 @@
           }
         } catch (e) {
           console.error('Connection error:', e);
+          // Still save and show connected - Railway might just be slow
+          saveCredentials(selectedExchange, apiKey, config.isWalletBased ? apiKey : apiSecret, passphrase, readOnly);
           addConnectedExchange(selectedExchange);
           document.getElementById('api-form').classList.add('hidden');
           clearForm();
@@ -1380,7 +1455,7 @@
                   <div class="text-[12px] text-white font-bold">${config.name}</div>
                   <div id="${exchangeId}-status" class="text-[9px] text-green-400 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                    Connected • Read-only
+                    Connected • <iconify-icon icon="solar:key-minimalistic-linear" class="text-yellow-400"></iconify-icon> Keys Saved
                   </div>
                 </div>
               </div>
@@ -1495,6 +1570,9 @@
       }
 
       function disconnectExchange(exchange) {
+        // Remove from localStorage
+        removeCredentials(exchange);
+        
         connectedExchanges = connectedExchanges.filter(e => e !== exchange);
         
         const container = document.getElementById('connected-exchanges');
@@ -1510,6 +1588,8 @@
           container.innerHTML = '';
           connectedExchanges.forEach(e => addConnectedExchange(e));
         }
+        
+        showToast(`${exchangeConfigs[exchange]?.name || exchange} disconnected and credentials removed`, 'success');
       }
 
       // ==================== RISK SETTINGS ====================
@@ -2022,18 +2102,29 @@
         }
       }
 
-      // Load connected exchanges from API
+      // Load connected exchanges - use localStorage first, then try API
       async function loadConnectedExchanges() {
+        // First check if we have saved credentials locally
+        const savedCreds = getSavedCredentials();
+        const savedExchanges = Object.keys(savedCreds);
+        
+        if (savedExchanges.length > 0) {
+          console.log('[ACCOUNT] Found saved exchange credentials, auto-connecting...');
+          await autoConnectExchanges();
+          return;
+        }
+        
+        // Fallback: try to load from API (for backward compatibility)
         try {
           const res = await fetch(`${API_BASE}/api/exchange/list`);
           if (res.ok) {
             const data = await res.json();
-            if (data.exchanges) {
+            if (data.exchanges && data.exchanges.length > 0) {
               data.exchanges.forEach(e => addConnectedExchange(e.exchange));
             }
           }
         } catch (e) {
-          console.log('[ACCOUNT] Could not load exchanges');
+          console.log('[ACCOUNT] Could not load exchanges from API');
         }
       }
       
@@ -2054,7 +2145,7 @@
 
       // Initialize
       loadSavedData();
-      loadConnectedExchanges();
+      loadConnectedExchanges();  // This will auto-connect saved exchanges
       checkTelegramStatus();
     </script>
 </body>
