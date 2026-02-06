@@ -39,11 +39,6 @@
         .sys-delay-400 { transition-delay: 640ms; }
         .sys-delay-500 { transition-delay: 800ms; }
         .sys-delay-600 { transition-delay: 960ms; }
-        @keyframes sys-flicker { 0% { opacity: 0.08; } 6% { opacity: 1; } 12% { opacity: 0.08; } 18% { opacity: 1; } 100% { opacity: 1; } }
-        .sys-flicker-anim { animation: sys-flicker 2.4s linear forwards; opacity: 0; }
-        .sys-active.sys-flicker-anim { opacity: 1; }
-        .sys-bar-fill { transition: width 2.4s cubic-bezier(0.22, 1, 0.36, 1); width: 0 !important; }
-        .sys-active .sys-bar-fill, .sys-bar-fill.sys-active { width: var(--sys-width) !important; }
       }
     </style>
     <script>
@@ -51,33 +46,12 @@
         theme: {
           extend: {
             colors: {
-              'red': {
-                500: '#EF4444',
-                600: '#DC2626',
-                700: '#B91C1C',
-                900: '#7F1D1D',
-              }
+              'red': { 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C', 900: '#7F1D1D' }
             }
           }
         }
       };
     </script>
-    <style>
-      @keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      @keyframes orbit-rev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-      @keyframes pulse-scale { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.85); opacity: 0.6; } }
-      @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.4); opacity: 0; } }
-      @keyframes flow-dash { to { stroke-dashoffset: -24; } }
-      @keyframes scan-v { 0% { transform: translateY(-20%); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(120%); opacity: 0; } }
-      .anim-orbit { animation: orbit 8s linear infinite; }
-      .anim-orbit-slow { animation: orbit 12s linear infinite; }
-      .anim-orbit-rev { animation: orbit-rev 10s linear infinite; }
-      .anim-pulse { animation: pulse-scale 3s ease-in-out infinite; }
-      .anim-pulse-ring { animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-      .anim-flow { animation: flow-dash 1s linear infinite; }
-      .anim-scan-v { animation: scan-v 3s linear infinite; }
-      .origin-center { transform-box: fill-box; transform-origin: center; }
-    </style>
 </head>
 <body class="text-zinc-400 min-h-screen flex flex-col selection:bg-red-600 selection:text-white bg-[#050505]">
     <!-- Fixed Grid Background -->
@@ -85,17 +59,11 @@
 
     <!-- Header -->
     <header class="relative z-50 h-16 border-b border-zinc-800 bg-[#050505]/95 backdrop-blur-sm flex items-center justify-between sticky top-0">
-      <!-- Left: Logo & Status -->
       <div class="flex items-center h-full pl-6 pr-8 border-r border-zinc-800 bg-[#050505]">
         <a href="/" class="flex items-center gap-3 group">
           <iconify-icon icon="solar:shield-bold" class="text-red-600 text-2xl group-hover:scale-110 transition-transform"></iconify-icon>
-          <span class="text-xl tracking-tighter text-white font-mono group-hover:text-red-600 transition-colors font-semibold">
-            BASTION
-          </span>
+          <span class="text-xl tracking-tighter text-white font-mono group-hover:text-red-600 transition-colors font-semibold">BASTION</span>
         </a>
-        <button id="tablet-menu-btn" class="hidden md:flex lg:hidden ml-6 w-10 h-10 border border-zinc-800 bg-zinc-900/30 items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-1 focus:ring-red-600" aria-label="Toggle Tablet Navigation">
-          <iconify-icon icon="solar:hamburger-menu-linear" width="20"></iconify-icon>
-        </button>
         <div class="hidden lg:flex items-center ml-6 px-3 py-1 border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm rounded-sm gap-2">
           <span class="text-[10px] font-mono text-zinc-600 leading-none">[</span>
           <span class="relative flex h-1.5 w-1.5">
@@ -105,50 +73,29 @@
           <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">ENV: LIVE</span>
           <span class="text-[10px] font-mono text-zinc-600 leading-none">]</span>
         </div>
-        <!-- Beta Badge -->
         <div class="hidden lg:flex items-center ml-4 px-2 py-1 bg-red-600/10 border border-red-600/30 rounded-sm">
           <span class="text-[9px] font-mono text-red-500 uppercase tracking-widest font-bold">FREE BETA</span>
         </div>
       </div>
 
-      <!-- Center: Navigation Links -->
       <nav class="hidden lg:flex items-center h-full flex-1 justify-center">
         <div class="flex h-full items-center border-x border-zinc-800/50">
-          <a href="/frontend" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">
-            Terminal
-            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-          </a>
-          <a href="/research" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">
-            Research
-            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-          </a>
-          <a href="/visualizations" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">
-            Analytics
-            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-          </a>
-          <a href="/account" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">
-            Account
-            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-          </a>
-          <a href="#features" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">
-            Features
-            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-          </a>
+          <a href="/frontend" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Terminal<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/research" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Research<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/visualizations" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Analytics<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/account" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Account<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="#features" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">Features<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
         </div>
       </nav>
 
-      <!-- Right: Actions -->
       <div class="hidden md:flex items-center h-full border-l border-zinc-800 bg-[#050505]">
-        <a href="/login" class="h-full px-6 bg-transparent text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-widest transition-all flex items-center gap-2 border-r border-zinc-800">
-          Login
-        </a>
+        <a href="/login" class="h-full px-6 bg-transparent text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-widest transition-all flex items-center gap-2 border-r border-zinc-800">Login</a>
         <a href="/account" class="h-full px-8 bg-red-600 text-white text-[10px] font-mono uppercase tracking-widest hover:bg-red-500 transition-all flex items-center gap-2 group shadow-[inset_0_0_20px_rgba(0,0,0,0.4)]">
           Connect Exchange
           <iconify-icon icon="solar:link-circle-bold" width="14" class="group-hover:rotate-45 transition-transform"></iconify-icon>
         </a>
       </div>
 
-      <!-- Mobile Toggle -->
       <button id="mobile-menu-btn" class="md:hidden p-0 w-16 h-full text-zinc-400 hover:text-white border-l border-zinc-800 bg-[#050505] flex items-center justify-center transition-colors hover:bg-zinc-900">
         <iconify-icon icon="solar:hamburger-menu-linear" width="24"></iconify-icon>
       </button>
@@ -157,37 +104,13 @@
     <!-- Mobile Menu -->
     <div id="mobile-menu" class="fixed inset-x-0 top-16 bottom-0 z-40 bg-[#050505] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col border-t border-zinc-800 overflow-y-auto">
       <div class="flex flex-col p-6 space-y-4">
-        <a href="/account" class="w-full py-4 bg-red-600 text-white text-xs font-mono uppercase tracking-widest hover:bg-red-500 flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-900/20 font-bold">
-          Connect Exchange
-          <iconify-icon icon="solar:link-circle-bold" width="16"></iconify-icon>
-        </a>
+        <a href="/account" class="w-full py-4 bg-red-600 text-white text-xs font-mono uppercase tracking-widest hover:bg-red-500 flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-900/20 font-bold">Connect Exchange<iconify-icon icon="solar:link-circle-bold" width="16"></iconify-icon></a>
         <div class="flex flex-col border border-zinc-800 bg-zinc-900/20">
-          <a href="/frontend" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">
-            Terminal
-            <iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon>
-          </a>
-          <a href="/research" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">
-            Research
-            <iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon>
-          </a>
-          <a href="/visualizations" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">
-            Analytics
-            <iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon>
-          </a>
-          <a href="/account" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">
-            Account
-            <iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon>
-          </a>
-          <a href="/login" class="flex items-center justify-between p-4 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">
-            Login
-            <iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon>
-          </a>
-        </div>
-      </div>
-      <div class="mt-auto p-6 border-t border-zinc-800">
-        <div class="flex items-center gap-2 text-[10px] font-mono text-zinc-600 uppercase">
-          <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-          Protection Operational
+          <a href="/frontend" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Terminal<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
+          <a href="/research" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Research<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
+          <a href="/visualizations" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Analytics<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
+          <a href="/account" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Account<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
+          <a href="/login" class="flex items-center justify-between p-4 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Login<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
         </div>
       </div>
     </div>
@@ -199,138 +122,74 @@
         <div class="h-full flex flex-col items-center py-12 w-full">
           <div class="absolute top-0 bottom-0 left-1/2 w-px bg-zinc-900 -translate-x-1/2 z-0"></div>
           <nav class="flex flex-col gap-10 relative z-10 w-full items-center">
-            <a href="#hero" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">
-              01
-              <div class="absolute left-full ml-4 px-2 py-1 bg-zinc-900 border border-zinc-800 text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">Terminal</div>
-            </a>
-            <a href="#features" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">
-              02
-              <div class="absolute left-full ml-4 px-2 py-1 bg-zinc-900 border border-zinc-800 text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">Capabilities</div>
-            </a>
-            <a href="#intelligence" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">
-              03
-              <div class="absolute left-full ml-4 px-2 py-1 bg-zinc-900 border border-zinc-800 text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">Intelligence</div>
-            </a>
-            <a href="#ai-advisor" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">
-              04
-              <div class="absolute left-full ml-4 px-2 py-1 bg-zinc-900 border border-zinc-800 text-white text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">AI Coach</div>
-            </a>
+            <a href="#hero" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">01</a>
+            <a href="#features" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">02</a>
+            <a href="#intelligence" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">03</a>
+            <a href="#ai-advisor" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">04</a>
           </nav>
-          <div class="mt-auto mb-12 flex flex-col items-center gap-4">
-            <div class="w-px h-12 bg-gradient-to-b from-zinc-800 to-transparent"></div>
-            <div class="text-[8px] font-mono text-zinc-700 -rotate-90 whitespace-nowrap tracking-widest uppercase">HUD_v2.0</div>
-          </div>
         </div>
       </aside>
 
       <!-- Content Area -->
       <div class="flex-1 flex flex-col min-w-0 relative z-0 md:ml-16">
         <!-- Hero Section -->
-        <div id="hero" class="relative w-full min-h-[750px] flex items-center border-b border-zinc-800 overflow-hidden bg-[#050505]">
-          <!-- Background with Unicorn Studio Animation -->
+        <div id="hero" class="relative w-full min-h-[700px] flex items-center border-b border-zinc-800 overflow-hidden bg-[#050505]">
           <div class="absolute inset-0 z-0">
-            <!-- Unicorn Studio Black Hole Animation -->
             <div class="aura-background-component w-full h-full absolute inset-0">
               <div data-us-project="hRFfUymDGOHwtFe7evR2" class="absolute w-full h-full left-0 top-0 opacity-40 mix-blend-screen" style="filter: hue-rotate(320deg) saturate(2);"></div>
-              <script type="text/javascript">
-                !function(){if(!window.UnicornStudio){window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.29/dist/unicornStudio.umd.js",i.onload=function(){window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)},(document.head || document.body).appendChild(i)}}();
-              </script>
+              <script type="text/javascript">!function(){if(!window.UnicornStudio){window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.29/dist/unicornStudio.umd.js",i.onload=function(){window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)},(document.head || document.body).appendChild(i)}}();</script>
             </div>
-            <!-- Gradient Overlays for contrast -->
             <div class="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/25 to-[#050505]/20 z-10 pointer-events-none"></div>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#050505] z-10 pointer-events-none"></div>
-            <div class="absolute inset-0 bg-scanline opacity-20 z-10"></div>
           </div>
 
-          <!-- Content Container -->
-          <div class="container lg:px-12 grid grid-cols-1 lg:grid-cols-2 md:pt-32 md:pb-44 h-full z-20 mr-auto ml-auto pt-24 pr-6 pb-32 pl-6 relative gap-x-12 gap-y-12 items-center">
-            <!-- Left Content -->
+          <div class="container lg:px-12 grid grid-cols-1 lg:grid-cols-2 md:pt-28 md:pb-36 h-full z-20 mr-auto ml-auto pt-20 pr-6 pb-28 pl-6 relative gap-x-12 gap-y-12 items-center">
             <div class="flex flex-col justify-center max-w-2xl">
-              <!-- Status Indicator -->
               <div class="flex items-center gap-3 mb-8 sys-reveal sys-rise">
                 <span class="relative flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
                 </span>
-                <span class="text-[10px] uppercase text-zinc-400 tracking-widest font-mono">
-                  RISK ENGINE: ACTIVE
-                  <span class="text-zinc-600 mx-2">//</span>
-                  PROTECTION ENABLED
-                </span>
+                <span class="text-[10px] uppercase text-zinc-400 tracking-widest font-mono">RISK ENGINE: ACTIVE <span class="text-zinc-600 mx-2">//</span> PROTECTION ENABLED</span>
               </div>
 
-              <!-- Headline -->
               <h1 class="md:text-7xl lg:text-8xl uppercase leading-[0.9] sys-reveal sys-rise sys-delay-100 text-5xl font-medium text-white pt-8 pb-8 tracking-tight">
-                risk
-                <span class="inline-block min-w-[11ch] whitespace-nowrap text-red-600 text-left" id="hero-typewriter">ENGINEERED</span>
+                risk <span class="inline-block min-w-[11ch] whitespace-nowrap text-red-600 text-left" id="hero-typewriter">ENGINEERED</span>
               </h1>
 
-              <!-- Subheading -->
               <p class="text-base md:text-lg text-zinc-500 font-mono leading-relaxed mb-10 max-w-md border-l-2 border-red-600 pl-4 sys-reveal sys-rise sys-delay-200">
-                Institutional-grade risk management for retail traders.
-                Multi-shot entries, dynamic stops, and momentum-capturing exits.
+                Institutional-grade risk management for retail traders. Multi-shot entries, dynamic stops, and momentum-capturing exits.
               </p>
 
-              <!-- Value Highlights -->
               <div class="flex flex-col gap-3 mb-10 sys-reveal sys-rise sys-delay-300">
-                <div class="flex items-center gap-3">
-                  <span class="w-1.5 h-1.5 bg-red-600"></span>
-                  <span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Strategy-agnostic risk shield</span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span class="w-1.5 h-1.5 bg-red-600"></span>
-                  <span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Real-time position management</span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span class="w-1.5 h-1.5 bg-red-600"></span>
-                  <span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Intelligent profit protection</span>
-                </div>
+                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Strategy-agnostic risk shield</span></div>
+                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Real-time position management</span></div>
+                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Intelligent profit protection</span></div>
               </div>
 
-              <!-- CTA Buttons -->
               <div class="flex flex-col sm:flex-row gap-4 mb-8 sys-reveal sys-rise sys-delay-400">
-                <a href="/frontend" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">
-                  Launch Terminal
-                  <iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
-                </a>
-                <a href="#features" class="group bg-transparent border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 font-medium">
-                  Learn More
-                  <iconify-icon icon="solar:arrow-down-linear" width="16"></iconify-icon>
-                </a>
+                <a href="/frontend" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">Launch Terminal<iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
+                <a href="#features" class="group bg-transparent border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 font-medium">Learn More<iconify-icon icon="solar:arrow-down-linear" width="16"></iconify-icon></a>
               </div>
 
-              <!-- Micro Trust -->
               <div class="flex items-center gap-4 text-[10px] font-mono text-zinc-600 uppercase tracking-wide pl-1 sys-reveal sys-rise sys-delay-500">
-                <span>Bitunix / Bybit / Binance</span>
-                <span class="w-1 h-1 bg-zinc-800 rounded-full"></span>
-                <span>Low Latency Execution</span>
+                <span>Bitunix / Bybit / Binance</span><span class="w-1 h-1 bg-zinc-800 rounded-full"></span><span>Low Latency Execution</span>
               </div>
             </div>
 
-            <!-- Right Column: Active System Cards -->
             <div class="hidden lg:flex flex-col items-end justify-center relative h-full pointer-events-none select-none">
               <div class="relative w-full max-w-sm perspective-1000 mt-12 mr-8">
-                <!-- Card 1: Active Positions -->
                 <div class="absolute -top-32 right-0 w-64 bg-[#050505]/90 backdrop-blur-sm border border-zinc-800 p-5 z-10 sys-reveal sys-slide-l sys-delay-300 border-l-2 border-l-red-600">
                   <div class="flex justify-between items-center mb-3 border-b border-zinc-800 pb-2">
                     <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">ACTIVE_POSITIONS</span>
-                    <div class="flex gap-1">
-                      <div class="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
-                    </div>
+                    <div class="flex gap-1"><div class="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div></div>
                   </div>
                   <div class="space-y-2">
-                    <div class="flex justify-between text-[10px] font-mono text-zinc-400">
-                      <span>BTC-PERP</span>
-                      <span class="text-green-500 bg-green-500/10 px-1 rounded-sm">LONG</span>
-                    </div>
-                    <div class="flex justify-between text-[10px] font-mono text-zinc-400">
-                      <span>ETH-PERP</span>
-                      <span class="text-red-500 bg-red-500/10 px-1 rounded-sm">SHORT</span>
-                    </div>
+                    <div class="flex justify-between text-[10px] font-mono text-zinc-400"><span>BTC-PERP</span><span class="text-green-500 bg-green-500/10 px-1 rounded-sm">LONG</span></div>
+                    <div class="flex justify-between text-[10px] font-mono text-zinc-400"><span>ETH-PERP</span><span class="text-red-500 bg-red-500/10 px-1 rounded-sm">SHORT</span></div>
                   </div>
                 </div>
 
-                <!-- Card 2: Position Health -->
                 <div class="relative w-80 bg-[#080808] border border-zinc-800 p-6 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 group hover:border-red-600/30 transition-colors pointer-events-auto">
                   <div class="absolute -left-px top-6 bottom-6 w-0.5 bg-red-600"></div>
                   <div class="flex justify-between items-start mb-6">
@@ -345,22 +204,15 @@
                   <div class="space-y-3">
                     <div>
                       <div class="flex justify-between text-[9px] font-mono text-zinc-600 uppercase mb-1">Risk Utilization</div>
-                      <div class="w-full bg-zinc-900 h-1">
-                        <div class="bg-red-600 h-full w-[42%] relative">
-                          <div class="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-2 bg-white"></div>
-                        </div>
-                      </div>
+                      <div class="w-full bg-zinc-900 h-1"><div class="bg-red-600 h-full w-[42%] relative"><div class="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-2 bg-white"></div></div></div>
                     </div>
                     <div class="flex justify-between items-center pt-2">
                       <div class="text-[10px] font-mono text-zinc-400">RISK: <span class="text-white">1.2%</span></div>
                       <div class="text-[10px] font-mono text-green-500 border border-green-900 bg-green-900/10 px-1.5 py-0.5 rounded-sm">OPTIMAL</div>
                     </div>
                   </div>
-                  <div class="absolute inset-0 bg-red-600/5 blur-xl -z-10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                  <div class="absolute inset-0 bg-scanline opacity-20 pointer-events-none"></div>
                 </div>
 
-                <!-- Card 3: Session Status -->
                 <div class="absolute -bottom-24 right-8 w-64 bg-[#050505]/90 backdrop-blur-sm border border-zinc-800 p-4 z-10 sys-reveal sys-slide-l sys-delay-400">
                   <div class="flex justify-between items-center mb-3">
                     <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">SESSION_STATUS</span>
@@ -379,349 +231,264 @@
               </div>
             </div>
           </div>
-
-          <div class="absolute bottom-8 left-8 w-4 h-4 border-l border-b border-red-600/30"></div>
-          <div class="absolute top-8 right-8 w-4 h-4 border-r border-t border-red-600/30"></div>
         </div>
 
-        <!-- Features Section -->
+        <!-- Features Section - RISK ENGINE -->
         <section id="features" class="flex flex-col bg-[#050505] border-b border-zinc-800">
-          <div class="flex flex-col md:px-12 md:flex-row md:items-end md:pt-36 md:pb-28 bg-center bg-gradient-to-r from-white/10 via-white/0 to-white/10 border-zinc-800 border-b pt-36 pr-8 pb-28 pl-8 gap-x-6 gap-y-6 justify-between">
+          <div class="flex flex-col md:px-12 md:flex-row md:items-end md:pt-16 md:pb-12 bg-center bg-gradient-to-r from-white/5 via-white/0 to-white/5 border-zinc-800 border-b pt-16 pr-8 pb-12 pl-8 gap-x-6 gap-y-4 justify-between">
             <div class="max-w-2xl">
-              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-4">
-                <span class="w-1.5 h-1.5 bg-red-600"></span>
-                // PROTECTION_LAYER
+              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
+                <span class="w-1.5 h-1.5 bg-red-600"></span>// PROTECTION_LAYER
               </div>
-              <h2 class="text-3xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-none mb-4">
-                <span class="text-red-600">RISK ENGINE</span>
-                <span class="text-white">PRIMITIVES</span>
+              <h2 class="text-2xl md:text-3xl font-semibold text-white uppercase tracking-tight leading-none mb-2">
+                <span class="text-red-600">RISK ENGINE</span> <span class="text-white">PRIMITIVES</span>
               </h2>
-              <p class="text-sm text-zinc-500 font-mono leading-relaxed max-w-lg">
-                The same risk management technology used by quantitative hedge
-                funds. Now protecting your capital.
-              </p>
+              <p class="text-xs text-zinc-500 font-mono leading-relaxed max-w-md">Quantitative hedge fund technology. Now protecting your capital.</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            <!-- Feature Card 1 -->
-            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-100">
+            <!-- FIG 01 -->
+            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-100">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 01</span>
-                  <iconify-icon icon="solar:layers-minimalistic-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:layers-minimalistic-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">MULTI-SHOT POSITION SCALING</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Institutional-grade averaging system
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    3-tier entry with automatic sizing
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    R-multiple optimized allocation
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-01" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">MULTI-SHOT POSITION SCALING</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Institutional-grade averaging system</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>3-tier entry with automatic sizing</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>R-multiple optimized allocation</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Feature Card 2 -->
-            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-200">
+            <!-- FIG 02 -->
+            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-200">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 02</span>
-                  <iconify-icon icon="solar:shield-warning-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:shield-warning-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">ADAPTIVE STOP ARCHITECTURE</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Structural stops at key market levels
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Safety net hard floor protection
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Automatic breakeven at +1R
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-02" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">ADAPTIVE STOP ARCHITECTURE</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Structural stops at key market levels</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Safety net hard floor protection</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Automatic breakeven at +1R</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Feature Card 3 -->
-            <div class="group relative border-r border-b md:border-r-0 lg:border-r border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-300">
+            <!-- FIG 03 -->
+            <div class="group relative border-r border-b md:border-r-0 lg:border-r border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-300">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 03</span>
-                  <iconify-icon icon="solar:graph-up-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:graph-up-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">MOMENTUM CAPTURE SYSTEM</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Slope-based trend measurement
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Candle body trailing algorithm
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Aggressive profit lock mechanism
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-03" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">MOMENTUM CAPTURE SYSTEM</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Slope-based trend measurement</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Candle body trailing algorithm</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Aggressive profit lock mechanism</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Feature Card 4 -->
-            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-400">
+            <!-- FIG 04 -->
+            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-400">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 04</span>
-                  <iconify-icon icon="solar:umbrella-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:umbrella-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">VOLATILITY REGIME ENGINE</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Real-time ATR regime classification
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Automatic position size adjustment
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    50% reduction in extreme regimes
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-04" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">VOLATILITY REGIME ENGINE</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Real-time ATR regime classification</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>LOW → NORMAL → HIGH → EXTREME</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>50% reduction in extreme regimes</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Feature Card 5 -->
-            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-500">
+            <!-- FIG 05 -->
+            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-500">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 05</span>
-                  <iconify-icon icon="solar:sitemap-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:sitemap-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">STRUCTURE ANALYSIS</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Multi-timeframe level detection
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Confluence scoring algorithm
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Dynamic support/resistance mapping
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-05" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">STRUCTURE ANALYSIS</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Multi-timeframe level detection</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Confluence scoring algorithm</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Dynamic support/resistance mapping</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Feature Card 6 -->
-            <div class="group relative border-b lg:border-b-0 border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-600">
+            <!-- FIG 06 -->
+            <div class="group relative border-b lg:border-b-0 border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-600">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 06</span>
-                  <iconify-icon icon="solar:chart-square-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:chart-square-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">DIVERGENCE INTELLIGENCE</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    RSI divergence across timeframes
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Trend exhaustion early warning
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Bullish/bearish classification
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-fig-06" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">DIVERGENCE INTELLIGENCE</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>RSI divergence across timeframes</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Trend exhaustion early warning</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Bullish/bearish classification</li>
                 </ul>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- Intelligence Section -->
+        <!-- Intelligence Section - MARKET INTEL -->
         <section id="intelligence" class="flex flex-col bg-[#050505] border-b border-zinc-800">
-          <div class="flex flex-col md:px-12 md:flex-row md:items-end md:pt-36 md:pb-28 bg-center border-zinc-800 border-b pt-36 pr-8 pb-28 pl-8 gap-x-6 gap-y-6 justify-between">
+          <div class="flex flex-col md:px-12 md:flex-row md:items-end md:pt-16 md:pb-12 bg-center border-zinc-800 border-b pt-16 pr-8 pb-12 pl-8 gap-x-6 gap-y-4 justify-between">
             <div class="max-w-2xl">
-              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-4">
-                <span class="w-1.5 h-1.5 bg-red-600"></span>
-                // MARKET_INTELLIGENCE
+              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
+                <span class="w-1.5 h-1.5 bg-red-600"></span>// MARKET_INTELLIGENCE
               </div>
-              <h2 class="text-3xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-none mb-4">
-                <span class="text-white">MARKET</span>
-                <span class="text-red-600">INTELLIGENCE</span>
+              <h2 class="text-2xl md:text-3xl font-semibold text-white uppercase tracking-tight leading-none mb-2">
+                <span class="text-white">MARKET</span> <span class="text-red-600">INTELLIGENCE</span>
               </h2>
-              <p class="text-sm text-zinc-500 font-mono leading-relaxed max-w-lg">
-                Deep-dive analytics across on-chain and off-chain data streams.
-                Real-time synthesis.
-              </p>
+              <p class="text-xs text-zinc-500 font-mono leading-relaxed max-w-md">Deep-dive analytics across on-chain and off-chain data streams.</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            <!-- Intel Card 1 -->
-            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-100">
+            <!-- DAT 01 -->
+            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-100">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">DAT. 01</span>
-                  <iconify-icon icon="solar:drop-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:drop-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">LIQUIDATION INTELLIGENCE</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Real-time liquidation cascade prediction
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Exchange-level liquidation heatmaps
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Leveraged position concentration
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-dat-01" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">LIQUIDATION INTELLIGENCE</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Real-time cascade prediction</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Exchange-level heatmaps</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Leveraged position concentration</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Intel Card 2 -->
-            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-200">
+            <!-- DAT 02 -->
+            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-200">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">DAT. 02</span>
-                  <iconify-icon icon="solar:wallet-money-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:wallet-money-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">WHALE FLOW TRACKING</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Multi-chain blockchain surveillance
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Institutional wallet fingerprinting
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Smart money accumulation detection
-                  </li>
+                <div class="w-full h-24 mb-4 bg-amber-900/10 rounded-sm border border-amber-800/20 relative overflow-hidden flex items-center justify-center group-hover:border-amber-500/30 transition-colors">
+                  <canvas id="canvas-dat-02" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">WHALE FLOW TRACKING</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Multi-chain surveillance</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Institutional wallet fingerprinting</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Smart money detection</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Intel Card 3 -->
-            <div class="group relative border-r border-b md:border-r-0 lg:border-r border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-300">
+            <!-- DAT 03 -->
+            <div class="group relative border-r border-b md:border-r-0 lg:border-r border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-300">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">DAT. 03</span>
-                  <iconify-icon icon="solar:tuning-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:tuning-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">DERIVATIVES MATRIX</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Cross-exchange funding rate arbitrage
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Open interest anomaly detection
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Options flow & IV surface analysis
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-dat-03" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">DERIVATIVES MATRIX</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Cross-exchange funding arbitrage</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Open interest anomaly detection</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Options flow & IV analysis</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Intel Card 4 -->
-            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-400">
+            <!-- DAT 04 -->
+            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-400">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">DAT. 04</span>
-                  <iconify-icon icon="solar:sort-from-top-to-bottom-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:sort-from-top-to-bottom-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">ORDER FLOW INTELLIGENCE</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Cumulative volume delta tracking
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Absorption & exhaustion detection
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Iceberg order identification
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-dat-04" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">ORDER FLOW INTELLIGENCE</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Cumulative volume delta</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Absorption & exhaustion detection</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Iceberg order identification</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Intel Card 5 -->
-            <div class="group relative border-r border-b border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-500">
+            <!-- DAT 05 -->
+            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-500">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">DAT. 05</span>
-                  <iconify-icon icon="solar:heart-pulse-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:heart-pulse-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">SENTIMENT SYNTHESIS</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Fear/greed regime classification
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Social momentum scoring
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Retail vs institutional positioning
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-dat-05" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">SENTIMENT SYNTHESIS</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Fear/greed regime classification</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Social momentum scoring</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Retail vs institutional positioning</li>
                 </ul>
               </div>
             </div>
 
-            <!-- Intel Card 6 -->
-            <div class="group relative border-b lg:border-b-0 border-zinc-800 p-8 min-h-[280px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-600">
+            <!-- DAT 06 -->
+            <div class="group relative border-b lg:border-b-0 border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-600">
               <div>
-                <div class="flex justify-between items-start mb-6">
+                <div class="flex justify-between items-start mb-4">
                   <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">DAT. 06</span>
-                  <iconify-icon icon="solar:globe-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="24"></iconify-icon>
+                  <iconify-icon icon="solar:globe-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
                 </div>
-                <h3 class="text-lg font-semibold text-white uppercase tracking-tight mb-4 group-hover:text-red-600 transition-colors">MACRO CORRELATION ENGINE</h3>
-                <ul class="space-y-2">
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    DXY/BTC correlation tracking
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Equity market spillover detection
-                  </li>
-                  <li class="text-xs text-zinc-500 font-mono flex items-start gap-2">
-                    <span class="text-red-600/70 mt-0.5">•</span>
-                    Bond yield impact analysis
-                  </li>
+                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
+                  <canvas id="canvas-dat-06" class="w-full h-full block"></canvas>
+                </div>
+                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">MACRO CORRELATION ENGINE</h3>
+                <ul class="space-y-1.5">
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>DXY/BTC correlation tracking</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Equity market spillover detection</li>
+                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Bond yield impact analysis</li>
                 </ul>
               </div>
             </div>
@@ -729,73 +496,46 @@
         </section>
 
         <!-- AI Advisor Section -->
-        <section id="ai-advisor" class="flex flex-col bg-[#050505] border-b border-zinc-800 py-32">
+        <section id="ai-advisor" class="flex flex-col bg-[#050505] border-b border-zinc-800 py-24">
           <div class="container mx-auto px-6 lg:px-12 relative z-10">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <!-- Left: Text -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
                 <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <iconify-icon icon="solar:chat-line-bold"></iconify-icon>
-                  // NEURAL_INTELLIGENCE
+                  <iconify-icon icon="solar:chat-line-bold"></iconify-icon>// NEURAL_INTELLIGENCE
                 </div>
-                <h2 class="text-3xl md:text-5xl font-semibold text-white uppercase tracking-tight leading-none mb-6">
-                  <span class="text-red-600">AI-POWERED</span>
-                  TRADE COACHING
+                <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-none mb-6">
+                  <span class="text-red-600">AI-POWERED</span> TRADE COACHING
                 </h2>
-                <p class="text-sm text-zinc-500 font-mono max-w-lg mb-10 border-l-2 border-red-600/30 pl-4">
-                  Neural network dedicated to your risk decisions. Institutional analysis in natural language.
-                </p>
+                <p class="text-xs text-zinc-500 font-mono max-w-lg mb-8 border-l-2 border-red-600/30 pl-4">Neural network dedicated to your risk decisions. Institutional analysis in natural language.</p>
 
-                <div class="space-y-6">
+                <div class="space-y-5">
                   <div class="flex gap-4 group">
-                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors shadow-[0_0_10px_rgba(220,38,38,0.1)]">
-                      <iconify-icon icon="solar:chat-square-code-linear" class="text-xl"></iconify-icon>
-                    </div>
-                    <div>
-                      <h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">TRADE NARRATIVE ENGINE</h4>
-                      <p class="text-xs text-zinc-500 font-mono">Every decision explained in plain English</p>
-                    </div>
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:chat-square-code-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">TRADE NARRATIVE ENGINE</h4><p class="text-[11px] text-zinc-500 font-mono">Every decision explained in plain English</p></div>
                   </div>
-
                   <div class="flex gap-4 group">
-                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors shadow-[0_0_10px_rgba(220,38,38,0.1)]">
-                      <iconify-icon icon="solar:monitor-camera-linear" class="text-xl"></iconify-icon>
-                    </div>
-                    <div>
-                      <h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">REAL-TIME COACHING</h4>
-                      <p class="text-xs text-zinc-500 font-mono">"Momentum trailing activated - slope strength 2.3x"</p>
-                    </div>
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:monitor-camera-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">REAL-TIME COACHING</h4><p class="text-[11px] text-zinc-500 font-mono">"Momentum trailing activated - slope strength 2.3x"</p></div>
                   </div>
-
                   <div class="flex gap-4 group">
-                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors shadow-[0_0_10px_rgba(220,38,38,0.1)]">
-                      <iconify-icon icon="solar:bell-bing-linear" class="text-xl"></iconify-icon>
-                    </div>
-                    <div>
-                      <h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">PREDICTIVE ALERTING</h4>
-                      <p class="text-xs text-zinc-500 font-mono">"Volatility regime shift detected - recommending size reduction"</p>
-                    </div>
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:bell-bing-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">PREDICTIVE ALERTING</h4><p class="text-[11px] text-zinc-500 font-mono">"Volatility regime shift detected"</p></div>
                   </div>
                 </div>
               </div>
 
-              <!-- Right: Terminal Mockup -->
               <div class="relative bg-black border border-zinc-800 p-1 shadow-[0_0_30px_rgba(220,38,38,0.15)] group">
                 <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-red-600"></div>
                 <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-red-600"></div>
                 <div class="bg-zinc-900/80 border-b border-zinc-800 p-3 flex items-center justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-2.5 h-2.5 bg-red-600 animate-pulse rounded-full shadow-[0_0_8px_#DC2626]"></div>
-                    <span class="text-[10px] font-mono text-zinc-300 font-bold tracking-wider">BASTION_CLI_v2.0 // ROOT</span>
+                    <span class="text-[10px] font-mono text-zinc-300 font-bold tracking-wider">BASTION_CLI_v2.0</span>
                   </div>
-                  <div class="text-[9px] font-mono text-red-500 font-bold uppercase border border-red-900/50 px-2 py-0.5 bg-red-900/10">ENCRYPTED CONNECTION</div>
+                  <div class="text-[9px] font-mono text-red-500 font-bold uppercase border border-red-900/50 px-2 py-0.5 bg-red-900/10">ENCRYPTED</div>
                 </div>
-                <div class="p-6 font-mono text-xs space-y-4 h-[350px] overflow-y-auto relative bg-[#050505]">
-                  <div class="absolute inset-0 bg-scanline opacity-10 pointer-events-none"></div>
-                  <div class="text-zinc-500">
-                    <span class="text-red-600 font-bold">root@bastion:~$</span>
-                    ./analyze_structure --target BTC
-                  </div>
+                <div class="p-6 font-mono text-xs space-y-4 h-[300px] overflow-y-auto relative bg-[#050505]">
+                  <div class="text-zinc-500"><span class="text-red-600 font-bold">root@bastion:~$</span> ./analyze_structure --target BTC</div>
                   <div class="text-zinc-400 pl-4 border-l border-zinc-800/50">
                     <span class="text-zinc-600">[10:42:01]</span> INGESTING 147 STREAMS... <span class="text-red-600">OK</span><br>
                     <span class="text-zinc-600">[10:42:02]</span> CALCULATING LIQUIDATION LEVELS... <span class="text-red-600">DONE</span><br>
@@ -803,17 +543,11 @@
                   </div>
                   <div class="pl-4 space-y-2 mt-4">
                     <div class="bg-red-950/20 border-l-2 border-red-600 p-3 text-red-200">
-                      <span class="font-bold">&gt;&gt;&gt; TACTICAL REPORT:</span>
-                      Market structure bearish on 4H. Massive short liquidation cluster detected at <span class="text-white font-bold">$68,200</span>. Suggest waiting for liquidity grab before entry.
+                      <span class="font-bold">&gt;&gt;&gt; TACTICAL REPORT:</span> Market structure bearish on 4H. Massive short liquidation cluster at <span class="text-white font-bold">$68,200</span>.
                     </div>
-                    <div class="text-white mt-2 font-bold">
-                      <span class="text-zinc-500">RECOMMENDATION &gt;</span> REDUCE POSITION SIZE 40%
-                    </div>
+                    <div class="text-white mt-2 font-bold"><span class="text-zinc-500">RECOMMENDATION &gt;</span> REDUCE SIZE 40%</div>
                   </div>
-                  <div class="text-zinc-500 mt-4 flex items-center gap-1">
-                    <span class="text-red-600 font-bold">root@bastion:~$</span>
-                    <span class="w-2.5 h-5 bg-red-600 animate-pulse block"></span>
-                  </div>
+                  <div class="text-zinc-500 mt-4 flex items-center gap-1"><span class="text-red-600 font-bold">root@bastion:~$</span><span class="w-2.5 h-5 bg-red-600 animate-pulse block"></span></div>
                 </div>
               </div>
             </div>
@@ -821,76 +555,48 @@
         </section>
 
         <!-- CTA Section -->
-        <section class="bg-[#050505] py-24 border-b border-zinc-800">
+        <section class="bg-[#050505] py-20 border-b border-zinc-800">
           <div class="container mx-auto px-6 lg:px-12 text-center">
             <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-4">// BETA ACCESS</div>
-            <h2 class="text-3xl md:text-4xl font-semibold text-white uppercase tracking-tight mb-6">Ready to Protect Your Capital?</h2>
-            <p class="text-sm text-zinc-500 font-mono mb-10 max-w-lg mx-auto">
-              Join the beta and get early access to institutional-grade risk management. Free during beta.
-            </p>
+            <h2 class="text-2xl md:text-3xl font-semibold text-white uppercase tracking-tight mb-4">Ready to Protect Your Capital?</h2>
+            <p class="text-xs text-zinc-500 font-mono mb-8 max-w-lg mx-auto">Join the beta and get early access to institutional-grade risk management. Free during beta.</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/frontend" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-10 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">
-                Launch Terminal
-                <iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
-              </a>
-              <a href="/login" class="group bg-transparent border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-xs font-mono uppercase tracking-widest px-10 py-4 transition-all flex items-center justify-center gap-3 font-medium">
-                Create Account
-                <iconify-icon icon="solar:user-plus-linear" width="16"></iconify-icon>
-              </a>
+              <a href="/frontend" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-10 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">Launch Terminal<iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
+              <a href="/login" class="group bg-transparent border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-xs font-mono uppercase tracking-widest px-10 py-4 transition-all flex items-center justify-center gap-3 font-medium">Create Account<iconify-icon icon="solar:user-plus-linear" width="16"></iconify-icon></a>
             </div>
           </div>
         </section>
 
         <!-- Footer -->
-        <footer class="border-t border-zinc-800 bg-[#050505] text-zinc-500 font-mono relative z-20">
-          <div class="border-t border-zinc-800 bg-[#080808] px-8 py-4 flex flex-col md:flex-row items-center justify-between text-[10px] uppercase tracking-wider text-zinc-600 relative z-20">
-            <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-2 md:mb-0">
-              <span class="cursor-default">© 2026 BASTION SYSTEMS.</span>
-              <span class="hidden md:inline w-px h-3 bg-zinc-800"></span>
-              <div class="flex gap-6">
-                <a href="#" class="hover:text-white transition-colors">Privacy</a>
-                <a href="#" class="hover:text-white transition-colors">Terms</a>
-              </div>
-            </div>
-            <div class="flex items-center gap-6 font-mono">
-              <div class="flex items-center gap-2">
-                <iconify-icon icon="solar:clock-circle-linear" width="12"></iconify-icon>
-                <span>MARKET OPEN</span>
-              </div>
-              <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
-              <div class="flex items-center gap-2 text-red-900">
-                <iconify-icon icon="solar:shield-check-linear" width="12"></iconify-icon>
-                <span class="text-red-600">SECURE_CONNECTION</span>
-              </div>
-            </div>
+        <footer class="border-t border-zinc-800 bg-[#080808] px-8 py-4 flex flex-col md:flex-row items-center justify-between text-[10px] uppercase tracking-wider text-zinc-600 relative z-20">
+          <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-2 md:mb-0">
+            <span class="cursor-default">© 2026 BASTION SYSTEMS.</span>
+            <span class="hidden md:inline w-px h-3 bg-zinc-800"></span>
+            <div class="flex gap-6"><a href="#" class="hover:text-white transition-colors">Privacy</a><a href="#" class="hover:text-white transition-colors">Terms</a></div>
+          </div>
+          <div class="flex items-center gap-6 font-mono">
+            <div class="flex items-center gap-2"><iconify-icon icon="solar:clock-circle-linear" width="12"></iconify-icon><span>MARKET OPEN</span></div>
+            <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
+            <div class="flex items-center gap-2 text-red-600"><iconify-icon icon="solar:shield-check-linear" width="12"></iconify-icon><span>SECURE_CONNECTION</span></div>
           </div>
         </footer>
       </div>
     </main>
 
     <script>
-      // Mobile menu toggle
       document.getElementById('mobile-menu-btn').addEventListener('click', function() {
-        const menu = document.getElementById('mobile-menu');
-        menu.classList.toggle('translate-x-full');
+        document.getElementById('mobile-menu').classList.toggle('translate-x-full');
       });
 
-      // Animation observers
       document.addEventListener("DOMContentLoaded", () => {
         const observer = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("sys-active");
-              observer.unobserve(entry.target);
-            }
-          });
+          entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add("sys-active"); observer.unobserve(entry.target); } });
         }, { threshold: 0.1 });
         document.querySelectorAll(".sys-reveal, .sys-rise").forEach(el => observer.observe(el));
       });
     </script>
 
     <script>
-      // Typewriter effect
       (function() {
         const el = document.getElementById("hero-typewriter");
         if (!el) return;
@@ -901,23 +607,166 @@
           if (!isDeleting && charIdx <= currentWord.length) {
             el.textContent = currentWord.substring(0, charIdx);
             charIdx++;
-            if (charIdx > currentWord.length) {
-              isDeleting = true;
-              setTimeout(type, currentWord === "WEAPONIZED" ? 2000 : 1500);
-            } else setTimeout(type, 100);
+            if (charIdx > currentWord.length) { isDeleting = true; setTimeout(type, currentWord === "WEAPONIZED" ? 2000 : 1500); }
+            else setTimeout(type, 100);
           } else if (isDeleting && charIdx >= 0) {
             el.textContent = currentWord.substring(0, charIdx);
             charIdx--;
-            if (charIdx < 0) {
-              isDeleting = false;
-              wordIdx = (wordIdx + 1) % words.length;
-              charIdx = 0;
-              setTimeout(type, 200);
-            } else setTimeout(type, 50);
+            if (charIdx < 0) { isDeleting = false; wordIdx = (wordIdx + 1) % words.length; charIdx = 0; setTimeout(type, 200); }
+            else setTimeout(type, 50);
           }
         }
         setTimeout(type, 1000);
       })();
+    </script>
+
+    <!-- Canvas Animations -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const C = { R: "#DC2626", G: "#22C55E", A: "#F59E0B", C: "#06B6D4", W: "#FFFFFF", Z: "#52525b", B: "rgba(0,0,0,0.5)" };
+        const drawCircle = (ctx, x, y, r, c, fill=false) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); fill ? (ctx.fillStyle=c, ctx.fill()) : (ctx.strokeStyle=c, ctx.stroke()); };
+        const drawLine = (ctx, x1, y1, x2, y2, c, w=1, d=[]) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.setLineDash(d); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]); };
+        const drawText = (ctx, t, x, y, c, s=10) => { ctx.font = `bold ${s}px 'JetBrains Mono', monospace`; ctx.fillStyle = c; ctx.fillText(t, x, y); };
+
+        const anims = {
+          "canvas-fig-01": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h); const cx = w/2, cy = h/2; const loop = t % 4000;
+            [30, 20, 10].forEach((r, i) => { ctx.shadowBlur = 0; drawCircle(ctx, cx, cy, r, '#333'); });
+            [1000, 1600, 2200].forEach((st, i) => {
+              if (loop > st) {
+                const age = loop - st;
+                if (age < 600) { ctx.shadowBlur = 10; ctx.shadowColor = C.R; drawCircle(ctx, cx, cy, 10 + age/10, `rgba(220,38,38,${1-age/600})`); }
+                ctx.shadowBlur = 10; ctx.shadowColor = C.R; drawCircle(ctx, cx, cy, 2, C.R, true);
+                ctx.shadowBlur = 0; drawText(ctx, ["40%","30%","30%"][i], cx+20, cy - 10 + i*12, C.R, 9);
+              }
+            });
+          },
+          "canvas-fig-02": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h); const loop = t % 5000; const p = loop / 5000;
+            ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1; ctx.beginPath();
+            for(let i=0; i<w; i+=15) { ctx.moveTo(i,0); ctx.lineTo(i,h); }
+            for(let i=0; i<h; i+=15) { ctx.moveTo(0,i); ctx.lineTo(w,i); }
+            ctx.stroke();
+            const candleW = w/10; const candles = [0.3, 0.32, 0.45, 0.42, 0.6, 0.7, 0.75, 0.72];
+            const count = Math.floor(p * 12); let maxY = h;
+            candles.forEach((val, i) => {
+              if (i >= count) return;
+              const x = i * (candleW+2) + 10; const base = h - 15; const top = base - (val * (h*0.7));
+              if (top < maxY) maxY = top;
+              ctx.fillStyle = (i === 3 || i === 7) ? C.R : C.G;
+              ctx.fillRect(x, top, candleW, base - top);
+            });
+            const safeY = h - 8; const structY = h * 0.5;
+            drawLine(ctx, 0, safeY, w, safeY, C.R, 2); drawText(ctx, "SAFETY", 5, safeY-3, C.R, 7);
+            drawLine(ctx, 0, structY, w, structY, C.A, 1, [4,4]); drawText(ctx, "STRUCT", 5, structY-3, C.A, 7);
+          },
+          "canvas-fig-03": (ctx, w, h, t) => {
+            ctx.fillStyle = '#050505'; ctx.fillRect(0,0,w,h);
+            const loop = t % 6000; const p = loop / 6000;
+            const step = w/12; const pts = [];
+            for(let i=0; i<12; i++) { let y = h*0.7; if (i > 2) y -= (i-2)*(h*0.06); pts.push({x: i*step, y}); }
+            const cur = Math.floor(p * 15);
+            pts.forEach((pt, i) => {
+              if (i > cur) return;
+              const isPump = (i > 2);
+              ctx.fillStyle = isPump ? C.G : '#333';
+              if(isPump) { ctx.shadowBlur = 8; ctx.shadowColor = C.G; } else ctx.shadowBlur = 0;
+              ctx.fillRect(pt.x, pt.y - 6, step-3, 12);
+            });
+            if (p > 0.7) { drawText(ctx, "CAPTURED", w/2-30, h/2-5, C.W, 11); drawText(ctx, "+3.2R LOCKED", w/2-35, h/2+10, C.G, 10); }
+          },
+          "canvas-fig-04": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h); const cx = w/2, cy = h-8, r = w/2.5;
+            ctx.lineWidth = 6; const zones = [C.G, C.A, C.R, "#7F1D1D"];
+            zones.forEach((c, i) => { ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI + (i/4)*Math.PI, Math.PI + ((i+1)/4)*Math.PI); ctx.strokeStyle = c; ctx.globalAlpha = 0.3; ctx.stroke(); });
+            const v = (Math.sin(t/1500)+1)/2; const ang = Math.PI + v * Math.PI;
+            ctx.globalAlpha = 1; ctx.strokeStyle = C.W; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang)*r, cy + Math.sin(ang)*r); ctx.stroke();
+            if(v > 0.75) { drawText(ctx, "SIZE: -50%", cx-25, cy-15, C.R, 9); }
+          },
+          "canvas-fig-05": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h);
+            ctx.beginPath(); ctx.moveTo(0, h/2);
+            for(let i=0; i<w; i+=8) ctx.lineTo(i, h/2 + Math.sin(i/15 + t/1000)*15);
+            ctx.strokeStyle = '#333'; ctx.stroke();
+            const lvls = [h/3, h/2, h/1.5];
+            lvls.forEach((y, i) => {
+              const active = Math.abs((h/2 + Math.sin(w/15 + t/1000)*15) - y) < 8;
+              ctx.shadowBlur = active ? 8 : 0; ctx.shadowColor = active ? C.G : 'transparent';
+              drawLine(ctx, 0, y, w, y, active ? C.W : '#333', 1, [2,2]);
+              if(active) drawText(ctx, "CONF: " + (80+i*5), w-50, y-3, C.G, 8);
+            });
+          },
+          "canvas-fig-06": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h);
+            const p1 = h/3, p2 = h/3 - 8; const r1 = h*0.7, r2 = h*0.7 + 8;
+            drawLine(ctx, 15, p1, w-15, p2, C.G, 2); drawLine(ctx, 15, r1, w-15, r2, '#A855F7', 2);
+            if (t%2000 < 1000) { drawLine(ctx, 15, p1, 15, r1, '#333', 1, [2,2]); drawLine(ctx, w-15, p2, w-15, r2, C.R, 1, [2,2]); drawText(ctx, "⚠️ DIV", w/2-15, h/2, C.A, 9); }
+          },
+          "canvas-dat-01": (ctx, w, h, t) => {
+            ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,w,h);
+            const bars = 8; const bw = w/bars;
+            for(let i=0; i<bars; i++) {
+              const bh = (Math.sin(i*132)*15 + 25);
+              ctx.fillStyle = C.R; ctx.globalAlpha = 0.3 + (Math.sin(t/500 + i)*0.2); ctx.fillRect(i*bw, h-bh, bw-2, bh);
+            }
+            ctx.globalAlpha = 1;
+            if(Math.random() > 0.95) { const ex = Math.random()*w; drawText(ctx, "-$47M", ex, h-30, C.R, 8); }
+          },
+          "canvas-dat-02": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h);
+            const nodes = [{x:15, y:h/2, c:C.C}, {x:w/2, y:h/2, c:C.W}, {x:w-15, y:h/2, c:C.G}];
+            nodes.forEach(n => { ctx.shadowBlur=8; ctx.shadowColor=n.c; drawCircle(ctx, n.x, n.y, 3, n.c, true); });
+            const p = (t%2000)/2000; const x = 15 + p*(w-30); const y = h/2 - Math.sin(p*Math.PI)*15;
+            ctx.shadowBlur=5; ctx.shadowColor=C.C; drawCircle(ctx, x, y, 2, C.C, true);
+            drawText(ctx, "$42M", x-10, y-8, C.W, 7);
+          },
+          "canvas-dat-03": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h); const cx=w/2, cy=h/2;
+            drawLine(ctx, 0, 0, cx, cy, C.G, 1); drawLine(ctx, w, 0, cx, cy, C.G, 1);
+            drawLine(ctx, 0, h, cx, cy, C.R, 1); drawLine(ctx, w, h, cx, cy, C.A, 1);
+            ctx.shadowBlur=15; ctx.shadowColor=C.G; drawCircle(ctx, cx, cy, 4 + Math.sin(t/200)*2, C.G, true);
+            drawText(ctx, "BULLISH", cx-18, cy+18, C.G, 8);
+          },
+          "canvas-dat-04": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h);
+            let cvd = h/2;
+            ctx.beginPath(); ctx.moveTo(0, cvd);
+            for(let i=0; i<w; i+=4) { cvd += Math.sin(i/40 + t/1000)*1.5; ctx.lineTo(i, cvd); }
+            ctx.strokeStyle=C.W; ctx.stroke();
+            drawText(ctx, "DELTA: +2.4M", 8, 12, C.G, 9);
+          },
+          "canvas-dat-05": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h); const cx=w/2, cy=h-5, r=w/2.5;
+            ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 2*Math.PI); ctx.strokeStyle = '#333'; ctx.stroke();
+            const ang = Math.PI + (Math.sin(t/2000)*0.4 + 0.6) * Math.PI;
+            drawLine(ctx, cx, cy, cx+Math.cos(ang)*r, cy+Math.sin(ang)*r, C.A, 2);
+            drawText(ctx, "GREED", cx-15, cy-8, C.A, 9);
+          },
+          "canvas-dat-06": (ctx, w, h, t) => {
+            ctx.clearRect(0,0,w,h);
+            [0, 1, 2].forEach(i => {
+              const y = 8 + i*(h/3.5);
+              drawText(ctx, ["BTC","DXY","SPX"][i], 5, y+8, C.Z, 7);
+              ctx.beginPath(); ctx.moveTo(25, y+8);
+              for(let x=0; x<w-35; x+=4) ctx.lineTo(25+x, y+8 + Math.sin(x/8 + t/500 + i)*4);
+              ctx.strokeStyle = i===1 ? C.R : (i===2 ? C.A : C.G); ctx.stroke();
+            });
+          }
+        };
+
+        const obs = new IntersectionObserver(entries => { entries.forEach(e => { if(e.target.tagName === 'CANVAS') e.target._visible = e.isIntersecting; }); });
+        Object.keys(anims).forEach(id => {
+          const c = document.getElementById(id);
+          if(!c) return;
+          obs.observe(c);
+          const ctx = c.getContext('2d');
+          const loop = (t) => {
+            if(c._visible) { if(c.width !== c.clientWidth) { c.width = c.clientWidth; c.height = c.clientHeight; } anims[id](ctx, c.width, c.height, t); }
+            requestAnimationFrame(loop);
+          };
+          requestAnimationFrame(loop);
+        });
+      });
     </script>
 </body>
 </html>
