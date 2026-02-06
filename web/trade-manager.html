@@ -1368,12 +1368,13 @@
             const settings = window.BastionSettings?.current?.appearance || {};
             const theme = window.BastionSettings?.themes?.[settings.theme] || {};
             
-            const bgColor = theme['--bg'] || '#0d1117';
-            const textColor = theme['--dim'] || '#8b949e';
-            const gridColor = theme['--surface-2'] || '#21262d';
-            const borderColor = theme['--border'] || '#30363d';
-            const upColor = settings.upColor || theme['--green'] || '#238636';
-            const downColor = settings.downColor || theme['--red'] || '#da3633';
+            // Chart colors (background themes don't affect chart colors)
+            const bgColor = theme.bg || '#0d1117';
+            const textColor = '#8b949e';
+            const gridColor = '#21262d';
+            const borderColor = '#30363d';
+            const upColor = settings.upColor || '#22c55e';
+            const downColor = settings.downColor || '#ef4444';
             
             chart = LightweightCharts.createChart(container, {
                 layout: {

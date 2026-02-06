@@ -201,37 +201,167 @@ class BitunixClient(BaseExchangeClient):
         self.base_url = "https://fapi.bitunix.com"
         self.exchange_name = "bitunix"
     
-    def _get_headers(self, timestamp: str, sign: str) -> Dict:
+    def _generate_bitunix_signature(self, timestamp: str, nonce: str, method: str, path: str, body: str = "") -> str:
+        """Generate Bitunix-specific signature."""
+        # Bitunix signature: HMAC-SHA256(timestamp + nonce + method + path + body)
+        message = f"{timestamp}{nonce}{method}{path}{body}"
+        return hmac.new(
+            self.credentials.api_secret.encode(),
+            message.encode(),
+            hashlib.sha256
+        ).hexdigest()
+    
+    def _get_headers(self, method: str, path: str, body: str = "") -> Dict:
+        """Generate headers with proper Bitunix authentication."""
+        timestamp = str(int(time.time() * 1000))
+        nonce = str(int(time.time() * 1000000))  # microseconds as nonce
+        sign = self._generate_bitunix_signature(timestamp, nonce, method, path, body)
+        
         return {
             "api-key": self.credentials.api_key,
             "sign": sign,
             "timestamp": timestamp,
+            "nonce": nonce,
             "Content-Type": "application/json"
         }
     
     async def test_connection(self) -> bool:
+        """Test API connection."""
         try:
             async with httpx.AsyncClient() as client:
-                timestamp = str(int(time.time() * 1000))
-                message = f"{timestamp}"
-                sign = self._generate_signature(message)
+                path = "/api/v1/futures/account"
+                headers = self._get_headers("GET", path)
                 
                 res = await client.get(
-                    f"{self.base_url}/api/v1/account",
-                    headers=self._get_headers(timestamp, sign),
+                    f"{self.base_url}{path}",
+                    headers=headers,
                     timeout=10.0
                 )
+                logger.info(f"[BITUNIX] Connection test response: {res.status_code}")
                 return res.status_code == 200
         except Exception as e:
             logger.error(f"Bitunix connection test failed: {e}")
             return False
     
     async def get_positions(self) -> List[Position]:
-        # Similar implementation pattern as BloFin
-        # Adjust for Bitunix-specific API format
-        return []
+        """Fetch open positions from Bitunix Futures."""
+        positions = []
+        try:
+            async with httpx.AsyncClient() as client:
+                path = "/api/v1/futures/position"
+                headers = self._get_headers("GET", path)
+                
+                res = await client.get(
+                    f"{self.base_url}{path}",
+                    headers=headers,
+                    timeout=10.0
+                )
+                
+                logger.info(f"[BITUNIX] Positions response: {res.status_code}")
+                
+                if res.status_code == 200:
+                    data = res.json()
+                    logger.info(f"[BITUNIX] Positions data: {data}")
+                    
+                    # Handle different response formats
+                    pos_list = data.get("data", data.get("result", []))
+                    if isinstance(pos_list, dict):
+                        pos_list = pos_list.get("list", [pos_list])
+                    
+                    for pos in pos_list:
+                        try:
+                            # Get position amount - could be various field names
+                            size = float(pos.get("positionAmt", pos.get("qty", pos.get("size", pos.get("position", 0)))))
+                            
+                            if size == 0:
+                                continue
+                            
+                            symbol = pos.get("symbol", pos.get("instId", ""))
+                            entry = float(pos.get("entryPrice", pos.get("avgPrice", pos.get("openAvgPrice", 0))))
+                            mark = float(pos.get("markPrice", pos.get("lastPrice", entry)))
+                            pnl = float(pos.get("unrealizedPnl", pos.get("unrealisedPnl", pos.get("unRealizedProfit", 0))))
+                            margin = float(pos.get("margin", pos.get("positionIM", pos.get("isolatedMargin", 0))))
+                            leverage = float(pos.get("leverage", 1))
+                            liq_price = float(pos.get("liquidationPrice", pos.get("liqPrice", 0))) or None
+                            
+                            # Determine direction
+                            side = pos.get("side", pos.get("positionSide", ""))
+                            if side:
+                                direction = "long" if side.lower() in ["long", "buy"] else "short"
+                            else:
+                                direction = "long" if size > 0 else "short"
+                            
+                            # Calculate PnL percentage
+                            pnl_pct = (pnl / margin * 100) if margin > 0 else 0
+                            
+                            positions.append(Position(
+                                id=f"bitunix_{symbol}_{direction}",
+                                symbol=symbol,
+                                direction=direction,
+                                entry_price=entry,
+                                current_price=mark,
+                                size=abs(size),
+                                size_usd=abs(size * mark),
+                                pnl=pnl,
+                                pnl_pct=pnl_pct,
+                                leverage=leverage,
+                                margin=margin,
+                                liquidation_price=liq_price,
+                                exchange=self.exchange_name,
+                                updated_at=datetime.now().isoformat()
+                            ))
+                            logger.info(f"[BITUNIX] Added position: {symbol} {direction} size={size}")
+                        except Exception as e:
+                            logger.error(f"[BITUNIX] Error parsing position: {e}, data: {pos}")
+                else:
+                    logger.warning(f"[BITUNIX] Failed to get positions: {res.text}")
+                    
+        except Exception as e:
+            logger.error(f"Bitunix get_positions error: {e}")
+        
+        return positions
     
     async def get_balance(self) -> ExchangeBalance:
+        """Fetch account balance from Bitunix Futures."""
+        try:
+            async with httpx.AsyncClient() as client:
+                path = "/api/v1/futures/account"
+                headers = self._get_headers("GET", path)
+                
+                res = await client.get(
+                    f"{self.base_url}{path}",
+                    headers=headers,
+                    timeout=10.0
+                )
+                
+                logger.info(f"[BITUNIX] Balance response: {res.status_code}")
+                
+                if res.status_code == 200:
+                    data = res.json()
+                    logger.info(f"[BITUNIX] Balance data: {data}")
+                    
+                    # Extract balance data - try multiple field names
+                    account = data.get("data", data.get("result", data))
+                    if isinstance(account, list):
+                        account = account[0] if account else {}
+                    
+                    equity = float(account.get("totalEquity", account.get("equity", account.get("totalWalletBalance", account.get("balance", 0)))))
+                    available = float(account.get("availableBalance", account.get("available", account.get("availableMargin", equity))))
+                    margin_used = float(account.get("marginUsed", account.get("usedMargin", account.get("totalInitialMargin", 0))))
+                    unrealized = float(account.get("unrealizedPnl", account.get("unrealisedPnl", account.get("totalUnrealizedProfit", 0))))
+                    
+                    return ExchangeBalance(
+                        total_equity=equity,
+                        available_balance=available,
+                        margin_used=margin_used,
+                        unrealized_pnl=unrealized
+                    )
+                else:
+                    logger.warning(f"[BITUNIX] Failed to get balance: {res.text}")
+                    
+        except Exception as e:
+            logger.error(f"Bitunix get_balance error: {e}")
+        
         return ExchangeBalance(0, 0, 0, 0)
 
 
