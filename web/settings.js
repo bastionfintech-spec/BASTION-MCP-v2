@@ -4,37 +4,37 @@
  */
 
 const BastionSettings = {
-  // Theme background configurations - JUST BACKGROUNDS
+  // Theme background configurations - MORE VISIBLE GRADIENTS
   themes: {
     crimson: {
       name: 'Crimson Dark',
-      bg: '#0a0a0a',
-      bgGradient: 'radial-gradient(ellipse at top, rgba(220, 38, 38, 0.08) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(220, 38, 38, 0.05) 0%, transparent 40%), #0a0a0a'
+      bg: '#0a0808',
+      bgGradient: 'radial-gradient(ellipse at top, rgba(220, 38, 38, 0.25) 0%, rgba(127, 29, 29, 0.1) 30%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(185, 28, 28, 0.15) 0%, transparent 50%), #0a0808'
     },
     midnight: {
       name: 'Midnight Blue',
-      bg: '#050510',
-      bgGradient: 'radial-gradient(ellipse at top, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(30, 64, 175, 0.08) 0%, transparent 40%), #050510'
+      bg: '#050815',
+      bgGradient: 'radial-gradient(ellipse at top, rgba(59, 130, 246, 0.3) 0%, rgba(30, 64, 175, 0.15) 30%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(37, 99, 235, 0.2) 0%, transparent 50%), #050815'
     },
     matrix: {
       name: 'Matrix',
-      bg: '#030a03',
-      bgGradient: 'radial-gradient(ellipse at top, rgba(34, 197, 94, 0.08) 0%, transparent 50%), radial-gradient(ellipse at bottom left, rgba(22, 163, 74, 0.05) 0%, transparent 40%), #030a03'
+      bg: '#020a02',
+      bgGradient: 'radial-gradient(ellipse at top, rgba(34, 197, 94, 0.25) 0%, rgba(22, 163, 74, 0.12) 30%, transparent 60%), radial-gradient(ellipse at bottom left, rgba(21, 128, 61, 0.15) 0%, transparent 50%), #020a02'
     },
     stealth: {
       name: 'Stealth',
-      bg: '#0a0a0a',
-      bgGradient: 'linear-gradient(180deg, #0f0f0f 0%, #0a0a0a 50%, #080808 100%)'
+      bg: '#080808',
+      bgGradient: 'linear-gradient(180deg, #121212 0%, #0a0a0a 40%, #050505 100%)'
     },
     abyss: {
       name: 'Abyss',
       bg: '#000000',
-      bgGradient: 'radial-gradient(ellipse at center, #0a0a0a 0%, #000000 70%)'
+      bgGradient: 'radial-gradient(ellipse at center, #080808 0%, #000000 60%)'
     },
     terminal: {
       name: 'Terminal',
-      bg: '#0c0c0c',
-      bgGradient: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.01) 2px, rgba(0,255,0,0.01) 4px), radial-gradient(ellipse at top, rgba(0, 255, 0, 0.05) 0%, transparent 50%), #0c0c0c'
+      bg: '#000800',
+      bgGradient: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,0,0.03) 3px, rgba(0,255,0,0.03) 6px), radial-gradient(ellipse at top, rgba(0, 255, 0, 0.2) 0%, rgba(0, 200, 0, 0.1) 30%, transparent 60%), #000800'
     }
   },
 

@@ -331,6 +331,55 @@ async def serve_settings_js():
     raise HTTPException(status_code=404, detail="settings.js not found")
 
 
+@app.get("/api/debug/bitunix")
+async def debug_bitunix():
+    """Debug endpoint to test Bitunix API directly."""
+    if "bitunix" not in connected_exchanges:
+        return {"error": "Bitunix not connected. Connect it first on the Account page."}
+    
+    if "bitunix" not in user_context.connections:
+        return {"error": "Bitunix client not in user_context. Try reconnecting."}
+    
+    client = user_context.connections["bitunix"]
+    results = {}
+    
+    # Test multiple endpoints
+    test_endpoints = [
+        "/api/v1/futures/position",
+        "/api/v1/futures/account", 
+        "/fapi/v1/positionRisk",
+        "/api/v1/position/list",
+        "/api/v1/user/positions",
+        "/api/v1/account/positions",
+        "/openApi/contract/v1/private/position/list",
+        "/api/v1/contract/position"
+    ]
+    
+    import httpx
+    
+    async with httpx.AsyncClient() as http_client:
+        for endpoint in test_endpoints:
+            try:
+                headers = client._get_headers("GET", endpoint)
+                res = await http_client.get(
+                    f"{client.base_url}{endpoint}",
+                    headers=headers,
+                    timeout=10.0
+                )
+                results[endpoint] = {
+                    "status": res.status_code,
+                    "body": res.text[:500] if res.text else "empty"
+                }
+            except Exception as e:
+                results[endpoint] = {"error": str(e)}
+    
+    return {
+        "base_url": client.base_url,
+        "api_key_preview": client.credentials.api_key[:8] + "...",
+        "results": results
+    }
+
+
 @app.get("/volume-profile.js")
 async def serve_volume_profile_js():
     """Serve the volume-profile.js file."""
