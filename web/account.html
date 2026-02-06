@@ -2346,11 +2346,12 @@
       }
       
       async function setup2FA() {
+        const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
         try {
           const res = await fetch(`${API_BASE}/api/auth/2fa/setup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: localStorage.getItem('bastion_token') || 'local' })
+            body: JSON.stringify({ token: token || 'local' })
           });
           
           const data = await res.json();
@@ -2401,12 +2402,14 @@
           return;
         }
         
+        const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+        
         try {
           const res = await fetch(`${API_BASE}/api/auth/2fa/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-              token: localStorage.getItem('bastion_token') || 'local',
+              token: token || 'local',
               code: code,
               secret: pending2FASecret
             })
@@ -2450,10 +2453,11 @@
         showToast('2FA disabled', 'success');
         
         // Also notify backend
+        const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
         fetch(`${API_BASE}/api/auth/2fa/disable`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: localStorage.getItem('bastion_token') || 'local' })
+          body: JSON.stringify({ token: token || 'local' })
         }).catch(() => {});
       }
       

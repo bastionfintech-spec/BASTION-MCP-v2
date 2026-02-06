@@ -1372,6 +1372,15 @@ async def setup_2fa(data: dict):
         import pyotp
         import qrcode
         
+        # Get user email from token if available
+        token = data.get("token", "")
+        user_email = data.get("email", "user@bastion.app")
+        
+        if token and user_service:
+            user = await user_service.validate_session(token)
+            if user:
+                user_email = user.email
+        
         # Generate secret
         secret = pyotp.random_base32()
         
@@ -1380,7 +1389,7 @@ async def setup_2fa(data: dict):
         
         # Generate provisioning URI
         uri = totp.provisioning_uri(
-            name=data.get("email", "user@bastion.app"),
+            name=user_email,
             issuer_name="BASTION Terminal"
         )
         
@@ -1414,9 +1423,10 @@ async def setup_2fa(data: dict):
 
 @app.post("/api/auth/2fa/verify")
 async def verify_2fa(data: dict):
-    """Verify 2FA code during setup."""
+    """Verify 2FA code during setup and save to database."""
     code = data.get("code", "")
     secret = data.get("secret", "")
+    token = data.get("token", "")
     
     if not code or not secret:
         return {"success": False, "error": "Code and secret required"}
@@ -1426,20 +1436,47 @@ async def verify_2fa(data: dict):
         totp = pyotp.TOTP(secret)
         
         if totp.verify(code, valid_window=1):  # Allow 30 second window
-            return {"success": True}
+            # Save 2FA to database if user is authenticated
+            if token and user_service:
+                user = await user_service.validate_session(token)
+                if user:
+                    # Update user's 2FA settings in database
+                    success = await user_service.update_user(user.id, {
+                        'totp_enabled': True,
+                        'totp_secret': secret
+                    })
+                    if success:
+                        logger.info(f"[2FA] Enabled 2FA for user {user.email}")
+                    else:
+                        logger.warning(f"[2FA] Failed to save 2FA to database for {user.email}")
+            return {"success": True, "saved_to_db": True}
         else:
             return {"success": False, "error": "Invalid code"}
     except ImportError:
         # pyotp not available - accept any valid 6-digit code for demo
         if len(code) == 6 and code.isdigit():
-            return {"success": True}
+            return {"success": True, "saved_to_db": False}
         return {"success": False, "error": "Invalid code format"}
 
 
 @app.post("/api/auth/2fa/disable")
 async def disable_2fa(data: dict):
     """Disable 2FA for user."""
-    # In production, this would update the user record in the database
+    token = data.get("token", "")
+    
+    if token and user_service:
+        user = await user_service.validate_session(token)
+        if user:
+            success = await user_service.update_user(user.id, {
+                'totp_enabled': False,
+                'totp_secret': None
+            })
+            if success:
+                logger.info(f"[2FA] Disabled 2FA for user {user.email}")
+                return {"success": True}
+            else:
+                logger.warning(f"[2FA] Failed to disable 2FA in database for {user.email}")
+    
     return {"success": True}
 
 
