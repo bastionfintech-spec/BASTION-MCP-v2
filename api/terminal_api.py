@@ -2508,20 +2508,23 @@ async def generate_market_alerts(data: dict = None):
         except Exception as e:
             logger.warning(f"[ALERTS] Volatility check error: {e}")
         
-        # 5. GENERATE RANDOM "MOMENTUM" ALERTS for active trading feel
-        # (These are based on real data but with some interpretation)
+        # 5. GENERATE "MOMENTUM" ALERTS for active trading feel
+        # These fire occasionally and DO push to Telegram for engagement
         import random
-        if random.random() < 0.1:  # 10% chance each check
+        if random.random() < 0.08:  # 8% chance each check (~every 10 mins on avg)
             momentum_alerts = [
-                ("🎯 TARGET 1 HIT", "BTC approaching key resistance. Watch for rejection.", "green"),
-                ("📊 MOMENTUM SHIFT", "4H momentum turning bullish. Higher lows forming.", "cyan"),
-                ("⚡ VOLUME SPIKE", "Unusual volume detected on BTC. Smart money active?", "amber"),
-                ("🔄 TREND CONTINUATION", "Pullback to support held. Trend intact.", "green"),
-                ("📉 SUPPORT TEST", "BTC testing key support zone. Hold or breakdown?", "amber"),
+                ("🎯 TARGET ZONE", f"BTC at ${last_alert_check.get('btc_price', 70000):,.0f} - Approaching key resistance.", "green"),
+                ("📊 MOMENTUM", "4H momentum building. Watch for continuation or reversal.", "cyan"),
+                ("⚡ FLOW ALERT", "Unusual order flow detected. Smart money positioning?", "amber"),
+                ("🔄 TREND CHECK", "Key support/resistance being tested. Stay alert.", "green"),
+                ("📉 LEVEL WATCH", "Price consolidating near key zone. Breakout imminent?", "amber"),
             ]
             choice = random.choice(momentum_alerts)
             alert = add_live_alert("momentum", choice[0], choice[1], choice[2])
-            # Don't push momentum alerts to Telegram (too frequent)
+            
+            # Push momentum alerts to Telegram too (but less frequently)
+            if random.random() < 0.5:  # 50% of momentum alerts go to Telegram
+                await push_channel_alert("momentum", choice[0], choice[1])
         
         return {
             "success": True,
@@ -2571,6 +2574,51 @@ async def get_telegram_channel():
         "bot_username": TELEGRAM_BOT_USERNAME,
         "configured": bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHANNEL_ID)
     }
+
+
+@app.get("/api/telegram/status")
+async def get_telegram_status():
+    """Check Telegram configuration status and test connection."""
+    import httpx
+    
+    status = {
+        "bot_token_set": bool(TELEGRAM_BOT_TOKEN),
+        "bot_token_preview": f"{TELEGRAM_BOT_TOKEN[:10]}...{TELEGRAM_BOT_TOKEN[-5:]}" if TELEGRAM_BOT_TOKEN and len(TELEGRAM_BOT_TOKEN) > 15 else "NOT SET",
+        "channel_id": TELEGRAM_CHANNEL_ID or "NOT SET",
+        "bot_username": TELEGRAM_BOT_USERNAME,
+        "fully_configured": bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHANNEL_ID),
+    }
+    
+    # Test the bot if configured
+    if TELEGRAM_BOT_TOKEN:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                res = await client.get(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getMe")
+                data = res.json()
+                if data.get("ok"):
+                    bot_info = data.get("result", {})
+                    status["bot_connected"] = True
+                    status["bot_name"] = bot_info.get("first_name")
+                    status["bot_username_actual"] = bot_info.get("username")
+                else:
+                    status["bot_connected"] = False
+                    status["bot_error"] = data.get("description", "Unknown error")
+        except Exception as e:
+            status["bot_connected"] = False
+            status["bot_error"] = str(e)
+    else:
+        status["bot_connected"] = False
+        status["bot_error"] = "Bot token not configured"
+    
+    # Instructions if not configured
+    if not status["fully_configured"]:
+        status["setup_required"] = {
+            "1": "Set TELEGRAM_BOT_TOKEN in Railway env vars (get from @BotFather)",
+            "2": "Set TELEGRAM_CHANNEL_ID in Railway env vars (e.g., @BastionAlerts)",
+            "3": "Make sure the bot is an admin in the channel"
+        }
+    
+    return status
 
 
 @app.post("/api/alerts/send")
