@@ -1568,6 +1568,9 @@
           console.log(`[AUTO-CONNECT] Connecting to ${exchange}...`);
           
           try {
+            // Get user token if logged in
+            const userToken = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+            
             const res = await fetch(`${API_BASE}/api/exchange/connect`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1576,7 +1579,8 @@
                 api_key: creds.api_key,
                 api_secret: creds.api_secret,
                 passphrase: creds.passphrase,
-                read_only: creds.read_only
+                read_only: creds.read_only,
+                token: userToken  // Pass token to save to cloud if logged in
               })
             });
             
@@ -1617,6 +1621,9 @@
         }
         
         try {
+          // Get user token if logged in
+          const userToken = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+          
           const res = await fetch(`${API_BASE}/api/exchange/connect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1625,7 +1632,8 @@
               api_key: apiKey,
               api_secret: config.isWalletBased ? apiKey : apiSecret, // For wallet-based, use address as both
               passphrase: passphrase || null,
-              read_only: readOnly
+              read_only: readOnly,
+              token: userToken  // Pass token to save to cloud if logged in
             })
           });
           
@@ -1634,7 +1642,8 @@
           if (data.success) {
             // SAVE credentials to localStorage!
             saveCredentials(selectedExchange, apiKey, config.isWalletBased ? apiKey : apiSecret, passphrase, readOnly);
-            showToast(`Connected to ${exchangeConfigs[selectedExchange].name}! Your keys are saved locally.`, 'success');
+            const cloudMsg = data.saved_to_cloud ? ' (Synced to cloud!)' : '';
+            showToast(`Connected to ${exchangeConfigs[selectedExchange].name}!${cloudMsg}`, 'success');
             addConnectedExchange(selectedExchange);
             document.getElementById('api-form').classList.add('hidden');
             clearForm();

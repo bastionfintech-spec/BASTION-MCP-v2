@@ -540,6 +540,7 @@ async def connect_exchange(data: dict):
     api_secret = data.get("api_secret")
     passphrase = data.get("passphrase")
     read_only = data.get("read_only", True)
+    token = data.get("token")  # Optional user token for Supabase storage
     
     if not exchange or not api_key or not api_secret:
         raise HTTPException(status_code=400, detail="Missing required fields")
@@ -574,12 +575,27 @@ async def connect_exchange(data: dict):
         "status": "active"
     }
     
+    # If user is logged in, save to Supabase for persistence
+    saved_to_cloud = False
+    if token and user_service:
+        try:
+            user = await user_service.validate_session(token)
+            if user:
+                saved_to_cloud = await user_service.save_exchange_keys(
+                    user.id, exchange, api_key, api_secret, passphrase
+                )
+                if saved_to_cloud:
+                    logger.info(f"[EXCHANGE] Saved {exchange} keys to cloud for user {user.id[:8]}...")
+        except Exception as e:
+            logger.warning(f"[EXCHANGE] Failed to save to cloud: {e}")
+    
     logger.info(f"[EXCHANGE] Connected to {exchange}")
     
     return {
         "success": True,
         "message": f"Successfully connected to {exchange}",
-        "exchange": connected_exchanges[exchange]
+        "exchange": connected_exchanges[exchange],
+        "saved_to_cloud": saved_to_cloud
     }
 
 
@@ -1138,6 +1154,53 @@ async def get_user_exchanges(token: str):
     
     exchanges = await user_service.get_user_exchanges(user.id)
     return {"success": True, "exchanges": exchanges}
+
+
+@app.post("/api/auth/load-exchanges")
+async def load_user_exchanges(data: dict):
+    """Load and auto-connect user's saved exchanges from cloud."""
+    token = data.get("token")
+    
+    if not token or not user_service:
+        return {"success": False, "loaded": 0}
+    
+    user = await user_service.validate_session(token)
+    if not user:
+        return {"success": False, "loaded": 0}
+    
+    # Get list of saved exchanges
+    exchange_names = await user_service.get_user_exchanges(user.id)
+    loaded = 0
+    
+    for exchange_name in exchange_names:
+        try:
+            # Get the keys
+            keys = await user_service.get_exchange_keys(user.id, exchange_name)
+            if keys:
+                # Auto-connect
+                success = await user_context.connect_exchange(
+                    exchange=exchange_name,
+                    api_key=keys["api_key"],
+                    api_secret=keys["api_secret"],
+                    passphrase=keys.get("passphrase"),
+                    read_only=True
+                )
+                
+                # Store in connected_exchanges
+                connected_exchanges[exchange_name] = {
+                    "exchange": exchange_name,
+                    "api_key": keys["api_key"][:8] + "...",
+                    "read_only": True,
+                    "connected_at": datetime.now().isoformat(),
+                    "status": "active" if success else "demo",
+                    "from_cloud": True
+                }
+                loaded += 1
+                logger.info(f"[EXCHANGE] Auto-loaded {exchange_name} from cloud")
+        except Exception as e:
+            logger.error(f"[EXCHANGE] Failed to load {exchange_name}: {e}")
+    
+    return {"success": True, "loaded": loaded, "exchanges": list(connected_exchanges.keys())}
 
 
 @app.delete("/api/auth/exchange-keys/{exchange}")
