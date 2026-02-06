@@ -378,6 +378,33 @@
           }
           
           if (data.success && data.token) {
+            // Check if this is a different user than previously logged in
+            // If so, clear personalization data to prevent cross-user data leakage
+            const previousUser = localStorage.getItem('bastion_user');
+            if (previousUser) {
+              try {
+                const prevUserData = JSON.parse(previousUser);
+                if (prevUserData.id !== data.user.id) {
+                  console.log('[AUTH] Different user logging in, clearing personalization data');
+                  // Clear user-specific personalization data
+                  localStorage.removeItem('cornerGif');
+                  localStorage.removeItem('cornerGifSettings');
+                  localStorage.removeItem('userAvatar');
+                  localStorage.removeItem('profile');
+                  localStorage.removeItem('bastionAppearance');
+                  localStorage.removeItem('riskSettings');
+                  localStorage.removeItem('alertSettings');
+                  localStorage.removeItem('2fa_enabled');
+                  localStorage.removeItem('2fa_secret');
+                  localStorage.removeItem('bastion_exchange_credentials');
+                }
+              } catch (e) {
+                // If parsing fails, clear everything to be safe
+                console.log('[AUTH] Could not parse previous user, clearing data');
+                localStorage.clear();
+              }
+            }
+            
             // Store session
             const storage = remember ? localStorage : sessionStorage;
             storage.setItem('bastion_token', data.token);
@@ -459,6 +486,19 @@
           const data = await res.json();
           
           if (data.success && data.token) {
+            // New user - clear any previous user's personalization data
+            console.log('[AUTH] New user registration, clearing any old personalization data');
+            localStorage.removeItem('cornerGif');
+            localStorage.removeItem('cornerGifSettings');
+            localStorage.removeItem('userAvatar');
+            localStorage.removeItem('profile');
+            localStorage.removeItem('bastionAppearance');
+            localStorage.removeItem('riskSettings');
+            localStorage.removeItem('alertSettings');
+            localStorage.removeItem('2fa_enabled');
+            localStorage.removeItem('2fa_secret');
+            localStorage.removeItem('bastion_exchange_credentials');
+            
             // Store session
             localStorage.setItem('bastion_token', data.token);
             localStorage.setItem('bastion_user', JSON.stringify(data.user));
