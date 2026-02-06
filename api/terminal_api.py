@@ -365,21 +365,30 @@ async def health_check():
 # =============================================================================
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_terminal():
-    """Serve the terminal page."""
+async def serve_landing():
+    """Serve the landing page."""
+    landing_path = bastion_path / "web" / "index.html"
+    if landing_path.exists():
+        return FileResponse(landing_path)
+    return HTMLResponse("<h1>Landing page not found</h1>")
+
+
+@app.get("/frontend", response_class=HTMLResponse)
+async def serve_frontend():
+    """Serve the main trading terminal."""
     terminal_path = bastion_path / "generated-page.html"
     if terminal_path.exists():
         return FileResponse(terminal_path)
     return HTMLResponse("<h1>Terminal not found</h1>")
 
 
-@app.get("/frontend", response_class=HTMLResponse)
-async def serve_frontend():
-    """Serve the frontend landing page."""
-    frontend_path = bastion_path / "BASTION FRONT END.html"
-    if frontend_path.exists():
-        return FileResponse(frontend_path)
-    return HTMLResponse("<h1>Frontend not found</h1>")
+@app.get("/login", response_class=HTMLResponse)
+async def serve_login():
+    """Serve the login page."""
+    login_path = bastion_path / "web" / "login.html"
+    if login_path.exists():
+        return FileResponse(login_path)
+    return HTMLResponse("<h1>Login page not found</h1>")
 
 
 @app.get("/visualizations", response_class=HTMLResponse)
