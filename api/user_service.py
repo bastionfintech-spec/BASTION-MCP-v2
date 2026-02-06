@@ -33,6 +33,7 @@ class User:
     email: str
     display_name: str
     created_at: str
+    password_hash: Optional[str] = None  # Not included in to_dict for security
     last_login: Optional[str] = None
     avatar_url: Optional[str] = None
     timezone: str = "UTC"
@@ -85,7 +86,10 @@ class User:
             self.trading_style = ["day_trading"]
     
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        # Never expose password hash
+        d.pop('password_hash', None)
+        return d
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'User':
@@ -95,6 +99,7 @@ class User:
             email=data.get('email', ''),
             display_name=data.get('display_name', 'Trader'),
             created_at=data.get('created_at', datetime.utcnow().isoformat()),
+            password_hash=data.get('password_hash'),
             last_login=data.get('last_login'),
             avatar_url=data.get('avatar_url'),
             timezone=data.get('timezone', 'UTC'),
@@ -212,6 +217,10 @@ class UserService:
         """Hash password with salt"""
         salt = os.getenv("PASSWORD_SALT", "bastion_default_salt_change_me")
         return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
+    
+    def verify_password(self, password: str, password_hash: str) -> bool:
+        """Verify a password against its hash"""
+        return self._hash_password(password) == password_hash
     
     def _generate_session_token(self) -> str:
         """Generate secure session token"""

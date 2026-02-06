@@ -131,6 +131,20 @@
             </div>
           </div>
 
+          <!-- 2FA Input (hidden by default, shown when required) -->
+          <div id="2fa-input-section" class="hidden">
+            <div class="relative group">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-[#DC2626] transition-colors">
+                <iconify-icon icon="solar:shield-keyhole-linear" width="18"></iconify-icon>
+              </div>
+              <input type="text" id="login-2fa-code" placeholder="6-DIGIT 2FA CODE" maxlength="6" pattern="[0-9]{6}" class="w-full bg-[#18181b] border border-amber-600/50 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 pl-10 pr-4 py-3 transition-all font-mono placeholder:tracking-wider tracking-[0.5em] text-center" autocomplete="one-time-code">
+            </div>
+            <p class="text-[10px] text-amber-500/80 mt-2 font-mono flex items-center gap-1">
+              <iconify-icon icon="solar:shield-check-bold" width="12"></iconify-icon>
+              Enter the code from your authenticator app
+            </p>
+          </div>
+
           <div class="flex items-center justify-between">
             <label class="flex items-center gap-2 cursor-pointer group">
               <div class="relative flex items-center">
@@ -310,14 +324,26 @@
         }
       }
 
+      // Track if 2FA is pending
+      let pending2FA = { email: null, password: null };
+
       async function handleLogin(event) {
         event.preventDefault();
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
         const remember = document.getElementById('remember-device').checked;
+        const totpCode = document.getElementById('login-2fa-code').value;
 
         if (!email || !password) {
           showStatus('login-status', 'Please enter email and password', true);
+          return;
+        }
+
+        // If 2FA is showing and no code entered
+        const is2FAVisible = !document.getElementById('2fa-input-section').classList.contains('hidden');
+        if (is2FAVisible && !totpCode) {
+          showStatus('login-status', 'Please enter your 2FA code', true);
+          document.getElementById('login-2fa-code').focus();
           return;
         }
 
@@ -330,10 +356,26 @@
           const res = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ 
+              email, 
+              password,
+              totp_code: totpCode || undefined
+            })
           });
           
           const data = await res.json();
+          
+          // Check if 2FA is required
+          if (data.requires_2fa) {
+            // Show 2FA input
+            document.getElementById('2fa-input-section').classList.remove('hidden');
+            document.getElementById('login-2fa-code').focus();
+            showStatus('login-status', '2FA verification required', false);
+            pending2FA = { email, password };
+            resetLoginBtn();
+            document.getElementById('login-btn-text').textContent = 'Verify 2FA';
+            return;
+          }
           
           if (data.success && data.token) {
             // Store session
@@ -342,6 +384,11 @@
             storage.setItem('bastion_user', JSON.stringify(data.user));
             
             showStatus('login-status', 'Authentication successful. Redirecting...', false);
+            
+            // Reset 2FA state
+            document.getElementById('2fa-input-section').classList.add('hidden');
+            document.getElementById('login-2fa-code').value = '';
+            pending2FA = { email: null, password: null };
             
             setTimeout(() => {
               window.location.href = '/frontend';

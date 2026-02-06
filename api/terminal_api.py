@@ -1144,6 +1144,7 @@ async def login_user(data: dict):
     """Login and get session token."""
     email = data.get("email", "").lower().strip()
     password = data.get("password", "")
+    totp_code = data.get("totp_code", "")
     
     logger.info(f"[AUTH] Login attempt for: {email}")
     
@@ -1154,11 +1155,39 @@ async def login_user(data: dict):
         logger.error("[AUTH] User service not available for login")
         raise HTTPException(status_code=503, detail="User service unavailable")
     
+    # First verify password
+    user = await user_service.get_user_by_email(email)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Verify password
+    if not user_service.verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Check if 2FA is enabled
+    if user.totp_enabled and user.totp_secret:
+        if not totp_code:
+            # 2FA required but no code provided - return flag for frontend
+            logger.info(f"[AUTH] 2FA required for {email}")
+            return {
+                "success": False,
+                "requires_2fa": True,
+                "email": email,
+                "message": "2FA verification required"
+            }
+        
+        # Verify 2FA code
+        import pyotp
+        totp = pyotp.TOTP(user.totp_secret)
+        if not totp.verify(totp_code, valid_window=1):
+            raise HTTPException(status_code=401, detail="Invalid 2FA code")
+        
+        logger.info(f"[AUTH] 2FA verified for {email}")
+    
+    # Create session token
     token = await user_service.authenticate(email, password)
     if not token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    user = await user_service.get_user_by_email(email)
     
     return {
         "success": True,
