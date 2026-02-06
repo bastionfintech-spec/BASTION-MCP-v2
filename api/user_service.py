@@ -202,12 +202,6 @@ class UserService:
         """Create a new user"""
         logger.info(f"[UserService] Attempting to create user: {email}")
         
-        # Check if email exists
-        existing = await self.get_user_by_email(email)
-        if existing:
-            logger.warning(f"[UserService] User already exists: {email}")
-            return None
-        
         user_id = secrets.token_urlsafe(16)
         password_hash = self._hash_password(password)
         
@@ -218,8 +212,15 @@ class UserService:
             created_at=datetime.utcnow().isoformat()
         )
         
+        # Try database first
         if self.is_db_available:
             try:
+                # Check if email exists first
+                existing = await self.get_user_by_email(email)
+                if existing:
+                    logger.warning(f"[UserService] User already exists: {email}")
+                    return None
+                
                 # Build data dict manually to avoid extra fields
                 data = {
                     'id': user.id,
@@ -236,20 +237,25 @@ class UserService:
                 }
                 
                 result = self.client.table(self.users_table).insert(data).execute()
-                logger.info(f"[UserService] Created user: {email}")
+                logger.info(f"[UserService] Created user in database: {email}")
                 return user
             except Exception as e:
-                logger.error(f"[UserService] Failed to create user: {e}")
+                logger.error(f"[UserService] Database failed, falling back to in-memory: {e}")
                 # Check if it's a duplicate key error
                 if "duplicate" in str(e).lower() or "unique" in str(e).lower():
                     logger.warning(f"[UserService] Duplicate email detected: {email}")
-                return None
-        else:
-            # In-memory fallback
-            logger.info(f"[UserService] Using in-memory storage for user: {email}")
-            self._memory_users[user_id] = user
-            self._memory_users[f"email:{email}"] = {"user_id": user_id, "password_hash": password_hash}
-            return user
+                    return None
+                # Fall through to in-memory storage
+        
+        # In-memory fallback - check if email exists first
+        if f"email:{email}" in self._memory_users:
+            logger.warning(f"[UserService] User already exists in memory: {email}")
+            return None
+        
+        logger.info(f"[UserService] Using in-memory storage for user: {email}")
+        self._memory_users[user_id] = user
+        self._memory_users[f"email:{email}"] = {"user_id": user_id, "password_hash": password_hash}
+        return user
     
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""
@@ -294,32 +300,40 @@ class UserService:
         """Authenticate user and return session token"""
         password_hash = self._hash_password(password)
         
+        # Try database first
         if self.is_db_available:
             try:
                 result = self.client.table(self.users_table)\
                     .select("id, password_hash")\
                     .eq("email", email)\
-                    .single()\
                     .execute()
                 
-                if result.data and result.data.get("password_hash") == password_hash:
-                    user_id = result.data["id"]
-                    # Create session
-                    session = await self._create_session(user_id)
-                    # Update last login
-                    self.client.table(self.users_table)\
-                        .update({"last_login": datetime.utcnow().isoformat()})\
-                        .eq("id", user_id)\
-                        .execute()
-                    return session.token
+                if result.data and len(result.data) > 0:
+                    user_data = result.data[0]
+                    if user_data.get("password_hash") == password_hash:
+                        user_id = user_data["id"]
+                        # Create session
+                        session = await self._create_session(user_id)
+                        # Update last login (don't fail if this fails)
+                        try:
+                            self.client.table(self.users_table)\
+                                .update({"last_login": datetime.utcnow().isoformat()})\
+                                .eq("id", user_id)\
+                                .execute()
+                        except:
+                            pass
+                        return session.token
+                    else:
+                        return None  # Wrong password
             except Exception as e:
-                logger.error(f"[UserService] Auth failed: {e}")
-        else:
-            # In-memory
-            ref = self._memory_users.get(f"email:{email}")
-            if ref and ref.get("password_hash") == password_hash:
-                session = await self._create_session(ref["user_id"])
-                return session.token
+                logger.error(f"[UserService] Database auth failed, trying in-memory: {e}")
+                # Fall through to in-memory
+        
+        # In-memory fallback
+        ref = self._memory_users.get(f"email:{email}")
+        if ref and ref.get("password_hash") == password_hash:
+            session = await self._create_session(ref["user_id"])
+            return session.token
         return None
     
     async def _create_session(self, user_id: str, ip: str = None, ua: str = None) -> Session:
