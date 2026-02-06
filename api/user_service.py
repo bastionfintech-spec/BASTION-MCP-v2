@@ -103,6 +103,21 @@ class User:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'User':
+        import json
+        
+        # Helper to parse JSON strings back to dict/list
+        def parse_json_field(value, default=None):
+            if value is None:
+                return default
+            if isinstance(value, (dict, list)):
+                return value
+            if isinstance(value, str):
+                try:
+                    return json.loads(value)
+                except:
+                    return default
+            return default
+        
         # Handle missing fields gracefully
         return cls(
             id=data.get('id', ''),
@@ -115,7 +130,7 @@ class User:
             timezone=data.get('timezone', 'UTC'),
             currency=data.get('currency', 'USD'),
             trading_experience=data.get('trading_experience', 'intermediate'),
-            trading_style=data.get('trading_style', ['day_trading']),
+            trading_style=parse_json_field(data.get('trading_style'), ['day_trading']),
             theme=data.get('theme', 'crimson'),
             chart_type=data.get('chart_type', 'candlestick'),
             up_candle_color=data.get('up_candle_color', '#22c55e'),
@@ -149,10 +164,10 @@ class User:
             totp_enabled=data.get('totp_enabled', False),
             totp_secret=data.get('totp_secret'),
             corner_gif=data.get('corner_gif'),
-            corner_gif_settings=data.get('corner_gif_settings'),
+            corner_gif_settings=parse_json_field(data.get('corner_gif_settings')),
             avatar=data.get('avatar'),
-            alert_types=data.get('alert_types'),
-            sync_settings=data.get('sync_settings'),
+            alert_types=parse_json_field(data.get('alert_types')),
+            sync_settings=parse_json_field(data.get('sync_settings')),
             sync_updated_at=data.get('sync_updated_at'),
         )
 
@@ -477,16 +492,37 @@ class UserService:
         if not filtered:
             return False
         
+        # Serialize dict/list fields to JSON strings for database storage
+        json_fields = {'corner_gif_settings', 'alert_types', 'sync_settings', 'trading_style'}
+        for field in json_fields:
+            if field in filtered and filtered[field] is not None:
+                if isinstance(filtered[field], (dict, list)):
+                    import json
+                    filtered[field] = json.dumps(filtered[field])
+        
         if self.is_db_available:
             try:
                 self.client.table(self.users_table)\
                     .update(filtered)\
                     .eq("id", user_id)\
                     .execute()
-                logger.info(f"[UserService] Updated user {user_id}")
+                logger.info(f"[UserService] Updated user {user_id}: {list(filtered.keys())}")
                 return True
             except Exception as e:
-                logger.error(f"[UserService] Update failed: {e}")
+                logger.error(f"[UserService] Update failed for {list(filtered.keys())}: {e}")
+                # Try again without potentially missing columns
+                problem_cols = {'corner_gif_settings', 'avatar', 'alert_types', 'sync_settings', 'sync_updated_at', 'corner_gif'}
+                filtered_safe = {k: v for k, v in filtered.items() if k not in problem_cols}
+                if filtered_safe:
+                    try:
+                        self.client.table(self.users_table)\
+                            .update(filtered_safe)\
+                            .eq("id", user_id)\
+                            .execute()
+                        logger.info(f"[UserService] Partial update succeeded: {list(filtered_safe.keys())}")
+                        return True
+                    except Exception as e2:
+                        logger.error(f"[UserService] Partial update also failed: {e2}")
         else:
             user = self._memory_users.get(user_id)
             if user:
