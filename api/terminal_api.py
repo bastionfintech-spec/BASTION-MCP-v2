@@ -1360,46 +1360,90 @@ async def get_viz_data(viz_name: str, symbol: str = "BTC"):
 
 @app.get("/api/positions")
 async def get_positions():
-    """Get all active positions with live prices."""
+    """Get all active positions - real from exchanges first, mock as fallback."""
     import httpx
     import copy
     
-    # Get live prices to update mock positions
+    # FIRST: Try to get REAL positions from connected exchanges
+    if user_context.connections:
+        try:
+            real_positions = await user_context.get_all_positions()
+            if real_positions:
+                logger.info(f"[POSITIONS] Returning {len(real_positions)} real positions from exchanges")
+                
+                positions = []
+                total_pnl = 0
+                total_exposure = 0
+                
+                for p in real_positions:
+                    positions.append({
+                        "id": p.id,
+                        "symbol": f"{p.symbol}-PERP" if not p.symbol.endswith("PERP") else p.symbol,
+                        "direction": p.direction,
+                        "entry_price": p.entry_price,
+                        "current_price": p.current_price,
+                        "size": p.size,
+                        "size_usd": p.size_usd,
+                        "pnl": p.pnl,
+                        "pnl_pct": p.pnl_pct,
+                        "leverage": p.leverage,
+                        "margin": p.margin,
+                        "liquidation_price": p.liquidation_price,
+                        "stop_loss": p.stop_loss,
+                        "take_profit": p.take_profit,
+                        "exchange": p.exchange,
+                        "source": "live"
+                    })
+                    total_pnl += p.pnl
+                    total_exposure += p.size_usd
+                
+                return {
+                    "positions": positions,
+                    "summary": {
+                        "total_positions": len(positions),
+                        "total_pnl": round(total_pnl, 2),
+                        "total_pnl_pct": round((total_pnl / total_exposure * 100) if total_exposure > 0 else 0, 2),
+                        "total_exposure_usd": round(total_exposure, 2),
+                        "source": "live"
+                    }
+                }
+        except Exception as e:
+            logger.warning(f"[POSITIONS] Failed to get real positions: {e}")
+    
+    # FALLBACK: Mock positions with live prices
+    logger.info("[POSITIONS] No exchange connected, returning mock data")
+    
     live_prices = {}
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            # Fetch BTC price
             res = await client.get("https://api.kraken.com/0/public/Ticker?pair=XXBTZUSD")
             data = res.json()
             if data.get("result"):
                 for key, ticker in data["result"].items():
                     live_prices["BTC"] = float(ticker["c"][0])
             
-            # Fetch ETH price
             res = await client.get("https://api.kraken.com/0/public/Ticker?pair=XETHZUSD")
             data = res.json()
             if data.get("result"):
                 for key, ticker in data["result"].items():
                     live_prices["ETH"] = float(ticker["c"][0])
             
-            # Fetch SOL price
             res = await client.get("https://api.kraken.com/0/public/Ticker?pair=SOLUSD")
             data = res.json()
             if data.get("result"):
                 for key, ticker in data["result"].items():
                     live_prices["SOL"] = float(ticker["c"][0])
     except Exception as e:
-        logger.warning(f"Failed to fetch live prices for positions: {e}")
+        logger.warning(f"Failed to fetch live prices: {e}")
     
-    # Update mock positions with live prices
     positions = copy.deepcopy(MOCK_POSITIONS)
     total_pnl_pct = 0
     
     for pos in positions:
+        pos["source"] = "demo"
         symbol = pos["symbol"].replace("-PERP", "")
         if symbol in live_prices:
             pos["current_price"] = live_prices[symbol]
-            # Recalculate PnL
             entry = pos["entry_price"]
             current = pos["current_price"]
             if pos["direction"] == "long":
@@ -1415,7 +1459,8 @@ async def get_positions():
             "total_positions": len(positions),
             "total_pnl_pct": round(total_pnl_pct, 2),
             "total_exposure_usd": 70245,
-            "risk_pct": 1.8
+            "risk_pct": 1.8,
+            "source": "demo"
         }
     }
 
