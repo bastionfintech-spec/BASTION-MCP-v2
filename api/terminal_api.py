@@ -1721,7 +1721,8 @@ async def get_usage_stats(token: Optional[str] = None, session_id: Optional[str]
 
 # Telegram bot configuration
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "BastionAlertsBot")
+TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "BastionSentinelbot")
+TELEGRAM_CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID", "")  # e.g. "@BastionAlerts" or "-1001234567890"
 
 # Connected Telegram users (would use DB in production)
 telegram_users: Dict[str, Dict] = {}
@@ -1755,6 +1756,40 @@ async def send_telegram_message(chat_id: str, message: str, parse_mode: str = "H
     except Exception as e:
         logger.error(f"[TELEGRAM] Error sending message: {e}")
         return False
+
+
+async def push_channel_alert(alert_type: str, title: str, message: str, data: dict = None) -> bool:
+    """Push an alert to the BASTION Telegram channel for all users."""
+    if not TELEGRAM_CHANNEL_ID:
+        logger.warning("[TELEGRAM] Channel ID not configured")
+        return False
+    
+    emoji_map = {
+        "liquidation": "🔥",
+        "whale": "🐋",
+        "fear_greed": "😱",
+        "funding": "📊",
+        "price": "💰",
+        "oi": "📈",
+        "news": "📰",
+        "general": "🔔"
+    }
+    emoji = emoji_map.get(alert_type, "🔔")
+    
+    # Format message
+    formatted = f"{emoji} <b>{title}</b>\n\n{message}"
+    
+    if data:
+        if data.get("symbol"):
+            formatted += f"\n\n<b>Symbol:</b> {data['symbol']}"
+        if data.get("value"):
+            formatted += f"\n<b>Value:</b> {data['value']}"
+        if data.get("change"):
+            formatted += f"\n<b>Change:</b> {data['change']}"
+    
+    formatted += f"\n\n<i>BASTION • {datetime.now().strftime('%H:%M UTC')}</i>"
+    
+    return await send_telegram_message(TELEGRAM_CHANNEL_ID, formatted)
 
 
 @app.get("/api/alerts/telegram/connect")
@@ -1920,32 +1955,40 @@ async def send_test_alert(data: dict):
 
 @app.post("/api/telegram/test")
 async def telegram_test_user(data: dict):
-    """Send a test notification to user's connected Telegram."""
-    token = data.get("token")
-    
-    if not token or not user_service:
-        return {"success": False, "sent": False, "reason": "Not authenticated"}
-    
-    user = await user_service.validate_session(token)
-    if not user:
-        return {"success": False, "sent": False, "reason": "Invalid session"}
-    
-    # Check if user has Telegram connected
-    chat_id = user.telegram_chat_id
-    if not chat_id:
-        return {"success": True, "sent": False, "reason": "Telegram not connected"}
-    
-    # Send test message
-    sent = await send_telegram_message(
-        chat_id,
-        "🔔 <b>BASTION Alert Test</b>\n\n"
-        f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
-        f"User: {user.display_name or user.email}\n\n"
-        "✅ Your Telegram alerts are working!\n\n"
-        "<i>You'll receive alerts based on your preferences.</i>"
+    """Send a test notification to the BASTION channel."""
+    # Push test alert to channel
+    sent = await push_channel_alert(
+        "general",
+        "BASTION System Test",
+        "Telegram alerts are working! 🚀",
+        {"symbol": "BTC", "value": "$65,800"}
     )
     
-    return {"success": True, "sent": sent}
+    return {"success": True, "sent": sent, "channel": TELEGRAM_CHANNEL_ID or "not configured"}
+
+
+@app.post("/api/telegram/push")
+async def telegram_push_alert(data: dict):
+    """Push a market alert to the BASTION Telegram channel."""
+    alert_type = data.get("type", "general")
+    title = data.get("title", "Market Alert")
+    message = data.get("message", "")
+    alert_data = data.get("data", {})
+    
+    sent = await push_channel_alert(alert_type, title, message, alert_data)
+    
+    return {"success": sent, "channel": TELEGRAM_CHANNEL_ID}
+
+
+@app.get("/api/telegram/channel")
+async def get_telegram_channel():
+    """Get BASTION Telegram channel info for users to join."""
+    return {
+        "channel_id": TELEGRAM_CHANNEL_ID,
+        "channel_url": f"https://t.me/{TELEGRAM_CHANNEL_ID.replace('@', '')}" if TELEGRAM_CHANNEL_ID and TELEGRAM_CHANNEL_ID.startswith("@") else None,
+        "bot_username": TELEGRAM_BOT_USERNAME,
+        "configured": bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHANNEL_ID)
+    }
 
 
 @app.post("/api/alerts/send")
@@ -2864,35 +2907,51 @@ async def get_session_stats(data: dict = None):
     # Get user context
     scope_id, ctx, exchanges = await get_user_scope(token, session_id)
     
+    logger.info(f"[SESSION STATS] scope_id={scope_id}, exchanges={exchanges}")
+    
     # Calculate real stats from positions
     total_pnl = 0
     total_value = 0
     active_positions = 0
     winning_positions = 0
+    all_positions = []
     
-    if exchanges:
+    # Try to get positions from context
+    if exchanges and ctx:
         for exchange_name in exchanges:
             try:
                 positions = await ctx.get_positions(exchange_name)
+                logger.info(f"[SESSION STATS] {exchange_name} returned {len(positions) if positions else 0} positions")
                 if positions:
-                    for pos in positions:
-                        pnl = float(pos.get('pnl', 0) or pos.get('unrealized_pnl', 0) or 0)
-                        size = float(pos.get('size', 0) or 0)
-                        entry = float(pos.get('entry_price', 0) or 0)
-                        
-                        total_pnl += pnl
-                        total_value += abs(size * entry)
-                        active_positions += 1
-                        
-                        if pnl > 0:
-                            winning_positions += 1
-                
-                # Also try to get balance for total capital
-                balance = await ctx.get_balance(exchange_name)
-                if balance and 'total_equity' in balance:
-                    total_value = max(total_value, balance.get('total_equity', 0))
+                    all_positions.extend(positions)
             except Exception as e:
-                logger.warning(f"[SESSION STATS] Error fetching from {exchange_name}: {e}")
+                logger.warning(f"[SESSION STATS] Error from {exchange_name}: {e}")
+    
+    # Also check user_exchanges directly as fallback
+    if not all_positions and scope_id in user_exchanges:
+        for exchange_name, client in user_exchanges[scope_id].items():
+            try:
+                positions = await client.get_positions()
+                logger.info(f"[SESSION STATS] Direct {exchange_name} returned {len(positions) if positions else 0} positions")
+                if positions:
+                    all_positions.extend(positions)
+            except Exception as e:
+                logger.warning(f"[SESSION STATS] Direct error from {exchange_name}: {e}")
+    
+    # Process all positions
+    for pos in all_positions:
+        pnl = float(pos.get('pnl', 0) or pos.get('unrealized_pnl', 0) or 0)
+        size = float(pos.get('size', 0) or 0)
+        entry = float(pos.get('entry_price', 0) or 0)
+        
+        total_pnl += pnl
+        total_value += abs(size * entry)
+        active_positions += 1
+        
+        if pnl > 0:
+            winning_positions += 1
+    
+    logger.info(f"[SESSION STATS] Total: {active_positions} positions, PnL: ${total_pnl:.2f}")
     
     # Calculate derived stats
     pnl_pct = (total_pnl / total_value * 100) if total_value > 0 else 0
@@ -2911,7 +2970,7 @@ async def get_session_stats(data: dict = None):
         "win_rate": round(win_rate, 0),
         "avg_r": round(avg_r, 1),
         "max_drawdown": round(max_drawdown, 1),
-        "trades_today": active_positions,  # Simplified
+        "trades_today": active_positions,
         "wins": winning_positions,
         "losses": active_positions - winning_positions
     }
