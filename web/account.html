@@ -2227,7 +2227,110 @@
       document.addEventListener('DOMContentLoaded', () => {
         loadAvatarAndGif();
         load2FAStatus();
+        loadUserProfileFromBackend();
       });
+      
+      // ==================== LOAD USER PROFILE FROM BACKEND ====================
+      async function loadUserProfileFromBackend() {
+        const token = getAuthToken();
+        if (!token) {
+          console.log('[PROFILE] No auth token, using localStorage data');
+          loadProfileFromLocalStorage();
+          return;
+        }
+        
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/me?token=${token}`);
+          const data = await res.json();
+          
+          if (data.success && data.user) {
+            const user = data.user;
+            console.log('[PROFILE] Loaded user from backend:', user.email);
+            
+            // Update sidebar
+            if (document.getElementById('user-display-name')) {
+              document.getElementById('user-display-name').textContent = user.display_name || 'Trader';
+            }
+            if (document.getElementById('user-avatar')) {
+              document.getElementById('user-avatar').textContent = (user.display_name || user.email || 'T').charAt(0).toUpperCase();
+            }
+            
+            // Update profile form
+            if (document.getElementById('profile-name')) {
+              document.getElementById('profile-name').value = user.display_name || '';
+            }
+            if (document.getElementById('profile-email')) {
+              document.getElementById('profile-email').value = user.email || '';
+            }
+            if (document.getElementById('profile-avatar')) {
+              document.getElementById('profile-avatar').textContent = (user.display_name || user.email || 'T').charAt(0).toUpperCase();
+            }
+            
+            // Update timezone
+            if (document.getElementById('profile-timezone') && user.timezone) {
+              document.getElementById('profile-timezone').value = user.timezone;
+            }
+            
+            // Update currency
+            if (document.getElementById('profile-currency') && user.currency) {
+              document.getElementById('profile-currency').value = user.currency;
+            }
+            
+            // Update avatar if exists
+            if (user.avatar_url) {
+              localStorage.setItem('userAvatar', user.avatar_url);
+              loadAvatarAndGif();
+            }
+            
+            // Store in localStorage for offline access
+            localStorage.setItem('bastion_user', JSON.stringify(user));
+            
+            // Also load risk, appearance settings if present
+            if (user.max_leverage) {
+              const riskEl = document.getElementById('max-leverage');
+              if (riskEl) riskEl.value = user.max_leverage;
+            }
+            if (user.max_position_pct) {
+              const posEl = document.getElementById('max-position');
+              if (posEl) posEl.value = user.max_position_pct;
+            }
+            
+            // Appearance settings
+            if (user.theme && window.BastionSettings) {
+              BastionSettings.current.appearance = BastionSettings.current.appearance || {};
+              BastionSettings.current.appearance.theme = user.theme;
+              BastionSettings.applyTheme(user.theme);
+            }
+            
+            showToast('Profile loaded from cloud', 'success');
+          } else {
+            console.log('[PROFILE] No user data from backend, using localStorage');
+            loadProfileFromLocalStorage();
+          }
+        } catch (e) {
+          console.error('[PROFILE] Failed to load from backend:', e);
+          loadProfileFromLocalStorage();
+        }
+      }
+      
+      function loadProfileFromLocalStorage() {
+        // Fallback to localStorage
+        const cachedUser = localStorage.getItem('bastion_user');
+        if (cachedUser) {
+          try {
+            const user = JSON.parse(cachedUser);
+            if (document.getElementById('user-display-name')) {
+              document.getElementById('user-display-name').textContent = user.display_name || 'Trader';
+            }
+            if (document.getElementById('profile-name')) {
+              document.getElementById('profile-name').value = user.display_name || '';
+            }
+            if (document.getElementById('profile-email')) {
+              document.getElementById('profile-email').value = user.email || '';
+            }
+          } catch (e) {}
+        }
+      }
       
       // ==================== TWO-FACTOR AUTHENTICATION ====================
       let pending2FASecret = null;
