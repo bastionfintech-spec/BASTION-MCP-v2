@@ -1424,55 +1424,56 @@ def _format_market_data_for_iros(symbol: str, market_data: dict) -> str:
     """Format market data into a clean context string for IROS."""
     lines = []
     
+    lines.append("## VERIFIED LIVE DATA - DO NOT HALLUCINATE")
+    lines.append(f"## USE ONLY THESE {symbol} NUMBERS\n")
+    
     # Current market overview
+    price_found = False
     if market_data.get("coins_markets"):
-        for coin in market_data["coins_markets"][:5]:
+        for coin in market_data["coins_markets"]:
             if coin.get("symbol", "").upper() == symbol.upper():
-                lines.append(f"""
-{symbol} CURRENT METRICS:
-- Price: ${coin.get('price', 'N/A'):,.2f}
+                price = coin.get('price', 0)
+                if price > 0:
+                    price_found = True
+                    lines.append(f"""
+**{symbol} CURRENT PRICE: ${price:,.2f}**
 - 24h Change: {coin.get('priceChangePercent24h', 0):.2f}%
 - Open Interest: ${coin.get('openInterest', 0)/1e9:.2f}B
-- OI 24h Change: {coin.get('oiChangePercent24h', 0):.2f}%
 - Funding Rate: {coin.get('fundingRate', 0)*100:.4f}%
-- Long/Short Ratio: {coin.get('longRate', 50):.1f}% / {coin.get('shortRate', 50):.1f}%
-- 24h Liquidations Long: ${coin.get('liquidationH24Long', 0)/1e6:.2f}M
-- 24h Liquidations Short: ${coin.get('liquidationH24Short', 0)/1e6:.2f}M
+- Long/Short: {coin.get('longRate', 50):.1f}% / {coin.get('shortRate', 50):.1f}%
 """)
                 break
     
-    # Whale positions (Hyperliquid)
+    if not price_found:
+        lines.append(f"**WARNING: Price data missing for {symbol}**")
+    
+    # Whale positions - CORRECT FIELD NAMES
     if market_data.get("whale_positions"):
-        lines.append("\nHYPERLIQUID WHALE POSITIONS:")
-        for whale in market_data["whale_positions"][:5]:
-            lines.append(f"- {whale.get('account', 'Unknown')[:8]}...: {whale.get('side', '?').upper()} ${whale.get('positionValue', 0)/1e6:.1f}M, {whale.get('leverage', 1):.1f}x leverage, PnL: ${whale.get('unrealizedPnl', 0)/1e3:.1f}K")
+        all_pos = market_data["whale_positions"]
+        sym_pos = [p for p in all_pos if p.get("symbol", "").upper() == symbol.upper()]
+        if sym_pos:
+            total_long = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) > 0)
+            total_short = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) < 0)
+            lines.append(f"\n**WHALES ({len(sym_pos)}):** Long ${total_long/1e6:.1f}M | Short ${total_short/1e6:.1f}M")
+            sorted_pos = sorted(sym_pos, key=lambda x: abs(x.get("positionValueUsd", 0)), reverse=True)
+            for i, w in enumerate(sorted_pos[:5]):
+                side = "LONG" if w.get("positionSize", 0) > 0 else "SHORT"
+                val = abs(w.get("positionValueUsd", 0)) / 1e6
+                lines.append(f"  {i+1}. {side} ${val:.1f}M @ ${w.get('entryPrice', 0):,.0f}")
     
-    # Funding rates by exchange
+    # Funding - handle nested structure
     if market_data.get("funding"):
-        lines.append("\nFUNDING RATES BY EXCHANGE:")
-        for ex in market_data["funding"][:5]:
-            lines.append(f"- {ex.get('exchange', 'Unknown')}: {float(ex.get('rate', 0))*100:.4f}%")
+        fd = market_data["funding"]
+        rates = []
+        if isinstance(fd, dict):
+            for ml in ["usdtOrUsdMarginList", "tokenMarginList"]:
+                for item in fd.get(ml, []):
+                    r = item.get("rate", 0) or item.get("fundingRate", 0)
+                    if r: rates.append(f"{item.get('exchangeName', '?')}: {r*100:.4f}%")
+        if rates:
+            lines.append("\n**FUNDING:** " + " | ".join(rates[:3]))
     
-    # L/S ratio
-    if market_data.get("ls_ratio"):
-        ls_data = market_data["ls_ratio"]
-        if isinstance(ls_data, list) and ls_data:
-            ls_data = ls_data[0]
-        if isinstance(ls_data, dict):
-            lines.append(f"\nLONG/SHORT RATIO: {ls_data.get('longRate', 50):.1f}% long / {ls_data.get('shortRate', 50):.1f}% short")
-    
-    # Options max pain
-    if market_data.get("max_pain"):
-        max_pain_data = market_data["max_pain"]
-        if isinstance(max_pain_data, list):
-            lines.append("\nOPTIONS MAX PAIN BY EXPIRY:")
-            for opt in max_pain_data[:3]:
-                if isinstance(opt, dict):
-                    lines.append(f"- {opt.get('expirationDate', 'Unknown')}: Max Pain ${opt.get('maxPain', 0):,.0f}")
-        elif isinstance(max_pain_data, dict):
-            lines.append(f"\nMAX PAIN: ${max_pain_data.get('maxPain', 0):,.0f}")
-    
-    return "\n".join(lines) if lines else "No live market data available."
+    return "\n".join(lines) if lines else "No data"
 
 
 @app.post("/api/neural/chat")
