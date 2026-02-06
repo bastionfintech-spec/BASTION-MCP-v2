@@ -3073,6 +3073,12 @@ Esc    - Close Dialogs
             chart.timeScale().fitContent();
             console.log('[CHART] Loaded', data.candles.length, 'candles');
             
+            // CRITICAL: Set currentCandle for live updates
+            if (data.candles.length > 0) {
+              currentCandle = data.candles[data.candles.length - 1];
+              console.log('[CHART] Current candle set:', currentCandle.close);
+            }
+            
             // Add session markers (non-blocking)
             try {
               addSessionMarkers(data.candles);
@@ -3143,44 +3149,66 @@ Esc    - Close Dialogs
       
       async function updateLastCandle() {
         try {
-          // Fetch latest candles (just 3 for speed)
-          const res = await fetch(`${API_BASE}/api/klines/${currentSymbol}?interval=${currentInterval}&limit=3`);
+          // Fetch just 1 candle for fastest update - add timestamp to bust cache
+          const res = await fetch(`${API_BASE}/api/klines/${currentSymbol}?interval=${currentInterval}&limit=1&_t=${Date.now()}`);
           const data = await res.json();
 
           if (data.candles?.length && candleSeries) {
-            // Update all recent candles (in case we missed any)
-            data.candles.forEach(candle => {
-              candleSeries.update(candle);
-              if (volumeSeries) {
-                volumeSeries.update({
-                  time: candle.time,
-                  value: candle.volume,
-                  color: candle.close >= candle.open ? '#22c55e40' : '#dc262640',
-                });
-              }
-            });
+            const latestCandle = data.candles[0];
             
-            // Store the latest for real-time price updates
-            currentCandle = data.candles[data.candles.length - 1];
-            // Reduced logging for performance
+            // Update the candle on chart
+            candleSeries.update(latestCandle);
+            
+            // Update volume
+            if (volumeSeries) {
+              volumeSeries.update({
+                time: latestCandle.time,
+                value: latestCandle.volume,
+                color: latestCandle.close >= latestCandle.open ? '#22c55e40' : '#dc262640',
+              });
+            }
+            
+            // Store for real-time price updates
+            currentCandle = latestCandle;
           }
         } catch (e) {
-          // Silent fail for performance - price updates will still work
+          console.warn('[CANDLE] Update error:', e.message);
         }
       }
       
-      // Update current candle with live price (called more frequently)
+      // Update current candle with live price (called every 500ms)
       function updateCandleWithPrice(price) {
-        if (!currentCandle || !candleSeries || !price) return;
+        if (!candleSeries || !price || price <= 0) return;
         
-        // Update the current candle's close price
+        // If no current candle yet, create one with current timestamp
+        if (!currentCandle) {
+          const now = Math.floor(Date.now() / 1000);
+          // Round down to interval start (e.g., for 5m candle, round to nearest 5 minutes)
+          const intervalSeconds = { '5m': 300, '15m': 900, '1h': 3600, '4h': 14400 }[currentInterval] || 300;
+          const candleTime = Math.floor(now / intervalSeconds) * intervalSeconds;
+          
+          currentCandle = {
+            time: candleTime,
+            open: price,
+            high: price,
+            low: price,
+            close: price,
+            volume: 0
+          };
+          console.log('[CANDLE] Created initial candle at', price);
+        }
+        
+        // Update the current candle's OHLC with new price
         const updatedCandle = {
-          ...currentCandle,
-          close: price,
+          time: currentCandle.time,
+          open: currentCandle.open,
           high: Math.max(currentCandle.high, price),
           low: Math.min(currentCandle.low, price),
+          close: price,
+          volume: currentCandle.volume
         };
         
+        // Apply update to chart
         candleSeries.update(updatedCandle);
         currentCandle = updatedCandle;
       }
@@ -5044,8 +5072,9 @@ Esc    - Close Dialogs
           flashUpdate('live-indicator');
         }, 500);
         
-        // === CANDLES === Every 500ms (real-time chart updates)
-        setInterval(updateLastCandle, 500);
+        // === CANDLES === Every 2 seconds (sync with actual candle data from API)
+        // Price updates via updateCandleWithPrice() keep chart live between syncs
+        setInterval(updateLastCandle, 2000);
 
         // === MARKET INTEL === Every 3 seconds (Helsinki is free, no limit)
         setInterval(async () => {

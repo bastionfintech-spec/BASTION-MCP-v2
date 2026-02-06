@@ -3184,14 +3184,16 @@ async def get_klines(symbol: str = "BTC", interval: str = "15m", limit: int = 10
     import httpx
     
     sym = symbol.upper()
-    cache_key = f"klines_{sym}_{interval}"
+    cache_key = f"klines_{sym}_{interval}_{limit}"
     now = time.time()
     
-    # Check cache - ultra-fast for live candle updates (1 second TTL)
-    if cache_key in price_cache:
-        cached = price_cache[cache_key]
-        if now - cached["time"] < 1:  # 1 second for live chart data
-            return cached["data"]
+    # Skip cache for single candle requests (live updates need real-time data)
+    # For larger requests, use short cache to prevent hammering APIs
+    if limit > 1:
+        if cache_key in price_cache:
+            cached = price_cache[cache_key]
+            if now - cached["time"] < 2:  # 2 second cache for full chart loads
+                return cached["data"]
     
     candles = []
     
