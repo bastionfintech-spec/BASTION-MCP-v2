@@ -1376,6 +1376,7 @@ async def neural_chat(request: Dict[str, Any]):
     
     try:
         init_clients()
+        logger.info(f"[NEURAL] Fetching Coinglass data for {symbol}")
         if coinglass:
             cg_results = await asyncio.gather(
                 coinglass.get_coins_markets(),
@@ -1384,12 +1385,21 @@ async def neural_chat(request: Dict[str, Any]):
                 return_exceptions=True
             )
             
+            logger.info(f"[NEURAL] coins_markets result: success={getattr(cg_results[0], 'success', 'N/A')}, has_data={bool(getattr(cg_results[0], 'data', None))}")
+            
             if hasattr(cg_results[0], 'data') and cg_results[0].data:
                 market_data["coins_markets"] = cg_results[0].data
                 data_sources.append("Coinglass")
+                # Log the price we found
+                for coin in cg_results[0].data:
+                    if coin.get("symbol", "").upper() == symbol.upper():
+                        logger.info(f"[NEURAL] Found {symbol} price: ${coin.get('price', 0)}")
+                        break
             if hasattr(cg_results[1], 'data') and cg_results[1].data:
                 market_data["whale_positions"] = cg_results[1].data
                 data_sources.append("Hyperliquid")
+        else:
+            logger.error("[NEURAL] coinglass client is None!")
     except Exception as e:
         logger.error(f"Failed to fetch market data: {e}")
     
@@ -1414,21 +1424,32 @@ async def neural_chat(request: Dict[str, Any]):
             shorts = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) < 0)
             whale_line = f"WHALES: Longs ${longs/1e6:.1f}M | Shorts ${shorts/1e6:.1f}M | Bias: {'LONG' if longs > shorts else 'SHORT'}"
     
+    # Log what we're sending
+    logger.info(f"[NEURAL] Price line: {price_line}")
+    logger.info(f"[NEURAL] Whale line: {whale_line}")
+    
     # Call IROS model
     model_url = os.getenv("BASTION_MODEL_URL")
     response = ""
     
     if model_url:
         try:
-            system_prompt = f"""You are BASTION, an institutional crypto analyst. 
-CRITICAL: Use ONLY the verified data below. DO NOT invent prices. NO EMOJIS.
+            system_prompt = f"""You are BASTION, an institutional crypto analyst.
 
-## VERIFIED {symbol} DATA (LIVE)
+### CRITICAL RULES - FOLLOW EXACTLY ###
+1. USE ONLY the verified data provided below
+2. If price shows "UNAVAILABLE", say "Price data currently unavailable"
+3. NEVER invent, guess, or hallucinate prices or metrics
+4. NO EMOJIS in your response
+5. The price in VERIFIED DATA is the ONLY correct price
+
+### VERIFIED {symbol} DATA (LIVE - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC) ###
 {price_line}
 {whale_line}
 {position_context if position_context else ''}
+### END VERIFIED DATA ###
 
-Provide analysis based ONLY on this data."""
+Your response MUST reference the EXACT price shown above. Any other price is WRONG."""
 
             async with httpx.AsyncClient(timeout=60.0) as client:
                 model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
