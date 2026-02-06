@@ -730,7 +730,7 @@
                 </div>
                 
                 <!-- Save Button -->
-                <button class="bg-crimson-600 hover:bg-crimson-700 text-white text-[11px] font-bold px-6 py-2.5 rounded transition-colors">
+                <button class="bg-crimson-600 hover:bg-crimson-700 text-white text-[11px] font-bold px-6 py-2.5 rounded transition-colors" onclick="saveAppearanceSettings()">
                   Save Appearance Settings
                 </button>
               </div>
@@ -1638,6 +1638,66 @@
       }
 
       // ==================== APPEARANCE SETTINGS ====================
+      
+      // Save appearance settings
+      function saveAppearanceSettings() {
+        // Get current theme
+        const activeTheme = document.querySelector('.theme-btn.border-crimson-600');
+        const theme = activeTheme?.dataset.theme || 'crimson';
+        
+        // Get chart type
+        const activeChartType = document.querySelector('.chart-type-btn.bg-crimson-600\\/20');
+        const chartType = activeChartType?.dataset.type || 'candles';
+        
+        // Get colors
+        const upColor = document.getElementById('up-color')?.value || '#22c55e';
+        const downColor = document.getElementById('down-color')?.value || '#ef4444';
+        
+        // Get toggles
+        const showVolume = document.querySelector('[data-setting="volume"]')?.classList.contains('toggle-on') ?? true;
+        const showGrid = document.querySelector('[data-setting="grid"]')?.classList.contains('toggle-on') ?? true;
+        const compactMode = document.querySelector('[data-setting="compact"]')?.classList.contains('toggle-on') ?? false;
+        const scanlines = document.querySelector('[data-setting="scanlines"]')?.classList.contains('toggle-on') ?? true;
+        const animations = document.querySelector('[data-setting="animations"]')?.classList.contains('toggle-on') ?? true;
+        
+        // Get font size
+        const activeFontBtn = document.querySelector('.font-size-btn.bg-crimson-600\\/20');
+        const fontSize = activeFontBtn?.textContent.toLowerCase() || 'medium';
+        
+        const settings = {
+          theme,
+          chartType,
+          upColor,
+          downColor,
+          showVolume,
+          showGrid,
+          compactMode,
+          scanlines,
+          animations,
+          fontSize
+        };
+        
+        // Save to localStorage with a clear key
+        localStorage.setItem('bastionAppearance', JSON.stringify(settings));
+        
+        // Also update BastionSettings if available
+        if (window.BastionSettings) {
+          BastionSettings.current = BastionSettings.current || {};
+          BastionSettings.current.appearance = settings;
+          BastionSettings.saveSettings();
+          BastionSettings.applyTheme(theme);
+        }
+        
+        // Save to backend
+        fetch(`${API_BASE}/api/settings/appearance`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+        }).catch(e => console.log('[APPEARANCE] Backend save failed'));
+        
+        showToast('Appearance settings saved! Changes will apply across all pages.', 'success');
+      }
+      
       // Theme selection
       document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', () => {

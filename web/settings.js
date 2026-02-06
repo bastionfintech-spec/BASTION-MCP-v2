@@ -17,6 +17,10 @@ const BastionSettings = {
       '--accent': '#da3633',
       '--green': '#238636',
       '--red': '#da3633',
+      '--gold': '#bb8009',
+      '--blue': '#388bfd',
+      '--orange': '#bd5d12',
+      '--cyan': '#79c0ff',
       '--glow': 'rgba(220, 38, 38, 0.15)',
       '--glow-strong': 'rgba(220, 38, 38, 0.3)'
     },
@@ -31,6 +35,10 @@ const BastionSettings = {
       '--accent': '#3b82f6',
       '--green': '#10b981',
       '--red': '#ef4444',
+      '--gold': '#f59e0b',
+      '--blue': '#3b82f6',
+      '--orange': '#f97316',
+      '--cyan': '#22d3ee',
       '--glow': 'rgba(59, 130, 246, 0.15)',
       '--glow-strong': 'rgba(59, 130, 246, 0.3)'
     },
@@ -45,6 +53,10 @@ const BastionSettings = {
       '--accent': '#22c55e',
       '--green': '#4ade80',
       '--red': '#f87171',
+      '--gold': '#fbbf24',
+      '--blue': '#60a5fa',
+      '--orange': '#fb923c',
+      '--cyan': '#22d3ee',
       '--glow': 'rgba(34, 197, 94, 0.15)',
       '--glow-strong': 'rgba(34, 197, 94, 0.3)'
     },
@@ -59,6 +71,10 @@ const BastionSettings = {
       '--accent': '#525252',
       '--green': '#4ade80',
       '--red': '#f87171',
+      '--gold': '#fbbf24',
+      '--blue': '#60a5fa',
+      '--orange': '#fb923c',
+      '--cyan': '#a1a1aa',
       '--glow': 'rgba(82, 82, 82, 0.15)',
       '--glow-strong': 'rgba(82, 82, 82, 0.3)'
     }
@@ -93,28 +109,46 @@ const BastionSettings = {
     this.loadSettings();
     this.applyTheme();
     this.applyAppearance();
-    console.log('[BASTION] Settings initialized');
+    console.log('[BASTION] Settings initialized with theme:', this.current?.appearance?.theme);
   },
 
   // Load settings from localStorage
   loadSettings() {
-    const stored = localStorage.getItem('bastionSettings');
+    // First try the new key
+    let stored = localStorage.getItem('bastionAppearance');
+    if (stored) {
+      try {
+        const appearance = JSON.parse(stored);
+        this.current = { appearance, alerts: this.defaults.alerts };
+        console.log('[BASTION] Loaded appearance from bastionAppearance:', appearance.theme);
+        return this.current;
+      } catch (e) {
+        console.warn('[BASTION] Invalid bastionAppearance');
+      }
+    }
+    
+    // Try the old key
+    stored = localStorage.getItem('bastionSettings');
     if (stored) {
       try {
         this.current = JSON.parse(stored);
+        return this.current;
       } catch (e) {
-        console.warn('[BASTION] Invalid settings, using defaults');
-        this.current = { ...this.defaults };
+        console.warn('[BASTION] Invalid bastionSettings');
       }
-    } else {
-      this.current = { ...this.defaults };
     }
+    
+    // Use defaults
+    this.current = JSON.parse(JSON.stringify(this.defaults));
     return this.current;
   },
 
   // Save settings to localStorage
   saveSettings() {
     localStorage.setItem('bastionSettings', JSON.stringify(this.current));
+    if (this.current.appearance) {
+      localStorage.setItem('bastionAppearance', JSON.stringify(this.current.appearance));
+    }
     console.log('[BASTION] Settings saved');
   },
 
@@ -124,25 +158,45 @@ const BastionSettings = {
     const themeConfig = this.themes[theme];
     
     if (!themeConfig) {
-      console.warn(`[BASTION] Unknown theme: ${theme}`);
-      return;
+      console.warn(`[BASTION] Unknown theme: ${theme}, falling back to crimson`);
+      return this.applyTheme('crimson');
     }
 
     const root = document.documentElement;
+    
+    // Apply all CSS variables
     Object.entries(themeConfig).forEach(([key, value]) => {
       if (key.startsWith('--')) {
         root.style.setProperty(key, value);
       }
     });
+    
+    // Also update body background
+    document.body.style.backgroundColor = themeConfig['--bg'];
+    
+    // Update any elements with hardcoded backgrounds
+    document.querySelectorAll('[style*="background"]').forEach(el => {
+      const style = el.getAttribute('style');
+      if (style && style.includes('#0d1117')) {
+        el.style.backgroundColor = themeConfig['--bg'];
+      }
+    });
 
     // Store current theme
-    if (this.current?.appearance) {
+    if (this.current) {
+      this.current.appearance = this.current.appearance || {};
       this.current.appearance.theme = theme;
-      this.saveSettings();
     }
 
-    // Dispatch event for components that need to know
-    window.dispatchEvent(new CustomEvent('bastionThemeChange', { detail: { theme, config: themeConfig } }));
+    // Dispatch event for components that need to know (like charts)
+    window.dispatchEvent(new CustomEvent('bastionThemeChange', { 
+      detail: { 
+        theme, 
+        config: themeConfig,
+        upColor: this.current?.appearance?.upColor || '#22c55e',
+        downColor: this.current?.appearance?.downColor || '#ef4444'
+      } 
+    }));
     
     console.log(`[BASTION] Theme applied: ${themeConfig.name}`);
   },
@@ -151,28 +205,50 @@ const BastionSettings = {
   applyAppearance() {
     const app = this.current?.appearance || this.defaults.appearance;
     
-    // Scanlines
-    const scanlines = document.querySelector('.scanlines, [class*="scanline"]');
-    if (scanlines) {
-      scanlines.style.display = app.scanlines ? 'block' : 'none';
-    }
+    // Scanlines - find all possible scanline elements
+    document.querySelectorAll('.scanlines, [class*="scanline"], .scanline-overlay').forEach(el => {
+      el.style.opacity = app.scanlines ? '0.3' : '0';
+      el.style.display = app.scanlines ? 'block' : 'none';
+    });
 
     // Compact mode
     if (app.compactMode) {
       document.body.classList.add('compact-mode');
+      document.documentElement.style.setProperty('--spacing-multiplier', '0.75');
     } else {
       document.body.classList.remove('compact-mode');
+      document.documentElement.style.setProperty('--spacing-multiplier', '1');
     }
 
     // Font size
     const fontSizes = { small: '10px', medium: '11px', large: '13px' };
-    document.documentElement.style.setProperty('--base-font-size', fontSizes[app.fontSize] || '11px');
+    const fontSize = fontSizes[app.fontSize] || '11px';
+    document.documentElement.style.setProperty('--base-font-size', fontSize);
+    
+    // Also set on body for pages that don't use the variable
+    if (app.fontSize === 'large') {
+      document.body.style.fontSize = '13px';
+    } else if (app.fontSize === 'small') {
+      document.body.style.fontSize = '10px';
+    }
 
     // Animations
     if (!app.animations) {
       document.body.classList.add('no-animations');
+      document.documentElement.style.setProperty('--transition-speed', '0s');
     } else {
       document.body.classList.remove('no-animations');
+      document.documentElement.style.setProperty('--transition-speed', '0.2s');
+    }
+    
+    // Apply chart colors to CSS variables for any charts
+    if (app.upColor) {
+      document.documentElement.style.setProperty('--chart-up', app.upColor);
+      document.documentElement.style.setProperty('--green', app.upColor);
+    }
+    if (app.downColor) {
+      document.documentElement.style.setProperty('--chart-down', app.downColor);
+      document.documentElement.style.setProperty('--red', app.downColor);
     }
   },
 
