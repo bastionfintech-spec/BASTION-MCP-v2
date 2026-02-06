@@ -384,6 +384,7 @@ async def serve_landing():
 
 
 @app.get("/frontend", response_class=HTMLResponse)
+@app.get("/terminal", response_class=HTMLResponse)
 async def serve_frontend():
     """Serve the main trading terminal."""
     terminal_path = bastion_path / "generated-page.html"
