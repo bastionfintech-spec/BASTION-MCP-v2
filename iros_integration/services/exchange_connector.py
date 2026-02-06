@@ -194,201 +194,159 @@ class BloFinClient(BaseExchangeClient):
 
 
 class BitunixClient(BaseExchangeClient):
-    """Bitunix exchange client."""
+    """Bitunix exchange client - using official API signature format."""
     
     def __init__(self, credentials: ExchangeCredentials):
         super().__init__(credentials)
         self.base_url = "https://fapi.bitunix.com"
         self.exchange_name = "bitunix"
     
-    def _generate_bitunix_signature(self, timestamp: str, nonce: str, method: str, path: str, body: str = "") -> str:
-        """Generate Bitunix-specific signature."""
-        # Bitunix signature: HMAC-SHA256(timestamp + nonce + method + path + body)
-        message = f"{timestamp}{nonce}{method}{path}{body}"
-        return hmac.new(
-            self.credentials.api_secret.encode(),
-            message.encode(),
-            hashlib.sha256
-        ).hexdigest()
+    def _get_nonce(self) -> str:
+        """Generate 32-char random nonce."""
+        import uuid
+        return str(uuid.uuid4()).replace('-', '')
     
-    def _get_headers(self, method: str, path: str, body: str = "") -> Dict:
+    def _sort_params(self, params: Dict) -> str:
+        """Sort params by key and concatenate (Bitunix format)."""
+        if not params:
+            return ""
+        return ''.join(f"{k}{v}" for k, v in sorted(params.items()))
+    
+    def _generate_signature(self, nonce: str, timestamp: str, query_params: str = "", body: str = "") -> str:
+        """
+        Generate Bitunix signature using DOUBLE SHA256 (from official docs).
+        Step 1: digest = SHA256(nonce + timestamp + api-key + queryParams + body)
+        Step 2: sign = SHA256(digest + secretKey)
+        """
+        digest_input = nonce + timestamp + self.credentials.api_key + query_params + body
+        digest = hashlib.sha256(digest_input.encode('utf-8')).hexdigest()
+        sign_input = digest + self.credentials.api_secret
+        sign = hashlib.sha256(sign_input.encode('utf-8')).hexdigest()
+        return sign
+    
+    def _get_headers(self, query_params: str = "", body: str = "") -> Dict:
         """Generate headers with proper Bitunix authentication."""
+        nonce = self._get_nonce()
         timestamp = str(int(time.time() * 1000))
-        nonce = str(int(time.time() * 1000000))  # microseconds as nonce
-        sign = self._generate_bitunix_signature(timestamp, nonce, method, path, body)
+        sign = self._generate_signature(nonce, timestamp, query_params, body)
         
         return {
             "api-key": self.credentials.api_key,
             "sign": sign,
-            "timestamp": timestamp,
             "nonce": nonce,
+            "timestamp": timestamp,
             "Content-Type": "application/json"
         }
     
     async def test_connection(self) -> bool:
-        """Test API connection."""
+        """Test API connection using official Bitunix format."""
         try:
             async with httpx.AsyncClient() as client:
-                path = "/api/v1/futures/account"
-                headers = self._get_headers("GET", path)
+                params = {"marginCoin": "USDT"}
+                query_string = self._sort_params(params)
+                headers = self._get_headers(query_params=query_string)
                 
                 res = await client.get(
-                    f"{self.base_url}{path}",
+                    f"{self.base_url}/api/v1/futures/account",
+                    params=params,
                     headers=headers,
                     timeout=10.0
                 )
                 logger.info(f"[BITUNIX] Connection test response: {res.status_code}")
-                return res.status_code == 200
+                if res.status_code == 200:
+                    data = res.json()
+                    logger.info(f"[BITUNIX] Account response: {data}")
+                    return data.get("code") == 0
+                return False
         except Exception as e:
             logger.error(f"Bitunix connection test failed: {e}")
             return False
     
     async def get_positions(self) -> List[Position]:
-        """Fetch open positions from Bitunix Futures."""
+        """Fetch open positions from Bitunix Futures using official API."""
         positions = []
-        
-        # Try multiple possible endpoint paths
-        possible_paths = [
-            "/api/v1/futures/position",
-            "/fapi/v1/positionRisk",
-            "/api/v1/position/list",
-            "/api/v1/account/positions",
-            "/api/v1/user/positions"
-        ]
         
         try:
             async with httpx.AsyncClient() as client:
-                for path in possible_paths:
-                    try:
-                        headers = self._get_headers("GET", path)
-                        res = await client.get(
-                            f"{self.base_url}{path}",
-                            headers=headers,
-                            timeout=10.0
-                        )
-                        
-                        logger.info(f"[BITUNIX] Trying {path}: {res.status_code}")
-                        
-                        if res.status_code == 200:
-                            data = res.json()
-                            logger.info(f"[BITUNIX] Raw response from {path}: {json.dumps(data)[:500]}")
-                            
-                            # Try to find positions in the response
-                            pos_list = self._extract_positions(data)
-                            
-                            if pos_list:
-                                logger.info(f"[BITUNIX] Found {len(pos_list)} position entries")
-                                positions = self._parse_positions(pos_list)
-                                if positions:
-                                    logger.info(f"[BITUNIX] Parsed {len(positions)} positions")
-                                    break
-                        elif res.status_code == 401:
-                            logger.warning(f"[BITUNIX] Auth failed for {path}")
-                        else:
-                            logger.info(f"[BITUNIX] {path} returned {res.status_code}: {res.text[:200]}")
-                    except Exception as ep:
-                        logger.warning(f"[BITUNIX] Error trying {path}: {ep}")
-                        continue
+                # Use official endpoint for pending (open) positions
+                headers = self._get_headers()
+                res = await client.get(
+                    f"{self.base_url}/api/v1/futures/position/get_pending_positions",
+                    headers=headers,
+                    timeout=10.0
+                )
+                
+                logger.info(f"[BITUNIX] Positions response: {res.status_code}")
+                
+                if res.status_code == 200:
+                    data = res.json()
+                    logger.info(f"[BITUNIX] Positions data: {json.dumps(data)[:500]}")
                     
+                    if data.get("code") == 0:
+                        pos_list = data.get("data", [])
+                        logger.info(f"[BITUNIX] Found {len(pos_list)} open positions")
+                        
+                        for pos in pos_list:
+                            try:
+                                qty = float(pos.get("qty", 0))
+                                if qty == 0:
+                                    continue
+                                
+                                symbol = pos.get("symbol", "")
+                                side = pos.get("side", "").upper()
+                                direction = "long" if side == "BUY" else "short"
+                                entry_price = float(pos.get("avgOpenPrice", 0))
+                                unrealized_pnl = float(pos.get("unrealizedPNL", 0))
+                                margin = float(pos.get("margin", 0))
+                                leverage = float(pos.get("leverage", 1))
+                                liq_price = float(pos.get("liqPrice", 0)) or None
+                                
+                                # Calculate current price from entry value and qty
+                                entry_value = float(pos.get("entryValue", 0))
+                                current_price = entry_price  # Will be updated if we have better data
+                                
+                                # PnL percentage
+                                pnl_pct = (unrealized_pnl / margin * 100) if margin > 0 else 0
+                                
+                                positions.append(Position(
+                                    id=pos.get("positionId", f"bitunix_{symbol}_{direction}"),
+                                    symbol=symbol,
+                                    direction=direction,
+                                    entry_price=entry_price,
+                                    current_price=current_price,
+                                    size=qty,
+                                    size_usd=entry_value,
+                                    pnl=unrealized_pnl,
+                                    pnl_pct=pnl_pct,
+                                    leverage=leverage,
+                                    margin=margin,
+                                    liquidation_price=liq_price,
+                                    exchange=self.exchange_name,
+                                    updated_at=datetime.now().isoformat()
+                                ))
+                                logger.info(f"[BITUNIX] Added position: {symbol} {direction} qty={qty} pnl={unrealized_pnl}")
+                            except Exception as pe:
+                                logger.error(f"[BITUNIX] Error parsing position: {pe}")
+                    else:
+                        logger.warning(f"[BITUNIX] API error: {data.get('msg')}")
+                        
         except Exception as e:
             logger.error(f"[BITUNIX] get_positions error: {e}")
         
         return positions
     
-    def _extract_positions(self, data: Any) -> List[Dict]:
-        """Extract position list from various response formats."""
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            # Try common keys
-            for key in ["data", "result", "positions", "list"]:
-                if key in data:
-                    val = data[key]
-                    if isinstance(val, list):
-                        return val
-                    if isinstance(val, dict):
-                        for subkey in ["list", "positions", "data"]:
-                            if subkey in val and isinstance(val[subkey], list):
-                                return val[subkey]
-        return []
-    
-    def _parse_positions(self, pos_list: List[Dict]) -> List[Position]:
-        """Parse position entries into Position objects."""
-        positions = []
-        
-        for pos in pos_list:
-            try:
-                # Log the raw position data
-                logger.info(f"[BITUNIX] Parsing position: {json.dumps(pos)[:300]}")
-                
-                # Get position amount - try many field names
-                size = 0
-                for size_key in ["positionAmt", "qty", "size", "position", "positionSize", "vol", "amount"]:
-                    if size_key in pos:
-                        size = float(pos[size_key])
-                        if size != 0:
-                            break
-                
-                if size == 0:
-                    logger.info(f"[BITUNIX] Skipping position with 0 size")
-                    continue
-                
-                # Get symbol
-                symbol = pos.get("symbol", pos.get("instId", pos.get("contractName", pos.get("pair", ""))))
-                
-                # Get prices
-                entry = float(pos.get("entryPrice", pos.get("avgPrice", pos.get("openAvgPrice", pos.get("avgOpenPrice", 0)))))
-                mark = float(pos.get("markPrice", pos.get("lastPrice", pos.get("currentPrice", entry))))
-                
-                # Get PnL
-                pnl = float(pos.get("unrealizedPnl", pos.get("unrealisedPnl", pos.get("unRealizedProfit", pos.get("profit", 0)))))
-                margin = float(pos.get("margin", pos.get("positionIM", pos.get("isolatedMargin", pos.get("im", abs(entry * abs(size) / 10))))))
-                leverage = float(pos.get("leverage", 1))
-                liq_price = float(pos.get("liquidationPrice", pos.get("liqPrice", pos.get("estLiqPrice", 0)))) or None
-                
-                # Determine direction
-                side = str(pos.get("side", pos.get("positionSide", pos.get("direction", "")))).lower()
-                if side in ["long", "buy", "1"]:
-                    direction = "long"
-                elif side in ["short", "sell", "2"]:
-                    direction = "short"
-                else:
-                    direction = "long" if size > 0 else "short"
-                
-                # Calculate PnL percentage
-                pnl_pct = (pnl / margin * 100) if margin > 0 else 0
-                
-                positions.append(Position(
-                    id=f"bitunix_{symbol}_{direction}",
-                    symbol=symbol,
-                    direction=direction,
-                    entry_price=entry,
-                    current_price=mark,
-                    size=abs(size),
-                    size_usd=abs(size * mark),
-                    pnl=pnl,
-                    pnl_pct=pnl_pct,
-                    leverage=leverage,
-                    margin=margin,
-                    liquidation_price=liq_price,
-                    exchange=self.exchange_name,
-                    updated_at=datetime.now().isoformat()
-                ))
-                logger.info(f"[BITUNIX] Added position: {symbol} {direction} size={abs(size)}")
-            except Exception as e:
-                logger.error(f"[BITUNIX] Error parsing position: {e}")
-        
-        return positions
     
     async def get_balance(self) -> ExchangeBalance:
-        """Fetch account balance from Bitunix Futures."""
+        """Fetch account balance from Bitunix Futures using official API."""
         try:
             async with httpx.AsyncClient() as client:
-                path = "/api/v1/futures/account"
-                headers = self._get_headers("GET", path)
+                params = {"marginCoin": "USDT"}
+                query_string = self._sort_params(params)
+                headers = self._get_headers(query_params=query_string)
                 
                 res = await client.get(
-                    f"{self.base_url}{path}",
+                    f"{self.base_url}/api/v1/futures/account",
+                    params=params,
                     headers=headers,
                     timeout=10.0
                 )
@@ -399,22 +357,27 @@ class BitunixClient(BaseExchangeClient):
                     data = res.json()
                     logger.info(f"[BITUNIX] Balance data: {data}")
                     
-                    # Extract balance data - try multiple field names
-                    account = data.get("data", data.get("result", data))
-                    if isinstance(account, list):
-                        account = account[0] if account else {}
-                    
-                    equity = float(account.get("totalEquity", account.get("equity", account.get("totalWalletBalance", account.get("balance", 0)))))
-                    available = float(account.get("availableBalance", account.get("available", account.get("availableMargin", equity))))
-                    margin_used = float(account.get("marginUsed", account.get("usedMargin", account.get("totalInitialMargin", 0))))
-                    unrealized = float(account.get("unrealizedPnl", account.get("unrealisedPnl", account.get("totalUnrealizedProfit", 0))))
-                    
-                    return ExchangeBalance(
-                        total_equity=equity,
-                        available_balance=available,
-                        margin_used=margin_used,
-                        unrealized_pnl=unrealized
-                    )
+                    if data.get("code") == 0:
+                        account = data.get("data", {})
+                        
+                        available = float(account.get("available", 0))
+                        margin = float(account.get("margin", 0))
+                        frozen = float(account.get("frozen", 0))
+                        cross_pnl = float(account.get("crossUnrealizedPNL", 0))
+                        iso_pnl = float(account.get("isolationUnrealizedPNL", 0))
+                        total_unrealized = cross_pnl + iso_pnl
+                        
+                        # Total equity = available + margin + unrealized PNL
+                        total_equity = available + margin + total_unrealized
+                        
+                        return ExchangeBalance(
+                            total_equity=total_equity,
+                            available_balance=available,
+                            margin_used=margin,
+                            unrealized_pnl=total_unrealized
+                        )
+                    else:
+                        logger.warning(f"[BITUNIX] API error: {data.get('msg')}")
                 else:
                     logger.warning(f"[BITUNIX] Failed to get balance: {res.text}")
                     
