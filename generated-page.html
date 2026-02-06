@@ -924,142 +924,47 @@
             </div>
           </div>
           
-          <!-- COL: POSITIONS -->
+          <!-- COL: POSITIONS (Dynamic) -->
           <div class="bg-[#0B0B0B] flex flex-col flex-shrink-0" style="width: 200px;">
             <div class="p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
               <span class="text-zinc-400 font-bold tracking-wider">
                 POSITIONS
               </span>
-              <span class="bg-zinc-800 text-white px-1.5 rounded">3</span>
+              <div class="flex items-center gap-2">
+                <button id="refresh-positions-btn" class="text-zinc-500 hover:text-white transition-colors" title="Refresh positions">
+                  <iconify-icon icon="solar:refresh-linear" class="text-sm"></iconify-icon>
+                </button>
+                <span id="positions-count" class="bg-zinc-800 text-white px-1.5 rounded">0</span>
+              </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
-              <!-- Card 1 -->
-              <div class="bg-[#141414] border border-zinc-800/50 p-3 hover:border-crimson-600/50 transition-all duration-300 relative group shadow-[0_0_20px_rgba(220,38,38,0.15)] border-crimson-500/20">
-                <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
-                <div class="flex justify-between items-start mb-2">
-                  <span class="font-bold text-white text-xs tracking-tight">
-                    BTC-PERP
-                  </span>
-                  <span class="text-green-500 text-[10px] font-bold">
-                    LONG ▲
-                  </span>
-                </div>
-                <div class="grid grid-cols-2 gap-y-1 text-[10px] font-mono text-zinc-500 mb-3">
-                  <span>ENTRY</span>
-                  <span class="text-right text-zinc-300">$95,120</span>
-                  <span class="">CURRENT</span>
-                  <span class="text-right text-green-500">
-                    $96,847 (+1.82%)
-                  </span>
-                  <span class="">SIZE</span>
-                  <span class="text-right text-zinc-300">0.45 BTC</span>
-                </div>
-                <div class="w-full bg-zinc-900 h-1.5 mb-1 rounded-full overflow-hidden">
-                  <div class="bg-green-600 h-full w-[80%] relative"></div>
-                </div>
-                <div class="text-[9px] text-zinc-500 text-right mb-3">
-                  +2.4R
-                </div>
-
-                <div class="space-y-1 text-[9px] font-mono border-t border-zinc-800/50 pt-2 text-zinc-500">
-                  <div class="flex justify-between">
-                    <span>STOP</span>
-                    <span class="text-crimson-500">$94,180</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="">TARGET 1</span>
-                    <span class="text-green-500 line-through">
-                      HIT ($96,800)
-                    </span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-cyan-500">TRAILING</span>
-                    <span class="text-white">$96,412 (2.3x)</span>
-                  </div>
-                </div>
-                <div class="mt-3 flex gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                  <button class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[9px] py-1 border border-zinc-700">
-                    CLOSE 50%
-                  </button>
-                  <button class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[9px] py-1 border border-zinc-700">
-                    EDIT
-                  </button>
-                </div>
+            <div id="positions-container" class="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
+              <!-- Loading state -->
+              <div id="positions-loading" class="text-center py-8 text-zinc-500 text-[10px] font-mono">
+                <iconify-icon icon="solar:refresh-linear" class="text-2xl animate-spin mb-2"></iconify-icon>
+                <div>Loading positions...</div>
               </div>
-
-              <!-- Card 2 -->
-              <div class="bg-[#141414] border border-zinc-800/50 p-3 hover:border-crimson-600/50 transition-all duration-300 relative group shadow-[0_0_20px_rgba(220,38,38,0.15)] border-crimson-500/20">
-                <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
-                <div class="flex justify-between items-start mb-2">
-                  <span class="font-bold text-white text-xs tracking-tight">
-                    ETH-PERP
-                  </span>
-                  <span class="text-red-500 text-[10px] font-bold">
-                    SHORT ▼
-                  </span>
-                </div>
-                <div class="grid grid-cols-2 gap-y-1 text-[10px] font-mono text-zinc-500 mb-3">
-                  <span>ENTRY</span>
-                  <span class="text-right text-zinc-300">$3,245</span>
-                  <span>CURRENT</span>
-                  <span class="text-right text-green-500">$3,198 (+1.47%)</span>
-                </div>
-                <div class="w-full bg-zinc-900 h-1.5 mb-1 rounded-full overflow-hidden">
-                  <div class="bg-green-600 h-full w-[40%] relative"></div>
-                </div>
-                <div class="text-[9px] text-zinc-500 text-right mb-3">
-                  +0.8R
-                </div>
-
-                <div class="space-y-1 text-[9px] font-mono border-t border-zinc-800/50 pt-2 text-zinc-500">
-                  <div class="flex justify-between">
-                    <span>STOP</span>
-                    <span class="text-zinc-400">$3,312</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-amber-500">GUARD</span>
-                    <span class="text-white">ACTIVE ($3,287)</span>
-                  </div>
-                </div>
+              <!-- Empty state (hidden by default) -->
+              <div id="positions-empty" class="hidden text-center py-8 text-zinc-600 text-[10px] font-mono">
+                <iconify-icon icon="solar:chart-2-linear" class="text-3xl mb-2 text-zinc-700"></iconify-icon>
+                <div class="mb-1">No open positions</div>
+                <div class="text-[9px]">Connect exchange in Account</div>
               </div>
-
-              <!-- Card 3 -->
-              <div class="bg-[#141414] border border-zinc-800/50 p-3 hover:border-crimson-600/50 transition-all duration-300 relative group shadow-[0_0_20px_rgba(220,38,38,0.15)] border-crimson-500/20">
-                <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-amber-500"></div>
-                <div class="flex justify-between items-start mb-2">
-                  <span class="font-bold text-white text-xs tracking-tight">
-                    SOL-PERP
-                  </span>
-                  <span class="text-green-500 text-[10px] font-bold">
-                    LONG ▲
-                  </span>
-                </div>
-                <div class="grid grid-cols-2 gap-y-1 text-[10px] font-mono text-zinc-500 mb-3">
-                  <span>ENTRY</span>
-                  <span class="text-right text-zinc-300">$142.80</span>
-                  <span>CURRENT</span>
-                  <span class="text-right text-crimson-500">
-                    $141.20 (-1.12%)
-                  </span>
-                </div>
-                <div class="w-full bg-zinc-900 h-1.5 mb-1 rounded-full overflow-hidden">
-                  <div class="bg-crimson-600 h-full w-[20%] relative"></div>
-                </div>
-                <div class="p-1.5 bg-crimson-900/10 border border-crimson-900/50 text-[9px] text-crimson-400 font-bold text-center mt-2">
-                  ⚠ APPROACHING STOP (0.5%)
-                </div>
-              </div>
+              <!-- Positions will be dynamically inserted here -->
             </div>
 
             <div class="p-3 border-t border-zinc-800 bg-zinc-900/30 text-[10px] font-mono text-zinc-500">
               <div class="flex justify-between mb-1">
                 <span>EXPOSURE</span>
-                <span class="text-white">$70,245</span>
+                <span id="total-exposure" class="text-white">$0</span>
+              </div>
+              <div class="flex justify-between mb-1">
+                <span>UNREALIZED</span>
+                <span id="total-pnl" class="text-white">$0</span>
               </div>
               <div class="flex justify-between">
-                <span>RISK</span>
-                <span class="text-white">1.8%</span>
+                <span>EXCHANGE</span>
+                <span id="connected-exchange" class="text-zinc-400">--</span>
               </div>
             </div>
           </div>
@@ -4931,6 +4836,241 @@ Esc    - Close Dialogs
           });
         });
       })();
+    </script>
+
+    <!-- LIVE POSITIONS PANEL -->
+    <script>
+    (function() {
+      const positionsContainer = document.getElementById('positions-container');
+      const positionsCount = document.getElementById('positions-count');
+      const positionsLoading = document.getElementById('positions-loading');
+      const positionsEmpty = document.getElementById('positions-empty');
+      const totalExposure = document.getElementById('total-exposure');
+      const totalPnl = document.getElementById('total-pnl');
+      const connectedExchange = document.getElementById('connected-exchange');
+      const refreshBtn = document.getElementById('refresh-positions-btn');
+      
+      let exchangeConnections = {};
+
+      // Auto-connect exchanges from localStorage
+      async function loadAndAutoConnectExchanges() {
+        const stored = localStorage.getItem('bastion_exchange_credentials');
+        if (!stored) {
+          console.log('[POSITIONS] No stored exchange credentials');
+          return;
+        }
+        
+        try {
+          const credentials = JSON.parse(stored);
+          console.log('[POSITIONS] Found stored credentials for:', Object.keys(credentials));
+          
+          for (const [exchange, creds] of Object.entries(credentials)) {
+            try {
+              const payload = {
+                exchange: exchange,
+                api_key: creds.apiKey,
+                api_secret: creds.apiSecret,
+                passphrase: creds.passphrase || '',
+                read_only: creds.readOnly !== false
+              };
+              
+              console.log(`[POSITIONS] Auto-connecting ${exchange}...`);
+              const res = await fetch('/api/exchange/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+              
+              if (res.ok) {
+                const data = await res.json();
+                if (data.success || data.balance !== undefined) {
+                  exchangeConnections[exchange] = true;
+                  console.log(`[POSITIONS] ✓ Connected ${exchange}`);
+                }
+              }
+            } catch (e) {
+              console.error(`[POSITIONS] Failed to auto-connect ${exchange}:`, e);
+            }
+          }
+          
+          // Now load positions
+          await loadPositions();
+        } catch (e) {
+          console.error('[POSITIONS] Error parsing stored credentials:', e);
+        }
+      }
+      
+      // Load positions from API
+      async function loadPositions() {
+        console.log('[POSITIONS] Fetching positions...');
+        
+        try {
+          const res = await fetch('/api/positions/all');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          
+          const data = await res.json();
+          console.log('[POSITIONS] API response:', data);
+          
+          // Hide loading
+          if (positionsLoading) positionsLoading.classList.add('hidden');
+          
+          const positions = data.positions || [];
+          
+          // Update count
+          if (positionsCount) positionsCount.textContent = positions.length;
+          
+          // Show empty state or render positions
+          if (positions.length === 0) {
+            if (positionsEmpty) positionsEmpty.classList.remove('hidden');
+            if (totalExposure) totalExposure.textContent = '$0';
+            if (totalPnl) totalPnl.textContent = '$0';
+            if (connectedExchange) {
+              const exchanges = Object.keys(exchangeConnections);
+              connectedExchange.textContent = exchanges.length > 0 ? exchanges.join(', ') : '--';
+            }
+            return;
+          }
+          
+          // Hide empty state
+          if (positionsEmpty) positionsEmpty.classList.add('hidden');
+          
+          // Calculate totals
+          let exposure = 0;
+          let unrealizedPnl = 0;
+          const exchangeSet = new Set();
+          
+          positions.forEach(p => {
+            // Use size_usd if available, otherwise calculate from size * price
+            const sizeUsd = parseFloat(p.size_usd) || 0;
+            if (sizeUsd > 0) {
+              exposure += Math.abs(sizeUsd);
+            } else {
+              const size = parseFloat(p.size) || 0;
+              const price = parseFloat(p.current_price || p.entry_price) || 0;
+              exposure += Math.abs(size * price);
+            }
+            unrealizedPnl += parseFloat(p.pnl || p.unrealized_pnl) || 0;
+            if (p.exchange) exchangeSet.add(p.exchange);
+          });
+          
+          // Update footer stats
+          if (totalExposure) totalExposure.textContent = '$' + exposure.toLocaleString(undefined, {maximumFractionDigits: 0});
+          if (totalPnl) {
+            totalPnl.textContent = (unrealizedPnl >= 0 ? '+' : '') + '$' + unrealizedPnl.toLocaleString(undefined, {maximumFractionDigits: 2});
+            totalPnl.className = unrealizedPnl >= 0 ? 'text-green-500' : 'text-red-500';
+          }
+          if (connectedExchange) {
+            connectedExchange.textContent = [...exchangeSet].join(', ') || '--';
+          }
+          
+          // Render position cards
+          renderPositions(positions);
+          
+        } catch (e) {
+          console.error('[POSITIONS] Error loading positions:', e);
+          if (positionsLoading) positionsLoading.classList.add('hidden');
+          if (positionsEmpty) {
+            positionsEmpty.classList.remove('hidden');
+            positionsEmpty.innerHTML = `
+              <div class="text-center py-6 text-zinc-600 text-[10px] font-mono">
+                <iconify-icon icon="solar:danger-triangle-linear" class="text-2xl mb-2 text-red-500"></iconify-icon>
+                <div class="text-red-400 mb-1">Error loading positions</div>
+                <div class="text-[9px]">${e.message}</div>
+              </div>
+            `;
+          }
+        }
+      }
+      
+      // Render position cards
+      function renderPositions(positions) {
+        // Remove loading/empty, keep them but clear position cards
+        const existingCards = positionsContainer.querySelectorAll('.position-card');
+        existingCards.forEach(card => card.remove());
+        
+        positions.forEach(pos => {
+          // Handle both API field names (direction/pnl/pnl_pct) and alternate names (side/unrealized_pnl/pnl_percent)
+          const direction = pos.direction || pos.side || '';
+          const isLong = direction.toLowerCase() === 'long' || direction.toLowerCase() === 'buy';
+          const pnl = parseFloat(pos.pnl || pos.unrealized_pnl) || 0;
+          const pnlPercent = parseFloat(pos.pnl_pct || pos.pnl_percent) || 0;
+          const isProfitable = pnl >= 0;
+          
+          const sideColor = isLong ? 'green' : 'red';
+          const pnlColor = isProfitable ? 'green' : 'red';
+          
+          // Determine bar width based on PnL (max 100%)
+          const barWidth = Math.min(Math.abs(pnlPercent) * 10, 100);
+          
+          const card = document.createElement('div');
+          card.className = 'position-card bg-[#141414] border border-zinc-800/50 p-3 hover:border-crimson-600/50 transition-all duration-300 relative group shadow-[0_0_20px_rgba(220,38,38,0.15)] border-crimson-500/20';
+          
+          card.innerHTML = `
+            <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-${sideColor}-500 shadow-[0_0_8px_rgba(${isLong ? '34,197,94' : '239,68,68'},0.4)]"></div>
+            <div class="flex justify-between items-start mb-2">
+              <span class="font-bold text-white text-xs tracking-tight">
+                ${pos.symbol || 'Unknown'}
+              </span>
+              <span class="text-${sideColor}-500 text-[10px] font-bold">
+                ${isLong ? 'LONG ▲' : 'SHORT ▼'}
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-y-1 text-[10px] font-mono text-zinc-500 mb-3">
+              <span>ENTRY</span>
+              <span class="text-right text-zinc-300">$${parseFloat(pos.entry_price || 0).toLocaleString(undefined, {maximumFractionDigits: 2})}</span>
+              <span>CURRENT</span>
+              <span class="text-right text-${pnlColor}-500">
+                $${parseFloat(pos.current_price || pos.entry_price || 0).toLocaleString(undefined, {maximumFractionDigits: 2})} (${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)
+              </span>
+              <span>SIZE</span>
+              <span class="text-right text-zinc-300">${parseFloat(pos.size || 0).toFixed(4)}</span>
+            </div>
+            <div class="w-full bg-zinc-900 h-1.5 mb-1 rounded-full overflow-hidden">
+              <div class="bg-${pnlColor}-600 h-full relative" style="width: ${barWidth}%"></div>
+            </div>
+            <div class="text-[9px] text-${pnlColor}-500 text-right mb-2 font-bold">
+              ${isProfitable ? '+' : ''}$${pnl.toFixed(2)} PnL
+            </div>
+            ${pos.leverage ? `
+            <div class="text-[9px] font-mono text-zinc-500 border-t border-zinc-800/50 pt-2">
+              <div class="flex justify-between">
+                <span>LEVERAGE</span>
+                <span class="text-white">${pos.leverage}x</span>
+              </div>
+              ${pos.exchange ? `
+              <div class="flex justify-between mt-1">
+                <span>EXCHANGE</span>
+                <span class="text-zinc-400">${pos.exchange}</span>
+              </div>
+              ` : ''}
+            </div>
+            ` : ''}
+          `;
+          
+          positionsContainer.appendChild(card);
+        });
+      }
+      
+      // Refresh button
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+          refreshBtn.querySelector('iconify-icon')?.classList.add('animate-spin');
+          loadPositions().finally(() => {
+            setTimeout(() => {
+              refreshBtn.querySelector('iconify-icon')?.classList.remove('animate-spin');
+            }, 500);
+          });
+        });
+      }
+      
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', async () => {
+        await loadAndAutoConnectExchanges();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadPositions, 30000);
+      });
+    })();
     </script>
   
 </body></html>
