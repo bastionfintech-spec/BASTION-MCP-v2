@@ -280,11 +280,11 @@
                     
                     <div class="space-y-4">
                       <div>
-                        <label class="text-[10px] text-zinc-400 uppercase tracking-wider mb-1 block">API Key</label>
+                        <label id="api-key-label" class="text-[10px] text-zinc-400 uppercase tracking-wider mb-1 block">API Key</label>
                         <input type="text" id="api-key" placeholder="Enter your API key" class="w-full bg-zinc-900 border border-zinc-700 text-[11px] text-white px-3 py-2.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-600 font-mono rounded">
                       </div>
                       
-                      <div>
+                      <div id="api-secret-field">
                         <label class="text-[10px] text-zinc-400 uppercase tracking-wider mb-1 block">API Secret</label>
                         <input type="password" id="api-secret" placeholder="Enter your API secret" class="w-full bg-zinc-900 border border-zinc-700 text-[11px] text-white px-3 py-2.5 focus:border-crimson-600 focus:outline-none placeholder-zinc-600 font-mono rounded">
                       </div>
@@ -1191,12 +1191,12 @@
 
       // ==================== EXCHANGE CONFIGS ====================
       const exchangeConfigs = {
-        blofin: { name: 'BloFin', icon: '🔵', needsPassphrase: true },
-        bitunix: { name: 'Bitunix', icon: '🟣', needsPassphrase: false },
-        bybit: { name: 'Bybit', icon: '🟡', needsPassphrase: false },
-        okx: { name: 'OKX', icon: '⚫', needsPassphrase: true },
-        binance: { name: 'Binance', icon: '🟠', needsPassphrase: false },
-        hyperliquid: { name: 'Hyperliquid', icon: '🟢', needsPassphrase: false }
+        blofin: { name: 'BloFin', icon: '🔵', needsPassphrase: true, isWalletBased: false },
+        bitunix: { name: 'Bitunix', icon: '🟣', needsPassphrase: false, isWalletBased: false },
+        bybit: { name: 'Bybit', icon: '🟡', needsPassphrase: false, isWalletBased: false },
+        okx: { name: 'OKX', icon: '⚫', needsPassphrase: true, isWalletBased: false },
+        binance: { name: 'Binance', icon: '🟠', needsPassphrase: false, isWalletBased: false },
+        hyperliquid: { name: 'Hyperliquid', icon: '🟢', needsPassphrase: false, isWalletBased: true }
       };
 
       let selectedExchange = null;
@@ -1259,11 +1259,27 @@
           document.getElementById('selected-exchange-icon').textContent = config.icon;
           document.getElementById('selected-exchange-name').textContent = config.name;
           
+          const apiKeyInput = document.getElementById('api-key');
+          const apiSecretField = document.getElementById('api-secret-field');
           const passphraseField = document.getElementById('passphrase-field');
-          if (config.needsPassphrase) {
-            passphraseField.classList.remove('hidden');
+          
+          const apiKeyLabel = document.getElementById('api-key-label');
+          
+          // Handle wallet-based exchanges (Hyperliquid)
+          if (config.isWalletBased) {
+            if (apiKeyInput) apiKeyInput.placeholder = 'Enter your wallet address (0x...)';
+            if (apiKeyLabel) apiKeyLabel.textContent = 'WALLET ADDRESS';
+            if (apiSecretField) apiSecretField.classList.add('hidden');
+            if (passphraseField) passphraseField.classList.add('hidden');
           } else {
-            passphraseField.classList.add('hidden');
+            if (apiKeyInput) apiKeyInput.placeholder = 'Enter your API key';
+            if (apiKeyLabel) apiKeyLabel.textContent = 'API KEY';
+            if (apiSecretField) apiSecretField.classList.remove('hidden');
+            if (config.needsPassphrase) {
+              passphraseField?.classList.remove('hidden');
+            } else {
+              passphraseField?.classList.add('hidden');
+            }
           }
         });
       });
@@ -1278,14 +1294,23 @@
       });
 
       document.getElementById('connect-btn').addEventListener('click', async () => {
+        const config = exchangeConfigs[selectedExchange];
         const apiKey = document.getElementById('api-key').value;
         const apiSecret = document.getElementById('api-secret').value;
         const passphrase = document.getElementById('api-passphrase').value;
         const readOnly = document.getElementById('read-only').checked;
         
-        if (!apiKey || !apiSecret) {
-          alert('Please enter both API key and secret');
-          return;
+        // Validation based on exchange type
+        if (config.isWalletBased) {
+          if (!apiKey || !apiKey.startsWith('0x')) {
+            alert('Please enter a valid wallet address (0x...)');
+            return;
+          }
+        } else {
+          if (!apiKey || !apiSecret) {
+            alert('Please enter both API key and secret');
+            return;
+          }
         }
         
         try {
@@ -1295,7 +1320,7 @@
             body: JSON.stringify({
               exchange: selectedExchange,
               api_key: apiKey,
-              api_secret: apiSecret,
+              api_secret: config.isWalletBased ? apiKey : apiSecret, // For wallet-based, use address as both
               passphrase: passphrase || null,
               read_only: readOnly
             })
@@ -1336,28 +1361,112 @@
           container.innerHTML = '';
         }
         
+        const exchangeId = `exchange-${exchange}`;
         container.innerHTML += `
-          <div class="bg-[#0D0D0D] border border-green-900/50 rounded-lg p-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl">${config.icon}</span>
-              <div>
-                <div class="text-[12px] text-white font-bold">${config.name}</div>
-                <div class="text-[9px] text-green-400 flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                  Connected • Read-only
+          <div id="${exchangeId}" class="bg-[#0D0D0D] border border-green-900/50 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">${config.icon}</span>
+                <div>
+                  <div class="text-[12px] text-white font-bold">${config.name}</div>
+                  <div id="${exchangeId}-status" class="text-[9px] text-green-400 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                    Connected • Read-only
+                  </div>
                 </div>
               </div>
+              <div class="flex items-center gap-2">
+                <button id="${exchangeId}-sync" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors" onclick="syncExchange('${exchange}')">
+                  <iconify-icon icon="solar:refresh-linear" class="mr-1"></iconify-icon>Sync
+                </button>
+                <button class="px-3 py-1.5 bg-crimson-900/30 hover:bg-crimson-900/50 text-crimson-400 text-[10px] rounded transition-colors" onclick="disconnectExchange('${exchange}')">
+                  <iconify-icon icon="solar:trash-bin-trash-linear" class="mr-1"></iconify-icon>Remove
+                </button>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] rounded transition-colors">
-                <iconify-icon icon="solar:refresh-linear" class="mr-1"></iconify-icon>Sync
-              </button>
-              <button class="px-3 py-1.5 bg-crimson-900/30 hover:bg-crimson-900/50 text-crimson-400 text-[10px] rounded transition-colors" onclick="disconnectExchange('${exchange}')">
-                <iconify-icon icon="solar:trash-bin-trash-linear" class="mr-1"></iconify-icon>Remove
-              </button>
+            <!-- Balance Display -->
+            <div id="${exchangeId}-balance" class="grid grid-cols-4 gap-2 text-center">
+              <div class="bg-zinc-900/50 rounded p-2">
+                <div class="text-[9px] text-zinc-500">Equity</div>
+                <div class="text-[11px] text-white font-mono" id="${exchangeId}-equity">--</div>
+              </div>
+              <div class="bg-zinc-900/50 rounded p-2">
+                <div class="text-[9px] text-zinc-500">Available</div>
+                <div class="text-[11px] text-white font-mono" id="${exchangeId}-available">--</div>
+              </div>
+              <div class="bg-zinc-900/50 rounded p-2">
+                <div class="text-[9px] text-zinc-500">Margin Used</div>
+                <div class="text-[11px] text-white font-mono" id="${exchangeId}-margin">--</div>
+              </div>
+              <div class="bg-zinc-900/50 rounded p-2">
+                <div class="text-[9px] text-zinc-500">uPnL</div>
+                <div class="text-[11px] font-mono" id="${exchangeId}-upnl">--</div>
+              </div>
+            </div>
+            <!-- Positions Count -->
+            <div class="mt-2 flex items-center justify-between text-[9px]">
+              <span class="text-zinc-500">Open Positions: <span id="${exchangeId}-positions" class="text-white font-mono">--</span></span>
+              <span id="${exchangeId}-last-sync" class="text-zinc-600">Never synced</span>
             </div>
           </div>
         `;
+        
+        // Auto sync on connect
+        setTimeout(() => syncExchange(exchange), 500);
+      }
+      
+      async function syncExchange(exchange) {
+        const exchangeId = `exchange-${exchange}`;
+        const syncBtn = document.getElementById(`${exchangeId}-sync`);
+        const statusEl = document.getElementById(`${exchangeId}-status`);
+        
+        // Show loading state
+        if (syncBtn) {
+          syncBtn.innerHTML = '<iconify-icon icon="solar:refresh-linear" class="mr-1 animate-spin"></iconify-icon>Syncing...';
+          syncBtn.disabled = true;
+        }
+        
+        try {
+          const response = await fetch(`${API_BASE}/api/exchange/${exchange}/sync`, { method: 'POST' });
+          const data = await response.json();
+          
+          if (data.success) {
+            // Update balance display
+            const balance = data.balance || {};
+            document.getElementById(`${exchangeId}-equity`).textContent = formatUSD(balance.total_equity);
+            document.getElementById(`${exchangeId}-available`).textContent = formatUSD(balance.available_balance);
+            document.getElementById(`${exchangeId}-margin`).textContent = formatUSD(balance.margin_used);
+            
+            const upnlEl = document.getElementById(`${exchangeId}-upnl`);
+            const upnl = balance.unrealized_pnl || 0;
+            upnlEl.textContent = (upnl >= 0 ? '+' : '') + formatUSD(upnl);
+            upnlEl.className = `text-[11px] font-mono ${upnl >= 0 ? 'text-green-400' : 'text-red-400'}`;
+            
+            // Update positions count
+            document.getElementById(`${exchangeId}-positions`).textContent = data.positions_count || 0;
+            
+            // Update last sync time
+            document.getElementById(`${exchangeId}-last-sync`).textContent = `Synced ${new Date().toLocaleTimeString()}`;
+            
+            showToast(`${exchangeConfigs[exchange].name} synced! ${data.positions_count} positions`, 'success');
+          } else {
+            statusEl.innerHTML = `<span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span> Sync failed - ${data.error || 'Unknown error'}`;
+            showToast(`Sync failed: ${data.error}`, 'error');
+          }
+        } catch (err) {
+          console.error('Sync error:', err);
+          showToast('Sync failed - Network error', 'error');
+        } finally {
+          if (syncBtn) {
+            syncBtn.innerHTML = '<iconify-icon icon="solar:refresh-linear" class="mr-1"></iconify-icon>Sync';
+            syncBtn.disabled = false;
+          }
+        }
+      }
+      
+      function formatUSD(amount) {
+        if (amount === undefined || amount === null) return '--';
+        return '$' + parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
 
       function disconnectExchange(exchange) {

@@ -445,6 +445,106 @@ async def get_exchange_positions(exchange_name: str):
     }
 
 
+@app.get("/api/exchange/{exchange_name}/balance")
+async def get_exchange_balance(exchange_name: str):
+    """Get balance from a connected exchange."""
+    if exchange_name not in connected_exchanges:
+        raise HTTPException(status_code=404, detail="Exchange not connected")
+    
+    try:
+        if exchange_name in user_context.connections:
+            client = user_context.connections[exchange_name]
+            balance = await client.get_balance()
+            return {
+                "success": True,
+                "exchange": exchange_name,
+                "balance": {
+                    "total_equity": balance.total_equity,
+                    "available_balance": balance.available_balance,
+                    "margin_used": balance.margin_used,
+                    "unrealized_pnl": balance.unrealized_pnl,
+                    "currency": balance.currency
+                },
+                "timestamp": datetime.now().isoformat(),
+                "source": "live"
+            }
+    except Exception as e:
+        logger.warning(f"Could not fetch balance: {e}")
+    
+    # Fallback
+    return {
+        "success": True,
+        "exchange": exchange_name,
+        "balance": {
+            "total_equity": 0,
+            "available_balance": 0,
+            "margin_used": 0,
+            "unrealized_pnl": 0,
+            "currency": "USDT"
+        },
+        "timestamp": datetime.now().isoformat(),
+        "source": "demo"
+    }
+
+
+@app.post("/api/exchange/{exchange_name}/sync")
+async def sync_exchange(exchange_name: str):
+    """Force sync positions and balance from an exchange."""
+    if exchange_name not in connected_exchanges:
+        raise HTTPException(status_code=404, detail="Exchange not connected")
+    
+    try:
+        if exchange_name in user_context.connections:
+            client = user_context.connections[exchange_name]
+            
+            # Clear cache to force refresh
+            if exchange_name in user_context.cache_timestamp:
+                del user_context.cache_timestamp[exchange_name]
+            
+            # Fetch fresh data
+            positions = await client.get_positions()
+            balance = await client.get_balance()
+            
+            return {
+                "success": True,
+                "exchange": exchange_name,
+                "positions_count": len(positions),
+                "balance": {
+                    "total_equity": balance.total_equity,
+                    "available_balance": balance.available_balance,
+                    "unrealized_pnl": balance.unrealized_pnl
+                },
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Sync error for {exchange_name}: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+    
+    return {"success": False, "error": "Exchange not properly connected"}
+
+
+@app.get("/api/balance/total")
+async def get_total_balance():
+    """Get aggregated balance across all connected exchanges."""
+    try:
+        balance_data = await user_context.get_total_balance()
+        return {
+            "success": True,
+            "balance": balance_data,
+            "exchanges_connected": list(connected_exchanges.keys()),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting total balance: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
 @app.get("/api/positions/all")
 async def get_all_positions():
     """Get positions from all connected exchanges."""

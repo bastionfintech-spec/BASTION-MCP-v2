@@ -485,6 +485,114 @@ class DeribitClient(BaseExchangeClient):
         return ExchangeBalance(0, 0, 0, 0)
 
 
+class HyperliquidClient(BaseExchangeClient):
+    """Hyperliquid DEX client (Perpetuals)."""
+    
+    def __init__(self, credentials: ExchangeCredentials):
+        super().__init__(credentials)
+        self.base_url = "https://api.hyperliquid.xyz"
+        self.exchange_name = "hyperliquid"
+        # For Hyperliquid, api_key is the wallet address
+        self.wallet_address = credentials.api_key
+    
+    async def test_connection(self) -> bool:
+        """Test connection by fetching user state."""
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(
+                    f"{self.base_url}/info",
+                    json={
+                        "type": "clearinghouseState",
+                        "user": self.wallet_address
+                    },
+                    timeout=10.0
+                )
+                return res.status_code == 200
+        except Exception as e:
+            logger.error(f"Hyperliquid connection test failed: {e}")
+            return False
+    
+    async def get_positions(self) -> List[Position]:
+        """Fetch open positions from Hyperliquid."""
+        positions = []
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(
+                    f"{self.base_url}/info",
+                    json={
+                        "type": "clearinghouseState",
+                        "user": self.wallet_address
+                    },
+                    timeout=10.0
+                )
+                
+                if res.status_code == 200:
+                    data = res.json()
+                    asset_positions = data.get("assetPositions", [])
+                    
+                    for item in asset_positions:
+                        pos = item.get("position", {})
+                        size = float(pos.get("szi", 0))
+                        
+                        if size != 0:
+                            entry_price = float(pos.get("entryPx", 0))
+                            current_price = float(pos.get("markPx", 0) or pos.get("entryPx", 0))
+                            
+                            # Calculate PnL
+                            pnl = float(pos.get("unrealizedPnl", 0))
+                            margin = float(pos.get("marginUsed", 0))
+                            pnl_pct = (pnl / margin * 100) if margin > 0 else 0
+                            
+                            positions.append(Position(
+                                id=f"hyperliquid_{pos.get('coin', '')}",
+                                symbol=pos.get("coin", ""),
+                                direction="long" if size > 0 else "short",
+                                entry_price=entry_price,
+                                current_price=current_price,
+                                size=abs(size),
+                                size_usd=abs(size * current_price),
+                                pnl=pnl,
+                                pnl_pct=pnl_pct,
+                                leverage=float(pos.get("leverage", {}).get("value", 1)),
+                                margin=margin,
+                                liquidation_price=float(pos.get("liquidationPx", 0)) or None,
+                                exchange=self.exchange_name,
+                                updated_at=datetime.now().isoformat()
+                            ))
+        except Exception as e:
+            logger.error(f"Hyperliquid get_positions error: {e}")
+        return positions
+    
+    async def get_balance(self) -> ExchangeBalance:
+        """Fetch account balance from Hyperliquid."""
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(
+                    f"{self.base_url}/info",
+                    json={
+                        "type": "clearinghouseState",
+                        "user": self.wallet_address
+                    },
+                    timeout=10.0
+                )
+                
+                if res.status_code == 200:
+                    data = res.json()
+                    margin_summary = data.get("marginSummary", {})
+                    
+                    return ExchangeBalance(
+                        total_equity=float(margin_summary.get("accountValue", 0)),
+                        available_balance=float(margin_summary.get("availableBalance", 0) or margin_summary.get("accountValue", 0)),
+                        margin_used=float(margin_summary.get("totalMarginUsed", 0)),
+                        unrealized_pnl=float(margin_summary.get("totalUnrealizedPnl", 0)),
+                        currency="USDC"
+                    )
+        except Exception as e:
+            logger.error(f"Hyperliquid get_balance error: {e}")
+        
+        return ExchangeBalance(0, 0, 0, 0, "USDC")
+
+
 # =============================================================================
 # EXCHANGE CONNECTOR FACTORY
 # =============================================================================
@@ -495,7 +603,8 @@ EXCHANGE_CLIENTS = {
     "bybit": BybitClient,
     "okx": OKXClient,
     "binance": BinanceClient,
-    "deribit": DeribitClient
+    "deribit": DeribitClient,
+    "hyperliquid": HyperliquidClient
 }
 
 
