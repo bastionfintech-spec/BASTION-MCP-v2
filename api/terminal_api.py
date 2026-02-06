@@ -48,7 +48,7 @@ try:
     from iros_integration.services.query_processor import QueryProcessor
     from iros_integration.services.whale_alert import WhaleAlertClient
     from iros_integration.services.coinglass import CoinglassClient, CoinglassResponse
-    from iros_integration.services.exchange_connector import user_context, Position
+    from iros_integration.services.exchange_connector import user_context, Position, UserContext
     logger.info("IROS integration modules loaded successfully")
 except ImportError as e:
     logger.error(f"Import error: {e}")
@@ -69,10 +69,19 @@ except ImportError as e:
         data = None
     class Position:
         pass
-    user_context = type('obj', (object,), {
-        'get_all_positions': lambda: [],
-        'get_position_context_for_ai': lambda x: ''
-    })()
+    class UserContext:
+        """Fallback UserContext when IROS not available"""
+        def __init__(self):
+            self.connections = {}
+            self.cached_positions = {}
+            self.cache_timestamp = {}
+            self.cache_ttl = 30
+        async def connect_exchange(self, **kwargs): return False
+        async def get_all_positions(self): return []
+        async def get_total_balance(self): return {}
+        async def disconnect(self, name): pass
+        def get_position_context_for_ai(self, positions): return ''
+    user_context = UserContext()
 
 # Global clients
 helsinki: HelsinkiClient = None
