@@ -1250,6 +1250,7 @@ async def auth_debug():
         "users_table": "bastion_users",
         "can_query": False,
         "user_count": 0,
+        "users": [],
         "error": None
     }
     
@@ -1258,14 +1259,56 @@ async def auth_debug():
         
         if user_service.is_db_available:
             try:
-                # Try to count users
-                result = user_service.client.table("bastion_users").select("id", count="exact").execute()
+                # Try to get users
+                result = user_service.client.table("bastion_users").select("id, email, display_name, created_at").execute()
                 status["can_query"] = True
-                status["user_count"] = result.count if hasattr(result, 'count') else len(result.data or [])
+                status["user_count"] = len(result.data or [])
+                status["users"] = result.data or []
             except Exception as e:
                 status["error"] = str(e)
+        else:
+            # In-memory users
+            status["user_count"] = len([k for k in user_service._memory_users.keys() if not k.startswith("email:")])
     
     return status
+
+
+@app.delete("/api/auth/user/{email}")
+async def delete_user_by_email(email: str):
+    """Delete a user by email (for testing/admin)."""
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    
+    email = email.lower().strip()
+    
+    if user_service.is_db_available:
+        try:
+            # Delete from sessions first
+            user_result = user_service.client.table("bastion_users").select("id").eq("email", email).execute()
+            if user_result.data and len(user_result.data) > 0:
+                user_id = user_result.data[0]["id"]
+                # Delete sessions
+                user_service.client.table("bastion_sessions").delete().eq("user_id", user_id).execute()
+                # Delete exchange keys
+                user_service.client.table("bastion_exchange_keys").delete().eq("user_id", user_id).execute()
+            
+            # Delete user
+            result = user_service.client.table("bastion_users").delete().eq("email", email).execute()
+            logger.info(f"[AUTH] Deleted user: {email}")
+            return {"success": True, "deleted": email}
+        except Exception as e:
+            logger.error(f"[AUTH] Failed to delete user: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+    else:
+        # In-memory
+        ref = user_service._memory_users.get(f"email:{email}")
+        if ref:
+            user_id = ref["user_id"]
+            del user_service._memory_users[user_id]
+            del user_service._memory_users[f"email:{email}"]
+            return {"success": True, "deleted": email}
+    
+    raise HTTPException(status_code=404, detail="User not found")
 
 
 # =============================================================================
