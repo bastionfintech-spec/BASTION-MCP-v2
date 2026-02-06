@@ -91,6 +91,9 @@ class User:
     sync_settings: Optional[Dict] = None  # Full settings backup
     sync_updated_at: Optional[str] = None  # Last sync timestamp
     
+    # Panel layout
+    panel_layout: Optional[Dict] = None  # {collapsed: [], order: []}
+    
     def __post_init__(self):
         if self.trading_style is None:
             self.trading_style = ["day_trading"]
@@ -169,6 +172,7 @@ class User:
             alert_types=parse_json_field(data.get('alert_types')),
             sync_settings=parse_json_field(data.get('sync_settings')),
             sync_updated_at=data.get('sync_updated_at'),
+            panel_layout=parse_json_field(data.get('panel_layout')),
         )
 
 
@@ -485,7 +489,7 @@ class UserService:
             'liquidation_alerts', 'iros_signals', 'position_alerts', 'oi_alerts', 'research_alerts',
             'totp_enabled', 'totp_secret',
             'corner_gif', 'corner_gif_settings', 'avatar', 'alert_types',
-            'sync_settings', 'sync_updated_at'
+            'sync_settings', 'sync_updated_at', 'panel_layout'
         }
         filtered = {k: v for k, v in updates.items() if k in allowed}
         
@@ -493,7 +497,7 @@ class UserService:
             return False
         
         # Serialize dict/list fields to JSON strings for database storage
-        json_fields = {'corner_gif_settings', 'alert_types', 'sync_settings', 'trading_style'}
+        json_fields = {'corner_gif_settings', 'alert_types', 'sync_settings', 'trading_style', 'panel_layout'}
         for field in json_fields:
             if field in filtered and filtered[field] is not None:
                 if isinstance(filtered[field], (dict, list)):
@@ -511,7 +515,7 @@ class UserService:
             except Exception as e:
                 logger.error(f"[UserService] Update failed for {list(filtered.keys())}: {e}")
                 # Try again without potentially missing columns
-                problem_cols = {'corner_gif_settings', 'avatar', 'alert_types', 'sync_settings', 'sync_updated_at', 'corner_gif'}
+                problem_cols = {'corner_gif_settings', 'avatar', 'alert_types', 'sync_settings', 'sync_updated_at', 'corner_gif', 'panel_layout'}
                 filtered_safe = {k: v for k, v in filtered.items() if k not in problem_cols}
                 if filtered_safe:
                     try:

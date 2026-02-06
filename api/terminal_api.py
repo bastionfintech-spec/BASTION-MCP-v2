@@ -1234,6 +1234,7 @@ async def get_current_user(token: str = None):
 
 
 @app.put("/api/auth/profile")
+@app.post("/api/auth/profile")
 async def update_user_profile(data: dict):
     """Update user profile settings."""
     token = data.get("token", "")
