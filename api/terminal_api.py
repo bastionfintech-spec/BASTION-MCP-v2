@@ -4841,23 +4841,72 @@ async def get_kelly_criterion():
 
 
 @app.post("/api/monte-carlo")
-async def run_monte_carlo(simulations: int = 50000):
-    """Run Monte Carlo simulation for portfolio projections."""
+async def run_monte_carlo(data: dict = None, token: Optional[str] = None, session_id: Optional[str] = None):
+    """Run Monte Carlo simulation based on user's actual positions and capital."""
     import random
     import statistics
     
-    # Simulation parameters (would use real account data)
-    starting_capital = 100000
-    win_rate = 0.73
-    avg_win_pct = 2.1
-    avg_loss_pct = 1.0
-    trades_to_simulate = 100
-    position_size_pct = 1.2  # Half-Kelly
+    # Parse body if provided
+    if data:
+        token = data.get("token", token)
+        session_id = data.get("session_id", session_id)
+    
+    # Get user context and positions
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    
+    # Default parameters
+    starting_capital = 10000  # Default if no exchange connected
+    current_pnl = 0
+    current_exposure = 0
+    num_positions = 0
+    avg_leverage = 1
+    
+    # Try to get real data from connected exchanges
+    if exchanges:
+        total_balance = 0
+        total_pnl = 0
+        total_exposure = 0
+        pos_count = 0
+        
+        for exchange_name in exchanges:
+            try:
+                # Get balance
+                balance = await ctx.get_balance(exchange_name)
+                if balance and 'total_equity' in balance:
+                    total_balance += balance.get('total_equity', 0)
+                    total_pnl += balance.get('unrealized_pnl', 0)
+                
+                # Get positions
+                positions = await ctx.get_positions(exchange_name)
+                if positions:
+                    for pos in positions:
+                        size = abs(float(pos.get('size', 0)))
+                        price = float(pos.get('current_price', 0) or pos.get('entry_price', 0))
+                        total_exposure += size * price
+                        pos_count += 1
+            except:
+                pass
+        
+        if total_balance > 0:
+            starting_capital = total_balance
+            current_pnl = total_pnl
+            current_exposure = total_exposure
+            num_positions = pos_count
+            if starting_capital > 0:
+                avg_leverage = total_exposure / starting_capital if total_exposure > 0 else 1
+    
+    # Simulation parameters based on user's profile or defaults
+    win_rate = 0.55  # Conservative assumption
+    avg_win_pct = 2.5  # Average winning trade %
+    avg_loss_pct = 1.5  # Average losing trade %
+    trades_to_simulate = 50  # Next 50 trades
+    position_size_pct = min(avg_leverage * 0.5, 5)  # Half of current leverage, max 5%
     
     final_capitals = []
     max_drawdowns = []
+    num_sims = min(50000, 50000)
     
-    for _ in range(min(simulations, 50000)):
+    for _ in range(num_sims):
         capital = starting_capital
         peak = capital
         max_dd = 0
@@ -4870,7 +4919,7 @@ async def run_monte_carlo(simulations: int = 50000):
             
             if capital > peak:
                 peak = capital
-            dd = (peak - capital) / peak
+            dd = (peak - capital) / peak if peak > 0 else 0
             if dd > max_dd:
                 max_dd = dd
         
@@ -4889,6 +4938,9 @@ async def run_monte_carlo(simulations: int = 50000):
     return {
         "success": True,
         "simulations": len(final_capitals),
+        "starting_capital": round(starting_capital, 2),
+        "current_positions": num_positions,
+        "current_exposure": round(current_exposure, 2),
         "ev": round(ev, 0),
         "evFormatted": f"+${ev:,.0f}" if ev > 0 else f"-${abs(ev):,.0f}",
         "confLow": round(conf_low, 0),
@@ -4896,7 +4948,14 @@ async def run_monte_carlo(simulations: int = 50000):
         "confHigh": round(conf_high, 0),
         "confHighFormatted": f"+${conf_high:,.0f}",
         "ruinProb": round(ruin_prob, 1),
-        "maxDrawdown": round(avg_max_dd, 1)
+        "maxDrawdown": round(avg_max_dd, 1),
+        "assumptions": {
+            "win_rate": f"{win_rate*100:.0f}%",
+            "avg_win": f"{avg_win_pct}%",
+            "avg_loss": f"{avg_loss_pct}%",
+            "position_size": f"{position_size_pct:.1f}%",
+            "trades_simulated": trades_to_simulate
+        }
     }
 
 

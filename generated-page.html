@@ -4223,21 +4223,34 @@ Esc    - Close Dialogs
         const btn = document.querySelector('[data-action="run-monte-carlo"]');
         
         if (statusEl) statusEl.textContent = 'RUNNING...';
-        if (btn) btn.disabled = true;
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'SIMULATING...';
+        }
         
         try {
-          const res = await fetch(`${API_BASE}/api/monte-carlo`, { method: 'POST' });
+          const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+          const sessionId = localStorage.getItem('bastion_session_id');
+          
+          const res = await fetch(`${API_BASE}/api/monte-carlo`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, session_id: sessionId })
+          });
           const data = await res.json();
           
           if (data.success) {
             renderMonteCarlo(data);
-            console.log('[MONTE CARLO] Completed:', data.simulations, 'simulations');
+            console.log('[MONTE CARLO] Completed:', data.simulations, 'sims | Capital:', data.starting_capital, '| Positions:', data.current_positions);
           }
         } catch (e) {
           console.error('[MONTE CARLO] Error:', e);
         } finally {
           if (statusEl) statusEl.textContent = 'COMPLETE';
-          if (btn) btn.disabled = false;
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'RUN 50,000 SIMS';
+          }
           setTimeout(() => {
             if (statusEl) statusEl.textContent = 'READY';
           }, 3000);
@@ -5511,18 +5524,40 @@ Esc    - Close Dialogs
     }
     
     // Update exchange indicator based on connected exchanges
-    function updateExchangeIndicator() {
+    async function updateExchangeIndicator() {
       const exchangeName = document.getElementById('connected-exchange-name');
-      const saved = localStorage.getItem('bastion_exchange_credentials');
       
+      // First check localStorage
+      const saved = localStorage.getItem('bastion_exchange_credentials');
       if (saved) {
         try {
           const exchanges = Object.keys(JSON.parse(saved));
           if (exchanges.length > 0) {
-            exchangeName.textContent = exchanges.map(e => e.toUpperCase()).join(' + ');
+            if (exchanges.length === 1) {
+              exchangeName.textContent = exchanges[0].toUpperCase();
+            } else {
+              exchangeName.textContent = 'MULTI-EXCHANGE';
+            }
             return;
           }
         } catch (e) {}
+      }
+      
+      // Also check the API for session-based connections
+      try {
+        const res = await fetch(`/api/exchange/list?${getAuthParams()}`);
+        const data = await res.json();
+        if (data.success && data.exchanges && data.exchanges.length > 0) {
+          const names = data.exchanges.map(e => e.exchange);
+          if (names.length === 1) {
+            exchangeName.textContent = names[0].toUpperCase();
+          } else {
+            exchangeName.textContent = 'MULTI-EXCHANGE';
+          }
+          return;
+        }
+      } catch (e) {
+        console.log('[EXCHANGE] Could not fetch exchange list:', e);
       }
       
       exchangeName.textContent = 'NO EXCHANGE';
