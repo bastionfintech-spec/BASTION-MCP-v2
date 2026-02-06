@@ -246,78 +246,137 @@ class BitunixClient(BaseExchangeClient):
     async def get_positions(self) -> List[Position]:
         """Fetch open positions from Bitunix Futures."""
         positions = []
+        
+        # Try multiple possible endpoint paths
+        possible_paths = [
+            "/api/v1/futures/position",
+            "/fapi/v1/positionRisk",
+            "/api/v1/position/list",
+            "/api/v1/account/positions",
+            "/api/v1/user/positions"
+        ]
+        
         try:
             async with httpx.AsyncClient() as client:
-                path = "/api/v1/futures/position"
-                headers = self._get_headers("GET", path)
-                
-                res = await client.get(
-                    f"{self.base_url}{path}",
-                    headers=headers,
-                    timeout=10.0
-                )
-                
-                logger.info(f"[BITUNIX] Positions response: {res.status_code}")
-                
-                if res.status_code == 200:
-                    data = res.json()
-                    logger.info(f"[BITUNIX] Positions data: {data}")
-                    
-                    # Handle different response formats
-                    pos_list = data.get("data", data.get("result", []))
-                    if isinstance(pos_list, dict):
-                        pos_list = pos_list.get("list", [pos_list])
-                    
-                    for pos in pos_list:
-                        try:
-                            # Get position amount - could be various field names
-                            size = float(pos.get("positionAmt", pos.get("qty", pos.get("size", pos.get("position", 0)))))
+                for path in possible_paths:
+                    try:
+                        headers = self._get_headers("GET", path)
+                        res = await client.get(
+                            f"{self.base_url}{path}",
+                            headers=headers,
+                            timeout=10.0
+                        )
+                        
+                        logger.info(f"[BITUNIX] Trying {path}: {res.status_code}")
+                        
+                        if res.status_code == 200:
+                            data = res.json()
+                            logger.info(f"[BITUNIX] Raw response from {path}: {json.dumps(data)[:500]}")
                             
-                            if size == 0:
-                                continue
+                            # Try to find positions in the response
+                            pos_list = self._extract_positions(data)
                             
-                            symbol = pos.get("symbol", pos.get("instId", ""))
-                            entry = float(pos.get("entryPrice", pos.get("avgPrice", pos.get("openAvgPrice", 0))))
-                            mark = float(pos.get("markPrice", pos.get("lastPrice", entry)))
-                            pnl = float(pos.get("unrealizedPnl", pos.get("unrealisedPnl", pos.get("unRealizedProfit", 0))))
-                            margin = float(pos.get("margin", pos.get("positionIM", pos.get("isolatedMargin", 0))))
-                            leverage = float(pos.get("leverage", 1))
-                            liq_price = float(pos.get("liquidationPrice", pos.get("liqPrice", 0))) or None
-                            
-                            # Determine direction
-                            side = pos.get("side", pos.get("positionSide", ""))
-                            if side:
-                                direction = "long" if side.lower() in ["long", "buy"] else "short"
-                            else:
-                                direction = "long" if size > 0 else "short"
-                            
-                            # Calculate PnL percentage
-                            pnl_pct = (pnl / margin * 100) if margin > 0 else 0
-                            
-                            positions.append(Position(
-                                id=f"bitunix_{symbol}_{direction}",
-                                symbol=symbol,
-                                direction=direction,
-                                entry_price=entry,
-                                current_price=mark,
-                                size=abs(size),
-                                size_usd=abs(size * mark),
-                                pnl=pnl,
-                                pnl_pct=pnl_pct,
-                                leverage=leverage,
-                                margin=margin,
-                                liquidation_price=liq_price,
-                                exchange=self.exchange_name,
-                                updated_at=datetime.now().isoformat()
-                            ))
-                            logger.info(f"[BITUNIX] Added position: {symbol} {direction} size={size}")
-                        except Exception as e:
-                            logger.error(f"[BITUNIX] Error parsing position: {e}, data: {pos}")
-                else:
-                    logger.warning(f"[BITUNIX] Failed to get positions: {res.text}")
+                            if pos_list:
+                                logger.info(f"[BITUNIX] Found {len(pos_list)} position entries")
+                                positions = self._parse_positions(pos_list)
+                                if positions:
+                                    logger.info(f"[BITUNIX] Parsed {len(positions)} positions")
+                                    break
+                        elif res.status_code == 401:
+                            logger.warning(f"[BITUNIX] Auth failed for {path}")
+                        else:
+                            logger.info(f"[BITUNIX] {path} returned {res.status_code}: {res.text[:200]}")
+                    except Exception as ep:
+                        logger.warning(f"[BITUNIX] Error trying {path}: {ep}")
+                        continue
                     
         except Exception as e:
-            logger.error(f"Bitunix get_positions error: {e}")
+            logger.error(f"[BITUNIX] get_positions error: {e}")
+        
+        return positions
+    
+    def _extract_positions(self, data: Any) -> List[Dict]:
+        """Extract position list from various response formats."""
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            # Try common keys
+            for key in ["data", "result", "positions", "list"]:
+                if key in data:
+                    val = data[key]
+                    if isinstance(val, list):
+                        return val
+                    if isinstance(val, dict):
+                        for subkey in ["list", "positions", "data"]:
+                            if subkey in val and isinstance(val[subkey], list):
+                                return val[subkey]
+        return []
+    
+    def _parse_positions(self, pos_list: List[Dict]) -> List[Position]:
+        """Parse position entries into Position objects."""
+        positions = []
+        
+        for pos in pos_list:
+            try:
+                # Log the raw position data
+                logger.info(f"[BITUNIX] Parsing position: {json.dumps(pos)[:300]}")
+                
+                # Get position amount - try many field names
+                size = 0
+                for size_key in ["positionAmt", "qty", "size", "position", "positionSize", "vol", "amount"]:
+                    if size_key in pos:
+                        size = float(pos[size_key])
+                        if size != 0:
+                            break
+                
+                if size == 0:
+                    logger.info(f"[BITUNIX] Skipping position with 0 size")
+                    continue
+                
+                # Get symbol
+                symbol = pos.get("symbol", pos.get("instId", pos.get("contractName", pos.get("pair", ""))))
+                
+                # Get prices
+                entry = float(pos.get("entryPrice", pos.get("avgPrice", pos.get("openAvgPrice", pos.get("avgOpenPrice", 0)))))
+                mark = float(pos.get("markPrice", pos.get("lastPrice", pos.get("currentPrice", entry))))
+                
+                # Get PnL
+                pnl = float(pos.get("unrealizedPnl", pos.get("unrealisedPnl", pos.get("unRealizedProfit", pos.get("profit", 0)))))
+                margin = float(pos.get("margin", pos.get("positionIM", pos.get("isolatedMargin", pos.get("im", abs(entry * abs(size) / 10))))))
+                leverage = float(pos.get("leverage", 1))
+                liq_price = float(pos.get("liquidationPrice", pos.get("liqPrice", pos.get("estLiqPrice", 0)))) or None
+                
+                # Determine direction
+                side = str(pos.get("side", pos.get("positionSide", pos.get("direction", "")))).lower()
+                if side in ["long", "buy", "1"]:
+                    direction = "long"
+                elif side in ["short", "sell", "2"]:
+                    direction = "short"
+                else:
+                    direction = "long" if size > 0 else "short"
+                
+                # Calculate PnL percentage
+                pnl_pct = (pnl / margin * 100) if margin > 0 else 0
+                
+                positions.append(Position(
+                    id=f"bitunix_{symbol}_{direction}",
+                    symbol=symbol,
+                    direction=direction,
+                    entry_price=entry,
+                    current_price=mark,
+                    size=abs(size),
+                    size_usd=abs(size * mark),
+                    pnl=pnl,
+                    pnl_pct=pnl_pct,
+                    leverage=leverage,
+                    margin=margin,
+                    liquidation_price=liq_price,
+                    exchange=self.exchange_name,
+                    updated_at=datetime.now().isoformat()
+                ))
+                logger.info(f"[BITUNIX] Added position: {symbol} {direction} size={abs(size)}")
+            except Exception as e:
+                logger.error(f"[BITUNIX] Error parsing position: {e}")
         
         return positions
     

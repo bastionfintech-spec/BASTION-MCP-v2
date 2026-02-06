@@ -226,6 +226,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files from web directory
+web_dir = bastion_path / "web"
+if web_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(web_dir)), name="static")
+    logger.info(f"Mounted static files from {web_dir}")
+else:
+    logger.warning(f"Web directory not found at {web_dir}")
+
 
 # =============================================================================
 # STATUS & HEALTH CHECK
@@ -312,6 +320,24 @@ async def serve_account():
     if account_path.exists():
         return FileResponse(account_path)
     return HTMLResponse("<h1>Account page not found</h1>")
+
+
+@app.get("/settings.js")
+async def serve_settings_js():
+    """Serve the settings.js file."""
+    js_path = bastion_path / "web" / "settings.js"
+    if js_path.exists():
+        return FileResponse(js_path, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="settings.js not found")
+
+
+@app.get("/volume-profile.js")
+async def serve_volume_profile_js():
+    """Serve the volume-profile.js file."""
+    js_path = bastion_path / "web" / "volume-profile.js"
+    if js_path.exists():
+        return FileResponse(js_path, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="volume-profile.js not found")
 
 
 # =============================================================================
