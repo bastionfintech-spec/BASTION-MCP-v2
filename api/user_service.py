@@ -169,15 +169,38 @@ class UserService:
             return
         
         url = os.getenv("SUPABASE_URL")
-        key = os.getenv("SUPABASE_KEY")
+        # Try service role key first (bypasses RLS), fall back to anon key
+        key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
         
         if not url or not key:
-            logger.warning("SUPABASE_URL or SUPABASE_KEY not set - using in-memory storage")
+            logger.warning("SUPABASE_URL or SUPABASE_KEY/SUPABASE_SERVICE_ROLE_KEY not set - using in-memory storage")
             return
         
         try:
             self.client = create_client(url, key)
             logger.info("[UserService] Connected to Supabase")
+            
+            # Test if we can actually insert (RLS check)
+            test_id = f"_rls_test_{secrets.token_urlsafe(4)}"
+            try:
+                self.client.table(self.users_table).insert({
+                    'id': test_id, 
+                    'email': f'{test_id}@test.internal',
+                    'password_hash': 'test',
+                    'display_name': 'RLS Test',
+                    'created_at': datetime.utcnow().isoformat()
+                }).execute()
+                # Clean up test row
+                self.client.table(self.users_table).delete().eq('id', test_id).execute()
+                logger.info("[UserService] Supabase RLS check passed - inserts allowed")
+            except Exception as rls_e:
+                if "row-level security" in str(rls_e).lower() or "42501" in str(rls_e):
+                    logger.error("[UserService] Supabase RLS is blocking inserts! Use service_role key or disable RLS.")
+                    logger.error("[UserService] Set SUPABASE_SERVICE_ROLE_KEY in your environment variables.")
+                    self.client = None  # Force in-memory fallback
+                else:
+                    logger.warning(f"[UserService] RLS test had unexpected error: {rls_e}")
+                    # Still try to use the connection
         except Exception as e:
             logger.error(f"[UserService] Supabase connection failed: {e}")
     
