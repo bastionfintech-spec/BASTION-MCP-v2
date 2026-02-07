@@ -5771,6 +5771,15 @@ Esc    - Close Dialogs
         
         if (data.success && data.loaded > 0) {
           console.log(`[CLOUD] Loaded ${data.loaded} exchanges from cloud:`, data.exchanges);
+          
+          // Save credentials to localStorage for auto-reconnect on future page loads
+          if (data.credentials) {
+            const existing = JSON.parse(localStorage.getItem('bastion_exchange_credentials') || '{}');
+            Object.assign(existing, data.credentials);
+            localStorage.setItem('bastion_exchange_credentials', JSON.stringify(existing));
+            console.log('[CLOUD] Saved cloud credentials to localStorage');
+          }
+          
           updateExchangeIndicator();
         }
       } catch (e) {

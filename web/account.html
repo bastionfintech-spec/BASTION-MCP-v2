@@ -3223,20 +3223,56 @@
         if (savedExchanges.length > 0) {
           console.log('[ACCOUNT] Found saved exchange credentials, auto-connecting...');
           await autoConnectExchanges();
-          return;
+        }
+        
+        // If logged in, also load from cloud (will merge with localStorage)
+        const token = getAuthToken();
+        if (token) {
+          try {
+            console.log('[ACCOUNT] Loading exchanges from cloud...');
+            const res = await fetch(`${API_BASE}/api/auth/load-exchanges`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            
+            if (data.success && data.loaded > 0) {
+              console.log(`[CLOUD] Loaded ${data.loaded} exchanges from cloud:`, data.exchanges);
+              
+              // Save credentials to localStorage for auto-reconnect
+              if (data.credentials) {
+                const existing = JSON.parse(localStorage.getItem(CREDS_STORAGE_KEY) || '{}');
+                Object.assign(existing, data.credentials);
+                localStorage.setItem(CREDS_STORAGE_KEY, JSON.stringify(existing));
+                console.log('[CLOUD] Saved cloud credentials to localStorage');
+                
+                // Add to connected exchanges UI if not already there
+                Object.keys(data.credentials).forEach(exchange => {
+                  if (!connectedExchanges.includes(exchange)) {
+                    addConnectedExchange(exchange);
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            console.log('[CLOUD] Could not load exchanges from cloud:', e);
+          }
         }
         
         // Fallback: try to load from API (for backward compatibility)
-        try {
-          const res = await fetch(`${API_BASE}/api/exchange/list?${getAuthParams()}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.exchanges && data.exchanges.length > 0) {
-              data.exchanges.forEach(e => addConnectedExchange(e.exchange));
+        if (savedExchanges.length === 0) {
+          try {
+            const res = await fetch(`${API_BASE}/api/exchange/list?${getAuthParams()}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.exchanges && data.exchanges.length > 0) {
+                data.exchanges.forEach(e => addConnectedExchange(e.exchange));
+              }
             }
+          } catch (e) {
+            console.log('[ACCOUNT] Could not load exchanges from API');
           }
-        } catch (e) {
-          console.log('[ACCOUNT] Could not load exchanges from API');
         }
       }
       

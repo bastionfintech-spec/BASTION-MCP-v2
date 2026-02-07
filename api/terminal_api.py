@@ -1340,7 +1340,21 @@ async def load_user_exchanges(data: dict):
         except Exception as e:
             logger.error(f"[EXCHANGE] Failed to load {exchange_name}: {e}")
     
-    return {"success": True, "loaded": loaded, "exchanges": list(user_exchanges[scope_id].keys())}
+    # Return exchange info for client to save to localStorage
+    exchange_info = {}
+    for name, data in user_exchanges[scope_id].items():
+        # Get the full credentials for localStorage sync (they need it for auto-reconnect)
+        keys = await user_service.get_exchange_keys(user.id, name)
+        if keys:
+            exchange_info[name] = {
+                "api_key": keys["api_key"],
+                "api_secret": keys["api_secret"],
+                "passphrase": keys.get("passphrase"),
+                "read_only": True,
+                "from_cloud": True
+            }
+    
+    return {"success": True, "loaded": loaded, "exchanges": list(user_exchanges[scope_id].keys()), "credentials": exchange_info}
 
 
 @app.delete("/api/auth/exchange-keys/{exchange}")
