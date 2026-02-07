@@ -1613,58 +1613,90 @@ async def delete_user_by_email(email: str):
 # CLOUD SYNC API
 # =============================================================================
 
-# In-memory storage for sync (replace with database in production)
-user_sync_data: Dict[str, Dict] = {}
-
 
 @app.post("/api/sync/upload")
 async def sync_upload(data: dict):
-    """Upload user settings to cloud."""
+    """Upload user settings to cloud (saves to database)."""
     token = data.get("token", "")
     settings = data.get("settings", {})
     
     if not token:
         return {"success": False, "error": "Token required"}
     
-    # Validate token and get user ID
-    user_id = token  # In production, validate token and get actual user ID
-    if user_service:
-        user = await user_service.validate_session(token)
-        if user:
-            user_id = user.id
+    if not user_service:
+        return {"success": False, "error": "User service unavailable"}
     
-    # Store settings
-    user_sync_data[user_id] = {
-        "settings": settings,
-        "updated_at": datetime.utcnow().isoformat()
-    }
+    # Validate token and get user
+    user = await user_service.validate_session(token)
+    if not user:
+        return {"success": False, "error": "Not authenticated"}
     
-    logger.info(f"[SYNC] Uploaded settings for user {user_id[:8]}...")
-    return {"success": True, "timestamp": datetime.utcnow().isoformat()}
+    # Save settings to user profile in database
+    try:
+        updates = {
+            "sync_settings": settings,
+            "sync_updated_at": datetime.utcnow().isoformat()
+        }
+        await user_service.update_user(user.id, updates)
+        logger.info(f"[SYNC] Uploaded settings for user {user.id[:8]}...")
+        return {"success": True, "timestamp": datetime.utcnow().isoformat()}
+    except Exception as e:
+        logger.error(f"[SYNC] Upload failed: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @app.get("/api/sync/download")
 async def sync_download(token: str):
-    """Download user settings from cloud."""
+    """Download user settings from cloud (fetches from database)."""
     if not token:
         return {"success": False, "error": "Token required"}
     
-    # Validate token and get user ID
-    user_id = token
-    if user_service:
-        user = await user_service.validate_session(token)
-        if user:
-            user_id = user.id
+    if not user_service:
+        return {"success": False, "error": "User service unavailable"}
     
-    # Get settings
-    if user_id in user_sync_data:
-        return {
-            "success": True,
-            "settings": user_sync_data[user_id]["settings"],
-            "timestamp": user_sync_data[user_id]["updated_at"]
-        }
+    # Validate token and get user
+    user = await user_service.validate_session(token)
+    if not user:
+        return {"success": False, "error": "Not authenticated"}
     
-    return {"success": False, "error": "No backup found"}
+    # Get settings from user profile
+    try:
+        user_data = user.to_dict()
+        sync_settings = user_data.get("sync_settings", {})
+        sync_timestamp = user_data.get("sync_updated_at", None)
+        
+        if sync_settings:
+            return {
+                "success": True,
+                "settings": sync_settings,
+                "timestamp": sync_timestamp
+            }
+        
+        # If no explicit sync_settings, build from profile fields
+        # This allows restoration of data that was saved to individual fields
+        profile_settings = {}
+        if user_data.get("corner_gif"):
+            profile_settings["corner_gif"] = user_data.get("corner_gif")
+        if user_data.get("corner_gif_settings"):
+            profile_settings["cornerGifSettings"] = user_data.get("corner_gif_settings")
+        if user_data.get("avatar"):
+            profile_settings["avatar"] = user_data.get("avatar")
+        if user_data.get("alert_types"):
+            profile_settings["alert_types"] = user_data.get("alert_types")
+        if user_data.get("totp_enabled"):
+            profile_settings["2fa_enabled"] = user_data.get("totp_enabled")
+        
+        if profile_settings:
+            return {
+                "success": True,
+                "settings": profile_settings,
+                "timestamp": user_data.get("updated_at")
+            }
+        
+        return {"success": False, "error": "No backup found"}
+    except Exception as e:
+        logger.error(f"[SYNC] Download failed: {e}")
+        return {"success": False, "error": str(e)}
 
 
 # =============================================================================

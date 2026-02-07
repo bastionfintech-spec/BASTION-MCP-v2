@@ -84,6 +84,12 @@ class User:
     # Personalization
     corner_gif: Optional[str] = None  # Base64 data URL
     corner_gif_settings: Optional[Dict] = None  # {position, size, opacity}
+    avatar: Optional[str] = None  # Base64 data URL for profile avatar
+    alert_types: Optional[Dict] = None  # Alert type preferences
+    
+    # Cloud sync
+    sync_settings: Optional[Dict] = None  # Full settings backup
+    sync_updated_at: Optional[str] = None  # Last sync timestamp
     
     def __post_init__(self):
         if self.trading_style is None:
@@ -144,6 +150,10 @@ class User:
             totp_secret=data.get('totp_secret'),
             corner_gif=data.get('corner_gif'),
             corner_gif_settings=data.get('corner_gif_settings'),
+            avatar=data.get('avatar'),
+            alert_types=data.get('alert_types'),
+            sync_settings=data.get('sync_settings'),
+            sync_updated_at=data.get('sync_updated_at'),
         )
 
 
@@ -459,7 +469,8 @@ class UserService:
             'discord_webhook', 'sound_alerts', 'whale_alerts', 'price_alerts', 'funding_alerts',
             'liquidation_alerts', 'iros_signals', 'position_alerts', 'oi_alerts', 'research_alerts',
             'totp_enabled', 'totp_secret',
-            'corner_gif', 'corner_gif_settings'
+            'corner_gif', 'corner_gif_settings', 'avatar', 'alert_types',
+            'sync_settings', 'sync_updated_at'
         }
         filtered = {k: v for k, v in updates.items() if k in allowed}
         
