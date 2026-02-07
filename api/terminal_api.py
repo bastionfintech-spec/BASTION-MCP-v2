@@ -1,7 +1,8 @@
 """
-BASTION Terminal API
-=====================
+BASTION Terminal API v2.1
+=========================
 Full API for the Trading Terminal - connects all IROS intelligence
+GIF/Avatar cloud sync, 2MB upload limit
 """
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
