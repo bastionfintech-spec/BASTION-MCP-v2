@@ -1069,7 +1069,7 @@
                           Remove
                         </button>
                       </div>
-                      <div class="text-[9px] text-zinc-500">Animated GIF only. Max 1MB. Shows in bottom-right corner.</div>
+                      <div class="text-[9px] text-zinc-500">Animated GIF only. Max 2MB. Shows in bottom-right corner.</div>
                       
                       <div class="flex items-center gap-4 mt-3">
                         <div>
@@ -2053,9 +2053,9 @@
         const file = event.target.files[0];
         if (!file) return;
         
-        // Check file size (500KB max for cloud sync)
-        if (file.size > 500 * 1024) {
-          showToast('File too large! Max 500KB allowed.', 'error');
+        // Check file size (2MB max for cloud sync)
+        if (file.size > 2 * 1024 * 1024) {
+          showToast('File too large! Max 2MB allowed.', 'error');
           return;
         }
         
@@ -2079,12 +2079,18 @@
           const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
           if (token) {
             try {
-              await fetch(`${API_BASE}/api/auth/profile`, {
+              const res = await fetch(`${API_BASE}/api/auth/profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, avatar_url: dataUrl })
+                body: JSON.stringify({ token, avatar: dataUrl })
               });
-              showToast('Avatar saved to cloud!', 'success');
+              const data = await res.json();
+              if (data.success) {
+                showToast('Avatar saved to cloud!', 'success');
+              } else {
+                console.error('[AVATAR] Cloud save failed:', data.error);
+                showToast('Avatar saved locally (cloud error)', 'warning');
+              }
             } catch (e) {
               console.error('[AVATAR] Cloud save failed:', e);
               showToast('Avatar saved locally', 'success');
@@ -2135,9 +2141,9 @@
         const file = event.target.files[0];
         if (!file) return;
         
-        // Check file size (500KB max for cloud sync)
-        if (file.size > 500 * 1024) {
-          showToast('File too large! Max 500KB for corner GIF.', 'error');
+        // Check file size (2MB max for cloud sync)
+        if (file.size > 2 * 1024 * 1024) {
+          showToast('File too large! Max 2MB for corner GIF.', 'error');
           return;
         }
         
@@ -2150,6 +2156,7 @@
         const reader = new FileReader();
         reader.onload = async (e) => {
           const dataUrl = e.target.result;
+          console.log('[GIF] Loaded GIF, size:', dataUrl.length, 'bytes');
           
           // Save to localStorage
           localStorage.setItem('cornerGif', dataUrl);
@@ -2161,8 +2168,9 @@
           // Also save to cloud if logged in
           const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
           if (token) {
+            showToast('Uploading GIF to cloud...', 'info');
             try {
-              await fetch(`${API_BASE}/api/auth/profile`, {
+              const res = await fetch(`${API_BASE}/api/auth/profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -2171,9 +2179,16 @@
                   corner_gif_settings: JSON.parse(localStorage.getItem('cornerGifSettings') || '{}')
                 })
               });
-              showToast('Corner GIF saved to cloud!', 'success');
+              const data = await res.json();
+              console.log('[GIF] Cloud save response:', data);
+              if (data.success) {
+                showToast('Corner GIF saved to cloud!', 'success');
+              } else {
+                console.error('[GIF] Cloud save error:', data.error || data);
+                showToast('Cloud save failed: ' + (data.error || 'Unknown error'), 'error');
+              }
             } catch (e) {
-              console.error('[GIF] Cloud save failed:', e);
+              console.error('[GIF] Cloud save exception:', e);
               showToast('Corner GIF saved locally (cloud sync failed)', 'warning');
             }
           } else {
@@ -2314,15 +2329,18 @@
               document.getElementById('profile-currency').value = user.currency;
             }
             
-            // Update avatar if exists
-            if (user.avatar_url) {
+            // Update avatar if exists (check both avatar and avatar_url)
+            if (user.avatar) {
+              localStorage.setItem('userAvatar', user.avatar);
+              console.log('[PROFILE] Loaded avatar from cloud');
+            } else if (user.avatar_url) {
               localStorage.setItem('userAvatar', user.avatar_url);
             }
             
             // Update corner GIF if exists
             if (user.corner_gif) {
               localStorage.setItem('cornerGif', user.corner_gif);
-              console.log('[PROFILE] Loaded corner GIF from cloud');
+              console.log('[PROFILE] Loaded corner GIF from cloud, size:', user.corner_gif.length);
             }
             if (user.corner_gif_settings) {
               localStorage.setItem('cornerGifSettings', JSON.stringify(user.corner_gif_settings));

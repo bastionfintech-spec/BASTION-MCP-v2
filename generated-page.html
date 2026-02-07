@@ -5671,6 +5671,33 @@ Esc    - Close Dialogs
               userStatus.classList.add('text-green-500');
             }
             
+            // Load avatar from cloud if available
+            if (data.user.avatar) {
+              localStorage.setItem('userAvatar', data.user.avatar);
+              if (avatarImg) {
+                avatarImg.src = data.user.avatar;
+                avatarImg.classList.remove('hidden');
+                if (avatarLetter) avatarLetter.classList.add('hidden');
+              }
+            }
+            
+            // Load corner GIF from cloud if available
+            if (data.user.corner_gif) {
+              localStorage.setItem('cornerGif', data.user.corner_gif);
+              if (headerGifMini && headerGifImg) {
+                headerGifImg.src = data.user.corner_gif;
+                headerGifMini.classList.remove('hidden');
+              }
+              // Apply the corner GIF to the terminal
+              loadCornerGif();
+            }
+            
+            // Load corner GIF settings from cloud
+            if (data.user.corner_gif_settings) {
+              localStorage.setItem('cornerGifSettings', JSON.stringify(data.user.corner_gif_settings));
+              loadCornerGif();
+            }
+            
             // Update connected exchange indicator
             updateExchangeIndicator();
             
