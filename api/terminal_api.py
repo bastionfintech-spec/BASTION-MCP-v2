@@ -654,18 +654,21 @@ async def connect_exchange(data: dict):
     
     logger.info(f"[EXCHANGE] Connected {exchange} for scope {scope_id[:12]}...")
     
-    # Increment Bastion global stats
+    # Increment Bastion global stats (CUMULATIVE - adds every connection, even reconnections)
     try:
         await increment_exchanges_connected()
         
-        # Try to get balance and add to total managed
+        # Add user's equity to total managed - ALWAYS adds, even same user reconnecting
+        # This tracks total volume managed through Bastion over time
         if scope_id in user_contexts:
             try:
                 balance = await user_contexts[scope_id].get_total_balance()
-                total_usd = balance.get("total_equity", 0)  # Fixed: was "total_usd"
+                total_usd = balance.get("total_equity", 0)
                 if total_usd > 0:
                     await increment_portfolio_managed(total_usd)
-                    logger.info(f"[STATS] Added ${total_usd:,.0f} to total portfolio managed")
+                    logger.info(f"[STATS] ✓ Added ${total_usd:,.2f} to total portfolio managed (cumulative)")
+                else:
+                    logger.warning(f"[STATS] Balance returned 0 for {exchange}")
             except Exception as e:
                 logger.error(f"[STATS] Failed to get balance for portfolio tracking: {e}")
     except Exception as e:
@@ -3908,9 +3911,15 @@ async def increment_positions_analyzed(count: int = 1):
     await save_bastion_stats()
 
 async def increment_portfolio_managed(amount_usd: float):
-    """Add to total portfolio managed (cumulative - only goes up)."""
+    """
+    Add to total portfolio managed (CUMULATIVE).
+    Every connection adds to the total, even if same user reconnects.
+    This tracks total capital that has touched Bastion over time.
+    """
     if amount_usd > 0:
+        old_total = bastion_stats["total_portfolio_managed_usd"]
         bastion_stats["total_portfolio_managed_usd"] += amount_usd
+        logger.info(f"[STATS] Portfolio managed: ${old_total:,.2f} + ${amount_usd:,.2f} = ${bastion_stats['total_portfolio_managed_usd']:,.2f}")
         await save_bastion_stats()
 
 async def increment_exchanges_connected():
