@@ -662,12 +662,12 @@ async def connect_exchange(data: dict):
         if scope_id in user_contexts:
             try:
                 balance = await user_contexts[scope_id].get_total_balance()
-                total_usd = balance.get("total_usd", 0)
+                total_usd = balance.get("total_equity", 0)  # Fixed: was "total_usd"
                 if total_usd > 0:
                     await increment_portfolio_managed(total_usd)
-                    logger.info(f"[STATS] Added ${total_usd:,.0f} to total managed")
-            except:
-                pass
+                    logger.info(f"[STATS] Added ${total_usd:,.0f} to total portfolio managed")
+            except Exception as e:
+                logger.error(f"[STATS] Failed to get balance for portfolio tracking: {e}")
     except Exception as e:
         logger.warning(f"[STATS] Could not update stats: {e}")
     
