@@ -4397,47 +4397,74 @@ async def neural_chat(request: Dict[str, Any]):
     
     if model_url:
         try:
-            system_prompt = f"""You are BASTION, an institutional crypto analyst.
+            system_prompt = f"""You are BASTION — an institutional-grade crypto trading AI built for a $500M+ hedge fund. You have access to premium data: Helsinki VM (33 real-time quant endpoints), Coinglass Premium ($299/mo — liquidations, OI, funding, L/S ratios), and Whale Alert Premium ($30/mo — on-chain whale tracking).
 
-### CRITICAL RULES - FOLLOW EXACTLY ###
-1. USE ONLY the verified data provided below
-2. If price shows "UNAVAILABLE", say "Price data currently unavailable"
-3. NEVER invent, guess, or hallucinate prices or metrics
-4. NO EMOJIS in your response
-5. The price in VERIFIED DATA is the ONLY correct price
+RULES — FOLLOW WITHOUT EXCEPTION:
+1. USE ONLY the verified data below. NEVER invent prices, volumes, or statistics.
+2. If data shows "UNAVAILABLE", state that clearly. DO NOT GUESS.
+3. No emojis. No filler. Every sentence must add value.
+4. Be precise, quantified, and actionable. Use exact numbers from the data.
+5. Reject bad setups with clear reasoning — "no trade" is a valid answer.
 
-### VERIFIED {symbol} DATA (LIVE - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC) ###
+RESPONSE STRUCTURE — Use this EXACT format:
+
+## Market Structure
+State the current trend direction, key levels, and where price sits relative to structure. Reference the verified price.
+
+## Key Levels
+| Level | Price | Type | Significance |
+|-------|-------|------|-------------|
+List the most important support/resistance levels with grades.
+
+## Reasoning
+Walk through your analysis step by step. Explain WHY you reach each conclusion. Reference specific data points (funding rate, whale positioning, OI, CVD, liquidation clusters). The user must understand your logic with zero ambiguity.
+
+## Trade Setup
+If a setup exists:
+- BULLISH: Entry $X → T1 $X → T2 $X → Stop $X → R:R X:1
+- BEARISH: Entry $X → T1 $X → Stop $X → R:R X:1
+If no setup exists, state "NO VALID SETUP" and explain why.
+
+## Position Sizing
+- Risk: 2% of stated capital (or $10,000 default)
+- Size = (Capital x 0.02) / |Entry - Stop|
+- Show the math.
+
+## Verdict
+One clear line: Bias (BULLISH/BEARISH/NEUTRAL) | Confidence: X% | Action: specific instruction
+
+---
+
+VERIFIED {symbol} DATA (LIVE — {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC):
 {price_line}
 {whale_line}
-{position_context if position_context else ''}
-### END VERIFIED DATA ###
-
-Your response MUST reference the EXACT price shown above. Any other price is WRONG."""
+{position_context if position_context else '(No positions connected)'}
+---"""
 
             async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=30.0)) as client:
                 model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
                 headers = {"Content-Type": "application/json"}
                 if model_api_key:
                     headers["Authorization"] = f"Bearer {model_api_key}"
-                
+
                 resp = await client.post(
                     f"{model_url}/v1/chat/completions",
                     headers=headers,
                     json={
-                        "model": "iros",
+                        "model": "bastion-32b",
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": query}
                         ],
-                        "max_tokens": 1000,
-                        "temperature": 0.7
+                        "max_tokens": 1500,
+                        "temperature": 0.6
                     }
                 )
                 
                 if resp.status_code == 200:
                     result = resp.json()
                     response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-                    data_sources.append("IROS-32B")
+                    data_sources.append("BASTION-32B")
                 else:
                     response = f"Model error: {resp.status_code}"
                     
@@ -4468,6 +4495,405 @@ Set BASTION_MODEL_URL to enable AI analysis."""
         "data_sources": data_sources,
         "verified_data": {"price_line": price_line, "whale_line": whale_line}
     }
+
+
+# =============================================================================
+# RISK INTELLIGENCE API (BASTION Autonomous Trade Management)
+# =============================================================================
+
+@app.post("/api/risk/evaluate")
+async def risk_evaluate(request: Dict[str, Any]):
+    """
+    BASTION Risk Intelligence - Autonomous position evaluation.
+
+    Combines live data from Helsinki + Coinglass + Whale Alert
+    to make MCF-based exit/hold/adjust decisions.
+
+    Request body:
+    {
+        "position": {
+            "symbol": "BTC",
+            "direction": "LONG",
+            "entry_price": 94000,
+            "current_price": 95500,
+            "stop_loss": 93000,
+            "take_profits": [96500, 98000, 100000],
+            "position_size": 0.5,
+            "leverage": 10,
+            "guarding_line": 94800,
+            "trailing_stop": null,
+            "r_multiple": 1.5,
+            "duration_hours": 4
+        }
+    }
+    """
+    position = request.get("position", {})
+    if not position:
+        raise HTTPException(status_code=400, detail="Position data required")
+
+    symbol = position.get("symbol", "BTC").upper()
+    direction = position.get("direction", "LONG").upper()
+    entry = position.get("entry_price", 0)
+    current = position.get("current_price", 0)
+    stop_loss = position.get("stop_loss", 0)
+    take_profits = position.get("take_profits", [])
+    guarding_line = position.get("guarding_line")
+    trailing_stop = position.get("trailing_stop")
+    r_multiple = position.get("r_multiple", 0)
+    size = position.get("position_size", 0)
+    leverage = position.get("leverage", 1)
+    duration_hours = position.get("duration_hours", 0)
+
+    # ── Fetch live market data from ALL sources ──
+    data_sources = []
+    live_data = {}
+
+    try:
+        init_clients()
+        fetch_tasks = []
+
+        # Coinglass: Price, OI, Funding, Whale positions, Liquidations
+        if coinglass:
+            fetch_tasks.append(("coinglass_markets", coinglass.get_coins_markets()))
+            fetch_tasks.append(("coinglass_whales", coinglass.get_hyperliquid_whale_positions(symbol)))
+            fetch_tasks.append(("coinglass_funding", coinglass.get_funding_rates(symbol)))
+            fetch_tasks.append(("coinglass_oi", coinglass.get_open_interest(symbol)))
+
+        # Helsinki: CVD, Volatility, Liquidation estimates, Momentum, Smart Money
+        if helsinki:
+            fetch_tasks.append(("helsinki_cvd", helsinki.fetch_endpoint(f"/quant/cvd/{symbol}")))
+            fetch_tasks.append(("helsinki_vol", helsinki.fetch_endpoint(f"/quant/volatility/{symbol}")))
+            fetch_tasks.append(("helsinki_liq", helsinki.fetch_endpoint(f"/quant/liquidation-estimate/{symbol}")))
+            fetch_tasks.append(("helsinki_momentum", helsinki.fetch_endpoint(f"/quant/momentum/{symbol}")))
+            fetch_tasks.append(("helsinki_smart", helsinki.fetch_endpoint(f"/quant/smart-money/{symbol}")))
+            fetch_tasks.append(("helsinki_orderbook", helsinki.fetch_endpoint(f"/quant/orderbook/{symbol}")))
+            fetch_tasks.append(("helsinki_vwap", helsinki.fetch_endpoint(f"/quant/vwap/{symbol}")))
+
+        # Whale Alert: Recent large transactions
+        if whale_alert:
+            fetch_tasks.append(("whale_txs", whale_alert.get_recent_transactions(symbol)))
+
+        # Execute all fetches in parallel
+        task_names = [t[0] for t in fetch_tasks]
+        task_coros = [t[1] for t in fetch_tasks]
+        results = await asyncio.gather(*task_coros, return_exceptions=True)
+
+        for name, result in zip(task_names, results):
+            if not isinstance(result, Exception):
+                if hasattr(result, 'data') and result.data:
+                    live_data[name] = result.data
+                    data_sources.append(name)
+                elif isinstance(result, dict) and result.get("data"):
+                    live_data[name] = result["data"]
+                    data_sources.append(name)
+                elif isinstance(result, dict):
+                    live_data[name] = result
+                    data_sources.append(name)
+            else:
+                logger.warning(f"[RISK] Failed to fetch {name}: {result}")
+
+    except Exception as e:
+        logger.error(f"[RISK] Data fetch error: {e}")
+
+    # ── Build data-aware context string ──
+    context_lines = []
+
+    # Price from Coinglass
+    if live_data.get("coinglass_markets"):
+        for coin in live_data["coinglass_markets"]:
+            if isinstance(coin, dict) and coin.get("symbol", "").upper() == symbol:
+                price = coin.get("price", 0)
+                change_24h = coin.get("priceChangePercent24h", 0) or 0
+                oi = coin.get("openInterest", 0) or 0
+                context_lines.append(f"LIVE PRICE: ${price:,.2f} (24h: {change_24h:+.2f}%)")
+                if oi: context_lines.append(f"OPEN INTEREST: ${oi/1e9:.2f}B")
+                break
+
+    # Funding rate
+    if live_data.get("coinglass_funding"):
+        funding_data = live_data["coinglass_funding"]
+        rates = []
+        if isinstance(funding_data, dict):
+            for margin_list in ["usdtOrUsdMarginList", "tokenMarginList"]:
+                for item in funding_data.get(margin_list, []):
+                    rate = item.get("rate", 0) or item.get("fundingRate", 0)
+                    if rate: rates.append(rate)
+        if rates:
+            avg_rate = sum(rates) / len(rates)
+            context_lines.append(f"FUNDING RATE: {avg_rate*100:.4f}% ({'Longs paying' if avg_rate > 0 else 'Shorts paying'})")
+
+    # Whale positions
+    if live_data.get("coinglass_whales"):
+        positions = live_data["coinglass_whales"]
+        if isinstance(positions, list):
+            sym_pos = [p for p in positions if isinstance(p, dict) and p.get("symbol", "").upper() == symbol]
+            if sym_pos:
+                longs = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) > 0)
+                shorts = sum(abs(p.get("positionValueUsd", 0)) for p in sym_pos if p.get("positionSize", 0) < 0)
+                context_lines.append(f"WHALE POSITIONS: Longs ${longs/1e6:.1f}M | Shorts ${shorts/1e6:.1f}M | Bias: {'LONG' if longs > shorts else 'SHORT'}")
+
+    # CVD
+    if live_data.get("helsinki_cvd"):
+        cvd = live_data["helsinki_cvd"]
+        if isinstance(cvd, dict):
+            cvd_1h = cvd.get("cvd_1h", "N/A")
+            divergence = cvd.get("divergence", "NONE")
+            context_lines.append(f"CVD 1H: {cvd_1h} | Divergence: {divergence}")
+
+    # Volatility
+    if live_data.get("helsinki_vol"):
+        vol = live_data["helsinki_vol"]
+        if isinstance(vol, dict):
+            regime = vol.get("current_regime", vol.get("regime", "N/A"))
+            percentile = vol.get("volatility_percentile", vol.get("percentile", "N/A"))
+            atr = vol.get("atr_14", vol.get("atr", "N/A"))
+            context_lines.append(f"VOLATILITY: Regime={regime} | Percentile={percentile} | ATR(14)={atr}")
+
+    # Liquidation estimates
+    if live_data.get("helsinki_liq"):
+        liq = live_data["helsinki_liq"]
+        if isinstance(liq, dict):
+            cascade_bias = liq.get("cascade_bias", "N/A")
+            context_lines.append(f"LIQUIDATION CASCADE BIAS: {cascade_bias}")
+            for zone_type in ["downside_liquidation_zones", "upside_liquidation_zones"]:
+                zones = liq.get(zone_type, [])
+                if zones and isinstance(zones, list):
+                    direction_label = "DOWNSIDE" if "downside" in zone_type else "UPSIDE"
+                    for z in zones[:2]:
+                        if isinstance(z, dict):
+                            zprice = z.get("price", 0)
+                            zdist = z.get("distance_pct", 0)
+                            zrisk = z.get("estimated_usd_at_risk", 0)
+                            context_lines.append(f"  {direction_label} CLUSTER: ${zprice:,.0f} ({zdist:+.1f}%) - ${zrisk/1e6:.0f}M at risk")
+
+    # Smart money
+    if live_data.get("helsinki_smart"):
+        sm = live_data["helsinki_smart"]
+        if isinstance(sm, dict):
+            signal = sm.get("signal", sm.get("smart_money_signal", "N/A"))
+            context_lines.append(f"SMART MONEY: {signal}")
+
+    # Momentum
+    if live_data.get("helsinki_momentum"):
+        mom = live_data["helsinki_momentum"]
+        if isinstance(mom, dict):
+            score = mom.get("score", mom.get("momentum_score", "N/A"))
+            rsi = mom.get("rsi_14", mom.get("rsi", "N/A"))
+            context_lines.append(f"MOMENTUM: Score={score} | RSI(14)={rsi}")
+
+    # Orderbook
+    if live_data.get("helsinki_orderbook"):
+        ob = live_data["helsinki_orderbook"]
+        if isinstance(ob, dict):
+            imbalance = ob.get("imbalance", ob.get("bid_ask_imbalance", "N/A"))
+            pressure = ob.get("pressure", ob.get("buying_pressure", "N/A"))
+            context_lines.append(f"ORDERBOOK: Imbalance={imbalance} | Pressure={pressure}")
+
+    # Whale Alert transactions
+    if live_data.get("whale_txs"):
+        txs = live_data["whale_txs"]
+        if isinstance(txs, list) and txs:
+            context_lines.append(f"WHALE TRANSACTIONS: {len(txs)} recent large transfers")
+            for tx in txs[:3]:
+                if isinstance(tx, dict):
+                    amount_usd = tx.get("amount_usd", 0)
+                    from_type = tx.get("from_owner_type", tx.get("from", {}).get("owner_type", "unknown"))
+                    to_type = tx.get("to_owner_type", tx.get("to", {}).get("owner_type", "unknown"))
+                    context_lines.append(f"  ${amount_usd/1e6:.1f}M: {from_type} -> {to_type}")
+
+    live_context = "\n".join(context_lines) if context_lines else "LIVE DATA UNAVAILABLE"
+
+    # ── Build position state string ──
+    position_state = f"""POSITION STATE:
+- Asset: {symbol}/USDT
+- Direction: {direction}
+- Entry: ${entry:,.2f}
+- Current Price: ${current:,.2f}
+- P&L: {r_multiple:+.1f}R
+- Stop Loss: ${stop_loss:,.2f}"""
+
+    if guarding_line:
+        position_state += f"\n- Guarding Line: ${guarding_line:,.2f}"
+    if trailing_stop:
+        position_state += f"\n- Trailing Stop: ${trailing_stop:,.2f}"
+    if take_profits:
+        for i, tp in enumerate(take_profits):
+            position_state += f"\n- TP{i+1}: ${tp:,.2f}"
+    if size:
+        position_state += f"\n- Position Size: {size} {symbol}"
+    if leverage > 1:
+        position_state += f"\n- Leverage: {leverage}x"
+    if duration_hours:
+        position_state += f"\n- Duration: {duration_hours}h"
+
+    # ── Build Risk Intelligence system prompt ──
+    system_prompt = f"""You are BASTION Risk Intelligence — an autonomous trade management AI for institutional crypto trading. You monitor live positions and make execution decisions using the MCF (Market Context Framework) exit hierarchy.
+
+MCF EXIT HIERARCHY (check in this EXACT order — first trigger wins):
+1) HARD STOP — Maximum loss threshold. NON-NEGOTIABLE. Exit 100% immediately. No exceptions.
+2) SAFETY NET BREAK — Long-term structural support/resistance violated. Exit 100% immediately.
+3) GUARDING LINE BREAK — Dynamic trailing structure broken. Exit 50-75% of position.
+4) TAKE PROFIT TARGETS — T1: Exit 30-50%. T2: Exit 30-40% of remaining. T3: Let runners ride.
+5) TRAILING STOP — ATR-based dynamic stop adjustment. Exit remaining position if hit.
+6) TIME EXIT — Max holding period exceeded with no progress. Exit 50% gradually.
+
+CORE PHILOSOPHY: Exit on STRUCTURE BREAKS, not arbitrary price targets. Let winners run when structure holds. The market tells you when a trade is over — listen to structure, not emotions.
+
+CRITICAL REASONING RULES:
+- Every recommendation MUST explain the specific data that drives the decision
+- Reference exact numbers: funding rates, liquidation cluster sizes, CVD readings, ATR values
+- Explain what WOULD change the recommendation (invalidation conditions)
+- If multiple signals conflict, state the conflict and explain which signal takes priority and WHY
+- Confidence score must reflect uncertainty honestly — 0.5 means genuinely uncertain, 0.9+ means overwhelming evidence
+
+LIVE MARKET DATA ({datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC):
+{live_context}
+
+RESPOND WITH ONLY A JSON CODE BLOCK. No text before or after the code block.
+
+```json
+{{
+  "action": "HOLD|TP_PARTIAL|TP_FULL|MOVE_STOP_TO_BREAKEVEN|TRAIL_STOP|EXIT_FULL|REDUCE_SIZE|ADJUST_STOP|EXIT_100_PERCENT_IMMEDIATELY",
+  "urgency": "LOW|MEDIUM|HIGH|CRITICAL",
+  "reason": "One clear sentence explaining what is happening and what you are doing about it",
+  "reasoning": {{
+    "market_analysis": "What the live data is telling you — reference specific numbers from the data above. Funding rate, whale positioning, liquidation clusters, CVD, momentum. Connect each data point to what it means for this position.",
+    "structure_assessment": "Is the trend intact? Are key levels holding? Has support/resistance been broken or is it being tested? What does the price action structure look like on 15m and 1H?",
+    "risk_calculation": "Current P&L in R-multiples. Distance to stop in ATR units. Slippage risk. What happens if the worst case plays out — exact dollar impact.",
+    "decision_logic": "Walk through the MCF hierarchy. Which level triggered? Why this action over alternatives? What would you do differently if one data point changed?"
+  }},
+  "execution": {{
+    "primary_action": "Exact order to place — order type, size, price",
+    "stop_adjustment": "New stop level if applicable, or 'KEEP CURRENT' with reason",
+    "do_NOT": "What the user must NOT do — common mistakes for this scenario",
+    "monitor": "Specific conditions to watch for — what triggers the next evaluation"
+  }},
+  "confidence": 0.0-1.0
+}}
+```"""
+
+    # ── Call the model ──
+    model_url = os.getenv("BASTION_MODEL_URL")
+    risk_response = None
+
+    user_message = f"""{position_state}
+
+MARKET CONTEXT:
+{live_context}
+
+DECISION REQUIRED: Evaluate this {direction} position using MCF exit hierarchy and all available live data. What action should be taken?"""
+
+    if model_url:
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=30.0)) as client:
+                model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
+                headers = {"Content-Type": "application/json"}
+                if model_api_key:
+                    headers["Authorization"] = f"Bearer {model_api_key}"
+
+                resp = await client.post(
+                    f"{model_url}/v1/chat/completions",
+                    headers=headers,
+                    json={
+                        "model": "bastion-32b",
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_message}
+                        ],
+                        "max_tokens": 800,
+                        "temperature": 0.3
+                    }
+                )
+
+                if resp.status_code == 200:
+                    result = resp.json()
+                    risk_response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    data_sources.append("BASTION-32B")
+                else:
+                    logger.error(f"[RISK] Model error: {resp.status_code} - {resp.text[:200]}")
+
+        except Exception as e:
+            logger.error(f"[RISK] Model call failed: {e}")
+
+    # ── Parse JSON from model response ──
+    parsed_action = None
+    if risk_response:
+        try:
+            import re
+            json_match = re.search(r'```json\s*(.*?)\s*```', risk_response, re.DOTALL)
+            if json_match:
+                parsed_action = json.loads(json_match.group(1))
+            else:
+                # Try direct JSON parse
+                parsed_action = json.loads(risk_response)
+        except (json.JSONDecodeError, AttributeError):
+            logger.warning(f"[RISK] Could not parse JSON from response")
+
+    logger.info(f"[RISK] Evaluated {symbol} {direction} position: {parsed_action.get('action', 'UNKNOWN') if parsed_action else 'NO_RESPONSE'}")
+
+    return {
+        "success": True,
+        "evaluation": parsed_action,
+        "raw_response": risk_response,
+        "position": position,
+        "live_data_summary": live_context,
+        "data_sources": data_sources,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+@app.post("/api/risk/evaluate-all")
+async def risk_evaluate_all():
+    """
+    Evaluate ALL open positions using BASTION Risk Intelligence.
+    Fetches positions from connected exchanges and evaluates each.
+    """
+    try:
+        positions = await user_context.get_all_positions()
+        if not positions:
+            return {
+                "success": True,
+                "evaluations": [],
+                "message": "No open positions found"
+            }
+
+        evaluations = []
+        for pos in positions:
+            try:
+                eval_request = {
+                    "position": {
+                        "symbol": pos.symbol,
+                        "direction": pos.direction,
+                        "entry_price": pos.entry_price,
+                        "current_price": pos.current_price,
+                        "stop_loss": getattr(pos, 'stop_loss', 0),
+                        "take_profits": getattr(pos, 'take_profits', []),
+                        "position_size": getattr(pos, 'size', 0),
+                        "leverage": getattr(pos, 'leverage', 1),
+                        "r_multiple": getattr(pos, 'r_multiple', 0),
+                    }
+                }
+                result = await risk_evaluate(eval_request)
+                evaluations.append(result)
+            except Exception as e:
+                evaluations.append({
+                    "success": False,
+                    "symbol": pos.symbol,
+                    "error": str(e)
+                })
+
+        return {
+            "success": True,
+            "evaluations": evaluations,
+            "total_positions": len(positions),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"[RISK] Evaluate-all failed: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 
 # =============================================================================
