@@ -164,7 +164,7 @@ class ReportStorage:
                 "summary": r.summary,
                 "bias": r.bias.value,
                 "confidence": r.confidence.value,
-                "generated_at": r.generated_at.isoformat(),
+                "generated_at": r.generated_at.isoformat() + ("Z" if not r.generated_at.tzinfo else ""),
                 "time_ago": self._time_ago(r.generated_at),
                 "tags": r.tags,
             })

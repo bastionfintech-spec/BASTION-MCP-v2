@@ -5426,19 +5426,22 @@ async def generate_mcf_report(
             return {"success": False, "error": f"Unknown report type: {report_type}"}
         
         if report:
-            # Save report if storage is available
+            # Save to hybrid storage (filesystem + Supabase for all users)
+            saved = False
             if _mcf_storage:
                 try:
-                    from mcf_labs.scheduler import ReportScheduler
-                    scheduler = ReportScheduler(_mcf_generator)
-                    await scheduler.save_report(report)
+                    saved = _mcf_storage.save_report(report)
+                    if saved:
+                        logger.info(f"[MCF] Report saved: {report.id} (Supabase: {getattr(_mcf_storage, 'supabase_available', False)})")
                 except Exception as e:
-                    logger.warning(f"[MCF] Could not save report: {e}")
-            
+                    logger.warning(f"[MCF] Could not save report {report.id}: {e}")
+
             return {
                 "success": True,
                 "report": report.to_dict(),
-                "message": f"Generated {report_type} report for {symbol}"
+                "message": f"Generated {report_type} report for {symbol}",
+                "saved": saved,
+                "synced_to_cloud": getattr(_mcf_storage, 'supabase_available', False),
             }
         
         return {"success": False, "error": "Report generation failed"}
@@ -5519,6 +5522,7 @@ async def generate_institutional_report(symbol: str = "BTC"):
         if report and _mcf_storage:
             try:
                 _mcf_storage.save_report(report)
+                logger.info(f"[MCF] Institutional report saved: {report.id} (Supabase: {getattr(_mcf_storage, 'supabase_available', False)})")
             except Exception as e:
                 logger.warning(f"[MCF] Could not save institutional report: {e}")
 
@@ -5527,6 +5531,7 @@ async def generate_institutional_report(symbol: str = "BTC"):
                 "success": True,
                 "report": report.to_dict(),
                 "message": f"Generated institutional report for {symbol}",
+                "synced_to_cloud": getattr(_mcf_storage, 'supabase_available', False),
             }
 
         return {"success": False, "error": "Report generation failed"}

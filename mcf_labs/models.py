@@ -47,11 +47,15 @@ class Report:
     views: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
+        # Always serialize generated_at with Z suffix so JS treats it as UTC
+        ts = self.generated_at.isoformat()
+        if not ts.endswith("Z") and "+" not in ts:
+            ts += "Z"
         return {
             "id": self.id,
             "type": self.type.value,
             "title": self.title,
-            "generated_at": self.generated_at.isoformat(),
+            "generated_at": ts,
             "bias": self.bias.value,
             "confidence": self.confidence.value,
             "summary": self.summary,
@@ -70,7 +74,7 @@ class Report:
             id=data["id"],
             type=ReportType(data["type"]),
             title=data["title"],
-            generated_at=datetime.fromisoformat(data["generated_at"]),
+            generated_at=datetime.fromisoformat(data["generated_at"].replace("Z", "+00:00") if data["generated_at"].endswith("Z") else data["generated_at"]),
             bias=Bias(data["bias"]),
             confidence=Confidence(data["confidence"]),
             summary=data["summary"],
