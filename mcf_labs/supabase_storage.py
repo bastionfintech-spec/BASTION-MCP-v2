@@ -61,6 +61,23 @@ class SupabaseStorage:
             return False
         
         try:
+            # Extract symbol from report ID (e.g., "MS-BTC-20260206-00" -> "BTC")
+            symbol = ""
+            try:
+                parts = report.id.split("-")
+                if len(parts) >= 2:
+                    symbol = parts[1]
+            except:
+                pass
+
+            # Handle scenarios if present (some reports have trade_scenario in sections)
+            scenarios = []
+            if hasattr(report, 'scenarios') and report.scenarios:
+                scenarios = [s.__dict__ if hasattr(s, '__dict__') else s for s in report.scenarios]
+            elif "trade_scenario" in report.sections:
+                ts = report.sections["trade_scenario"]
+                scenarios = [ts] if isinstance(ts, dict) else []
+
             data = {
                 "id": report.id,
                 "type": report.type.value,
@@ -68,11 +85,11 @@ class SupabaseStorage:
                 "summary": report.summary,
                 "bias": report.bias.value,
                 "confidence": report.confidence.value,
-                "symbol": report.symbol,
+                "symbol": symbol,
                 "generated_at": report.generated_at.isoformat(),
-                "tags": report.tags,
+                "tags": json.dumps(report.tags) if isinstance(report.tags, list) else report.tags,
                 "sections": report.sections,
-                "scenarios": [s.__dict__ if hasattr(s, '__dict__') else s for s in report.scenarios] if report.scenarios else [],
+                "scenarios": scenarios,
                 "full_content": json.dumps(report.to_dict())
             }
             
