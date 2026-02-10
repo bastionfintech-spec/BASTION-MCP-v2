@@ -5563,11 +5563,13 @@ Esc    - Close Dialogs
                   api_key: creds.apiKey,
                   api_secret: creds.apiSecret,
                   passphrase: creds.passphrase || '',
-                  read_only: creds.readOnly !== false
+                  read_only: creds.readOnly !== false,
+                  token: getAuthToken(),
+                  session_id: getSessionId()
                 };
-                
-                console.log(`[POSITIONS] Auto-connecting ${exchange}...`);
-                const res = await fetch('/api/exchange/connect', {
+
+                console.log(`[POSITIONS] Auto-connecting ${exchange} (scope: ${getSessionId().substring(0, 12)}...)...`);
+                const res = await fetch(`${API_BASE}/api/exchange/connect`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(payload)

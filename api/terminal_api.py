@@ -2225,6 +2225,7 @@ async def check_and_send_liquidation_alert(data: dict = None):
 # Store recent alerts (in-memory, keeps last 50)
 live_alerts: List[Dict] = []
 MAX_ALERTS = 50
+alert_generation_count = 0  # Track how many times generate has been called
 last_alert_check: Dict[str, Any] = {
     "btc_price": 0,
     "funding_rate": 0,
@@ -2513,21 +2514,40 @@ async def generate_market_alerts(data: dict = None):
             logger.warning(f"[ALERTS] Volatility check error: {e}")
         
         # 5. GENERATE "MOMENTUM" ALERTS for active trading feel
-        # These fire occasionally and ALWAYS push to Telegram for engagement
+        # First call always fires a startup alert so users see the system is live
+        # Then ~6% chance each check (~every 12 mins on avg)
+        global alert_generation_count
+        alert_generation_count += 1
         import random
-        if random.random() < 0.06:  # 6% chance each check (~every 12 mins on avg)
-            momentum_alerts = [
-                ("🎯 TARGET ZONE", f"BTC at ${last_alert_check.get('btc_price', 70000):,.0f} - Approaching key resistance.", "green"),
-                ("📊 MOMENTUM", "4H momentum building. Watch for continuation or reversal.", "cyan"),
-                ("⚡ FLOW ALERT", "Unusual order flow detected. Smart money positioning?", "amber"),
-                ("🔄 TREND CHECK", "Key support/resistance being tested. Stay alert.", "green"),
-                ("📉 LEVEL WATCH", "Price consolidating near key zone. Breakout imminent?", "amber"),
-            ]
-            choice = random.choice(momentum_alerts)
-            alert = add_live_alert("momentum", choice[0], choice[1], choice[2])
-            
-            # ALWAYS push momentum alerts to Telegram now
-            await push_channel_alert("momentum", choice[0], choice[1])
+
+        # Always fire on first call (startup), then 6% chance
+        should_fire = alert_generation_count <= 1 or random.random() < 0.06
+
+        if should_fire:
+            btc_display = last_alert_check.get('btc_price', 0)
+            if alert_generation_count <= 1 and btc_display > 0:
+                # First alert — confirm system is online with real price
+                alert = add_live_alert(
+                    "system",
+                    "🟢 BASTION ONLINE",
+                    f"Risk Intelligence active. Monitoring BTC at ${btc_display:,.0f}. Alerts will fire on significant market events.",
+                    "green"
+                )
+                alerts_generated.append(alert)
+            else:
+                momentum_alerts = [
+                    ("🎯 TARGET ZONE", f"BTC at ${btc_display:,.0f} - Approaching key resistance." if btc_display > 0 else "Monitoring key resistance levels.", "green"),
+                    ("📊 MOMENTUM", "4H momentum building. Watch for continuation or reversal.", "cyan"),
+                    ("⚡ FLOW ALERT", "Unusual order flow detected. Smart money positioning?", "amber"),
+                    ("🔄 TREND CHECK", "Key support/resistance being tested. Stay alert.", "green"),
+                    ("📉 LEVEL WATCH", "Price consolidating near key zone. Breakout imminent?", "amber"),
+                ]
+                choice = random.choice(momentum_alerts)
+                alert = add_live_alert("momentum", choice[0], choice[1], choice[2])
+                alerts_generated.append(alert)
+
+                # Push momentum alerts to Telegram
+                await push_channel_alert("momentum", choice[0], choice[1])
         
         return {
             "success": True,
@@ -5077,7 +5097,10 @@ Confidence: <b>{confidence}%</b>
 <i>{reason}</i>
 
 ⚡ Powered by BASTION AI"""
-                                        await send_telegram_message(telegram_msg)
+                                        if TELEGRAM_CHANNEL_ID:
+                                            await send_telegram_message(TELEGRAM_CHANNEL_ID, telegram_msg)
+                                        else:
+                                            logger.warning("[SIGNAL] No TELEGRAM_CHANNEL_ID set, skipping push")
                                     except Exception as tg_err:
                                         logger.warning(f"[SIGNAL] Telegram push failed: {tg_err}")
 
