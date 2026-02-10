@@ -384,7 +384,7 @@ class InstitutionalReportGenerator:
         funding_bias = "LONG" if funding.get("rate", 0) < 0 else "SHORT" if funding.get("rate", 0) > 0.0003 else "NEUTRAL"
         ls_bias = "LONG" if ls > 1.05 else "SHORT" if ls < 0.95 else "NEUTRAL"
         taker_bias = "LONG" if buy > sell else "SHORT"
-        max_pain_bias = "LONG" if price < max_pain else "SHORT"
+        max_pain_bias = "LONG" if (max_pain > 0 and price < max_pain) else "SHORT" if (max_pain > 0 and price > max_pain) else "NEUTRAL"
 
         biases = [whale_bias, funding_bias, ls_bias, taker_bias, max_pain_bias]
         long_count = biases.count("LONG")
@@ -545,16 +545,25 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         drivers = []
         risks = []
 
-        lines = response.strip().split("\n")
+        # Strip markdown artifacts
+        clean = response.strip()
+        clean = clean.replace("```", "").replace("**", "")
+        clean = clean.replace("##", "").replace("# ", "")
+
+        lines = clean.split("\n")
 
         for line in lines:
             line = line.strip()
             if not line:
                 continue
 
-            if line.startswith("THESIS:"):
-                thesis = line.replace("THESIS:", "").strip()
-            elif line.startswith("DRIVER_"):
+            # Strip bullet markers
+            if line.startswith("- ") or line.startswith("• "):
+                line = line[2:]
+
+            if line.upper().startswith("THESIS:"):
+                thesis = line.split(":", 1)[-1].strip()
+            elif line.upper().startswith("DRIVER_") or line.upper().startswith("DRIVER "):
                 driver_text = line.split(":", 1)[-1].strip() if ":" in line else line
                 if driver_text:
                     drivers.append({
@@ -562,25 +571,50 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
                         "source": self._extract_source(driver_text),
                         "time": self._extract_time(driver_text),
                     })
-            elif line.startswith("RISK_"):
+            elif line.upper().startswith("RISK_") or line.upper().startswith("RISK "):
                 risk_text = line.split(":", 1)[-1].strip() if ":" in line else line
                 if risk_text:
                     risks.append({
                         "text": risk_text,
-                        "severity": "HIGH" if any(w in risk_text.lower() for w in ["liquidation", "crash", "extreme"]) else "MEDIUM",
+                        "severity": "HIGH" if any(w in risk_text.lower() for w in ["liquidation", "crash", "extreme", "cascade"]) else "MEDIUM",
                     })
 
-        # Fallback if parsing failed
+        # If structured parsing failed, try to extract thesis from the full text
         if not thesis:
-            thesis = response[:500] if len(response) > 500 else response
+            # Take the first meaningful paragraph as the thesis
+            paragraphs = [p.strip() for p in clean.split("\n\n") if p.strip()]
+            if paragraphs:
+                # Find the first paragraph that looks like prose (>50 chars, not a header)
+                for p in paragraphs:
+                    p_clean = p.replace("\n", " ").strip()
+                    if len(p_clean) > 50 and not p_clean.startswith("[") and not p_clean.startswith("MCF"):
+                        thesis = p_clean[:500]
+                        break
 
-        if not drivers:
-            drivers = self._generate_default_drivers(symbol, pkg)
+            # Last resort: use the rule-based narrative
+            if not thesis:
+                fallback = self._generate_rule_based_narrative(symbol, pkg)
+                thesis = fallback["thesis"]
 
-        if not risks:
-            risks = self._generate_default_risks(symbol, pkg)
+        # Always ensure we have at least 3 drivers and 2 risks
+        if len(drivers) < 3:
+            default_drivers = self._generate_default_drivers(symbol, pkg)
+            for d in default_drivers:
+                if len(drivers) >= 3:
+                    break
+                # Don't add duplicates
+                if not any(d["text"][:30] in existing["text"] for existing in drivers):
+                    drivers.append(d)
 
-        return {"thesis": thesis, "key_drivers": drivers, "risks": risks}
+        if len(risks) < 2:
+            default_risks = self._generate_default_risks(symbol, pkg)
+            for r in default_risks:
+                if len(risks) >= 2:
+                    break
+                if not any(r["text"][:30] in existing["text"] for existing in risks):
+                    risks.append(r)
+
+        return {"thesis": thesis, "key_drivers": drivers[:4], "risks": risks[:3]}
 
     def _extract_source(self, text: str) -> str:
         """Extract data source from driver text"""
@@ -641,54 +675,99 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         return {"thesis": thesis, "key_drivers": drivers, "risks": risks}
 
     def _generate_default_drivers(self, symbol: str, pkg: Dict) -> List[Dict]:
-        """Generate default key drivers from data"""
+        """Generate default key drivers from data — always returns at least 3"""
         drivers = []
         whales = pkg.get("whale_analysis", {})
         funding = pkg.get("funding", {})
         oi = pkg.get("oi", {})
         taker = pkg.get("taker_flow", {})
+        ls_ratio = pkg.get("ls_ratio", 1.0)
+        price = pkg.get("price", 0)
+        max_pain = pkg.get("max_pain", 0)
 
-        # Whale positioning
+        # 1. Whale positioning (always include)
         total_long = whales.get("total_long_usd", 0)
         total_short = whales.get("total_short_usd", 0)
+        pos_count = whales.get("position_count", 0)
         dominant = "long" if total_long > total_short else "short"
         drivers.append({
-            "text": f"Hyperliquid whale {dominant} exposure ${max(total_long, total_short)/1e6:.0f}M vs ${min(total_long, total_short)/1e6:.0f}M — {whales.get('position_count', 0)} tracked positions",
+            "text": f"Hyperliquid whale {dominant} exposure ${max(total_long, total_short)/1e6:.0f}M vs ${min(total_long, total_short)/1e6:.0f}M — {pos_count} tracked positions",
             "source": "Hyperliquid",
             "time": "live",
         })
 
-        # OI change
+        # 2. OI change (always include with context)
         oi_change = oi.get("change_percent_24h", 0)
-        if abs(oi_change) > 1:
+        oi_value = oi.get("value", 0)
+        if abs(oi_change) > 0.5:
             drivers.append({
-                "text": f"Open interest {'expanding' if oi_change > 0 else 'contracting'} {oi_change:+.1f}% in 24h — {'new money entering' if oi_change > 0 else 'positions closing'}",
+                "text": f"Open interest {'expanding' if oi_change > 0 else 'contracting'} {oi_change:+.1f}% in 24h (${oi_value/1e9:.1f}B total) — {'new money entering' if oi_change > 0 else 'positions closing'}",
+                "source": "Coinglass",
+                "time": "24h",
+            })
+        else:
+            drivers.append({
+                "text": f"Open interest stable at ${oi_value/1e9:.1f}B ({oi_change:+.1f}% 24h) — market awaiting catalyst for directional move",
                 "source": "Coinglass",
                 "time": "24h",
             })
 
-        # Funding signal
+        # 3. Funding signal (always include)
         rate = funding.get("rate", 0)
-        if abs(rate) > 0.0001:
+        if abs(rate) > 0.0003:
             direction = "positive (longs pay)" if rate > 0 else "negative (shorts pay)"
             drivers.append({
-                "text": f"Funding rate {direction} at {rate*100:.4f}% — {'crowded long' if rate > 0.0003 else 'crowded short' if rate < -0.0002 else 'moderate'} positioning",
+                "text": f"Funding rate {direction} at {rate*100:.4f}% — {'crowded long' if rate > 0.0003 else 'crowded short'} positioning creates squeeze risk",
+                "source": "Coinglass",
+                "time": "8h",
+            })
+        elif abs(rate) > 0.0001:
+            direction = "slightly positive" if rate > 0 else "slightly negative"
+            drivers.append({
+                "text": f"Funding rate {direction} at {rate*100:.4f}% — moderate positioning, no immediate squeeze risk",
+                "source": "Coinglass",
+                "time": "8h",
+            })
+        else:
+            drivers.append({
+                "text": f"Funding rate neutral at {rate*100:.4f}% — balanced positioning suggests room for directional expansion",
                 "source": "Coinglass",
                 "time": "8h",
             })
 
-        # Taker flow
+        # 4. Taker flow (if available)
         buy = taker.get("buy", 0)
         sell = taker.get("sell", 0)
         if buy + sell > 0:
             dominant_flow = "buy" if buy > sell else "sell"
             drivers.append({
-                "text": f"Taker {dominant_flow} flow dominant — ${buy/1e6:.0f}M bought vs ${sell/1e6:.0f}M sold",
+                "text": f"Taker {dominant_flow} flow dominant — ${buy/1e6:.0f}M bought vs ${sell/1e6:.0f}M sold ({buy/(buy+sell)*100:.0f}% buy ratio)",
                 "source": "Coinglass",
                 "time": "24h",
             })
 
-        return drivers[:3]  # Max 3 drivers
+        # 5. L/S ratio context (if we still need more)
+        if len(drivers) < 4:
+            if ls_ratio > 1.1:
+                drivers.append({
+                    "text": f"Long/Short ratio at {ls_ratio:.2f} — longs dominating, potential for short squeeze above resistance",
+                    "source": "Coinglass",
+                    "time": "24h",
+                })
+            elif ls_ratio < 0.9:
+                drivers.append({
+                    "text": f"Long/Short ratio at {ls_ratio:.2f} — shorts dominating, potential for long squeeze on breakdown",
+                    "source": "Coinglass",
+                    "time": "24h",
+                })
+            else:
+                drivers.append({
+                    "text": f"Long/Short ratio balanced at {ls_ratio:.2f} — no clear directional conviction from retail accounts",
+                    "source": "Coinglass",
+                    "time": "24h",
+                })
+
+        return drivers[:4]  # Max 4 drivers
 
     def _generate_default_risks(self, symbol: str, pkg: Dict) -> List[Dict]:
         """Generate default risk factors"""
@@ -814,22 +893,31 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         if price <= 0:
             return {}
 
+        # Use max_pain as anchor if available, otherwise use price-derived levels
+        anchor = max_pain if max_pain > 0 else price
+
         # Support/resistance from liquidation zones
         support = liq.get("longs", {}).get("price", price * 0.95)
         resistance = liq.get("shorts", {}).get("price", price * 1.05)
 
         if bias == "LONG":
             bear_target = support
-            base_target = max_pain if max_pain > price else price * 1.05
-            bull_target = resistance * 1.05
+            base_target = anchor if anchor > price else price * 1.03
+            bull_target = max(resistance, price * 1.08)
         elif bias == "SHORT":
-            bear_target = support * 0.95
-            base_target = max_pain if max_pain < price else price * 0.95
+            bear_target = min(support, price * 0.92)
+            base_target = anchor if anchor < price else price * 0.97
             bull_target = resistance
         else:
             bear_target = support
-            base_target = price
+            base_target = anchor if anchor != price else price * 1.01
             bull_target = resistance
+
+        # Compute rationale
+        if max_pain > 0:
+            rationale = f"Base case assumes {'continuation of current trend' if bias != 'NEUTRAL' else 'range-bound action'} with max pain at ${max_pain:,.0f}."
+        else:
+            rationale = f"Base case assumes {'continuation of current trend' if bias != 'NEUTRAL' else 'range-bound action'} based on derivatives flow and whale positioning."
 
         return {
             "bear": {
@@ -847,7 +935,7 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
                 "probability": 40 if bias == "LONG" else 20 if bias == "SHORT" else 30,
                 "label": "Bull",
             },
-            "rationale": f"Base case assumes {'continuation of current trend' if bias != 'NEUTRAL' else 'range-bound action'} with max pain at ${max_pain:,.0f}.",
+            "rationale": rationale,
         }
 
     # =========================================================================
@@ -864,12 +952,15 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         if price <= 0:
             return []
 
+        # Use max_pain if valid, otherwise derive from price
+        anchor = max_pain if max_pain > 0 else price
+
         trades = []
 
         if bias == "LONG":
             # Momentum trade
             entry = round(price * 1.002, 2)
-            target = scenarios.get("bull", {}).get("target", price * 1.10)
+            target = scenarios.get("bull", {}).get("target", price * 1.08)
             stop = round(price * 0.97, 2)
             rr = round(abs(target - entry) / abs(entry - stop), 2) if abs(entry - stop) > 0 else 0
 
@@ -886,7 +977,7 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
 
             # Pullback trade
             pb_entry = round(price * 0.985, 2)
-            pb_target = round(max_pain if max_pain > price else price * 1.06, 2)
+            pb_target = round(anchor * 1.03 if anchor > price else price * 1.06, 2)
             pb_stop = round(price * 0.965, 2)
             pb_rr = round(abs(pb_target - pb_entry) / abs(pb_entry - pb_stop), 2) if abs(pb_entry - pb_stop) > 0 else 0
 
@@ -903,7 +994,7 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
 
         elif bias == "SHORT":
             entry = round(price * 0.998, 2)
-            target = scenarios.get("bear", {}).get("target", price * 0.90)
+            target = scenarios.get("bear", {}).get("target", price * 0.92)
             stop = round(price * 1.03, 2)
             rr = round(abs(entry - target) / abs(stop - entry), 2) if abs(stop - entry) > 0 else 0
 
@@ -920,7 +1011,7 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
 
             # Fade trade
             fade_entry = round(price * 1.015, 2)
-            fade_target = round(max_pain if max_pain < price else price * 0.94, 2)
+            fade_target = round(anchor * 0.97 if anchor < price else price * 0.94, 2)
             fade_stop = round(price * 1.035, 2)
             fade_rr = round(abs(fade_entry - fade_target) / abs(fade_stop - fade_entry), 2) if abs(fade_stop - fade_entry) > 0 else 0
 
@@ -1035,6 +1126,8 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         if data and hasattr(data, 'success') and data.success and data.data:
             if isinstance(data.data, list) and len(data.data) > 0:
                 return data.data[0].get("maxPain", 0)
+            elif isinstance(data.data, dict):
+                return data.data.get("maxPain", 0)
         return 0
 
     def _extract_whale_analysis(self, data, symbol: str) -> Dict:
@@ -1058,12 +1151,29 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
     def _extract_taker_flow(self, data) -> Dict:
         if not data or not hasattr(data, 'success') or not data.success:
             return {"buy": 0, "sell": 0}
-        if isinstance(data.data, list):
-            return {
-                "buy": sum(t.get("buyVolUsd", 0) for t in data.data),
-                "sell": sum(t.get("sellVolUsd", 0) for t in data.data),
-            }
-        return {"buy": 0, "sell": 0}
+
+        raw = data.data
+        total_buy = 0
+        total_sell = 0
+
+        if isinstance(raw, list):
+            for item in raw:
+                total_buy += item.get("buyVolUsd", 0) or item.get("buyVol", 0) or 0
+                total_sell += item.get("sellVolUsd", 0) or item.get("sellVol", 0) or 0
+        elif isinstance(raw, dict):
+            # exchange-list format: may have nested lists
+            for key in ("data", "list", "exchangeList"):
+                if isinstance(raw.get(key), list):
+                    for item in raw[key]:
+                        total_buy += item.get("buyVolUsd", 0) or item.get("buyVol", 0) or 0
+                        total_sell += item.get("sellVolUsd", 0) or item.get("sellVol", 0) or 0
+                    break
+            else:
+                # Flat dict
+                total_buy = raw.get("buyVolUsd", 0) or raw.get("buyVol", 0) or raw.get("buyRatio", 0.5)
+                total_sell = raw.get("sellVolUsd", 0) or raw.get("sellVol", 0) or raw.get("sellRatio", 0.5)
+
+        return {"buy": total_buy, "sell": total_sell}
 
     def _extract_liquidations(self, data, price: float) -> Dict:
         return {
