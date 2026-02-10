@@ -3,8 +3,12 @@ MCF Labs Report Scheduler
 ==========================
 Automated report generation on schedule.
 
-Generates market_structure, whale_intelligence, options_flow,
-and cycle_position reports at configurable intervals.
+Generates institutional_research, market_structure, whale_intelligence,
+options_flow, and cycle_position reports at configurable intervals.
+
+Institutional reports are the primary output (Goldman-grade analysis).
+Alert-style reports (market_structure, whale, etc.) run more frequently
+as lightweight monitoring signals.
 """
 
 import asyncio
@@ -22,12 +26,16 @@ _running: bool = False
 
 SUPPORTED_COINS = ("BTC", "ETH", "SOL", "BNB", "XRP", "AVAX", "LINK", "ARB", "OP")
 
+# Institutional reports focus on the top liquid coins
+INSTITUTIONAL_COINS = ("BTC", "ETH", "SOL")
+
 
 class ReportScheduler:
-    """Manages scheduled report generation"""
+    """Manages scheduled report generation for all report types"""
 
-    def __init__(self, generator, storage_path: str = "data/reports"):
+    def __init__(self, generator, storage_path: str = "data/reports", institutional_generator=None):
         self.generator = generator
+        self.institutional_generator = institutional_generator
         self.storage_path = storage_path
         self.tasks = []
         self._ensure_storage_dirs()
@@ -40,7 +48,7 @@ class ReportScheduler:
             os.makedirs(dir_path, exist_ok=True)
 
     def save_report(self, report) -> bool:
-        """Save report to filesystem"""
+        """Save report to filesystem and sync to Supabase"""
         try:
             year = report.generated_at.strftime("%Y")
             month = report.generated_at.strftime("%m")
@@ -71,6 +79,45 @@ class ReportScheduler:
         except Exception as e:
             logger.error(f"[Scheduler] Failed to save report {report.id}: {e}")
             return False
+
+    # =========================================================================
+    # INSTITUTIONAL REPORT GENERATION
+    # =========================================================================
+
+    async def run_institutional_report(self, symbol: str = "BTC"):
+        """Generate an institutional research report"""
+        if not self.institutional_generator:
+            logger.warning("[Scheduler] No institutional generator configured")
+            return None
+
+        try:
+            logger.info(f"[Scheduler] Generating institutional report for {symbol}")
+            report = await self.institutional_generator.generate_institutional_report(symbol)
+            if report:
+                self.save_report(report)
+                logger.info(f"[Scheduler] Institutional report generated: {report.id} (conviction: {report.sections.get('conviction', '?')}%)")
+                return report
+        except Exception as e:
+            logger.error(f"[Scheduler] Institutional report failed for {symbol}: {e}")
+        return None
+
+    async def run_institutional_batch(self, symbols: tuple = INSTITUTIONAL_COINS) -> List:
+        """Generate institutional reports for a batch of symbols"""
+        reports = []
+        for symbol in symbols:
+            try:
+                report = await self.run_institutional_report(symbol)
+                if report:
+                    reports.append(report)
+                await asyncio.sleep(3)  # Rate limit between reports
+            except Exception as e:
+                logger.error(f"[Scheduler] Institutional batch error for {symbol}: {e}")
+        logger.info(f"[Scheduler] Institutional batch complete: {len(reports)}/{len(symbols)} reports")
+        return reports
+
+    # =========================================================================
+    # ALERT-STYLE REPORT GENERATION
+    # =========================================================================
 
     async def run_market_structure(self, symbol: str = "BTC"):
         """Generate a market structure report"""
@@ -150,44 +197,66 @@ class ReportScheduler:
         """Check for liquidation risk conditions (stub)"""
         pass
 
+    # =========================================================================
+    # MAIN SCHEDULING LOOP
+    # =========================================================================
+
     async def schedule_loop(self):
-        """Main scheduling loop"""
+        """
+        Main scheduling loop.
+
+        Schedule:
+        - Institutional Research: every 6 hours (BTC, ETH, SOL)
+        - Market Structure alerts: every 4 hours (all coins)
+        - Whale Intelligence alerts: every 6 hours (all coins)
+        - Options Flow alerts: every 8 hours (top 3)
+        - Cycle Position: every 12 hours (BTC only)
+        """
         global _running
 
+        last_institutional = None
         last_market_structure = None
         last_whale = None
         last_options = None
         last_cycle = None
 
         logger.info("[Scheduler] Starting report generation loop")
+        logger.info(f"[Scheduler] Institutional generator: {'ACTIVE' if self.institutional_generator else 'NOT CONFIGURED'}")
 
         while _running:
             try:
                 now = datetime.utcnow()
-                hour = now.hour
 
-                # Market structure: every 4 hours
-                if last_market_structure is None or (now - last_market_structure).seconds >= 14400:
-                    logger.info("[Scheduler] Running market structure reports...")
+                # Institutional Research: every 6 hours (flagship reports)
+                if self.institutional_generator and (
+                    last_institutional is None or (now - last_institutional).total_seconds() >= 21600
+                ):
+                    logger.info("[Scheduler] === GENERATING INSTITUTIONAL REPORTS ===")
+                    await self.run_institutional_batch(INSTITUTIONAL_COINS)
+                    last_institutional = now
+
+                # Market structure alerts: every 4 hours
+                if last_market_structure is None or (now - last_market_structure).total_seconds() >= 14400:
+                    logger.info("[Scheduler] Running market structure alerts...")
                     await self.run_all_market_structure()
                     last_market_structure = now
 
-                # Whale intelligence: every 6 hours
-                if last_whale is None or (now - last_whale).seconds >= 21600:
-                    logger.info("[Scheduler] Running whale intelligence reports...")
+                # Whale intelligence alerts: every 6 hours
+                if last_whale is None or (now - last_whale).total_seconds() >= 21600:
+                    logger.info("[Scheduler] Running whale intelligence alerts...")
                     await self.run_all_whale_reports()
                     last_whale = now
 
-                # Options flow: every 8 hours
-                if last_options is None or (now - last_options).seconds >= 28800:
-                    logger.info("[Scheduler] Running options flow reports...")
-                    for symbol in SUPPORTED_COINS[:3]:  # Top 3 only
+                # Options flow alerts: every 8 hours (top 3 only)
+                if last_options is None or (now - last_options).total_seconds() >= 28800:
+                    logger.info("[Scheduler] Running options flow alerts...")
+                    for symbol in SUPPORTED_COINS[:3]:
                         await self.run_options_report(symbol)
                         await asyncio.sleep(2)
                     last_options = now
 
-                # Cycle position: every 12 hours
-                if last_cycle is None or (now - last_cycle).seconds >= 43200:
+                # Cycle position: every 12 hours (BTC only)
+                if last_cycle is None or (now - last_cycle).total_seconds() >= 43200:
                     logger.info("[Scheduler] Running cycle position report...")
                     await self.run_cycle_report("BTC")
                     last_cycle = now
@@ -213,12 +282,12 @@ async def start_scheduler(
     """
     Start the report scheduler.
 
-    If use_iros and model_url are provided, uses IROS-powered generation.
-    Otherwise falls back to rule-based generation.
+    Creates both the alert generator (IROS or rule-based) and the
+    institutional generator, then starts the scheduling loop.
     """
     global _scheduler, _running
 
-    # Create generator
+    # Create alert generator
     generator = None
 
     if use_iros and model_url:
@@ -231,7 +300,7 @@ async def start_scheduler(
                 model_url=model_url,
                 model_api_key=model_api_key,
             )
-            logger.info("[Scheduler] Using IROS-powered report generator")
+            logger.info("[Scheduler] Using IROS-powered alert generator")
         except Exception as e:
             logger.warning(f"[Scheduler] IROS generator failed, falling back to rule-based: {e}")
 
@@ -242,15 +311,33 @@ async def start_scheduler(
             helsinki_client=helsinki_client,
             whale_alert_client=whale_alert_client,
         )
-        logger.info("[Scheduler] Using rule-based report generator")
+        logger.info("[Scheduler] Using rule-based alert generator")
 
-    # Create scheduler
-    _scheduler = ReportScheduler(generator)
+    # Create institutional generator
+    institutional_gen = None
+    try:
+        from .institutional_generator import create_institutional_generator
+        institutional_gen = create_institutional_generator(
+            coinglass_client=coinglass_client,
+            helsinki_client=helsinki_client,
+            whale_alert_client=whale_alert_client,
+            model_url=model_url,
+            model_api_key=model_api_key,
+        )
+        logger.info("[Scheduler] Institutional report generator initialized")
+    except Exception as e:
+        logger.warning(f"[Scheduler] Institutional generator init failed: {e}")
+
+    # Create scheduler with both generators
+    _scheduler = ReportScheduler(
+        generator=generator,
+        institutional_generator=institutional_gen,
+    )
     _running = True
 
     # Start schedule loop as background task
     asyncio.create_task(_scheduler.schedule_loop())
-    logger.info("[Scheduler] Report scheduler started")
+    logger.info("[Scheduler] Report scheduler started (institutional + alerts)")
 
     return _scheduler
 

@@ -16,6 +16,7 @@ class ReportType(Enum):
     CYCLE_POSITION = "cycle_position"
     FUNDING_ARBITRAGE = "funding_arbitrage"
     LIQUIDATION_CASCADE = "liquidation_cascade"
+    INSTITUTIONAL_RESEARCH = "institutional_research"
 
 
 class Bias(Enum):

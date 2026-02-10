@@ -6,7 +6,7 @@
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <script src="/settings.js"></script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
       body { font-family: 'Inter', sans-serif; }
       .font-mono { font-family: 'JetBrains Mono', monospace; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -16,21 +16,36 @@
         background-image: linear-gradient(to right, #27272a 1px, transparent 1px),
         linear-gradient(to bottom, #27272a 1px, transparent 1px);
       }
+      .bastion-scrollbar { scrollbar-color: #dc2626 #18181b; scrollbar-width: thin; }
+      .bastion-scrollbar::-webkit-scrollbar { width: 6px; }
+      .bastion-scrollbar::-webkit-scrollbar-track { background: #18181b; }
+      .bastion-scrollbar::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 3px; }
+      .bastion-scrollbar::-webkit-scrollbar-thumb:hover { background: #ef4444; }
       .custom-scroll::-webkit-scrollbar { width: 4px; }
       .custom-scroll::-webkit-scrollbar-track { background: #09090b; }
       .custom-scroll::-webkit-scrollbar-thumb { background: #27272a; border-radius: 2px; }
       .custom-scroll::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
-      .report-item.active { background: #0a0a0a; border-left-color: #16a34a; }
+      .report-item.active { background: #0a0a0a; border-left-color: #dc2626; }
       .report-item:not(.active) { border-left-color: transparent; }
       .report-item:not(.active):hover { border-left-color: #3f3f46; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
       .fade-in { animation: fadeIn 0.3s ease-out; }
       @keyframes pulse-slow { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
       .pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
+      @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+      .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
+      .conviction-bar { background: linear-gradient(90deg, #dc2626 0%, #eab308 40%, #22c55e 70%, #16a34a 100%); }
+      .score-bar-bg { background: #18181b; }
+      .inst-section { border-left: 2px solid #27272a; padding-left: 1rem; }
+      .generate-dropdown { display: none; position: absolute; top: 100%; right: 0; z-index: 50; min-width: 260px; }
+      .generate-dropdown.show { display: block; }
+      .rating-badge-buy { background: rgba(22,163,74,0.15); border-color: rgba(22,163,74,0.4); color: #4ade80; }
+      .rating-badge-sell { background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.4); color: #f87171; }
+      .rating-badge-hold { background: rgba(113,113,122,0.15); border-color: rgba(113,113,122,0.4); color: #a1a1aa; }
     </style>
   </head>
-  <body class="text-zinc-400 h-screen flex flex-col selection:bg-green-500/30 selection:text-green-200 bg-[#050505] overflow-hidden">
-    <!-- Header / Control Bar -->
+  <body class="text-zinc-400 h-screen flex flex-col selection:bg-red-500/30 selection:text-red-200 bg-[#050505] overflow-hidden">
+    <!-- Header -->
     <header class="relative z-50 h-16 border-b border-zinc-800 bg-[#050505] flex items-center justify-between shrink-0">
       <div class="flex items-center h-full pl-6 pr-8 border-r border-zinc-800 bg-[#050505]">
         <a href="/" class="flex items-center gap-3 group">
@@ -40,36 +55,34 @@
         <div class="hidden lg:flex items-center ml-6 px-3 py-1 border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm rounded-sm gap-2">
           <span class="text-[10px] font-mono text-zinc-600 leading-none">[</span>
           <span class="relative flex h-1.5 w-1.5">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
           </span>
           <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">ENV: LIVE</span>
           <span class="text-[10px] font-mono text-zinc-600 leading-none">]</span>
         </div>
       </div>
-
       <nav class="hidden lg:flex items-center h-full flex-1 justify-center">
         <div class="flex h-full items-center border-x border-zinc-800/50">
           <a href="/" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50">Risk Engine</a>
           <a href="/research" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-white bg-zinc-900/50 border-r border-zinc-800/50 relative">
             Research
-            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-green-500"></div>
+            <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600"></div>
           </a>
           <a href="/visualizations" class="flex items-center text-[10px] uppercase hover:text-white hover:bg-zinc-900/50 transition-colors text-zinc-400 tracking-widest font-mono h-full border-zinc-800/50 border-r pr-6 pl-6">GRAPHS</a>
         </div>
       </nav>
-
       <div class="hidden md:flex items-center h-full border-l border-zinc-800 bg-[#050505]">
         <button id="latestNoteBtn" class="hidden xl:flex gap-3 hover:border-zinc-600 hover:bg-zinc-900/50 group transition-all cursor-pointer bg-zinc-900/30 border-zinc-800/50 border rounded-sm mr-4 pt-1.5 pr-3 pb-1.5 pl-6 items-center">
           <div class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-600"></span>
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
           </div>
           <div class="flex flex-col items-start">
             <span class="text-[8px] font-mono uppercase text-zinc-500 leading-none mb-0.5">Latest Note</span>
             <span id="latestNoteSymbol" class="text-[10px] font-mono font-bold text-zinc-300 group-hover:text-white leading-none">---</span>
             <div class="w-full h-0.5 bg-zinc-800 mt-1 rounded-full overflow-hidden">
-              <div id="latestNoteBar" class="h-full bg-green-500 w-[0%] rounded-[1px]"></div>
+              <div id="latestNoteBar" class="h-full bg-red-600 w-[0%] rounded-[1px]"></div>
             </div>
           </div>
           <span class="ml-2 text-[9px] font-mono text-zinc-700 border border-zinc-800 rounded px-1 group-hover:border-zinc-600 transition-colors">R</span>
@@ -84,26 +97,55 @@
     <!-- Subheader Bar -->
     <div class="h-[50px] border-b border-zinc-800 bg-[#050505] flex items-center px-6 gap-6 shrink-0 relative z-20">
       <div class="flex items-center gap-2 w-1/4">
-        <iconify-icon icon="solar:documents-linear" class="text-green-500"></iconify-icon>
+        <iconify-icon icon="solar:documents-linear" class="text-red-500"></iconify-icon>
         <span class="text-xs font-mono font-semibold text-white tracking-wider uppercase">INSTITUTIONAL RESEARCH</span>
         <span id="reportCountBadge" class="text-[9px] font-mono text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 rounded">0</span>
       </div>
       <div class="flex-1 max-w-2xl relative">
         <iconify-icon icon="solar:magnifer-linear" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"></iconify-icon>
-        <input id="globalSearch" type="text" placeholder="Search tickers, tags, report types..." class="w-full bg-[#0a0a0a] border border-zinc-800 h-8 pl-9 pr-4 text-xs font-mono text-white focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 placeholder-zinc-600 transition-all">
+        <input id="globalSearch" type="text" placeholder="Search tickers, tags, report types..." class="w-full bg-[#0a0a0a] border border-zinc-800 h-8 pl-9 pr-4 text-xs font-mono text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 placeholder-zinc-600 transition-all">
         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
           <span class="bg-zinc-900 border border-zinc-800 text-[9px] px-1 text-zinc-500 font-mono rounded">/</span>
         </div>
       </div>
       <div class="flex items-center gap-2 ml-auto">
-        <button onclick="filterByType(null)" class="filter-btn active-filter px-3 py-1 bg-zinc-900/50 border border-green-900/30 text-green-500 hover:bg-green-900/20 text-[10px] font-mono uppercase tracking-wide transition-colors">All</button>
+        <button onclick="filterByType(null)" class="filter-btn active-filter px-3 py-1 bg-zinc-900/50 border border-red-900/30 text-red-500 hover:bg-red-900/20 text-[10px] font-mono uppercase tracking-wide transition-colors">All</button>
+        <button onclick="filterByType('institutional_research')" class="filter-btn px-3 py-1 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-wide transition-colors">Research</button>
         <button onclick="filterByType('market_structure')" class="filter-btn px-3 py-1 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-wide transition-colors">Market</button>
         <button onclick="filterByType('whale_intelligence')" class="filter-btn px-3 py-1 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-wide transition-colors">Whale</button>
-        <button onclick="filterByType('cycle_position')" class="filter-btn px-3 py-1 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-wide transition-colors">Cycle</button>
         <button onclick="filterByType('options_flow')" class="filter-btn px-3 py-1 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-wide transition-colors">Options</button>
-        <button onclick="generateNewReport()" class="px-3 py-1 bg-red-600/20 border border-red-600/50 hover:bg-red-600/30 text-red-400 hover:text-red-300 text-[10px] font-mono uppercase tracking-wide transition-colors flex items-center gap-1">
-          <iconify-icon icon="solar:bolt-linear" width="12"></iconify-icon> Generate
-        </button>
+        <button onclick="filterByType('cycle_position')" class="filter-btn px-3 py-1 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-wide transition-colors">Cycle</button>
+        <div class="relative">
+          <button onclick="toggleGenerateDropdown()" class="px-3 py-1 bg-red-600/20 border border-red-600/50 hover:bg-red-600/30 text-red-400 hover:text-red-300 text-[10px] font-mono uppercase tracking-wide transition-colors flex items-center gap-1">
+            <iconify-icon icon="solar:bolt-linear" width="12"></iconify-icon> Generate <iconify-icon icon="solar:alt-arrow-down-linear" width="10"></iconify-icon>
+          </button>
+          <div id="generateDropdown" class="generate-dropdown bg-[#0a0a0a] border border-zinc-800 rounded-sm shadow-2xl shadow-black/50 mt-1">
+            <div class="p-2 border-b border-zinc-800">
+              <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Institutional Research</span>
+            </div>
+            <button onclick="generateReport('institutional_research','BTC');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors">
+              <iconify-icon icon="solar:shield-bold" class="text-red-500"></iconify-icon> BTC Institutional Research
+            </button>
+            <button onclick="generateReport('institutional_research','ETH');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors">
+              <iconify-icon icon="solar:shield-bold" class="text-blue-500"></iconify-icon> ETH Institutional Research
+            </button>
+            <button onclick="generateReport('institutional_research','SOL');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors border-b border-zinc-800">
+              <iconify-icon icon="solar:shield-bold" class="text-purple-500"></iconify-icon> SOL Institutional Research
+            </button>
+            <div class="p-2 border-b border-zinc-800">
+              <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Alert Reports</span>
+            </div>
+            <button onclick="generateReport('market_structure','BTC');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors">
+              <iconify-icon icon="solar:chart-2-linear" class="text-green-500"></iconify-icon> BTC Market Structure
+            </button>
+            <button onclick="generateReport('whale_intelligence','BTC');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors">
+              <iconify-icon icon="solar:eye-linear" class="text-cyan-500"></iconify-icon> BTC Whale Intel
+            </button>
+            <button onclick="generateReport('cycle_position');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors">
+              <iconify-icon icon="solar:graph-up-linear" class="text-yellow-500"></iconify-icon> Cycle Position
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -112,7 +154,7 @@
       <div class="absolute inset-0 pointer-events-none opacity-[0.02] bg-grid z-0"></div>
 
       <!-- LEFT COLUMN: Report List (25%) -->
-      <aside class="col-span-3 overflow-y-auto custom-scroll flex flex-col bg-[#050505] z-10 border-zinc-800 border-r">
+      <aside class="col-span-3 overflow-y-auto bastion-scrollbar flex flex-col bg-[#050505] z-10 border-zinc-800 border-r">
         <div class="sticky top-0 bg-[#050505] z-20 px-4 py-3 border-b border-zinc-800 flex flex-col gap-3">
           <div class="flex justify-between items-center">
             <span class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Research Nav</span>
@@ -122,34 +164,30 @@
           </div>
           <div class="relative">
             <iconify-icon icon="solar:magnifer-linear" class="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs"></iconify-icon>
-            <input id="sideSearch" type="text" placeholder="Filter reports..." class="w-full bg-zinc-900/50 border border-zinc-800 h-7 pl-7 pr-2 text-[10px] font-mono text-zinc-300 focus:outline-none focus:border-green-500 rounded-sm" oninput="filterReportList()">
+            <input id="sideSearch" type="text" placeholder="Filter reports..." class="w-full bg-zinc-900/50 border border-zinc-800 h-7 pl-7 pr-2 text-[10px] font-mono text-zinc-300 focus:outline-none focus:border-red-500 rounded-sm" oninput="filterReportList()">
           </div>
         </div>
         <div class="p-4 space-y-4">
-          <!-- Bias Filters -->
           <div>
             <h3 class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-2 font-bold">Bias Filter</h3>
             <div class="flex gap-1.5">
-              <button onclick="filterByBias(null)" class="bias-btn text-[9px] font-mono px-2 py-0.5 border rounded-sm bg-zinc-900/50 border-green-900/30 text-green-500">ALL</button>
+              <button onclick="filterByBias(null)" class="bias-btn text-[9px] font-mono px-2 py-0.5 border rounded-sm bg-zinc-900/50 border-red-900/30 text-red-500">ALL</button>
               <button onclick="filterByBias('BULLISH')" class="bias-btn text-[9px] font-mono px-2 py-0.5 border rounded-sm border-zinc-800 text-zinc-500 hover:text-green-400 hover:border-green-800">BULL</button>
               <button onclick="filterByBias('BEARISH')" class="bias-btn text-[9px] font-mono px-2 py-0.5 border rounded-sm border-zinc-800 text-zinc-500 hover:text-red-400 hover:border-red-800">BEAR</button>
               <button onclick="filterByBias('NEUTRAL')" class="bias-btn text-[9px] font-mono px-2 py-0.5 border rounded-sm border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600">NEUTRAL</button>
             </div>
           </div>
-          <!-- Report Results -->
           <div>
             <h3 class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-2 font-bold">
               Results (<span id="filteredCount">0</span>)
             </h3>
             <div id="reportList" class="space-y-px border border-zinc-800 rounded-sm overflow-hidden">
-              <!-- Loading State -->
               <div id="reportListLoading" class="py-8 text-center">
                 <iconify-icon icon="solar:refresh-circle-linear" class="text-zinc-600 text-xl animate-spin"></iconify-icon>
                 <div class="text-[10px] font-mono text-zinc-600 mt-2">Loading reports...</div>
               </div>
             </div>
           </div>
-          <!-- MCF Status -->
           <div id="mcfStatusPanel" class="mt-4">
             <h3 class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-2 font-bold">System Status</h3>
             <div id="mcfStatus" class="text-[9px] font-mono text-zinc-600 space-y-1">
@@ -160,181 +198,26 @@
       </aside>
 
       <!-- CENTER COLUMN: Detail View (50%) -->
-      <section id="detailSection" class="col-span-6 border-r border-zinc-800 overflow-y-auto custom-scroll bg-[#050505] flex flex-col z-10">
+      <section id="detailSection" class="col-span-6 border-r border-zinc-800 overflow-y-auto bastion-scrollbar bg-[#050505] flex flex-col z-10">
         <!-- Empty State -->
         <div id="emptyState" class="flex-1 flex items-center justify-center">
           <div class="text-center max-w-sm">
             <iconify-icon icon="solar:documents-linear" class="text-zinc-700 text-5xl mb-4"></iconify-icon>
             <h2 class="text-lg font-mono font-bold text-zinc-500 mb-2">No Report Selected</h2>
             <p class="text-[11px] font-mono text-zinc-600 leading-relaxed">Select a report from the left panel to view institutional-grade analysis powered by BASTION AI.</p>
-            <button onclick="generateNewReport()" class="mt-4 px-4 py-2 bg-red-600/20 border border-red-600/40 text-red-400 text-[10px] font-mono uppercase tracking-wide hover:bg-red-600/30 transition-colors">
-              <iconify-icon icon="solar:bolt-linear" class="mr-1"></iconify-icon> Generate Fresh Report
+            <button onclick="generateReport('institutional_research','BTC')" class="mt-4 px-4 py-2 bg-red-600/20 border border-red-600/40 text-red-400 text-[10px] font-mono uppercase tracking-wide hover:bg-red-600/30 transition-colors">
+              <iconify-icon icon="solar:bolt-linear" class="mr-1"></iconify-icon> Generate Institutional Report
             </button>
           </div>
         </div>
 
-        <!-- Report Detail (hidden initially) -->
-        <div id="reportDetail" class="hidden">
-          <!-- Detail Header -->
-          <div class="bg-[#050505] border-zinc-800 border-b pt-6 pr-6 pb-6 pl-6 relative">
-            <div class="flex gap-6 pt-7 pb-8 items-center">
-              <div class="absolute top-6 right-6 pointer-events-none select-none opacity-40">
-                <div class="flex items-center gap-2 border border-zinc-800/50 bg-zinc-900/20 px-3 py-1.5 rounded-sm">
-                  <iconify-icon icon="solar:shield-bold" class="text-zinc-600"></iconify-icon>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-500">MCF Labs / Research Desk</span>
-                </div>
-              </div>
-              <h1 id="detailSymbol" class="text-3xl font-bold font-mono text-white tracking-tight">---</h1>
-              <div id="detailBiasBadge" class="px-3 py-1 text-xs font-mono font-medium uppercase tracking-wider rounded-sm">---</div>
-              <div class="flex items-center gap-5 border-l border-zinc-800 pl-6">
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Price</span>
-                  <span id="detailPrice" class="text-lg font-mono font-bold text-white leading-none">---</span>
-                </div>
-                <div class="flex flex-col gap-0.5 pl-5 border-l border-zinc-800/50">
-                  <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Type</span>
-                  <span id="detailType" class="text-sm font-mono font-bold text-zinc-300 leading-none">---</span>
-                </div>
-                <div class="flex flex-col gap-0.5 pl-5 border-l border-zinc-800/50">
-                  <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Sources</span>
-                  <span id="detailSources" class="text-sm font-mono font-bold text-zinc-300 leading-none">---</span>
-                </div>
-              </div>
-              <div class="ml-auto flex flex-col gap-1 w-48">
-                <div class="flex justify-between text-[9px] font-mono text-zinc-500 uppercase">
-                  <span>Conviction</span>
-                  <span id="detailConfPct">---</span>
-                </div>
-                <div class="w-full h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
-                  <div id="detailConfBar" class="h-full bg-[#15803d] w-[0%] rounded-[1px] transition-all duration-500"></div>
-                </div>
-              </div>
-            </div>
-            <!-- Metadata Row -->
-            <div class="flex items-center gap-4 text-[10px] font-mono text-zinc-400 mb-4 pb-4 border-b border-zinc-800/50">
-              <span class="font-semibold text-white">By BASTION AI</span>
-              <span class="text-zinc-600">|</span>
-              <span id="detailDesk">Desk: ---</span>
-              <span class="text-zinc-600">|</span>
-              <span id="detailPublished">Published: ---</span>
-              <span class="text-zinc-600">|</span>
-              <span id="detailReportId" class="bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-300">---</span>
-              <span class="ml-auto flex items-center gap-2 text-zinc-500">
-                <iconify-icon icon="solar:shield-check-linear"></iconify-icon>
-                AI Generated
-              </span>
-            </div>
-            <!-- Tags -->
-            <div id="detailTags" class="flex items-center gap-2 text-[10px] font-mono"></div>
-          </div>
-
-          <!-- Content Body -->
-          <div class="p-6 bg-[#050505] space-y-10 fade-in">
-            <!-- AI Badge -->
-            <div class="flex items-center gap-3 bg-zinc-900/20 border border-zinc-800/60 p-2 rounded-sm max-w-fit">
-              <div class="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded text-[9px] font-mono uppercase tracking-wider font-bold">
-                <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                AI Generated
-              </div>
-              <span class="text-[10px] font-mono text-zinc-500">Confidence: <span id="detailConfText" class="text-white">---</span></span>
-              <span class="w-px h-3 bg-zinc-800"></span>
-              <div class="flex gap-2 text-[10px] font-mono text-zinc-400">
-                <span id="detailSourceCount" class="hover:text-white cursor-pointer underline decoration-zinc-700">Sources (0)</span>
-              </div>
-            </div>
-
-            <!-- Main Grid -->
-            <div class="grid grid-cols-2 gap-8">
-              <!-- Left: Narrative -->
-              <div class="space-y-6">
-                <!-- Thesis / Summary -->
-                <div>
-                  <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-green-500 pl-3 mb-4 [text-shadow:_0_0_10px_rgba(255,255,255,0.3)]">Thesis</h3>
-                  <p id="detailSummary" class="text-sm leading-8 text-zinc-300 font-light">---</p>
-                </div>
-
-                <!-- IROS Analysis -->
-                <div id="irosSection" class="hidden">
-                  <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-indigo-500 pl-3 mb-4 [text-shadow:_0_0_10px_rgba(255,255,255,0.3)]">
-                    <iconify-icon icon="solar:bolt-linear" class="text-indigo-400 mr-1"></iconify-icon>
-                    BASTION AI Analysis
-                  </h3>
-                  <div id="irosContent" class="text-sm leading-8 text-zinc-300 font-light whitespace-pre-line"></div>
-                </div>
-
-                <!-- Key Drivers / Indicators -->
-                <div id="driversSection">
-                  <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-zinc-700 pl-3 mb-4 [text-shadow:_0_0_10px_rgba(255,255,255,0.3)]">Key Data</h3>
-                  <ul id="detailDrivers" class="space-y-3 leading-7"></ul>
-                </div>
-
-                <!-- Risk Factors -->
-                <div id="risksSection" class="hidden">
-                  <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-red-600 pl-3 mb-4 [text-shadow:_0_0_10px_rgba(255,255,255,0.3)]">Risks</h3>
-                  <ul id="detailRisks" class="space-y-3 leading-7"></ul>
-                </div>
-              </div>
-
-              <!-- Right: Data Visuals -->
-              <div class="space-y-6">
-                <!-- Metrics Tiles -->
-                <div id="metricsTiles" class="grid grid-cols-2 gap-3"></div>
-
-                <!-- Whale Positions Table (for whale reports) -->
-                <div id="whaleTable" class="hidden border border-zinc-800 bg-[#080808] p-3">
-                  <div class="text-[9px] font-mono text-zinc-500 uppercase mb-2 font-bold">Top Whale Positions</div>
-                  <div id="whaleTableBody" class="space-y-1"></div>
-                </div>
-
-                <!-- Valuation Scenarios (for market structure) -->
-                <div id="scenarioSection" class="hidden border border-zinc-800 bg-[#080808] p-3">
-                  <div class="text-[9px] font-mono text-zinc-500 uppercase mb-2 font-bold">Key Levels</div>
-                  <div id="scenarioGrid" class="grid grid-cols-3 gap-px bg-zinc-800 border border-zinc-800"></div>
-                  <div id="scenarioNote" class="mt-2 text-[9px] text-zinc-500 font-mono leading-tight"></div>
-                </div>
-
-                <!-- Cycle Indicators (for cycle reports) -->
-                <div id="cycleSection" class="hidden">
-                  <div class="text-[9px] font-mono text-zinc-500 uppercase mb-2 font-bold">Cycle Indicators</div>
-                  <div id="cycleIndicators" class="space-y-3"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Trade Structures (for market structure reports) -->
-            <div id="tradeSection" class="hidden">
-              <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-cyan-500 pl-3 mb-4 flex items-center justify-between [text-shadow:_0_0_10px_rgba(255,255,255,0.3)]">
-                Tactical Trade Structure
-                <span class="ml-auto flex items-center gap-2 text-[9px] text-zinc-400 font-normal">
-                  <span class="bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">AUTO</span>
-                  Execution via <span class="text-zinc-300 font-mono">BASTION_V6</span>
-                </span>
-              </h3>
-              <div class="border border-zinc-800 rounded-sm overflow-hidden font-mono text-[10px]">
-                <div class="grid grid-cols-6 bg-zinc-900 border-b-2 border-zinc-700 p-2 text-zinc-500 uppercase tracking-wider font-bold text-[9px]">
-                  <span>Bias</span><span>Entry Zone</span><span>Target 1</span><span>Stop Loss</span><span>R:R</span><span class="text-right">Invalidation</span>
-                </div>
-                <div id="tradeRow" class="grid grid-cols-6 bg-[#050505] border-b border-zinc-800/50 p-2 items-center"></div>
-              </div>
-            </div>
-
-            <!-- Raw Data Section -->
-            <div class="pt-4 border-t border-zinc-800">
-              <div class="flex gap-4 mb-3">
-                <button onclick="toggleRawData()" class="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 pb-0.5">
-                  <iconify-icon icon="solar:code-linear" class="mr-1"></iconify-icon> View Raw JSON
-                </button>
-              </div>
-              <pre id="rawDataPanel" class="hidden bg-[#080808] border border-zinc-800 p-4 text-[9px] font-mono text-zinc-500 overflow-auto max-h-96 rounded-sm"></pre>
-            </div>
-          </div>
-        </div>
+        <!-- Report Detail Container -->
+        <div id="reportDetail" class="hidden"></div>
       </section>
 
       <!-- RIGHT COLUMN: Sidebar (25%) -->
-      <aside class="col-span-3 custom-scroll overflow-y-auto flex flex-col bg-[#050505] z-10 border-zinc-800 border-l pt-6 pr-6 pb-6 pl-6">
+      <aside class="col-span-3 bastion-scrollbar overflow-y-auto flex flex-col bg-[#050505] z-10 border-zinc-800 border-l pt-6 pr-6 pb-6 pl-6">
         <div class="flex flex-col h-full bg-[#050505]">
-          <!-- Status Panel -->
           <div class="p-5 border-b-4 border-zinc-900 bg-[#080808]">
             <div class="flex justify-between items-center mb-4">
               <span class="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Report State</span>
@@ -347,7 +230,7 @@
               </label>
               <label class="flex items-center gap-2 text-[10px] font-mono text-zinc-400 group">
                 <div id="checkIros" class="w-3 h-3 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-600"></div>
-                <span>IROS AI Analysis</span>
+                <span>BASTION AI Analysis</span>
               </label>
               <label class="flex items-center gap-2 text-[10px] font-mono text-zinc-400 group">
                 <div id="checkStored" class="w-3 h-3 border border-zinc-700 rounded-sm flex items-center justify-center text-zinc-600"></div>
@@ -355,8 +238,6 @@
               </label>
             </div>
           </div>
-
-          <!-- Activity Timeline -->
           <div class="flex-1 overflow-y-auto custom-scroll pt-5 pr-5 pb-5 pl-5 space-y-6">
             <div class="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest mb-3">Activity</div>
             <div id="activityTimeline" class="relative pl-4 border-l border-zinc-800 space-y-6">
@@ -369,21 +250,27 @@
                 </div>
               </div>
             </div>
-
             <!-- Quick Generate Buttons -->
             <div class="mt-6">
               <div class="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest mb-3">Quick Generate</div>
               <div class="space-y-2">
-                <button onclick="generateReport('market_structure', 'BTC')" class="w-full text-left px-3 py-2 bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
+                <button onclick="generateReport('institutional_research','BTC')" class="w-full text-left px-3 py-2.5 bg-red-950/30 border border-red-900/40 hover:border-red-700/60 rounded-sm text-[10px] font-mono text-red-400 hover:text-red-300 transition-colors flex items-center gap-2 font-bold">
+                  <iconify-icon icon="solar:shield-bold" class="text-red-500"></iconify-icon> BTC Institutional Research
+                </button>
+                <button onclick="generateReport('institutional_research','ETH')" class="w-full text-left px-3 py-2.5 bg-red-950/30 border border-red-900/40 hover:border-red-700/60 rounded-sm text-[10px] font-mono text-red-400 hover:text-red-300 transition-colors flex items-center gap-2 font-bold">
+                  <iconify-icon icon="solar:shield-bold" class="text-blue-500"></iconify-icon> ETH Institutional Research
+                </button>
+                <button onclick="generateReport('institutional_research','SOL')" class="w-full text-left px-3 py-2.5 bg-red-950/30 border border-red-900/40 hover:border-red-700/60 rounded-sm text-[10px] font-mono text-red-400 hover:text-red-300 transition-colors flex items-center gap-2 font-bold">
+                  <iconify-icon icon="solar:shield-bold" class="text-purple-500"></iconify-icon> SOL Institutional Research
+                </button>
+                <div class="border-t border-zinc-800 my-2"></div>
+                <button onclick="generateReport('market_structure','BTC')" class="w-full text-left px-3 py-2 bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
                   <iconify-icon icon="solar:chart-2-linear" class="text-green-500"></iconify-icon> BTC Market Structure
                 </button>
-                <button onclick="generateReport('market_structure', 'ETH')" class="w-full text-left px-3 py-2 bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
+                <button onclick="generateReport('market_structure','ETH')" class="w-full text-left px-3 py-2 bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
                   <iconify-icon icon="solar:chart-2-linear" class="text-blue-500"></iconify-icon> ETH Market Structure
                 </button>
-                <button onclick="generateReport('market_structure', 'SOL')" class="w-full text-left px-3 py-2 bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
-                  <iconify-icon icon="solar:chart-2-linear" class="text-purple-500"></iconify-icon> SOL Market Structure
-                </button>
-                <button onclick="generateReport('whale_intelligence', 'BTC')" class="w-full text-left px-3 py-2 bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
+                <button onclick="generateReport('whale_intelligence','BTC')" class="w-full text-left px-3 py-2 bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
                   <iconify-icon icon="solar:eye-linear" class="text-cyan-500"></iconify-icon> BTC Whale Intel
                 </button>
                 <button onclick="generateReport('cycle_position')" class="w-full text-left px-3 py-2 bg-zinc-900/30 border border-zinc-800 hover:border-zinc-600 rounded-sm text-[10px] font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
@@ -398,7 +285,7 @@
 
     <script>
     // =========================================================================
-    // BASTION RESEARCH TERMINAL - Live API Integration
+    // BASTION RESEARCH TERMINAL v2.0 - Institutional Research
     // =========================================================================
 
     const API_BASE = window.location.origin;
@@ -415,9 +302,18 @@
       await loadReports();
       await loadMCFStatus();
       setupKeyboardShortcuts();
-      // Auto-refresh every 2 minutes
       setInterval(loadReports, 120000);
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.relative')) closeDropdown();
+      });
     });
+
+    function toggleGenerateDropdown() {
+      document.getElementById('generateDropdown').classList.toggle('show');
+    }
+    function closeDropdown() {
+      document.getElementById('generateDropdown').classList.remove('show');
+    }
 
     // =========================================================================
     // DATA FETCHING
@@ -428,16 +324,12 @@
         const params = new URLSearchParams({ limit: '100' });
         if (activeTypeFilter) params.set('type', activeTypeFilter);
         if (activeBiasFilter) params.set('bias', activeBiasFilter);
-
         const res = await fetch(`${API_BASE}/api/mcf/reports?${params}`);
         const data = await res.json();
-
         if (data.success && data.reports) {
           allReports = data.reports;
           renderReportList(allReports);
           document.getElementById('reportCountBadge').textContent = allReports.length;
-
-          // Update Latest Note button
           if (allReports.length > 0) {
             const latest = allReports[0];
             const symbol = extractSymbol(latest);
@@ -458,13 +350,10 @@
       try {
         const res = await fetch(`${API_BASE}/api/mcf/reports/${reportId}`);
         const data = await res.json();
-
         if (data.success && data.report) {
           currentReport = data.report;
           renderDetail(data.report);
           highlightActiveReport(reportId);
-        } else {
-          console.error('[Research] Report not found:', reportId);
         }
       } catch (e) {
         console.error('[Research] Detail load error:', e);
@@ -475,28 +364,25 @@
       try {
         const res = await fetch(`${API_BASE}/api/mcf/status`);
         const data = await res.json();
-        if (data.success) {
-          renderMCFStatus(data.status);
-        }
+        if (data.success) renderMCFStatus(data.status);
       } catch (e) {
         console.warn('[Research] Status check failed');
       }
     }
 
     async function generateReport(type, symbol = 'BTC') {
-      const btn = event?.target;
+      const btn = event?.target?.closest('button');
+      let origHTML = '';
       if (btn) {
         btn.disabled = true;
-        const orig = btn.innerHTML;
+        origHTML = btn.innerHTML;
         btn.innerHTML = '<iconify-icon icon="solar:refresh-circle-linear" class="animate-spin mr-1"></iconify-icon> Generating...';
       }
-
+      addActivity('Generating...', `${type} for ${symbol}`, 'red');
       try {
         const res = await fetch(`${API_BASE}/api/mcf/generate/${type}?symbol=${symbol}`, { method: 'POST' });
         const data = await res.json();
-
         if (data.success && data.report) {
-          // Reload list and show new report
           await loadReports();
           renderDetail(data.report);
           currentReport = data.report;
@@ -508,15 +394,12 @@
       } catch (e) {
         addActivity('Generation Error', e.message, 'red');
       } finally {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = btn.getAttribute('data-orig') || 'Generate';
-        }
+        if (btn) { btn.disabled = false; btn.innerHTML = origHTML; }
       }
     }
 
     function generateNewReport() {
-      generateReport('market_structure', 'BTC');
+      generateReport('institutional_research', 'BTC');
     }
 
     async function refreshReports() {
@@ -533,34 +416,29 @@
     function renderReportList(reports) {
       const container = document.getElementById('reportList');
       document.getElementById('filteredCount').textContent = reports.length;
-
       if (reports.length === 0) {
-        container.innerHTML = `
-          <div class="py-6 text-center text-[10px] font-mono text-zinc-600">
-            No reports found. Generate one from the sidebar.
-          </div>`;
+        container.innerHTML = '<div class="py-6 text-center text-[10px] font-mono text-zinc-600">No reports found. Generate one from the sidebar.</div>';
         return;
       }
-
-      container.innerHTML = reports.map((r, i) => {
+      container.innerHTML = reports.map((r) => {
         const symbol = extractSymbol(r);
         const biasColor = getBiasColor(r.bias);
         const biasLabel = getBiasLabel(r.bias);
         const timeStr = formatTime(r.generated_at);
         const typeIcon = getTypeIcon(r.type);
         const active = currentReport && currentReport.id === r.id;
-
+        const isInst = r.type === 'institutional_research';
         return `
-          <div class="report-item ${active ? 'active bg-[#0a0a0a]' : 'bg-[#050505]'} border-l-[3px] ${active ? 'border-l-green-600' : 'border-l-transparent hover:border-l-zinc-700'} py-2 px-3 cursor-pointer border-t border-zinc-800/50 group transition-colors"
+          <div class="report-item ${active ? 'active bg-[#0a0a0a]' : 'bg-[#050505]'} border-l-[3px] ${active ? 'border-l-red-600' : 'border-l-transparent hover:border-l-zinc-700'} py-2 px-3 cursor-pointer border-t border-zinc-800/50 group transition-colors"
                onclick="loadReportDetail('${r.id}')" data-id="${r.id}">
             <div class="flex justify-between items-start mb-0.5">
-              <span class="text-xs font-bold font-mono ${active ? biasColor : 'text-zinc-300 group-hover:text-white'}">
-                ${typeIcon} ${symbol}
+              <span class="text-xs font-bold font-mono ${active ? biasColor : 'text-zinc-300 group-hover:text-white'} flex items-center gap-1.5">
+                ${isInst ? '<iconify-icon icon="solar:shield-bold" class="text-red-500 text-[10px]"></iconify-icon>' : typeIcon} ${symbol}
               </span>
               <span class="text-[9px] font-mono ${biasColor} font-bold">${biasLabel}</span>
             </div>
             <div class="flex justify-between items-end">
-              <span class="text-[9px] font-mono text-zinc-500 truncate max-w-[70%]">${r.title}</span>
+              <span class="text-[9px] font-mono text-zinc-500 truncate max-w-[70%]">${isInst ? 'Institutional Research' : r.title}</span>
               <span class="text-[9px] font-mono text-zinc-600">${timeStr}</span>
             </div>
           </div>`;
@@ -568,8 +446,7 @@
     }
 
     function renderEmptyList(msg) {
-      document.getElementById('reportList').innerHTML = `
-        <div class="py-6 text-center text-[10px] font-mono text-zinc-600">${msg}</div>`;
+      document.getElementById('reportList').innerHTML = `<div class="py-6 text-center text-[10px] font-mono text-zinc-600">${msg}</div>`;
       document.getElementById('filteredCount').textContent = '0';
     }
 
@@ -579,270 +456,740 @@
         el.classList.toggle('active', isActive);
         el.classList.toggle('bg-[#0a0a0a]', isActive);
         el.classList.toggle('bg-[#050505]', !isActive);
-        if (isActive) {
-          el.classList.remove('border-l-transparent');
-          el.classList.add('border-l-green-600');
-        } else {
-          el.classList.add('border-l-transparent');
-          el.classList.remove('border-l-green-600');
-        }
+        if (isActive) { el.classList.remove('border-l-transparent'); el.classList.add('border-l-red-600'); }
+        else { el.classList.add('border-l-transparent'); el.classList.remove('border-l-red-600'); }
       });
     }
 
     // =========================================================================
-    // RENDERING - REPORT DETAIL
+    // RENDERING - DETAIL DISPATCHER
     // =========================================================================
 
     function renderDetail(r) {
-      // Show detail, hide empty state
       document.getElementById('emptyState').classList.add('hidden');
-      document.getElementById('reportDetail').classList.remove('hidden');
-
-      const symbol = extractSymbol(r);
+      const container = document.getElementById('reportDetail');
+      container.classList.remove('hidden');
       const sections = r.sections || {};
 
-      // Header
-      document.getElementById('detailSymbol').textContent = symbol;
-      setBiasBadge(document.getElementById('detailBiasBadge'), r.bias);
-
-      // Price
-      const price = sections.key_levels?.current_price;
-      document.getElementById('detailPrice').textContent = price ? '$' + formatNumber(price) : '---';
-
-      // Type
-      const typeLabels = {
-        market_structure: 'Market Structure',
-        whale_intelligence: 'Whale Intel',
-        options_flow: 'Options Flow',
-        cycle_position: 'Cycle Position',
-        funding_arbitrage: 'Funding Arb',
-        liquidation_cascade: 'Liquidation'
-      };
-      document.getElementById('detailType').textContent = typeLabels[r.type] || r.type;
-
-      // Sources
-      document.getElementById('detailSources').textContent = (r.data_sources || []).length;
-      document.getElementById('detailSourceCount').textContent = `Sources (${(r.data_sources || []).length})`;
-
-      // Confidence
-      const confPct = r.confidence === 'HIGH' ? 85 : r.confidence === 'MEDIUM' ? 60 : 35;
-      document.getElementById('detailConfPct').textContent = confPct + '%';
-      document.getElementById('detailConfBar').style.width = confPct + '%';
-      document.getElementById('detailConfText').textContent = r.confidence;
-
-      // Metadata
-      document.getElementById('detailDesk').textContent = `Type: ${typeLabels[r.type] || r.type}`;
-      document.getElementById('detailPublished').textContent = `Published: ${formatDateTime(r.generated_at)}`;
-      document.getElementById('detailReportId').textContent = r.id;
-
-      // Tags
-      const tagsEl = document.getElementById('detailTags');
-      tagsEl.innerHTML = (r.tags || []).map(t =>
-        `<span class="px-2 py-0.5 bg-zinc-900/50 border border-zinc-800 text-[9px] font-mono text-zinc-400 rounded-sm">${t}</span>`
-      ).join('');
-
-      // Summary / Thesis
-      document.getElementById('detailSummary').textContent = r.summary || 'No summary available.';
-
-      // IROS Analysis
-      const irosSection = document.getElementById('irosSection');
-      if (sections.iros_analysis) {
-        irosSection.classList.remove('hidden');
-        document.getElementById('irosContent').textContent = sections.iros_analysis;
-      } else {
-        irosSection.classList.add('hidden');
-      }
-
-      // Type-specific rendering
-      if (r.type === 'market_structure') {
+      // Detect institutional report
+      if (sections.report_format === 'institutional' || r.type === 'institutional_research') {
+        renderInstitutionalReport(r, container);
+      } else if (r.type === 'market_structure') {
+        renderLegacyReport(r, container);
         renderMarketStructure(r);
       } else if (r.type === 'whale_intelligence') {
+        renderLegacyReport(r, container);
         renderWhaleIntelligence(r);
       } else if (r.type === 'cycle_position') {
+        renderLegacyReport(r, container);
         renderCyclePosition(r);
       } else {
+        renderLegacyReport(r, container);
         renderGenericReport(r);
       }
 
-      // Update sidebar state
       updateSidebarState(r);
-
-      // Raw data
-      document.getElementById('rawDataPanel').textContent = JSON.stringify(r, null, 2);
-      document.getElementById('rawDataPanel').classList.add('hidden');
-
-      // Scroll to top
       document.getElementById('detailSection').scrollTop = 0;
     }
 
     // =========================================================================
-    // TYPE-SPECIFIC RENDERERS
+    // INSTITUTIONAL REPORT RENDERER
+    // =========================================================================
+
+    function renderInstitutionalReport(r, container) {
+      const s = r.sections || {};
+      const symbol = s.symbol || extractSymbol(r);
+      const rating = s.rating || 'HOLD';
+      const ratingLabel = s.rating_label || rating;
+      const conviction = s.conviction || 0;
+      const targetPrice = s.target_price || 0;
+      const currentPrice = s.current_price || 0;
+      const upside = s.upside_percent || 0;
+      const desk = s.desk || 'Research Desk';
+      const horizon = s.horizon || '---';
+      const published = s.published_at || r.generated_at;
+      const version = s.version || 'v1.0';
+
+      const ratingClass = getRatingClass(rating);
+      const convictionColor = conviction >= 70 ? '#22c55e' : conviction >= 40 ? '#eab308' : '#dc2626';
+
+      let html = '';
+
+      // ===== A) REPORT HEADER =====
+      html += `
+      <div class="bg-[#050505] border-b border-zinc-800 p-6 relative">
+        <div class="absolute top-4 right-6 pointer-events-none select-none opacity-40">
+          <div class="flex items-center gap-2 border border-zinc-800/50 bg-zinc-900/20 px-3 py-1.5 rounded-sm">
+            <iconify-icon icon="solar:shield-bold" class="text-zinc-600"></iconify-icon>
+            <span class="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-500">MCF Labs / Research Desk</span>
+          </div>
+        </div>
+
+        <!-- Symbol + Rating Row -->
+        <div class="flex items-center gap-5 mb-6 pt-4">
+          <h1 class="text-4xl font-bold font-mono text-white tracking-tight">${escapeHtml(symbol)}</h1>
+          <div class="px-4 py-1.5 ${ratingClass} text-sm font-mono font-bold uppercase tracking-wider rounded-sm border">
+            ${escapeHtml(ratingLabel)}
+          </div>
+          <div class="flex items-center gap-1.5 ml-2">
+            <span class="text-[9px] font-mono text-zinc-500 uppercase">Rating:</span>
+            <span class="text-xs font-mono font-bold ${rating.includes('BUY') ? 'text-green-400' : rating.includes('SELL') ? 'text-red-400' : 'text-zinc-400'}">${escapeHtml(rating)}</span>
+          </div>
+        </div>
+
+        <!-- Price + Target + Upside -->
+        <div class="flex items-end gap-8 mb-6">
+          <div class="flex flex-col">
+            <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Current Price</span>
+            <span class="text-2xl font-mono font-bold text-white">$${formatNumber(currentPrice)}</span>
+          </div>
+          <div class="flex flex-col border-l border-zinc-800 pl-6">
+            <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Target Price</span>
+            <span class="text-2xl font-mono font-bold ${upside >= 0 ? 'text-green-400' : 'text-red-400'}">$${formatNumber(targetPrice)}</span>
+          </div>
+          <div class="flex flex-col border-l border-zinc-800 pl-6">
+            <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Upside</span>
+            <span class="text-xl font-mono font-bold ${upside >= 0 ? 'text-green-400' : 'text-red-400'}">${upside >= 0 ? '+' : ''}${upside.toFixed(1)}%</span>
+          </div>
+          <div class="flex flex-col border-l border-zinc-800 pl-6">
+            <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Horizon</span>
+            <span class="text-lg font-mono font-bold text-zinc-300">${escapeHtml(horizon)}</span>
+          </div>
+        </div>
+
+        <!-- Metadata Row -->
+        <div class="flex items-center gap-4 text-[10px] font-mono text-zinc-400 pb-4 border-b border-zinc-800/50 mb-4">
+          <span class="font-semibold text-white">${escapeHtml(s.analyst || 'MCF Labs AI Engine')}</span>
+          <span class="text-zinc-700">|</span>
+          <span>Desk: ${escapeHtml(desk)}</span>
+          <span class="text-zinc-700">|</span>
+          <span>Published: ${formatDateTime(published)}</span>
+          <span class="text-zinc-700">|</span>
+          <span class="bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-300">${escapeHtml(version)}</span>
+          <span class="text-zinc-700">|</span>
+          <span class="bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-300">${escapeHtml(r.id)}</span>
+          <span class="ml-auto flex items-center gap-2 text-zinc-500">
+            <iconify-icon icon="solar:shield-check-linear"></iconify-icon> AI Generated
+          </span>
+        </div>
+
+        <!-- C) CONVICTION METER -->
+        <div class="mb-2">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Conviction Score</span>
+            <span class="text-lg font-mono font-bold" style="color: ${convictionColor}">${conviction}%</span>
+          </div>
+          <div class="w-full h-3 rounded-full overflow-hidden score-bar-bg border border-zinc-800">
+            <div class="h-full conviction-bar rounded-full transition-all duration-700 relative" style="width: ${conviction}%">
+              <div class="absolute right-0 top-0 h-full w-1 bg-white/30 rounded-full"></div>
+            </div>
+          </div>
+          <div class="flex justify-between text-[8px] font-mono text-zinc-600 mt-1">
+            <span>0 - Low</span><span>50 - Moderate</span><span>100 - High</span>
+          </div>
+        </div>`;
+
+      // ===== L) RATING HISTORY =====
+      if (s.rating_history && s.rating_history.length > 0) {
+        html += `
+        <div class="mt-4 pt-3 border-t border-zinc-800/50">
+          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Rating History</span>
+          <div class="flex items-center gap-3 mt-2">
+            ${s.rating_history.map(rh => `
+              <div class="flex items-center gap-2 text-[10px] font-mono">
+                <span class="text-zinc-500">${formatDate(rh.date)}</span>
+                <span class="text-zinc-600">${escapeHtml(rh.from)}</span>
+                <iconify-icon icon="solar:arrow-right-linear" class="text-zinc-600 text-[9px]"></iconify-icon>
+                <span class="text-white font-bold">${escapeHtml(rh.to)}</span>
+              </div>
+            `).join('<span class="text-zinc-800">|</span>')}
+          </div>
+        </div>`;
+      }
+
+      html += `</div>`; // close header
+
+      // ===== START CONTENT BODY =====
+      html += `<div class="p-6 bg-[#050505] space-y-8 fade-in">`;
+
+      // ===== B) THESIS SECTION =====
+      if (s.thesis) {
+        html += `
+        <div>
+          <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-green-500 pl-3 mb-4">Investment Thesis</h3>
+          <div class="border-l-2 border-green-500/30 pl-4 py-2">
+            <p class="text-sm leading-8 text-zinc-300 font-light">${escapeHtml(s.thesis)}</p>
+          </div>
+        </div>`;
+      }
+
+      // ===== D) KEY DRIVERS =====
+      if (s.key_drivers && s.key_drivers.length > 0) {
+        html += `
+        <div>
+          <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-cyan-500 pl-3 mb-4">Key Drivers</h3>
+          <div class="space-y-3">
+            ${s.key_drivers.map((d, i) => `
+              <div class="flex items-start gap-3 group">
+                <span class="mt-0.5 w-5 h-5 bg-zinc-900 border border-zinc-800 rounded-sm flex items-center justify-center text-[9px] font-mono text-zinc-500 font-bold shrink-0">${i + 1}</span>
+                <div class="flex-1">
+                  <p class="text-sm text-zinc-300 leading-relaxed">${escapeHtml(d.text)}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[9px] font-mono px-1.5 py-0.5 bg-cyan-900/20 border border-cyan-800/30 text-cyan-400 rounded">${escapeHtml(d.source || 'Internal')}</span>
+                    <span class="text-[9px] font-mono text-zinc-600">${escapeHtml(d.time || '')}</span>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      }
+
+      // ===== E) RISK FACTORS =====
+      if (s.risks && s.risks.length > 0) {
+        html += `
+        <div>
+          <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-red-600 pl-3 mb-4">Risk Factors</h3>
+          <div class="space-y-2">
+            ${s.risks.map(risk => {
+              const sevColor = risk.severity === 'HIGH' ? 'bg-red-900/30 border-red-700/40 text-red-400' : risk.severity === 'MEDIUM' ? 'bg-yellow-900/20 border-yellow-700/30 text-yellow-400' : 'bg-zinc-900/30 border-zinc-700 text-zinc-400';
+              return `
+              <div class="flex items-start gap-3 border-l-2 border-red-800/40 pl-3 py-2">
+                <span class="text-[9px] font-mono px-1.5 py-0.5 ${sevColor} rounded border font-bold shrink-0">${escapeHtml(risk.severity || 'LOW')}</span>
+                <p class="text-sm text-zinc-300 leading-relaxed">${escapeHtml(risk.text)}</p>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }
+
+      // ===== F) VALUATION SCENARIOS =====
+      if (s.valuation_scenarios) {
+        const vs = s.valuation_scenarios;
+        html += `
+        <div>
+          <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-yellow-500 pl-3 mb-4">Valuation Scenarios</h3>
+          <div class="grid grid-cols-3 gap-3">
+            ${renderScenarioCard('Bear', vs.bear, 'red', currentPrice)}
+            ${renderScenarioCard('Base', vs.base, 'yellow', currentPrice, true)}
+            ${renderScenarioCard('Bull', vs.bull, 'green', currentPrice)}
+          </div>
+          ${vs.rationale ? `<p class="text-[10px] font-mono text-zinc-500 mt-3 leading-relaxed">${escapeHtml(vs.rationale)}</p>` : ''}
+        </div>`;
+      }
+
+      // ===== G) TRADE STRUCTURES TABLE =====
+      if (s.trade_structures && s.trade_structures.length > 0) {
+        html += `
+        <div>
+          <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-indigo-500 pl-3 mb-4 flex items-center justify-between">
+            Trade Structures
+            <span class="text-[9px] text-zinc-500 font-normal">Execution via <span class="text-zinc-300">BASTION_V6</span></span>
+          </h3>
+          <div class="border border-zinc-800 rounded-sm overflow-hidden font-mono text-[10px]">
+            <div class="grid grid-cols-8 bg-zinc-900 border-b-2 border-zinc-700 p-2 text-zinc-500 uppercase tracking-wider font-bold text-[9px]">
+              <span>Type</span><span>Dir</span><span>Entry</span><span>Target</span><span>Stop</span><span>Size</span><span>R:R</span><span class="text-right">Status</span>
+            </div>
+            ${s.trade_structures.map(t => {
+              const dirColor = t.direction === 'LONG' ? 'text-green-500' : 'text-red-500';
+              const statusColor = t.status === 'QUEUE' ? 'bg-green-900/20 text-green-400 border-green-800/30' : t.status === 'ACTIVE' ? 'bg-blue-900/20 text-blue-400 border-blue-800/30' : 'bg-zinc-900/30 text-zinc-400 border-zinc-700';
+              return `
+              <div class="grid grid-cols-8 bg-[#050505] border-b border-zinc-800/50 p-2 items-center hover:bg-zinc-900/30 transition-colors">
+                <span class="text-zinc-300 font-bold">${escapeHtml(t.type)}</span>
+                <span class="${dirColor} font-bold flex items-center gap-1"><span class="w-1 h-3 ${t.direction === 'LONG' ? 'bg-green-500' : 'bg-red-500'}"></span>${t.direction}</span>
+                <span class="text-zinc-300">$${formatNumber(t.entry)}</span>
+                <span class="${dirColor}">$${formatNumber(t.target)}</span>
+                <span class="text-red-500">$${formatNumber(t.stop)}</span>
+                <span class="text-zinc-400 text-[9px]">${escapeHtml(t.size || '---')}</span>
+                <span class="text-zinc-300">${t.risk_reward ? t.risk_reward.toFixed(2) + ':1' : '---'}</span>
+                <span class="text-right"><span class="px-1.5 py-0.5 ${statusColor} rounded border text-[8px] font-bold">${escapeHtml(t.status || '---')}</span></span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }
+
+      // ===== H) DERIVATIVES DASHBOARD =====
+      if (s.derivatives) {
+        const d = s.derivatives;
+        html += `
+        <div>
+          <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-purple-500 pl-3 mb-4">Derivatives Dashboard</h3>
+          <div class="grid grid-cols-3 gap-3">`;
+
+        // OI
+        if (d.open_interest) {
+          const oiChange = d.open_interest.change_percent_24h;
+          const oiColor = oiChange > 0 ? 'text-green-400' : oiChange < 0 ? 'text-red-400' : 'text-zinc-400';
+          html += `
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">Open Interest</div>
+              <div class="text-sm font-mono font-bold text-white">$${formatLargeNumber(d.open_interest.value)}</div>
+              <div class="text-[10px] font-mono ${oiColor} mt-1">${oiChange > 0 ? '+' : ''}${oiChange ? oiChange.toFixed(1) : '0'}% 24h</div>
+            </div>`;
+        }
+
+        // Funding Rate
+        if (d.funding_rate) {
+          const rate = d.funding_rate.rate || d.funding_rate.avg_rate || 0;
+          const frColor = rate > 0.0001 ? 'text-green-400' : rate < -0.0001 ? 'text-red-400' : 'text-zinc-300';
+          html += `
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">Funding Rate</div>
+              <div class="text-sm font-mono font-bold ${frColor}">${(rate * 100).toFixed(4)}%</div>
+              <div class="text-[10px] font-mono text-zinc-500 mt-1">8h avg</div>
+            </div>`;
+        }
+
+        // L/S Ratio
+        if (d.long_short_ratio) {
+          const lsr = typeof d.long_short_ratio === 'number' ? d.long_short_ratio : parseFloat(d.long_short_ratio);
+          html += `
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">Long/Short Ratio</div>
+              <div class="text-sm font-mono font-bold ${lsr > 1 ? 'text-green-400' : 'text-red-400'}">${lsr.toFixed(2)}</div>
+              <div class="text-[10px] font-mono text-zinc-500 mt-1">${lsr > 1 ? 'Longs Dominant' : 'Shorts Dominant'}</div>
+            </div>`;
+        }
+
+        // Max Pain
+        if (d.max_pain) {
+          html += `
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">Options Max Pain</div>
+              <div class="text-sm font-mono font-bold text-white">$${formatNumber(d.max_pain)}</div>
+              <div class="text-[10px] font-mono text-zinc-500 mt-1">Strike convergence</div>
+            </div>`;
+        }
+
+        // Taker Flow
+        if (d.taker_flow) {
+          html += `
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">Taker Buy Vol</div>
+              <div class="text-sm font-mono font-bold text-green-400">$${formatLargeNumber(d.taker_flow.buy)}</div>
+              <div class="text-[10px] font-mono text-zinc-500 mt-1">vs sell $${formatLargeNumber(d.taker_flow.sell)}</div>
+            </div>`;
+        }
+
+        // Whale Positioning
+        if (s.whale_positioning) {
+          const wp = s.whale_positioning;
+          const wpColor = wp.net_bias === 'LONG' ? 'text-green-400' : wp.net_bias === 'SHORT' ? 'text-red-400' : 'text-zinc-300';
+          html += `
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">Whale Net Bias</div>
+              <div class="text-sm font-mono font-bold ${wpColor}">${escapeHtml(wp.net_bias || 'N/A')}</div>
+              <div class="text-[10px] font-mono text-zinc-500 mt-1">${wp.position_count || 0} pos | L:$${formatLargeNumber(wp.total_long_usd)} S:$${formatLargeNumber(wp.total_short_usd)}</div>
+            </div>`;
+        }
+
+        html += `</div></div>`;
+      }
+
+      // ===== I) MCF ULTRA SCORES =====
+      if (s.mcf_scores) {
+        const ms = s.mcf_scores;
+        const composite = ms.composite || 0;
+        const grade = composite >= 8 ? 'A' : composite >= 6.5 ? 'B' : composite >= 5 ? 'C' : composite >= 3.5 ? 'D' : 'F';
+        const gradeColor = composite >= 8 ? 'text-green-400' : composite >= 6.5 ? 'text-green-500' : composite >= 5 ? 'text-yellow-400' : composite >= 3.5 ? 'text-orange-400' : 'text-red-400';
+        const components = [
+          { name: 'Structure', value: ms.structure || 0 },
+          { name: 'Volume', value: ms.volume || 0 },
+          { name: 'Volatility', value: ms.volatility || 0 },
+          { name: 'Proximity', value: ms.proximity || 0 },
+          { name: 'Momentum', value: ms.momentum || 0 }
+        ];
+        html += `
+        <div>
+          <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-orange-500 pl-3 mb-4">MCF Ultra Scores</h3>
+          <div class="grid grid-cols-2 gap-6">
+            <div class="space-y-3">
+              ${components.map(c => {
+                const pct = (c.value / 10) * 100;
+                const barColor = c.value >= 7 ? 'bg-green-500' : c.value >= 5 ? 'bg-yellow-500' : 'bg-red-500';
+                return `
+                <div>
+                  <div class="flex justify-between text-[10px] font-mono mb-1">
+                    <span class="text-zinc-400">${c.name}</span>
+                    <span class="text-white font-bold">${c.value.toFixed(1)}/10</span>
+                  </div>
+                  <div class="w-full h-2 rounded-full score-bar-bg border border-zinc-800 overflow-hidden">
+                    <div class="h-full ${barColor} rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+            <div class="flex flex-col items-center justify-center bg-[#080808] border border-zinc-800 rounded-sm p-6">
+              <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Composite Score</span>
+              <span class="text-5xl font-mono font-bold ${gradeColor}">${grade}</span>
+              <span class="text-xl font-mono font-bold text-white mt-1">${composite.toFixed(1)}<span class="text-zinc-500 text-sm">/10</span></span>
+              <div class="mt-3 w-full">
+                <span class="text-[9px] font-mono text-zinc-500 uppercase mb-1 block">Confluence</span>
+                <div class="w-full h-2 rounded-full score-bar-bg border border-zinc-800 overflow-hidden">
+                  <div class="h-full bg-orange-500 rounded-full" style="width: ${(ms.confluence || 0) * 100}%"></div>
+                </div>
+                <span class="text-[10px] font-mono text-orange-400 mt-1 block text-right">${((ms.confluence || 0) * 100).toFixed(0)}%</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      // ===== J) ORDER FLOW =====
+      if (s.order_flow) {
+        const of = s.order_flow;
+        const buyPct = of.buy_percent || 50;
+        const sellPct = of.sell_percent || 50;
+        const flowBiasColor = of.flow_bias === 'BULLISH' ? 'text-green-400' : of.flow_bias === 'BEARISH' ? 'text-red-400' : 'text-zinc-400';
+        html += `
+        <div>
+          <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-emerald-500 pl-3 mb-4">Order Flow Analysis</h3>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm text-center">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">CVD State</div>
+              <div class="text-sm font-mono font-bold ${of.cvd_state === 'Buying' ? 'text-green-400' : of.cvd_state === 'Selling' ? 'text-red-400' : 'text-zinc-300'}">${escapeHtml(of.cvd_state || 'N/A')}</div>
+            </div>
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-2">Buy / Sell Pressure</div>
+              <div class="w-full h-3 rounded-full overflow-hidden flex">
+                <div class="h-full bg-green-500" style="width: ${buyPct}%"></div>
+                <div class="h-full bg-red-500" style="width: ${sellPct}%"></div>
+              </div>
+              <div class="flex justify-between text-[9px] font-mono mt-1">
+                <span class="text-green-400">${buyPct.toFixed(1)}% Buy</span>
+                <span class="text-red-400">${sellPct.toFixed(1)}% Sell</span>
+              </div>
+            </div>
+            <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm text-center">
+              <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">Flow Bias</div>
+              <div class="text-sm font-mono font-bold ${flowBiasColor}">${escapeHtml(of.flow_bias || 'NEUTRAL')}</div>
+              <div class="text-[9px] font-mono text-zinc-500 mt-1">Whale: ${escapeHtml(of.whale_bias || 'N/A')} | L/S: ${of.ls_ratio ? of.ls_ratio.toFixed(2) : '---'}</div>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      // ===== K) AUDIT TRAIL =====
+      if (s.audit_trail) {
+        const at = s.audit_trail;
+        html += `
+        <div class="border-t border-zinc-800 pt-6">
+          <button onclick="document.getElementById('auditContent').classList.toggle('hidden');this.querySelector('iconify-icon').classList.toggle('rotate-90')" class="flex items-center gap-2 text-xs font-mono font-extrabold text-zinc-500 uppercase tracking-widest hover:text-white transition-colors cursor-pointer mb-4">
+            <iconify-icon icon="solar:alt-arrow-right-linear" class="transition-transform"></iconify-icon>
+            Audit Trail & Compliance
+          </button>
+          <div id="auditContent" class="hidden space-y-4 fade-in">
+            <div class="grid grid-cols-4 gap-3">
+              <div class="bg-[#080808] border border-zinc-800 p-2 rounded-sm">
+                <div class="text-[8px] font-mono text-zinc-600 uppercase">Gen Time</div>
+                <div class="text-[11px] font-mono text-zinc-300 font-bold">${at.generation_time_ms ? (at.generation_time_ms / 1000).toFixed(1) + 's' : '---'}</div>
+              </div>
+              <div class="bg-[#080808] border border-zinc-800 p-2 rounded-sm">
+                <div class="text-[8px] font-mono text-zinc-600 uppercase">Model</div>
+                <div class="text-[11px] font-mono text-zinc-300 font-bold">${escapeHtml(at.model || '---')}</div>
+              </div>
+              <div class="bg-[#080808] border border-zinc-800 p-2 rounded-sm">
+                <div class="text-[8px] font-mono text-zinc-600 uppercase">Engine</div>
+                <div class="text-[11px] font-mono text-zinc-300 font-bold">${escapeHtml(at.engine || '---')}</div>
+              </div>
+              <div class="bg-[#080808] border border-zinc-800 p-2 rounded-sm">
+                <div class="text-[8px] font-mono text-zinc-600 uppercase">Sources</div>
+                <div class="text-[11px] font-mono text-zinc-300 font-bold">${(at.data_sources || []).length} feeds</div>
+              </div>
+            </div>
+            ${at.data_sources ? `
+            <div>
+              <div class="text-[9px] font-mono text-zinc-600 uppercase mb-1">Data Sources</div>
+              <div class="flex gap-1.5 flex-wrap">
+                ${at.data_sources.map(src => `<span class="text-[9px] font-mono px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded">${escapeHtml(src)}</span>`).join('')}
+              </div>
+            </div>` : ''}
+            ${at.versions && at.versions.length > 0 ? `
+            <div>
+              <div class="text-[9px] font-mono text-zinc-600 uppercase mb-2">Version History</div>
+              <div class="border border-zinc-800 rounded-sm overflow-hidden text-[10px] font-mono">
+                <div class="grid grid-cols-5 bg-zinc-900 p-1.5 text-zinc-500 uppercase text-[8px] font-bold tracking-wider border-b border-zinc-700">
+                  <span>Version</span><span>Status</span><span>Author</span><span>Approved</span><span>Time</span>
+                </div>
+                ${at.versions.map(v => `
+                <div class="grid grid-cols-5 p-1.5 border-b border-zinc-800/50 text-zinc-400">
+                  <span class="text-zinc-300">${escapeHtml(v.version)}</span>
+                  <span class="text-green-400">${escapeHtml(v.status)}</span>
+                  <span>${escapeHtml(v.author)}</span>
+                  <span>${escapeHtml(v.approved_by || '---')}</span>
+                  <span>${escapeHtml(v.time || '---')}</span>
+                </div>`).join('')}
+              </div>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }
+
+      // Raw JSON toggle
+      html += `
+        <div class="pt-4 border-t border-zinc-800">
+          <button onclick="document.getElementById('instRawData').classList.toggle('hidden')" class="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 pb-0.5 cursor-pointer">
+            <iconify-icon icon="solar:code-linear" class="mr-1"></iconify-icon> View Raw JSON
+          </button>
+          <pre id="instRawData" class="hidden bg-[#080808] border border-zinc-800 p-4 text-[9px] font-mono text-zinc-500 overflow-auto max-h-96 rounded-sm mt-2">${escapeHtml(JSON.stringify(r, null, 2))}</pre>
+        </div>`;
+
+      html += `</div>`; // close content body
+      container.innerHTML = html;
+    }
+
+    function renderScenarioCard(label, scenario, color, currentPrice, isHighlight = false) {
+      if (!scenario) return `<div class="bg-[#080808] border border-zinc-800 p-4 rounded-sm opacity-50"><div class="text-[9px] font-mono text-zinc-500 uppercase">${label}</div><div class="text-sm font-mono text-zinc-600">N/A</div></div>`;
+      const target = scenario.target || 0;
+      const prob = scenario.probability || 0;
+      const diff = currentPrice > 0 ? ((target - currentPrice) / currentPrice * 100).toFixed(1) : '0';
+      const diffColor = parseFloat(diff) >= 0 ? 'text-green-400' : 'text-red-400';
+      const border = isHighlight ? `border-${color}-600/50 bg-${color}-950/20` : 'border-zinc-800 bg-[#080808]';
+      return `
+        <div class="${border} border p-4 rounded-sm ${isHighlight ? 'ring-1 ring-' + color + '-600/20' : ''}">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-[9px] font-mono text-zinc-500 uppercase font-bold">${escapeHtml(scenario.label || label)}</span>
+            <span class="text-[10px] font-mono font-bold text-${color}-400">${prob}%</span>
+          </div>
+          <div class="text-lg font-mono font-bold text-white">$${formatNumber(target)}</div>
+          <div class="text-[10px] font-mono ${diffColor} mt-1">${parseFloat(diff) >= 0 ? '+' : ''}${diff}% from current</div>
+          <div class="w-full h-1.5 rounded-full score-bar-bg mt-2 overflow-hidden">
+            <div class="h-full bg-${color}-500 rounded-full" style="width: ${prob}%"></div>
+          </div>
+        </div>`;
+    }
+
+    function getRatingClass(rating) {
+      if (rating === 'STRONG_BUY' || rating === 'BUY') return 'rating-badge-buy';
+      if (rating === 'STRONG_SELL' || rating === 'SELL') return 'rating-badge-sell';
+      return 'rating-badge-hold';
+    }
+
+    // =========================================================================
+    // LEGACY REPORT RENDERER (for non-institutional reports)
+    // =========================================================================
+
+    function renderLegacyReport(r, container) {
+      const symbol = extractSymbol(r);
+      const sections = r.sections || {};
+      const typeLabels = {
+        market_structure: 'Market Structure', whale_intelligence: 'Whale Intel',
+        options_flow: 'Options Flow', cycle_position: 'Cycle Position',
+        funding_arbitrage: 'Funding Arb', liquidation_cascade: 'Liquidation'
+      };
+      const confPct = r.confidence === 'HIGH' ? 85 : r.confidence === 'MEDIUM' ? 60 : 35;
+      const price = sections.key_levels?.current_price;
+
+      container.innerHTML = `
+        <!-- Legacy Header -->
+        <div class="bg-[#050505] border-zinc-800 border-b pt-6 pr-6 pb-6 pl-6 relative">
+          <div class="absolute top-6 right-6 pointer-events-none select-none opacity-40">
+            <div class="flex items-center gap-2 border border-zinc-800/50 bg-zinc-900/20 px-3 py-1.5 rounded-sm">
+              <iconify-icon icon="solar:shield-bold" class="text-zinc-600"></iconify-icon>
+              <span class="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-500">MCF Labs / Research Desk</span>
+            </div>
+          </div>
+          <div class="flex gap-6 pt-7 pb-8 items-center">
+            <h1 class="text-3xl font-bold font-mono text-white tracking-tight">${escapeHtml(symbol)}</h1>
+            <div id="detailBiasBadge" class="px-3 py-1 text-xs font-mono font-medium uppercase tracking-wider rounded-sm">---</div>
+            <div class="flex items-center gap-5 border-l border-zinc-800 pl-6">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Price</span>
+                <span class="text-lg font-mono font-bold text-white leading-none">${price ? '$' + formatNumber(price) : '---'}</span>
+              </div>
+              <div class="flex flex-col gap-0.5 pl-5 border-l border-zinc-800/50">
+                <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Type</span>
+                <span class="text-sm font-mono font-bold text-zinc-300 leading-none">${typeLabels[r.type] || r.type}</span>
+              </div>
+              <div class="flex flex-col gap-0.5 pl-5 border-l border-zinc-800/50">
+                <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Sources</span>
+                <span class="text-sm font-mono font-bold text-zinc-300 leading-none">${(r.data_sources || []).length}</span>
+              </div>
+            </div>
+            <div class="ml-auto flex flex-col gap-1 w-48">
+              <div class="flex justify-between text-[9px] font-mono text-zinc-500 uppercase"><span>Conviction</span><span>${confPct}%</span></div>
+              <div class="w-full h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                <div class="h-full bg-red-600 rounded-[1px] transition-all duration-500" style="width: ${confPct}%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-[10px] font-mono text-zinc-400 mb-4 pb-4 border-b border-zinc-800/50">
+            <span class="font-semibold text-white">By BASTION AI</span>
+            <span class="text-zinc-600">|</span><span>Type: ${typeLabels[r.type] || r.type}</span>
+            <span class="text-zinc-600">|</span><span>Published: ${formatDateTime(r.generated_at)}</span>
+            <span class="text-zinc-600">|</span><span class="bg-zinc-900 px-1.5 py-0.5 rounded text-zinc-300">${r.id}</span>
+            <span class="ml-auto flex items-center gap-2 text-zinc-500"><iconify-icon icon="solar:shield-check-linear"></iconify-icon> AI Generated</span>
+          </div>
+          <div class="flex items-center gap-2 text-[10px] font-mono">
+            ${(r.tags || []).map(t => `<span class="px-2 py-0.5 bg-zinc-900/50 border border-zinc-800 text-[9px] font-mono text-zinc-400 rounded-sm">${t}</span>`).join('')}
+          </div>
+        </div>
+        <!-- Legacy Content Body -->
+        <div class="p-6 bg-[#050505] space-y-10 fade-in">
+          <div class="flex items-center gap-3 bg-zinc-900/20 border border-zinc-800/60 p-2 rounded-sm max-w-fit">
+            <div class="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded text-[9px] font-mono uppercase tracking-wider font-bold">
+              <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon> AI Generated
+            </div>
+            <span class="text-[10px] font-mono text-zinc-500">Confidence: <span class="text-white">${r.confidence || '---'}</span></span>
+          </div>
+          <div class="grid grid-cols-2 gap-8">
+            <div class="space-y-6">
+              <div>
+                <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-green-500 pl-3 mb-4">Thesis</h3>
+                <p id="legacySummary" class="text-sm leading-8 text-zinc-300 font-light">${escapeHtml(r.summary || 'No summary available.')}</p>
+              </div>
+              ${sections.iros_analysis ? `
+              <div>
+                <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-indigo-500 pl-3 mb-4">
+                  <iconify-icon icon="solar:bolt-linear" class="text-indigo-400 mr-1"></iconify-icon> BASTION AI Analysis
+                </h3>
+                <div class="text-sm leading-8 text-zinc-300 font-light whitespace-pre-line">${escapeHtml(sections.iros_analysis)}</div>
+              </div>` : ''}
+              <div>
+                <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-zinc-700 pl-3 mb-4">Key Data</h3>
+                <ul id="detailDrivers" class="space-y-3 leading-7"></ul>
+              </div>
+              <div id="risksSection" class="hidden">
+                <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-red-600 pl-3 mb-4">Risks</h3>
+                <ul id="detailRisks" class="space-y-3 leading-7"></ul>
+              </div>
+            </div>
+            <div class="space-y-6">
+              <div id="metricsTiles" class="grid grid-cols-2 gap-3"></div>
+              <div id="whaleTable" class="hidden border border-zinc-800 bg-[#080808] p-3">
+                <div class="text-[9px] font-mono text-zinc-500 uppercase mb-2 font-bold">Top Whale Positions</div>
+                <div id="whaleTableBody" class="space-y-1"></div>
+              </div>
+              <div id="scenarioSection" class="hidden border border-zinc-800 bg-[#080808] p-3">
+                <div class="text-[9px] font-mono text-zinc-500 uppercase mb-2 font-bold">Key Levels</div>
+                <div id="scenarioGrid" class="grid grid-cols-3 gap-px bg-zinc-800 border border-zinc-800"></div>
+                <div id="scenarioNote" class="mt-2 text-[9px] text-zinc-500 font-mono leading-tight"></div>
+              </div>
+              <div id="cycleSection" class="hidden">
+                <div class="text-[9px] font-mono text-zinc-500 uppercase mb-2 font-bold">Cycle Indicators</div>
+                <div id="cycleIndicators" class="space-y-3"></div>
+              </div>
+            </div>
+          </div>
+          <div id="tradeSection" class="hidden">
+            <h3 class="text-xs font-mono font-extrabold text-white uppercase tracking-widest border-l-2 border-cyan-500 pl-3 mb-4 flex items-center justify-between">
+              Tactical Trade Structure
+              <span class="ml-auto flex items-center gap-2 text-[9px] text-zinc-400 font-normal">
+                <span class="bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">AUTO</span>
+                Execution via <span class="text-zinc-300 font-mono">BASTION_V6</span>
+              </span>
+            </h3>
+            <div class="border border-zinc-800 rounded-sm overflow-hidden font-mono text-[10px]">
+              <div class="grid grid-cols-6 bg-zinc-900 border-b-2 border-zinc-700 p-2 text-zinc-500 uppercase tracking-wider font-bold text-[9px]">
+                <span>Bias</span><span>Entry Zone</span><span>Target 1</span><span>Stop Loss</span><span>R:R</span><span class="text-right">Invalidation</span>
+              </div>
+              <div id="tradeRow" class="grid grid-cols-6 bg-[#050505] border-b border-zinc-800/50 p-2 items-center"></div>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-zinc-800">
+            <button onclick="document.getElementById('legacyRawData').classList.toggle('hidden')" class="text-[10px] font-mono text-zinc-500 hover:text-zinc-300 pb-0.5 cursor-pointer">
+              <iconify-icon icon="solar:code-linear" class="mr-1"></iconify-icon> View Raw JSON
+            </button>
+            <pre id="legacyRawData" class="hidden bg-[#080808] border border-zinc-800 p-4 text-[9px] font-mono text-zinc-500 overflow-auto max-h-96 rounded-sm mt-2">${escapeHtml(JSON.stringify(r, null, 2))}</pre>
+          </div>
+        </div>`;
+
+      // Set bias badge
+      setBiasBadge(document.getElementById('detailBiasBadge'), r.bias);
+    }
+
+    // =========================================================================
+    // TYPE-SPECIFIC RENDERERS (Legacy)
     // =========================================================================
 
     function renderMarketStructure(r) {
       const s = r.sections || {};
-
-      // Metrics tiles
       const tiles = [];
       if (s.derivatives?.open_interest) {
-        tiles.push({
-          label: 'Open Interest',
-          value: '$' + formatLargeNumber(s.derivatives.open_interest.value),
-          sub: s.derivatives.open_interest.change_percent_24h ? `${s.derivatives.open_interest.change_percent_24h > 0 ? '+' : ''}${s.derivatives.open_interest.change_percent_24h.toFixed(1)}% 24h` : '',
-          source: 'Coinglass'
-        });
+        tiles.push({ label: 'Open Interest', value: '$' + formatLargeNumber(s.derivatives.open_interest.value), sub: s.derivatives.open_interest.change_percent_24h ? `${s.derivatives.open_interest.change_percent_24h > 0 ? '+' : ''}${s.derivatives.open_interest.change_percent_24h.toFixed(1)}% 24h` : '', source: 'Coinglass' });
       }
       if (s.derivatives?.funding_rate) {
         const rate = s.derivatives.funding_rate.rate || s.derivatives.funding_rate.avg_rate || 0;
-        tiles.push({
-          label: 'Funding Rate',
-          value: (rate * 100).toFixed(4) + '%',
-          sub: rate > 0.01 ? 'Overheated' : rate < -0.01 ? 'Bearish' : 'Neutral',
-          source: 'Coinglass'
-        });
+        tiles.push({ label: 'Funding Rate', value: (rate * 100).toFixed(4) + '%', sub: rate > 0.01 ? 'Overheated' : rate < -0.01 ? 'Bearish' : 'Neutral', source: 'Coinglass' });
       }
       if (s.derivatives?.long_short_ratio) {
-        tiles.push({
-          label: 'Long/Short Ratio',
-          value: typeof s.derivatives.long_short_ratio === 'number' ? s.derivatives.long_short_ratio.toFixed(2) : String(s.derivatives.long_short_ratio),
-          sub: s.derivatives.long_short_ratio > 1 ? 'Longs Dominant' : 'Shorts Dominant',
-          source: 'Coinglass'
-        });
+        tiles.push({ label: 'Long/Short Ratio', value: typeof s.derivatives.long_short_ratio === 'number' ? s.derivatives.long_short_ratio.toFixed(2) : String(s.derivatives.long_short_ratio), sub: s.derivatives.long_short_ratio > 1 ? 'Longs Dominant' : 'Shorts Dominant', source: 'Coinglass' });
       }
       if (s.whale_positioning) {
-        tiles.push({
-          label: 'Whale Net Bias',
-          value: s.whale_positioning.net_bias || 'N/A',
-          sub: `${s.whale_positioning.position_count || 0} positions`,
-          source: 'Hyperliquid'
-        });
+        tiles.push({ label: 'Whale Net Bias', value: s.whale_positioning.net_bias || 'N/A', sub: `${s.whale_positioning.position_count || 0} positions`, source: 'Hyperliquid' });
       }
       renderMetricsTiles(tiles);
 
-      // Key drivers from data
       const drivers = [];
-      if (s.whale_positioning?.total_long_usd) {
-        drivers.push(`Whale Longs: $${formatLargeNumber(s.whale_positioning.total_long_usd)} | Shorts: $${formatLargeNumber(s.whale_positioning.total_short_usd)}`);
-      }
-      if (s.key_levels?.max_pain && s.key_levels.max_pain > 0) {
-        drivers.push(`Options Max Pain: $${formatNumber(s.key_levels.max_pain)}`);
-      }
-      if (s.key_levels?.resistance?.length) {
-        s.key_levels.resistance.forEach(l => {
-          if (l.price > 0) drivers.push(`Resistance: $${formatNumber(l.price)} (${l.reason})`);
-        });
-      }
-      if (s.key_levels?.support?.length) {
-        s.key_levels.support.forEach(l => {
-          if (l.price > 0) drivers.push(`Support: $${formatNumber(l.price)} (${l.reason})`);
-        });
-      }
+      if (s.whale_positioning?.total_long_usd) drivers.push(`Whale Longs: $${formatLargeNumber(s.whale_positioning.total_long_usd)} | Shorts: $${formatLargeNumber(s.whale_positioning.total_short_usd)}`);
+      if (s.key_levels?.max_pain && s.key_levels.max_pain > 0) drivers.push(`Options Max Pain: $${formatNumber(s.key_levels.max_pain)}`);
+      if (s.key_levels?.resistance?.length) s.key_levels.resistance.forEach(l => { if (l.price > 0) drivers.push(`Resistance: $${formatNumber(l.price)} (${l.reason})`); });
+      if (s.key_levels?.support?.length) s.key_levels.support.forEach(l => { if (l.price > 0) drivers.push(`Support: $${formatNumber(l.price)} (${l.reason})`); });
       renderDrivers(drivers);
 
-      // Risks
       const risks = [];
       if (s.key_levels?.liquidation_clusters) {
         const lc = s.key_levels.liquidation_clusters;
         if (lc.longs_at_risk?.price) risks.push(`Long liquidations cluster near $${formatNumber(lc.longs_at_risk.price)}`);
         if (lc.shorts_at_risk?.price) risks.push(`Short liquidations cluster near $${formatNumber(lc.shorts_at_risk.price)}`);
       }
-      if (risks.length > 0) {
-        document.getElementById('risksSection').classList.remove('hidden');
-        renderRisks(risks);
-      } else {
-        document.getElementById('risksSection').classList.add('hidden');
-      }
+      if (risks.length > 0) { document.getElementById('risksSection').classList.remove('hidden'); renderRisks(risks); }
+      else { document.getElementById('risksSection').classList.add('hidden'); }
 
-      // Key Levels (scenario section)
       if (s.key_levels) {
         document.getElementById('scenarioSection').classList.remove('hidden');
         const grid = document.getElementById('scenarioGrid');
         const levels = [];
-        if (s.key_levels.support?.length && s.key_levels.support[0].price > 0) {
-          levels.push({ label: 'SUPPORT', price: s.key_levels.support[0].price, color: 'text-green-500', reason: s.key_levels.support[0].reason });
-        }
+        if (s.key_levels.support?.length && s.key_levels.support[0].price > 0) levels.push({ label: 'SUPPORT', price: s.key_levels.support[0].price, color: 'text-green-500', reason: s.key_levels.support[0].reason });
         levels.push({ label: 'CURRENT', price: s.key_levels.current_price, color: 'text-white', reason: 'Spot Price' });
-        if (s.key_levels.resistance?.length && s.key_levels.resistance[0].price > 0) {
-          levels.push({ label: 'RESISTANCE', price: s.key_levels.resistance[0].price, color: 'text-red-500', reason: s.key_levels.resistance[0].reason });
-        }
-        grid.innerHTML = levels.map(l => `
-          <div class="bg-[#0c0c0c] p-2 text-center flex flex-col gap-1">
-            <span class="text-[8px] font-mono text-zinc-500 uppercase tracking-wider">${l.label}</span>
-            <span class="text-sm font-mono font-bold ${l.color} leading-none">$${formatNumber(l.price)}</span>
-            <span class="text-[7px] font-mono text-zinc-600">${l.reason}</span>
-          </div>`).join('');
-      } else {
-        document.getElementById('scenarioSection').classList.add('hidden');
-      }
+        if (s.key_levels.resistance?.length && s.key_levels.resistance[0].price > 0) levels.push({ label: 'RESISTANCE', price: s.key_levels.resistance[0].price, color: 'text-red-500', reason: s.key_levels.resistance[0].reason });
+        grid.innerHTML = levels.map(l => `<div class="bg-[#0c0c0c] p-2 text-center flex flex-col gap-1"><span class="text-[8px] font-mono text-zinc-500 uppercase tracking-wider">${l.label}</span><span class="text-sm font-mono font-bold ${l.color} leading-none">$${formatNumber(l.price)}</span><span class="text-[7px] font-mono text-zinc-600">${l.reason}</span></div>`).join('');
+      } else { document.getElementById('scenarioSection').classList.add('hidden'); }
 
-      // Trade scenario
       if (s.trade_scenario) {
         document.getElementById('tradeSection').classList.remove('hidden');
         const ts = s.trade_scenario;
         const entryStr = ts.entry_zone ? `$${formatNumber(ts.entry_zone[0])} - $${formatNumber(ts.entry_zone[1])}` : '---';
         const targetStr = ts.targets?.length && ts.targets[0] > 0 ? `$${formatNumber(ts.targets[0])}` : '---';
         const biasColor = ts.bias === 'LONG' ? 'text-green-500' : ts.bias === 'SHORT' ? 'text-red-500' : 'text-zinc-400';
-
         document.getElementById('tradeRow').innerHTML = `
-          <span class="${biasColor} font-bold flex items-center gap-1.5">
-            <span class="w-1 h-3 ${ts.bias === 'LONG' ? 'bg-green-500' : 'bg-red-500'}"></span>
-            ${ts.bias || 'N/A'}
-          </span>
+          <span class="${biasColor} font-bold flex items-center gap-1.5"><span class="w-1 h-3 ${ts.bias === 'LONG' ? 'bg-green-500' : 'bg-red-500'}"></span>${ts.bias || 'N/A'}</span>
           <span class="text-zinc-300">${entryStr}</span>
           <span class="${ts.bias === 'LONG' ? 'text-green-500' : 'text-red-500'}">${targetStr}</span>
           <span class="text-red-500">$${formatNumber(ts.stop_loss)}</span>
           <span class="text-zinc-400">${ts.risk_reward ? ts.risk_reward.toFixed(1) + ':1' : '---'}</span>
           <span class="text-right text-zinc-500 text-[9px]">${ts.invalidation || '---'}</span>`;
-      } else {
-        document.getElementById('tradeSection').classList.add('hidden');
-      }
+      } else { document.getElementById('tradeSection').classList.add('hidden'); }
 
-      // Hide whale & cycle sections
       document.getElementById('whaleTable').classList.add('hidden');
       document.getElementById('cycleSection').classList.add('hidden');
     }
 
     function renderWhaleIntelligence(r) {
       const s = r.sections || {};
-
-      // Metrics
       const tiles = [];
       if (s.aggregate) {
         tiles.push({ label: 'Net Exposure', value: '$' + formatLargeNumber(Math.abs((s.aggregate.total_long_usd || 0) - (s.aggregate.total_short_usd || 0))), sub: s.aggregate.net_bias || '', source: 'Hyperliquid' });
         tiles.push({ label: 'Total Positions', value: String(s.aggregate.position_count || 0), sub: `L: $${formatLargeNumber(s.aggregate.total_long_usd || 0)}`, source: 'Hyperliquid' });
       }
-      if (s.exchange_flows) {
-        tiles.push({ label: 'Exchange Flow', value: s.exchange_flows.net_direction || 'N/A', sub: s.exchange_flows.period || '', source: 'Whale Alert' });
-      }
+      if (s.exchange_flows) tiles.push({ label: 'Exchange Flow', value: s.exchange_flows.net_direction || 'N/A', sub: s.exchange_flows.period || '', source: 'Whale Alert' });
       renderMetricsTiles(tiles);
 
-      // Whale positions table
       if (s.top_positions?.length) {
         document.getElementById('whaleTable').classList.remove('hidden');
-        const tbody = document.getElementById('whaleTableBody');
-        tbody.innerHTML = s.top_positions.slice(0, 10).map((p, i) => {
+        document.getElementById('whaleTableBody').innerHTML = s.top_positions.slice(0, 10).map(p => {
           const sideColor = p.side === 'LONG' ? 'text-green-500' : 'text-red-500';
           const pnlColor = (p.pnl_usd || 0) >= 0 ? 'text-green-400' : 'text-red-400';
-          return `
-            <div class="grid grid-cols-5 gap-2 py-1 border-b border-zinc-800/30 text-[9px] font-mono items-center">
-              <span class="${sideColor} font-bold">#${p.rank} ${p.side}</span>
-              <span class="text-zinc-300">$${formatLargeNumber(p.size_usd)}</span>
-              <span class="text-zinc-400">${p.leverage || '?'}x</span>
-              <span class="text-zinc-400">$${formatNumber(p.entry_price)}</span>
-              <span class="${pnlColor}">${(p.pnl_usd || 0) >= 0 ? '+' : ''}$${formatLargeNumber(Math.abs(p.pnl_usd || 0))}</span>
-            </div>`;
+          return `<div class="grid grid-cols-5 gap-2 py-1 border-b border-zinc-800/30 text-[9px] font-mono items-center"><span class="${sideColor} font-bold">#${p.rank} ${p.side}</span><span class="text-zinc-300">$${formatLargeNumber(p.size_usd)}</span><span class="text-zinc-400">${p.leverage || '?'}x</span><span class="text-zinc-400">$${formatNumber(p.entry_price)}</span><span class="${pnlColor}">${(p.pnl_usd || 0) >= 0 ? '+' : ''}$${formatLargeNumber(Math.abs(p.pnl_usd || 0))}</span></div>`;
         }).join('');
-      } else {
-        document.getElementById('whaleTable').classList.add('hidden');
-      }
+      } else { document.getElementById('whaleTable').classList.add('hidden'); }
 
-      // Drivers
       const drivers = [];
       if (s.aggregate?.net_bias) drivers.push(`Net whale bias: ${s.aggregate.net_bias}`);
       if (s.aggregate?.avg_leverage) drivers.push(`Average leverage: ${s.aggregate.avg_leverage.toFixed(1)}x`);
       if (s.pnl_analysis?.total_unrealized_pnl) drivers.push(`Total unrealized PnL: $${formatLargeNumber(s.pnl_analysis.total_unrealized_pnl)}`);
       renderDrivers(drivers);
-
       document.getElementById('risksSection').classList.add('hidden');
       document.getElementById('scenarioSection').classList.add('hidden');
       document.getElementById('tradeSection').classList.add('hidden');
@@ -851,36 +1198,16 @@
 
     function renderCyclePosition(r) {
       const s = r.sections || {};
-
-      // Cycle indicators
       if (s.indicators) {
         document.getElementById('cycleSection').classList.remove('hidden');
         const container = document.getElementById('cycleIndicators');
         const indicators = [];
+        if (s.indicators.bubble_index) indicators.push({ name: 'Bubble Index', value: s.indicators.bubble_index.value?.toFixed(2) || '0', interpretation: s.indicators.bubble_index.interpretation, color: getInterpColor(s.indicators.bubble_index.interpretation) });
+        if (s.indicators.ahr999) indicators.push({ name: 'AHR999', value: s.indicators.ahr999.value?.toFixed(4) || '0', interpretation: s.indicators.ahr999.interpretation, color: getInterpColor(s.indicators.ahr999.interpretation) });
+        if (s.indicators.puell_multiple) indicators.push({ name: 'Puell Multiple', value: s.indicators.puell_multiple.value?.toFixed(4) || '0', interpretation: s.indicators.puell_multiple.interpretation, color: getInterpColor(s.indicators.puell_multiple.interpretation) });
+        container.innerHTML = indicators.map(ind => `<div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm"><div class="flex justify-between items-center mb-2"><span class="text-[9px] font-mono text-zinc-500 uppercase">${ind.name}</span><span class="text-[9px] font-mono px-1.5 py-0.5 rounded border ${ind.color}">${ind.interpretation}</span></div><div class="text-lg font-mono font-bold text-white">${ind.value}</div></div>`).join('');
+      } else { document.getElementById('cycleSection').classList.add('hidden'); }
 
-        if (s.indicators.bubble_index) {
-          indicators.push({ name: 'Bubble Index', value: s.indicators.bubble_index.value?.toFixed(2) || '0', interpretation: s.indicators.bubble_index.interpretation, color: getInterpColor(s.indicators.bubble_index.interpretation) });
-        }
-        if (s.indicators.ahr999) {
-          indicators.push({ name: 'AHR999', value: s.indicators.ahr999.value?.toFixed(4) || '0', interpretation: s.indicators.ahr999.interpretation, color: getInterpColor(s.indicators.ahr999.interpretation) });
-        }
-        if (s.indicators.puell_multiple) {
-          indicators.push({ name: 'Puell Multiple', value: s.indicators.puell_multiple.value?.toFixed(4) || '0', interpretation: s.indicators.puell_multiple.interpretation, color: getInterpColor(s.indicators.puell_multiple.interpretation) });
-        }
-
-        container.innerHTML = indicators.map(ind => `
-          <div class="bg-[#080808] border border-zinc-800 p-3 rounded-sm">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-[9px] font-mono text-zinc-500 uppercase">${ind.name}</span>
-              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded border ${ind.color}">${ind.interpretation}</span>
-            </div>
-            <div class="text-lg font-mono font-bold text-white">${ind.value}</div>
-          </div>`).join('');
-      } else {
-        document.getElementById('cycleSection').classList.add('hidden');
-      }
-
-      // Weighted assessment
       const tiles = [];
       if (s.weighted_assessment) {
         tiles.push({ label: 'Cycle Phase', value: s.weighted_assessment.phase || 'N/A', sub: `Score: ${s.weighted_assessment.score || 0}`, source: 'BASTION' });
@@ -888,12 +1215,10 @@
       }
       renderMetricsTiles(tiles);
 
-      // Drivers
       const drivers = [];
       if (s.weighted_assessment?.recommendation) drivers.push(s.weighted_assessment.recommendation);
       if (s.fear_greed) drivers.push(`Fear & Greed Index: ${s.fear_greed.value} (${s.fear_greed.classification})`);
       renderDrivers(drivers);
-
       document.getElementById('risksSection').classList.add('hidden');
       document.getElementById('scenarioSection').classList.add('hidden');
       document.getElementById('tradeSection').classList.add('hidden');
@@ -901,8 +1226,7 @@
     }
 
     function renderGenericReport(r) {
-      const tiles = [];
-      renderMetricsTiles(tiles);
+      renderMetricsTiles([]);
       renderDrivers([r.summary || 'No details available.']);
       document.getElementById('risksSection').classList.add('hidden');
       document.getElementById('scenarioSection').classList.add('hidden');
@@ -917,6 +1241,7 @@
 
     function renderMetricsTiles(tiles) {
       const container = document.getElementById('metricsTiles');
+      if (!container) return;
       if (!tiles.length) {
         container.innerHTML = '<div class="col-span-2 text-[10px] font-mono text-zinc-600 text-center py-4">No metrics available</div>';
         return;
@@ -924,30 +1249,25 @@
       container.innerHTML = tiles.map(t => `
         <div class="bg-[#080808] border border-zinc-800 p-3">
           <div class="text-[9px] font-mono text-zinc-500 uppercase mb-1">${t.label}</div>
-          <div class="text-sm font-mono font-bold text-white">${t.value}
-            ${t.sub ? `<span class="text-[9px] text-zinc-500 font-normal ml-1">${t.sub}</span>` : ''}
-          </div>
+          <div class="text-sm font-mono font-bold text-white">${t.value}${t.sub ? `<span class="text-[9px] text-zinc-500 font-normal ml-1">${t.sub}</span>` : ''}</div>
           <div class="text-[9px] text-zinc-600 mt-1 font-mono">Source: ${t.source}</div>
         </div>`).join('');
     }
 
     function renderDrivers(items) {
       const ul = document.getElementById('detailDrivers');
-      if (!items.length) {
-        ul.innerHTML = '<li class="text-[10px] font-mono text-zinc-600">No data points available.</li>';
-        return;
-      }
+      if (!ul) return;
+      if (!items.length) { ul.innerHTML = '<li class="text-[10px] font-mono text-zinc-600">No data points available.</li>'; return; }
       ul.innerHTML = items.map(d => `
-        <li class="group">
-          <div class="flex items-start gap-3 text-sm text-zinc-300 mb-1">
-            <span class="mt-2 w-1 h-1 bg-green-600 rounded-full shrink-0"></span>
-            <span>${escapeHtml(d)}</span>
-          </div>
-        </li>`).join('');
+        <li class="group"><div class="flex items-start gap-3 text-sm text-zinc-300 mb-1">
+          <span class="mt-2 w-1 h-1 bg-red-600 rounded-full shrink-0"></span>
+          <span>${escapeHtml(d)}</span>
+        </div></li>`).join('');
     }
 
     function renderRisks(items) {
       const ul = document.getElementById('detailRisks');
+      if (!ul) return;
       ul.innerHTML = items.map(r => `
         <li class="flex items-start gap-3 text-sm text-zinc-300">
           <span class="mt-2 w-1 h-1 bg-red-800 rounded-full shrink-0"></span>
@@ -960,7 +1280,7 @@
       const items = [
         { label: 'Storage', ok: status.storage_initialized },
         { label: 'Generator', ok: status.generator_initialized },
-        { label: 'IROS AI', ok: status.iros_enabled },
+        { label: 'BASTION AI', ok: status.iros_enabled },
         { label: 'Coinglass', ok: status.coinglass_available },
         { label: 'Helsinki', ok: status.helsinki_available }
       ];
@@ -974,23 +1294,19 @@
     function updateSidebarState(r) {
       const badge = document.getElementById('reportStateBadge');
       badge.textContent = 'Published';
-      badge.className = 'px-2 py-0.5 bg-green-900/20 border border-green-500/30 text-green-500 text-[10px] font-mono uppercase rounded-full';
-
-      // Checkmarks
+      badge.className = 'px-2 py-0.5 bg-red-900/20 border border-red-500/30 text-red-400 text-[10px] font-mono uppercase rounded-full';
       const hasData = (r.data_sources || []).length > 0;
-      const hasIros = r.sections?.iros_analysis != null;
-
+      const hasIros = r.sections?.iros_analysis != null || r.sections?.report_format === 'institutional';
       setCheck('checkData', hasData);
       setCheck('checkIros', hasIros);
       setCheck('checkStored', true);
-
-      // Activity
       addActivity('Report Loaded', `${r.id}`, 'green');
-      if (hasIros) addActivity('IROS Analysis', 'AI-powered insights included', 'indigo');
+      if (hasIros) addActivity('AI Analysis', 'AI-powered insights included', 'red');
     }
 
     function setCheck(id, checked) {
       const el = document.getElementById(id);
+      if (!el) return;
       if (checked) {
         el.className = 'w-3 h-3 border border-green-500 bg-green-500/20 rounded-sm flex items-center justify-center text-green-500';
         el.innerHTML = '<iconify-icon icon="solar:check-bold" class="text-[8px]"></iconify-icon>';
@@ -1002,10 +1318,10 @@
 
     function addActivity(title, detail, color = 'zinc') {
       const timeline = document.getElementById('activityTimeline');
+      if (!timeline) return;
       const colors = { green: 'border-green-500/30 text-green-500', red: 'border-red-500/30 text-red-500', indigo: 'border-indigo-500/30 text-indigo-400', zinc: 'border-zinc-700 text-zinc-400' };
       const borderColor = colors[color] || colors.zinc;
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
       const node = document.createElement('div');
       node.className = 'relative fade-in';
       node.innerHTML = `
@@ -1015,17 +1331,11 @@
         <div class="flex flex-col gap-0.5">
           <span class="text-[10px] font-mono ${borderColor.split(' ')[1]} font-bold">${escapeHtml(title)}</span>
           <div class="flex items-center gap-2 text-[9px] font-mono text-zinc-400">
-            <span class="text-zinc-500">${now}</span>
-            <span>&#8226;</span>
-            <span>${escapeHtml(detail)}</span>
+            <span class="text-zinc-500">${now}</span><span>&#8226;</span><span>${escapeHtml(detail)}</span>
           </div>
         </div>`;
-
       timeline.insertBefore(node, timeline.firstChild);
-      // Keep max 10 items
-      while (timeline.children.length > 10) {
-        timeline.removeChild(timeline.lastChild);
-      }
+      while (timeline.children.length > 10) timeline.removeChild(timeline.lastChild);
     }
 
     // =========================================================================
@@ -1035,12 +1345,12 @@
     function filterByType(type) {
       activeTypeFilter = type;
       document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active-filter', 'border-green-900/30', 'text-green-500');
+        btn.classList.remove('active-filter', 'border-red-900/30', 'text-red-500');
         btn.classList.add('border-zinc-800', 'text-zinc-400');
       });
       const activeBtn = event?.target;
       if (activeBtn) {
-        activeBtn.classList.add('active-filter', 'border-green-900/30', 'text-green-500');
+        activeBtn.classList.add('active-filter', 'border-red-900/30', 'text-red-500');
         activeBtn.classList.remove('border-zinc-800', 'text-zinc-400');
       }
       loadReports();
@@ -1049,12 +1359,12 @@
     function filterByBias(bias) {
       activeBiasFilter = bias;
       document.querySelectorAll('.bias-btn').forEach(btn => {
-        btn.classList.remove('border-green-900/30', 'text-green-500');
+        btn.classList.remove('border-red-900/30', 'text-red-500');
         btn.classList.add('border-zinc-800', 'text-zinc-500');
       });
       const activeBtn = event?.target;
       if (activeBtn) {
-        activeBtn.classList.add('border-green-900/30', 'text-green-500');
+        activeBtn.classList.add('border-red-900/30', 'text-red-500');
         activeBtn.classList.remove('border-zinc-800', 'text-zinc-500');
       }
       loadReports();
@@ -1062,13 +1372,9 @@
 
     function filterReportList() {
       const query = document.getElementById('sideSearch').value.toLowerCase().trim();
-      if (!query) {
-        renderReportList(allReports);
-        return;
-      }
+      if (!query) { renderReportList(allReports); return; }
       const filtered = allReports.filter(r =>
-        r.title.toLowerCase().includes(query) ||
-        r.id.toLowerCase().includes(query) ||
+        r.title.toLowerCase().includes(query) || r.id.toLowerCase().includes(query) ||
         (r.tags || []).some(t => t.toLowerCase().includes(query)) ||
         (r.summary || '').toLowerCase().includes(query)
       );
@@ -1081,7 +1387,6 @@
 
     function setupKeyboardShortcuts() {
       document.addEventListener('keydown', (e) => {
-        // "/" to focus search
         if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
           const active = document.activeElement;
           if (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA') {
@@ -1089,34 +1394,25 @@
             document.getElementById('globalSearch').focus();
           }
         }
-        // "R" to go to latest
         if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
           const active = document.activeElement;
           if (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA') {
-            if (allReports.length > 0) {
-              loadReportDetail(allReports[0].id);
-            }
+            if (allReports.length > 0) loadReportDetail(allReports[0].id);
           }
         }
-        // Escape to clear search
         if (e.key === 'Escape') {
           document.getElementById('globalSearch').value = '';
           document.getElementById('sideSearch').value = '';
           document.getElementById('globalSearch').blur();
           renderReportList(allReports);
+          closeDropdown();
         }
       });
-
-      // Global search
       document.getElementById('globalSearch').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
-        if (!query) {
-          renderReportList(allReports);
-          return;
-        }
+        if (!query) { renderReportList(allReports); return; }
         const filtered = allReports.filter(r =>
-          r.title.toLowerCase().includes(query) ||
-          r.id.toLowerCase().includes(query) ||
+          r.title.toLowerCase().includes(query) || r.id.toLowerCase().includes(query) ||
           (r.tags || []).some(t => t.toLowerCase().includes(query)) ||
           r.type.toLowerCase().includes(query) ||
           (r.summary || '').toLowerCase().includes(query)
@@ -1125,29 +1421,21 @@
       });
     }
 
-    function toggleRawData() {
-      const panel = document.getElementById('rawDataPanel');
-      panel.classList.toggle('hidden');
-    }
-
     // =========================================================================
     // UTILITY FUNCTIONS
     // =========================================================================
 
     function extractSymbol(r) {
-      // Try to extract from ID (e.g., "MS-BTC-20260206-00" -> "BTC")
+      if (r.sections?.symbol) return r.sections.symbol;
       const parts = (r.id || '').split('-');
       if (parts.length >= 2) {
         const sym = parts[1];
         if (sym.length <= 5 && sym === sym.toUpperCase()) return sym + '-PERP';
       }
-      // Try from tags
       const symbolTags = (r.tags || []).filter(t => ['btc','eth','sol','bnb','xrp','avax','link','arb','op','doge','ada','dot','atom'].includes(t.toLowerCase()));
       if (symbolTags.length) return symbolTags[0].toUpperCase() + '-PERP';
-      // Fallback from title
       const match = r.title?.match(/^(BTC|ETH|SOL|BNB|XRP|AVAX|LINK|ARB|OP|DOGE|ADA|DOT|ATOM)/i);
       if (match) return match[1].toUpperCase() + '-PERP';
-      // Cycle reports
       if (r.type === 'cycle_position') return 'BTC-CYCLE';
       return r.type?.toUpperCase() || 'REPORT';
     }
@@ -1165,6 +1453,7 @@
     }
 
     function setBiasBadge(el, bias) {
+      if (!el) return;
       if (bias === 'BULLISH') {
         el.className = 'px-3 py-1 bg-[#101e15] border border-[#1a3820] text-[#4ade80] text-xs font-mono font-medium uppercase tracking-wider rounded-sm';
         el.textContent = 'Bullish';
@@ -1179,14 +1468,15 @@
 
     function getTypeIcon(type) {
       const icons = {
-        market_structure: '&#x1F4CA;',
-        whale_intelligence: '&#x1F433;',
-        options_flow: '&#x1F4B0;',
-        cycle_position: '&#x1F504;',
-        funding_arbitrage: '&#x26A1;',
-        liquidation_cascade: '&#x1F4A5;'
+        market_structure: '<iconify-icon icon="solar:chart-2-linear" class="text-green-500 text-[10px]"></iconify-icon>',
+        whale_intelligence: '<iconify-icon icon="solar:eye-linear" class="text-cyan-500 text-[10px]"></iconify-icon>',
+        options_flow: '<iconify-icon icon="solar:wallet-linear" class="text-amber-500 text-[10px]"></iconify-icon>',
+        cycle_position: '<iconify-icon icon="solar:graph-up-linear" class="text-yellow-500 text-[10px]"></iconify-icon>',
+        institutional_research: '<iconify-icon icon="solar:shield-bold" class="text-red-500 text-[10px]"></iconify-icon>',
+        funding_arbitrage: '<iconify-icon icon="solar:bolt-linear" class="text-orange-500 text-[10px]"></iconify-icon>',
+        liquidation_cascade: '<iconify-icon icon="solar:danger-triangle-linear" class="text-red-500 text-[10px]"></iconify-icon>'
       };
-      return icons[type] || '&#x1F4C4;';
+      return icons[type] || '<iconify-icon icon="solar:document-linear" class="text-zinc-500 text-[10px]"></iconify-icon>';
     }
 
     function getInterpColor(interp) {
@@ -1233,6 +1523,13 @@
       try {
         const d = new Date(iso);
         return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      } catch (e) { return '---'; }
+    }
+
+    function formatDate(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       } catch (e) { return '---'; }
     }
 

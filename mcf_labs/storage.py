@@ -31,6 +31,7 @@ class ReportStorage:
         "CP": "cycle_position",
         "FA": "funding_arbitrage",
         "LC": "liquidation_cascade",
+        "IR": "institutional_research",
     }
 
     def __init__(self, storage_path: str = "data/reports"):

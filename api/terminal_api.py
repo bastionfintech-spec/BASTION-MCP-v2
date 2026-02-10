@@ -5416,6 +5416,12 @@ async def generate_mcf_report(
             report = await _mcf_generator.generate_options_report(symbol)
         elif report_type in ["cycle", "cycle_position"]:
             report = await _mcf_generator.generate_cycle_report(symbol)
+        elif report_type in ["institutional", "institutional_research"]:
+            _init_institutional()
+            if _institutional_generator:
+                report = await _institutional_generator.generate_institutional_report(symbol)
+            else:
+                return {"success": False, "error": "Institutional generator not available"}
         else:
             return {"success": False, "error": f"Unknown report type: {report_type}"}
         
@@ -5458,6 +5464,110 @@ async def get_mcf_status():
             "coinglass_available": coinglass is not None,
             "helsinki_available": helsinki is not None
         }
+    }
+
+
+# =============================================================================
+# INSTITUTIONAL RESEARCH REPORTS
+# =============================================================================
+
+_institutional_generator = None
+
+
+def _init_institutional():
+    """Initialize institutional report generator"""
+    global _institutional_generator
+    if _institutional_generator is not None:
+        return
+
+    if coinglass is None:
+        return
+
+    try:
+        import os
+        model_url = os.getenv("BASTION_MODEL_URL")
+        from mcf_labs.institutional_generator import create_institutional_generator
+        _institutional_generator = create_institutional_generator(
+            coinglass_client=coinglass,
+            helsinki_client=helsinki,
+            whale_alert_client=whale_alert,
+            model_url=model_url,
+            model_api_key=os.getenv("BASTION_MODEL_API_KEY"),
+        )
+        logger.info("[MCF] Institutional report generator initialized")
+    except Exception as e:
+        logger.warning(f"[MCF] Institutional generator init failed: {e}")
+
+
+@app.post("/api/mcf/generate/institutional")
+async def generate_institutional_report(symbol: str = "BTC"):
+    """
+    Generate an institutional-grade research report.
+
+    These are full analyst notes with thesis, drivers, risks,
+    valuation scenarios, and tactical trade structures.
+    """
+    _init_mcf()
+    _init_institutional()
+
+    if _institutional_generator is None:
+        return {"success": False, "error": "Institutional generator not initialized (need Coinglass)"}
+
+    try:
+        report = await _institutional_generator.generate_institutional_report(symbol)
+
+        if report and _mcf_storage:
+            try:
+                _mcf_storage.save_report(report)
+            except Exception as e:
+                logger.warning(f"[MCF] Could not save institutional report: {e}")
+
+        if report:
+            return {
+                "success": True,
+                "report": report.to_dict(),
+                "message": f"Generated institutional report for {symbol}",
+            }
+
+        return {"success": False, "error": "Report generation failed"}
+
+    except Exception as e:
+        logger.error(f"[MCF] Institutional report error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/mcf/generate/institutional/batch")
+async def generate_institutional_batch(symbols: str = "BTC,ETH,SOL"):
+    """Generate institutional reports for multiple symbols"""
+    _init_mcf()
+    _init_institutional()
+
+    if _institutional_generator is None:
+        return {"success": False, "error": "Institutional generator not initialized"}
+
+    symbol_list = [s.strip().upper() for s in symbols.split(",")]
+    results = []
+
+    for symbol in symbol_list:
+        try:
+            report = await _institutional_generator.generate_institutional_report(symbol)
+            if report and _mcf_storage:
+                try:
+                    _mcf_storage.save_report(report)
+                except Exception:
+                    pass
+            if report:
+                results.append({"symbol": symbol, "id": report.id, "success": True})
+            else:
+                results.append({"symbol": symbol, "success": False, "error": "Generation failed"})
+        except Exception as e:
+            results.append({"symbol": symbol, "success": False, "error": str(e)})
+
+    return {
+        "success": True,
+        "results": results,
+        "generated": sum(1 for r in results if r.get("success")),
+        "failed": sum(1 for r in results if not r.get("success")),
     }
 
 
