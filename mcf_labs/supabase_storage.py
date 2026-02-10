@@ -65,7 +65,7 @@ class SupabaseStorage:
             symbol = ""
             try:
                 parts = report.id.split("-")
-                if len(parts) >= 2:
+                if len(parts) >= 2 and parts[1].isalpha():
                     symbol = parts[1]
             except:
                 pass
@@ -87,7 +87,7 @@ class SupabaseStorage:
                 "confidence": report.confidence.value,
                 "symbol": symbol,
                 "generated_at": report.generated_at.isoformat(),
-                "tags": json.dumps(report.tags) if isinstance(report.tags, list) else report.tags,
+                "tags": report.tags if isinstance(report.tags, list) else [report.tags],
                 "sections": report.sections,
                 "scenarios": scenarios,
                 "full_content": json.dumps(report.to_dict())

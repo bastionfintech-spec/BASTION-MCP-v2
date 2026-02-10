@@ -22,6 +22,13 @@ from typing import Dict, Any, List, Optional
 import sys
 import logging
 
+# Load .env before anything else
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Setup logging FIRST
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
