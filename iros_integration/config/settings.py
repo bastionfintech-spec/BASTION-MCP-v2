@@ -27,7 +27,7 @@ class ModelConfig:
     # Pre-configured API key for vLLM authentication
     api_key: str = os.getenv("BASTION_MODEL_API_KEY", "5c37b5e8e6c2480813aa0cfd4de5c903544b7a000bff729e1c99d9b4538eb34d")
     timeout: int = int(os.getenv("BASTION_MODEL_TIMEOUT", "120000"))
-    model_name: str = os.getenv("BASTION_MODEL_NAME", "iros")
+    model_name: str = os.getenv("BASTION_MODEL_NAME", "bastion-32b")
     max_tokens: int = 1200
     temperature: float = 0.7
     top_p: float = 0.9

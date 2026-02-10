@@ -235,10 +235,9 @@ class InstitutionalReportGenerator:
 
         # Add Helsinki data if available
         if self.helsinki:
-            tasks["candles_4h"] = self.helsinki.get_candles(symbol, "4h", 200)
-            tasks["candles_1d"] = self.helsinki.get_candles(symbol, "1d", 100)
-            tasks["cvd"] = self.helsinki.get_cvd(symbol, "4h")
-            tasks["volatility"] = self.helsinki.get_volatility(symbol)
+            tasks["helsinki_full"] = self.helsinki.fetch_full_data(symbol)
+            tasks["helsinki_cvd"] = self.helsinki.fetch_cvd_data(symbol)
+            tasks["helsinki_volatility"] = self.helsinki.fetch_volatility_data(symbol)
 
         # Execute all in parallel
         keys = list(tasks.keys())
@@ -951,7 +950,7 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         sources = []
         for key, val in data.items():
             if val is not None:
-                if key.startswith("candles") or key in ("cvd", "volatility"):
+                if key.startswith("helsinki"):
                     sources.append("helsinki")
                 elif key == "whale_positions":
                     sources.append("hyperliquid")
