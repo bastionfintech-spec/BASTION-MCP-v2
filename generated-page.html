@@ -5845,25 +5845,43 @@ Esc    - Close Dialogs
       // Evaluate a shielded position
       async function evaluatePosition(symbol, direction, entryPrice, currentPrice, exchange) {
         try {
+          // Clean symbol for the API (remove suffixes, ensure base form)
+          const cleanSymbol = symbol.replace('-PERP','').replace('/USDT','').replace('USDT','');
+          console.log(`[SHIELD] Evaluating ${cleanSymbol} ${direction} entry=${entryPrice} current=${currentPrice}`);
+
           const res = await fetch(`${API_BASE}/api/risk/evaluate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              symbol: symbol.replace('-PERP','').replace('/USDT','') + 'USDT',
-              direction: direction.toLowerCase(),
-              entry_price: parseFloat(entryPrice),
-              current_price: parseFloat(currentPrice),
-              stop_loss: 0,
-              size: 1,
-              leverage: 10,
-              exchange: exchange || 'bitunix'
+              position: {
+                symbol: cleanSymbol,
+                direction: direction.toUpperCase(),
+                entry_price: parseFloat(entryPrice) || 0,
+                current_price: parseFloat(currentPrice) || parseFloat(entryPrice) || 0,
+                stop_loss: 0,
+                take_profits: [],
+                position_size: 1,
+                leverage: 10,
+                guarding_line: null,
+                trailing_stop: null,
+                r_multiple: 0,
+                duration_hours: 0
+              }
             })
           });
-          if (!res.ok) return null;
-          return await res.json();
+
+          if (!res.ok) {
+            const errText = await res.text().catch(() => 'Unknown error');
+            console.error(`[SHIELD] API returned ${res.status} for ${cleanSymbol}:`, errText);
+            return { _error: true, _status: res.status, evaluation: { action: 'ERROR', urgency: 'NONE', reason: `API error ${res.status}`, confidence: 0 } };
+          }
+
+          const data = await res.json();
+          console.log(`[SHIELD] Got response for ${cleanSymbol}:`, data);
+          return data;
         } catch (e) {
           console.error('[SHIELD] Eval failed for', symbol, e);
-          return null;
+          return { _error: true, evaluation: { action: 'OFFLINE', urgency: 'NONE', reason: 'Could not reach BASTION API', confidence: 0 } };
         }
       }
 
@@ -5906,16 +5924,20 @@ Esc    - Close Dialogs
           const card = document.createElement('div');
           card.className = 'shield-card p-2 border-b border-zinc-800/50 relative';
 
-          if (cached && cached.risk_assessment) {
-            const ra = cached.risk_assessment;
-            const urgencyColors = { 'CRITICAL': 'red', 'IMMEDIATE': 'red', 'HIGH': 'amber', 'MODERATE': 'yellow', 'LOW': 'green', 'NONE': 'zinc' };
+          // Backend returns { evaluation: {...} } not { risk_assessment: {...} }
+          const ra = cached?.evaluation || cached?.risk_assessment || null;
+
+          if (cached && ra) {
+            const urgencyColors = { 'CRITICAL': 'red', 'IMMEDIATE': 'red', 'HIGH': 'amber', 'MODERATE': 'yellow', 'MEDIUM': 'yellow', 'LOW': 'green', 'NONE': 'zinc' };
             const uc = urgencyColors[ra.urgency?.toUpperCase()] || 'zinc';
+            const isError = cached._error || ra.action === 'ERROR' || ra.action === 'OFFLINE';
+            const actionColor = isError ? 'text-zinc-500' : ra.action?.includes('EXIT') ? 'text-red-400' : ra.action?.includes('HOLD') ? 'text-green-400' : 'text-amber-400';
             card.innerHTML = `
               <div class="flex justify-between items-start mb-1">
                 <span class="text-[10px] font-bold text-white">${pos.symbol}</span>
                 <span class="text-[8px] font-mono bg-${uc}-500/20 text-${uc}-400 px-1.5 py-0.5 rounded">${ra.urgency || '--'}</span>
               </div>
-              <div class="text-[9px] font-mono font-bold ${ra.action?.includes('EXIT') ? 'text-red-400' : ra.action?.includes('HOLD') ? 'text-green-400' : 'text-amber-400'} mb-1">${ra.action || 'EVALUATING...'}</div>
+              <div class="text-[9px] font-mono font-bold ${actionColor} mb-1">${ra.action || 'EVALUATING...'}</div>
               <div class="text-[8px] text-zinc-400 leading-relaxed mb-1">${ra.reason || ''}</div>
               <div class="flex justify-between items-center text-[8px] font-mono">
                 <span class="text-zinc-600">Confidence</span>
@@ -5927,6 +5949,15 @@ Esc    - Close Dialogs
                 </div>
               </div>
               <div class="text-[7px] text-zinc-700 mt-1">Updated: ${cached._timestamp || 'just now'}</div>
+            `;
+          } else if (cached && cached._error) {
+            // Error state - don't stay stuck on loading
+            card.innerHTML = `
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold text-white">${pos.symbol}</span>
+                <iconify-icon icon="solar:danger-triangle-bold" class="text-amber-500 text-sm"></iconify-icon>
+              </div>
+              <div class="text-[8px] text-amber-500/70 mt-1">Evaluation unavailable — retrying in 60s</div>
             `;
           } else {
             card.innerHTML = `
@@ -5946,16 +5977,31 @@ Esc    - Close Dialogs
 
       // Run risk evaluation for all shielded positions
       async function runShieldEvaluations() {
+        console.log('[SHIELD] Running evaluations for', window._shieldedPositions.size, 'positions');
         const posCards = document.querySelectorAll('.shield-toggle');
         for (const btn of posCards) {
           if (!window._shieldedPositions.has(btn.dataset.shieldSymbol)) continue;
           const card = btn.closest('.position-card');
           if (!card) continue;
-          // Extract current price from the position card
-          const currentPriceEl = card.querySelector('.grid span:nth-child(4)');
-          const currentPriceText = currentPriceEl?.textContent || '';
-          const priceMatch = currentPriceText.match(/\$([\d,.]+)/);
-          const currentPrice = priceMatch ? parseFloat(priceMatch[1].replace(',','')) : 0;
+
+          // Extract current price from the position card grid
+          // Grid structure: ENTRY, $value, CURRENT, $currentPrice(%), SIZE, $size
+          let currentPrice = 0;
+          const gridSpans = card.querySelectorAll('.grid span');
+          for (let i = 0; i < gridSpans.length; i++) {
+            if (gridSpans[i].textContent.trim() === 'CURRENT' && gridSpans[i + 1]) {
+              const priceMatch = gridSpans[i + 1].textContent.match(/\$([\d,.]+)/);
+              if (priceMatch) {
+                currentPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
+              }
+              break;
+            }
+          }
+
+          // Fallback to entry price if current not found
+          if (!currentPrice) currentPrice = parseFloat(btn.dataset.shieldEntry) || 0;
+
+          console.log(`[SHIELD] ${btn.dataset.shieldSymbol}: currentPrice=${currentPrice}, entry=${btn.dataset.shieldEntry}`);
 
           const result = await evaluatePosition(
             btn.dataset.shieldSymbol,
@@ -5964,6 +6010,8 @@ Esc    - Close Dialogs
             currentPrice,
             btn.dataset.shieldExchange
           );
+
+          // Always cache the result (even errors) so we don't stay stuck on "Evaluating..."
           if (result) {
             result._timestamp = new Date().toLocaleTimeString();
             window._shieldEvalCache[btn.dataset.shieldSymbol] = result;
