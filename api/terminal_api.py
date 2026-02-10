@@ -59,6 +59,7 @@ except ImportError as e:
     class QueryProcessor:
         def extract_context(self, *args, **kwargs): return type('obj', (object,), {'symbol': 'BTC', 'capital': 10000, 'timeframe': '1h', 'query_intent': 'analysis'})()
     class WhaleAlertClient:
+        async def get_transactions(self, *args, **kwargs): return type('obj', (object,), {'success': False, 'transactions': []})()
         async def get_recent_transactions(self, *args, **kwargs): return []
     class CoinglassClient:
         async def get_liquidation_history(self, *args, **kwargs): return type('obj', (object,), {'success': False, 'data': None})()
@@ -4571,7 +4572,7 @@ async def risk_evaluate(request: Dict[str, Any]):
 
         # Whale Alert: Recent large transactions
         if whale_alert:
-            fetch_tasks.append(("whale_txs", whale_alert.get_recent_transactions(symbol)))
+            fetch_tasks.append(("whale_txs", whale_alert.get_transactions(min_value=1000000)))
 
         # Execute all fetches in parallel
         task_names = [t[0] for t in fetch_tasks]
@@ -4579,18 +4580,45 @@ async def risk_evaluate(request: Dict[str, Any]):
         results = await asyncio.gather(*task_coros, return_exceptions=True)
 
         for name, result in zip(task_names, results):
-            if not isinstance(result, Exception):
-                if hasattr(result, 'data') and result.data:
+            if isinstance(result, Exception):
+                logger.warning(f"[RISK] Failed to fetch {name}: {result}")
+                continue
+
+            try:
+                # CoinglassResponse: has .data attribute
+                if hasattr(result, 'data') and result.data is not None:
                     live_data[name] = result.data
                     data_sources.append(name)
+                    logger.info(f"[RISK] ✓ {name}: got data (type={type(result.data).__name__})")
+
+                # WhaleAlertResponse: has .transactions attribute
+                elif hasattr(result, 'transactions') and result.transactions:
+                    # Convert WhaleTransaction objects to dicts for JSON serialization
+                    live_data[name] = [
+                        {
+                            "symbol": tx.symbol, "amount": tx.amount, "amount_usd": tx.amount_usd,
+                            "from_owner": tx.from_owner, "from_owner_type": tx.from_owner_type,
+                            "to_owner": tx.to_owner, "to_owner_type": tx.to_owner_type,
+                            "transaction_type": tx.transaction_type, "blockchain": tx.blockchain,
+                        }
+                        for tx in result.transactions
+                    ]
+                    data_sources.append(name)
+                    logger.info(f"[RISK] ✓ {name}: got {len(result.transactions)} whale transactions")
+
+                # Raw dict response
                 elif isinstance(result, dict) and result.get("data"):
                     live_data[name] = result["data"]
                     data_sources.append(name)
-                elif isinstance(result, dict):
+                    logger.info(f"[RISK] ✓ {name}: got dict data")
+                elif isinstance(result, dict) and len(result) > 0:
                     live_data[name] = result
                     data_sources.append(name)
-            else:
-                logger.warning(f"[RISK] Failed to fetch {name}: {result}")
+                    logger.info(f"[RISK] ✓ {name}: got raw dict ({len(result)} keys)")
+                else:
+                    logger.warning(f"[RISK] ✗ {name}: empty or unrecognized response (type={type(result).__name__})")
+            except Exception as parse_err:
+                logger.warning(f"[RISK] ✗ {name}: parse error: {parse_err}")
 
     except Exception as e:
         logger.error(f"[RISK] Data fetch error: {e}")
@@ -4689,6 +4717,14 @@ async def risk_evaluate(request: Dict[str, Any]):
             pressure = ob.get("pressure", ob.get("buying_pressure", "N/A"))
             context_lines.append(f"ORDERBOOK: Imbalance={imbalance} | Pressure={pressure}")
 
+    # VWAP
+    if live_data.get("helsinki_vwap"):
+        vwap = live_data["helsinki_vwap"]
+        if isinstance(vwap, dict):
+            vwap_price = vwap.get("vwap", vwap.get("vwap_price", "N/A"))
+            deviation = vwap.get("deviation_pct", vwap.get("deviation", "N/A"))
+            context_lines.append(f"VWAP: ${vwap_price} | Deviation: {deviation}%")
+
     # Whale Alert transactions
     if live_data.get("whale_txs"):
         txs = live_data["whale_txs"]
@@ -4702,6 +4738,14 @@ async def risk_evaluate(request: Dict[str, Any]):
                     context_lines.append(f"  ${amount_usd/1e6:.1f}M: {from_type} -> {to_type}")
 
     live_context = "\n".join(context_lines) if context_lines else "LIVE DATA UNAVAILABLE"
+
+    logger.info(f"[RISK] Data pipeline: {len(data_sources)} sources active: {data_sources}")
+    logger.info(f"[RISK] Context lines built: {len(context_lines)}")
+    if not context_lines:
+        logger.warning(f"[RISK] ⚠ NO live data extracted! live_data keys: {list(live_data.keys())}")
+        # Dump what we have for debugging
+        for k, v in live_data.items():
+            logger.warning(f"[RISK]   {k}: type={type(v).__name__}, preview={str(v)[:200]}")
 
     # ── Build position state string ──
     position_state = f"""POSITION STATE:

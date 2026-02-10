@@ -16,7 +16,7 @@ load_dotenv()
 class HelsinkiConfig:
     """Helsinki VM (Free Quant Data Network) Configuration"""
     base_url: str = os.getenv("HELSINKI_VM_URL", "http://77.42.29.188:5002")
-    timeout: int = int(os.getenv("HELSINKI_TIMEOUT", "5000"))
+    timeout: int = int(os.getenv("HELSINKI_TIMEOUT", "15000"))
 
 
 @dataclass
