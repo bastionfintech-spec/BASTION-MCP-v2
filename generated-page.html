@@ -397,11 +397,11 @@
                 MARKET PULSE
               </span>
               <div class="flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                 <button class="panel-toggle text-zinc-500 hover:text-white" onclick="togglePanel('market-pulse')" title="Collapse/Expand">
                   <iconify-icon icon="solar:alt-arrow-left-linear" class="text-xs"></iconify-icon>
                 </button>
-              </div>
+            </div>
             </div>
             <div class="panel-content flex-1 overflow-y-auto no-scrollbar" data-panel="market-pulse">
               <!-- Loading State -->
@@ -796,13 +796,13 @@
             <div class="panel-header p-2 border-b border-zinc-800 flex justify-between items-center text-[10px] font-mono bg-zinc-900/30">
               <span class="text-zinc-400 font-bold tracking-wider">
                 RISK SIM
-              </span>
+                  </span>
               <div class="flex items-center gap-1.5">
                 <iconify-icon icon="solar:calculator-bold" class="text-zinc-500"></iconify-icon>
                 <button class="panel-toggle text-zinc-500 hover:text-white" onclick="togglePanel('risksim')" title="Collapse/Expand">
                   <iconify-icon icon="solar:alt-arrow-left-linear" class="text-xs"></iconify-icon>
                 </button>
-              </div>
+                </div>
             </div>
             <div class="panel-content flex-1 overflow-y-auto no-scrollbar" data-panel="risksim">
               <!-- KELLY CRITERION -->
@@ -878,9 +878,9 @@
                   <div class="flex justify-between">
                     <span class="text-zinc-500">Leverage</span>
                     <span id="sim-leverage" class="text-amber-400">--</span>
-                  </div>
                 </div>
-                
+              </div>
+
                 <!-- Profit Targets -->
                 <div data-monte="results" class="space-y-1.5 text-[8px] font-mono">
                   <div class="text-[9px] text-zinc-400 uppercase mb-1">Profit Targets</div>
@@ -889,12 +889,12 @@
                     <div>
                       <span class="text-green-400 font-bold">+15%</span>
                       <span class="text-zinc-500 ml-1">TP1</span>
-                    </div>
+                </div>
                     <div class="text-right">
                       <div id="sim-tp1-price" class="text-green-400">$--</div>
                       <div id="sim-tp1-prob" class="text-[7px] text-zinc-500">--% chance</div>
-                    </div>
-                  </div>
+                </div>
+                </div>
                   
                   <div class="flex justify-between items-center p-1.5 bg-green-900/30 border border-green-700/40 rounded">
                     <div>
@@ -905,8 +905,8 @@
                       <div id="sim-tp2-price" class="text-green-400">$--</div>
                       <div id="sim-tp2-prob" class="text-[7px] text-zinc-500">--% chance</div>
                     </div>
-                  </div>
-                  
+                </div>
+
                   <div class="flex justify-between items-center p-1.5 bg-green-900/40 border border-green-600/50 rounded">
                     <div>
                       <span class="text-green-400 font-bold">+80%</span>
@@ -1141,8 +1141,8 @@
                   Pre-Trade Calc
                 </span>
                 <span class="text-amber-400 text-[7px]">50K SIMS</span>
-              </div>
-              
+          </div>
+
               <div class="space-y-1.5">
                 <select id="pretrade-symbol" class="w-full bg-zinc-900 border border-zinc-700 text-[9px] text-white px-2 py-1 rounded font-mono">
                   <option value="BTC">BTC-PERP</option>
@@ -1820,7 +1820,7 @@
               </span>
               <iconify-icon icon="solar:filter-linear" class="text-zinc-500 hover:text-white cursor-pointer"></iconify-icon>
             </div>
-            
+
             <!-- MM MAGNET PANEL - MOVED TO TOP -->
             <div class="p-3 bg-[#0a0a0a] border-b border-zinc-800 relative overflow-hidden">
               <div class="absolute top-0 left-0 w-1 h-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]"></div>
@@ -1828,14 +1828,14 @@
                 <span class="text-amber-400 font-bold flex items-center gap-1">
                   <iconify-icon icon="solar:target-bold"></iconify-icon>
                   MM MAGNET
-                </span>
+                  </span>
                 <span data-mm="direction" class="text-zinc-400 text-[9px]">--</span>
-              </div>
+                </div>
               <div class="flex justify-between items-center mb-2">
                 <div>
                   <div class="text-[8px] text-zinc-500 mb-0.5">TARGET</div>
                   <div data-mm="target" class="text-white font-bold text-[13px] font-mono">$--</div>
-                </div>
+              </div>
                 <div class="text-right">
                   <div class="text-[8px] text-zinc-500 mb-0.5">CONFIDENCE</div>
                   <div data-mm="confidence" class="text-white font-bold text-[13px] font-mono">--%</div>
@@ -1882,16 +1882,16 @@
                   <span data-mm="sig-etf-label" class="text-zinc-400 w-16 text-right">--</span>
                 </div>
               </div>
-            </div>
+              </div>
 
             <div id="live-alerts-container" class="flex-1 overflow-y-auto p-0 no-scrollbar">
               <!-- Live alerts populated by JavaScript -->
               <div class="p-4 text-center">
                 <iconify-icon icon="solar:refresh-linear" class="text-zinc-500 text-xl animate-spin"></iconify-icon>
                 <div class="text-[9px] text-zinc-500 mt-2">Loading live alerts...</div>
+                </div>
               </div>
-            </div>
-            
+
             <!-- ALERT SYSTEM -->
             <div class="p-3 bg-[#0a0a0a] border-t border-zinc-800 flex flex-col gap-2 relative overflow-hidden">
               <div class="absolute top-0 left-0 w-1 h-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.6)]"></div>
@@ -1899,9 +1899,9 @@
                 <span class="text-amber-400 font-bold flex items-center gap-1">
                   <iconify-icon icon="solar:bell-bold"></iconify-icon>
                   ALERT SYSTEM
-                </span>
+                  </span>
                 <span data-alerts="status" class="text-[8px] text-green-400 animate-pulse">ACTIVE</span>
-              </div>
+                </div>
               <div class="text-[8px] text-zinc-500 mb-1">Push notifications enabled</div>
               <div data-alerts="feed" class="space-y-1.5 max-h-32 overflow-y-auto no-scrollbar">
                 <!-- Alert items populated by JS -->
@@ -1912,15 +1912,15 @@
                     <div class="text-zinc-400">BTC reached $96,500</div>
                     <div class="text-zinc-600">2 min ago</div>
               </div>
-                </div>
+            </div>
                 <div class="flex items-start gap-2 p-1.5 bg-purple-900/20 border border-purple-800/30 rounded text-[8px]">
                   <iconify-icon icon="solar:whale-bold" class="text-purple-400 mt-0.5"></iconify-icon>
                   <div>
                     <div class="text-purple-400 font-bold">Whale Movement</div>
                     <div class="text-zinc-400">$25M BTC moved to Binance</div>
                     <div class="text-zinc-600">5 min ago</div>
-                  </div>
-                </div>
+              </div>
+              </div>
                 <div class="flex items-start gap-2 p-1.5 bg-amber-900/20 border border-amber-800/30 rounded text-[8px]">
                   <iconify-icon icon="solar:chart-2-bold" class="text-amber-400 mt-0.5"></iconify-icon>
                   <div>

@@ -1,0 +1,76 @@
+# BASTION GPU CLUSTER - AGENT HANDOFF v6
+# MODEL DOWNLOAD IN PROGRESS - JUST MONITOR IT!
+
+## CLUSTER:
+- **SSH:** `ssh -o StrictHostKeyChecking=no -p 26796 root@74.48.140.178`
+- **Python:** `/opt/sys-venv/bin/python3`
+
+## ✅ ALL MAJOR ISSUES FIXED:
+- ✅ PyTorch 2.10.0+cu128 (supports RTX 5090 Blackwell sm_120)
+- ✅ GPU compute verified on all 4x RTX 5090
+- ✅ HF_HOME = /workspace/.hf_home
+- ✅ hf_transfer installed (fast parallel downloads)
+- ✅ HF_TOKEN set: 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
+
+## 🔄 CURRENT STATUS: MODEL DOWNLOADING
+
+**test_lora.py is RUNNING via nohup** - it won't die when you disconnect!
+
+Last known progress: ~18GB / 65GB (~28% done)
+ETA: ~30-45 more minutes
+
+### CHECK PROGRESS:
+```bash
+ssh -o StrictHostKeyChecking=no -p 26796 root@74.48.140.178 "echo '=== PROCESS ==='; ps aux | grep test_lora | grep -v grep; echo '=== SIZE ==='; du -sh /workspace/.hf_home/hub/; echo '=== LOG ==='; tail -15 /root/test_lora_output.log"
+```
+
+### IF PROCESS DIED, RESTART:
+```bash
+ssh -o StrictHostKeyChecking=no -p 26796 root@74.48.140.178 "nohup /opt/sys-venv/bin/python3 /root/test_lora.py > /root/test_lora_output.log 2>&1 & echo PID: \$!"
+```
+
+### MONITOR LIVE (Ctrl+C to stop):
+```bash
+ssh -o StrictHostKeyChecking=no -p 26796 root@74.48.140.178 "tail -f /root/test_lora_output.log"
+```
+
+## WHAT HAPPENS AFTER DOWNLOAD:
+
+1. test_lora.py loads base model across 4 GPUs
+2. Applies H200 LoRA from /root/models/h200-lora/iros-mega-lora-2026-02-01/
+3. Runs test inference about MCF methodology
+4. If prints "SUCCESS!" → we're golden
+
+## THEN DO:
+
+1. **Run merge_lora.py** (merge H200 LoRA into base):
+```bash
+ssh -o StrictHostKeyChecking=no -p 26796 root@74.48.140.178 "nohup /opt/sys-venv/bin/python3 /root/merge_lora.py > /root/merge_output.log 2>&1 &"
+```
+
+2. **Train Risk Intelligence LoRA** on merged model
+
+## FILES ON CLUSTER:
+- /root/test_lora.py - Test script (RUNNING)
+- /root/merge_lora.py - Merge script
+- /root/training/ - 797 training examples
+- /root/models/h200-lora/iros-mega-lora-2026-02-01/ - H200 LoRA
+
+## test_lora.py HAS THESE ENV VARS SET:
+```python
+os.environ['HF_HOME'] = '/workspace/.hf_home'
+os.environ['HF_HUB_ENABLE_HF_TRANSFER'] = '1'
+os.environ['HF_TOKEN'] = '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'
+```
+
+## DON'T:
+- Don't kill the running process
+- Don't restart if it's still running
+- Don't wait inline for long operations
+
+## DO:
+- Check if process running first
+- Use nohup for any new long operations
+- Monitor with tail -f (Ctrl+C safe)
+
+START BY: Check download progress with the command above!
