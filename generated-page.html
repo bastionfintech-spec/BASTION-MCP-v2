@@ -1118,6 +1118,30 @@
               <!-- Positions will be dynamically inserted here -->
             </div>
 
+            <!-- BASTION SHIELD — AI Trade Management -->
+            <div id="bastion-shield-panel" class="border-t border-zinc-800 bg-[#0a0a0a]">
+              <div class="p-2 flex justify-between items-center bg-zinc-900/30 border-b border-zinc-800/50">
+                <span class="text-[10px] font-mono text-crimson-500 font-bold flex items-center gap-1.5">
+                  <iconify-icon icon="solar:shield-bold" class="text-crimson-500"></iconify-icon>
+                  BASTION SHIELD
+                </span>
+                <div class="flex items-center gap-2">
+                  <span id="shield-status" class="text-[8px] font-mono text-zinc-600">INACTIVE</span>
+                  <button id="shield-toggle-all" class="text-[8px] bg-zinc-800 hover:bg-crimson-600 text-zinc-400 hover:text-white px-2 py-0.5 rounded transition-all font-mono">
+                    ACTIVATE
+                  </button>
+                </div>
+              </div>
+              <div id="shield-positions" class="max-h-[200px] overflow-y-auto no-scrollbar">
+                <!-- Shield position cards injected here by JS -->
+                <div id="shield-empty" class="text-center py-4 text-[9px] text-zinc-600 font-mono">
+                  <iconify-icon icon="solar:shield-cross-linear" class="text-xl mb-1 text-zinc-700"></iconify-icon>
+                  <div>No positions under shield</div>
+                  <div class="text-[8px] text-zinc-700 mt-0.5">Toggle positions above to enable AI monitoring</div>
+                </div>
+              </div>
+            </div>
+
             <div class="p-3 border-t border-zinc-800 bg-zinc-900/30 text-[10px] font-mono text-zinc-500">
               <div class="flex justify-between mb-1">
                 <span>EXPOSURE</span>
@@ -1818,7 +1842,12 @@
               <span class="text-zinc-400 font-bold tracking-wider">
                 ALERTS &amp; SIGNALS
               </span>
-              <iconify-icon icon="solar:filter-linear" class="text-zinc-500 hover:text-white cursor-pointer"></iconify-icon>
+              <div class="flex items-center gap-2">
+                <button id="bastion-scan-btn" class="text-[8px] bg-crimson-600/20 hover:bg-crimson-600 text-crimson-400 hover:text-white px-2 py-0.5 rounded transition-all font-mono flex items-center gap-1" title="Run BASTION signal scan">
+                  <iconify-icon icon="solar:target-bold" class="text-[10px]"></iconify-icon> SCAN
+                </button>
+                <iconify-icon icon="solar:filter-linear" class="text-zinc-500 hover:text-white cursor-pointer"></iconify-icon>
+              </div>
             </div>
 
             <!-- MM MAGNET PANEL - MOVED TO TOP -->
@@ -2070,7 +2099,7 @@
                     <span class="text-[8px] bg-crimson-600 text-white px-1.5 py-0.5 rounded animate-pulse">AI</span>
                   </div>
                 </div>
-                <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50 min-h-[60px] max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+                <div data-neural="response" class="text-[10px] text-zinc-300 font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-800/50 min-h-[60px] max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
                   <span class="text-crimson-500">&gt;&gt;</span>
                   Ready for your query...
                 </div>
@@ -2618,29 +2647,70 @@
         }
       }
 
+      // =================================================================
+      // MARKDOWN RENDERER — Renders structured model output properly
+      // =================================================================
+      function renderMarkdown(text) {
+        if (!text) return '';
+        let html = text;
+        // Code blocks (```json ... ```)
+        html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+          return `<pre class="bg-zinc-900 border border-zinc-800 rounded p-2 my-2 overflow-x-auto text-[9px] leading-relaxed"><code class="text-emerald-400">${code.trim().replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`;
+        });
+        // Tables
+        html = html.replace(/^(\|.+\|)\n(\|[\s\-:|]+\|)\n((?:\|.+\|\n?)+)/gm, (match, header, sep, body) => {
+          const headers = header.split('|').filter(c => c.trim()).map(c => `<th class="px-2 py-1 text-left text-zinc-400 border-b border-zinc-700">${c.trim()}</th>`).join('');
+          const rows = body.trim().split('\n').map(row => {
+            const cells = row.split('|').filter(c => c.trim()).map(c => `<td class="px-2 py-1 border-b border-zinc-800/50">${c.trim()}</td>`).join('');
+            return `<tr class="hover:bg-zinc-800/30">${cells}</tr>`;
+          }).join('');
+          return `<table class="w-full text-[9px] font-mono my-2 border border-zinc-800 rounded"><thead class="bg-zinc-900"><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+        });
+        // Headers
+        html = html.replace(/^### (.+)$/gm, '<h3 class="text-white font-bold text-[10px] mt-3 mb-1 flex items-center gap-1"><span class="text-crimson-500">▸</span>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2 class="text-white font-bold text-[11px] mt-3 mb-1 pb-1 border-b border-zinc-800/50 flex items-center gap-1"><span class="text-crimson-500">■</span>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1 class="text-white font-bold text-[12px] mt-2 mb-2">$1</h1>');
+        // Bold, italic, inline code
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em class="text-zinc-300">$1</em>');
+        html = html.replace(/`(.*?)`/g, '<code class="bg-zinc-800 px-1 rounded text-crimson-400 text-[9px]">$1</code>');
+        // Bullet points
+        html = html.replace(/^- (.+)$/gm, '<div class="flex gap-1.5 ml-1"><span class="text-crimson-500 mt-0.5">•</span><span>$1</span></div>');
+        // Horizontal rules
+        html = html.replace(/^---$/gm, '<hr class="border-zinc-800 my-2">');
+        // Line breaks
+        html = html.replace(/\n/g, '<br>');
+        // Clean up double <br> after block elements
+        html = html.replace(/<\/pre><br>/g, '</pre>');
+        html = html.replace(/<\/table><br>/g, '</table>');
+        html = html.replace(/<\/h[123]><br>/g, m => m.replace('<br>',''));
+        html = html.replace(/<hr[^>]*><br>/g, m => m.replace('<br>',''));
+        return html;
+      }
+
       async function sendNeuralChat() {
         const input = document.querySelector('[data-input="neural"]');
         if (!input || !input.value.trim()) return;
-        
+
         const query = input.value.trim();
         input.value = '';
         input.disabled = true;
-        
+
         const responseEl = document.querySelector('[data-neural="response"]');
         const loadingEl = document.getElementById('neural-loading');
         const sendBtn = document.querySelector('[data-action="neural-send"]');
-        
+
         // Show loading state
         if (loadingEl) loadingEl.classList.remove('hidden');
         if (sendBtn) sendBtn.disabled = true;
         if (responseEl) {
-          responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> <span class="text-amber-400">Processing: "${query.substring(0,50)}..."</span>`;
+          responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> <span class="text-amber-400 animate-pulse">BASTION is analyzing...</span>`;
         }
-        
+
         // Extract symbol from query or use current selected symbol
         const symbolMatch = query.toUpperCase().match(/\b(BTC|ETH|SOL|BNB|XRP|AVAX|LINK|ARB|OP|DOGE|ADA|MATIC|DOT|ATOM)\b/);
         const symbol = symbolMatch ? symbolMatch[1] : currentSymbol;
-        
+
         try {
           const res = await fetch(`${API_BASE}/api/neural/chat`, {
             method: 'POST',
@@ -2648,16 +2718,11 @@
             body: JSON.stringify({ query, symbol })
           });
           const data = await res.json();
-          
-          // Update neural response
+
+          // Update neural response with full markdown rendering
           if (responseEl) {
             if (data.response) {
-              // Format response nicely
-              let formatted = data.response
-                .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-                .replace(/`(.*?)`/g, '<code class="bg-zinc-800 px-1 rounded text-crimson-400">$1</code>');
-              responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> ${formatted}`;
+              responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> ${renderMarkdown(data.response)}`;
             } else if (data.error) {
               responseEl.innerHTML = `<span class="text-crimson-500">&gt;&gt;</span> <span class="text-red-400">Error: ${data.error}</span>`;
             }
@@ -5392,9 +5457,12 @@ Esc    - Close Dialogs
           const bubble = document.createElement('div');
           bubble.className = role === 'user'
             ? 'max-w-[80%] bg-crimson-600/20 border border-crimson-600/30 text-white text-[11px] px-4 py-2 rounded-lg'
-            : 'max-w-[80%] bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px] px-4 py-2 rounded-lg font-mono whitespace-pre-wrap';
-          
-          bubble.innerHTML = content;
+            : 'max-w-[85%] bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px] px-4 py-3 rounded-lg font-mono leading-relaxed';
+
+          // Render markdown for assistant messages, raw HTML for typing indicators
+          bubble.innerHTML = (role === 'assistant' && !isTyping && typeof renderMarkdown === 'function')
+            ? renderMarkdown(content)
+            : content;
           msgDiv.appendChild(bubble);
           
           // Remove empty state if present
@@ -5693,8 +5761,13 @@ Esc    - Close Dialogs
               ` : ''}
             </div>
             ` : ''}
+            <button class="shield-toggle w-full mt-2 py-1 text-[8px] font-mono rounded transition-all flex items-center justify-center gap-1 ${window._shieldedPositions?.has(pos.symbol) ? 'bg-crimson-600/20 border border-crimson-500/40 text-crimson-400' : 'bg-zinc-800/50 border border-zinc-700/30 text-zinc-500 hover:text-crimson-400 hover:border-crimson-500/30'}"
+              data-shield-symbol="${pos.symbol}" data-shield-exchange="${pos.exchange || ''}" data-shield-direction="${direction}" data-shield-entry="${pos.entry_price || 0}">
+              <iconify-icon icon="${window._shieldedPositions?.has(pos.symbol) ? 'solar:shield-bold' : 'solar:shield-linear'}"></iconify-icon>
+              ${window._shieldedPositions?.has(pos.symbol) ? 'SHIELDED' : 'ENABLE SHIELD'}
+            </button>
           `;
-          
+
           positionsContainer.appendChild(card);
         });
       }
@@ -5723,6 +5796,201 @@ Esc    - Close Dialogs
       });
     })();
     
+    // =====================================================
+    // BASTION SHIELD — AI Position Monitor
+    // =====================================================
+    window._shieldedPositions = new Set(JSON.parse(localStorage.getItem('bastion_shielded') || '[]'));
+    window._shieldEvalCache = {};
+
+    (function() {
+      const shieldContainer = document.getElementById('shield-positions');
+      const shieldEmpty = document.getElementById('shield-empty');
+      const shieldStatus = document.getElementById('shield-status');
+      const shieldToggleAll = document.getElementById('shield-toggle-all');
+      let shieldInterval = null;
+
+      // Toggle shield on a position
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.shield-toggle');
+        if (!btn) return;
+        const symbol = btn.dataset.shieldSymbol;
+        if (window._shieldedPositions.has(symbol)) {
+          window._shieldedPositions.delete(symbol);
+        } else {
+          window._shieldedPositions.add(symbol);
+        }
+        localStorage.setItem('bastion_shielded', JSON.stringify([...window._shieldedPositions]));
+        // Re-render positions to update button state
+        if (typeof loadPositions === 'function') loadPositions();
+        updateShieldPanel();
+      });
+
+      // Toggle all
+      if (shieldToggleAll) {
+        shieldToggleAll.addEventListener('click', () => {
+          const posCards = document.querySelectorAll('.shield-toggle');
+          if (window._shieldedPositions.size > 0) {
+            window._shieldedPositions.clear();
+          } else {
+            posCards.forEach(btn => {
+              if (btn.dataset.shieldSymbol) window._shieldedPositions.add(btn.dataset.shieldSymbol);
+            });
+          }
+          localStorage.setItem('bastion_shielded', JSON.stringify([...window._shieldedPositions]));
+          if (typeof loadPositions === 'function') loadPositions();
+          updateShieldPanel();
+        });
+      }
+
+      // Evaluate a shielded position
+      async function evaluatePosition(symbol, direction, entryPrice, currentPrice, exchange) {
+        try {
+          const res = await fetch(`${API_BASE}/api/risk/evaluate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: symbol.replace('-PERP','').replace('/USDT','') + 'USDT',
+              direction: direction.toLowerCase(),
+              entry_price: parseFloat(entryPrice),
+              current_price: parseFloat(currentPrice),
+              stop_loss: 0,
+              size: 1,
+              leverage: 10,
+              exchange: exchange || 'bitunix'
+            })
+          });
+          if (!res.ok) return null;
+          return await res.json();
+        } catch (e) {
+          console.error('[SHIELD] Eval failed for', symbol, e);
+          return null;
+        }
+      }
+
+      // Update shield panel display
+      async function updateShieldPanel() {
+        if (window._shieldedPositions.size === 0) {
+          if (shieldEmpty) shieldEmpty.classList.remove('hidden');
+          if (shieldStatus) { shieldStatus.textContent = 'INACTIVE'; shieldStatus.className = 'text-[8px] font-mono text-zinc-600'; }
+          if (shieldToggleAll) { shieldToggleAll.textContent = 'ACTIVATE'; shieldToggleAll.className = 'text-[8px] bg-zinc-800 hover:bg-crimson-600 text-zinc-400 hover:text-white px-2 py-0.5 rounded transition-all font-mono'; }
+          stopShieldMonitor();
+          // Clear non-empty/non-shield elements
+          shieldContainer?.querySelectorAll('.shield-card').forEach(c => c.remove());
+          return;
+        }
+
+        if (shieldEmpty) shieldEmpty.classList.add('hidden');
+        if (shieldStatus) { shieldStatus.textContent = 'MONITORING'; shieldStatus.className = 'text-[8px] font-mono text-green-500 animate-pulse'; }
+        if (shieldToggleAll) { shieldToggleAll.textContent = 'DISABLE ALL'; shieldToggleAll.className = 'text-[8px] bg-crimson-600/20 hover:bg-crimson-600 text-crimson-400 hover:text-white px-2 py-0.5 rounded transition-all font-mono'; }
+
+        // Get current position data from DOM
+        const posCards = document.querySelectorAll('.shield-toggle');
+        const shieldedData = [];
+        posCards.forEach(btn => {
+          if (window._shieldedPositions.has(btn.dataset.shieldSymbol)) {
+            shieldedData.push({
+              symbol: btn.dataset.shieldSymbol,
+              direction: btn.dataset.shieldDirection,
+              entry: btn.dataset.shieldEntry,
+              exchange: btn.dataset.shieldExchange
+            });
+          }
+        });
+
+        // Clear old cards
+        shieldContainer?.querySelectorAll('.shield-card').forEach(c => c.remove());
+
+        // Render shield cards with cached data or loading state
+        for (const pos of shieldedData) {
+          const cached = window._shieldEvalCache[pos.symbol];
+          const card = document.createElement('div');
+          card.className = 'shield-card p-2 border-b border-zinc-800/50 relative';
+
+          if (cached && cached.risk_assessment) {
+            const ra = cached.risk_assessment;
+            const urgencyColors = { 'CRITICAL': 'red', 'IMMEDIATE': 'red', 'HIGH': 'amber', 'MODERATE': 'yellow', 'LOW': 'green', 'NONE': 'zinc' };
+            const uc = urgencyColors[ra.urgency?.toUpperCase()] || 'zinc';
+            card.innerHTML = `
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-[10px] font-bold text-white">${pos.symbol}</span>
+                <span class="text-[8px] font-mono bg-${uc}-500/20 text-${uc}-400 px-1.5 py-0.5 rounded">${ra.urgency || '--'}</span>
+              </div>
+              <div class="text-[9px] font-mono font-bold ${ra.action?.includes('EXIT') ? 'text-red-400' : ra.action?.includes('HOLD') ? 'text-green-400' : 'text-amber-400'} mb-1">${ra.action || 'EVALUATING...'}</div>
+              <div class="text-[8px] text-zinc-400 leading-relaxed mb-1">${ra.reason || ''}</div>
+              <div class="flex justify-between items-center text-[8px] font-mono">
+                <span class="text-zinc-600">Confidence</span>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-16 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-crimson-500 transition-all" style="width: ${(ra.confidence || 0) * 100}%"></div>
+                  </div>
+                  <span class="text-zinc-400">${Math.round((ra.confidence || 0) * 100)}%</span>
+                </div>
+              </div>
+              <div class="text-[7px] text-zinc-700 mt-1">Updated: ${cached._timestamp || 'just now'}</div>
+            `;
+          } else {
+            card.innerHTML = `
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] font-bold text-white">${pos.symbol}</span>
+                <iconify-icon icon="solar:refresh-linear" class="text-crimson-500 animate-spin text-sm"></iconify-icon>
+              </div>
+              <div class="text-[8px] text-zinc-500 animate-pulse mt-1">Evaluating position...</div>
+            `;
+          }
+          shieldContainer?.appendChild(card);
+        }
+
+        // Start monitoring if not already
+        startShieldMonitor();
+      }
+
+      // Run risk evaluation for all shielded positions
+      async function runShieldEvaluations() {
+        const posCards = document.querySelectorAll('.shield-toggle');
+        for (const btn of posCards) {
+          if (!window._shieldedPositions.has(btn.dataset.shieldSymbol)) continue;
+          const card = btn.closest('.position-card');
+          if (!card) continue;
+          // Extract current price from the position card
+          const currentPriceEl = card.querySelector('.grid span:nth-child(4)');
+          const currentPriceText = currentPriceEl?.textContent || '';
+          const priceMatch = currentPriceText.match(/\$([\d,.]+)/);
+          const currentPrice = priceMatch ? parseFloat(priceMatch[1].replace(',','')) : 0;
+
+          const result = await evaluatePosition(
+            btn.dataset.shieldSymbol,
+            btn.dataset.shieldDirection,
+            btn.dataset.shieldEntry,
+            currentPrice,
+            btn.dataset.shieldExchange
+          );
+          if (result) {
+            result._timestamp = new Date().toLocaleTimeString();
+            window._shieldEvalCache[btn.dataset.shieldSymbol] = result;
+          }
+        }
+        updateShieldPanel();
+      }
+
+      function startShieldMonitor() {
+        if (shieldInterval) return;
+        runShieldEvaluations(); // Run immediately
+        shieldInterval = setInterval(runShieldEvaluations, 60000); // Then every 60s
+      }
+
+      function stopShieldMonitor() {
+        if (shieldInterval) { clearInterval(shieldInterval); shieldInterval = null; }
+      }
+
+      // Initialize on load
+      setTimeout(() => {
+        if (window._shieldedPositions.size > 0) updateShieldPanel();
+      }, 3000);
+
+      // Expose for position reloads
+      window.updateShieldPanel = updateShieldPanel;
+    })();
+
     // =====================================================
     // CORNER GIF PERSONALIZATION
     // =====================================================
@@ -6442,9 +6710,41 @@ Esc    - Close Dialogs
     }
     
     // =================================================================
+    // BASTION SIGNAL SCANNER
+    // =================================================================
+    (function() {
+      const scanBtn = document.getElementById('bastion-scan-btn');
+      if (scanBtn) {
+        scanBtn.addEventListener('click', async () => {
+          scanBtn.disabled = true;
+          scanBtn.innerHTML = '<iconify-icon icon="solar:refresh-linear" class="animate-spin text-[10px]"></iconify-icon> SCANNING...';
+          try {
+            const res = await fetch(`${API_BASE}/api/signals/scan`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+              const count = data.signals_generated || 0;
+              if (count > 0) {
+                showNotification(`BASTION found ${count} signal${count > 1 ? 's' : ''}!`, 'success');
+              } else {
+                showNotification('No high-conviction setups found', 'info');
+              }
+              // Refresh alerts to show new signals
+              if (typeof fetchLiveAlerts === 'function') fetchLiveAlerts();
+            }
+          } catch (e) {
+            console.error('[SCAN] Error:', e);
+            showNotification('Signal scan failed', 'error');
+          } finally {
+            scanBtn.disabled = false;
+            scanBtn.innerHTML = '<iconify-icon icon="solar:target-bold" class="text-[10px]"></iconify-icon> SCAN';
+          }
+        });
+      }
+    })();
+
     // LIVE ALERTS SYSTEM
     // =================================================================
-    
+
     let lastAlertId = null;
     let alertsLoaded = false;
     

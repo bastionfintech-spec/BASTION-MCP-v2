@@ -4897,6 +4897,171 @@ async def risk_evaluate_all():
 
 
 # =============================================================================
+# BASTION SIGNAL SCANNER — AI Trade Recommendations
+# =============================================================================
+
+@app.post("/api/signals/scan")
+async def bastion_signal_scan():
+    """
+    BASTION scans top assets and generates trade signals using the fine-tuned model.
+    Called periodically by the frontend or scheduler.
+    Signals are pushed to live alerts + Telegram.
+    """
+    model_url = os.getenv("BASTION_MODEL_URL")
+    if not model_url:
+        return {"success": False, "error": "BASTION_MODEL_URL not configured"}
+
+    SCAN_SYMBOLS = ["BTC", "ETH", "SOL", "XRP", "DOGE"]
+    signals_generated = []
+
+    for symbol in SCAN_SYMBOLS:
+        try:
+            # Fetch live data for this symbol
+            price_data = {}
+            funding_data = {}
+            whale_data = {}
+
+            try:
+                price_res = await get_live_price(symbol + "USDT")
+                price_data = price_res if isinstance(price_res, dict) else {}
+            except:
+                pass
+
+            try:
+                funding_res = await get_funding_rates()
+                if isinstance(funding_res, dict) and funding_res.get("rates"):
+                    for r in funding_res["rates"]:
+                        if symbol.upper() in str(r.get("symbol", "")).upper():
+                            funding_data = r
+                            break
+            except:
+                pass
+
+            current_price = price_data.get("price", 0)
+            change_24h = price_data.get("change_24h", 0)
+            funding_rate = funding_data.get("rate", 0)
+
+            if not current_price:
+                continue
+
+            # Build context for the model
+            context = f"""Asset: {symbol}/USDT
+Current Price: ${current_price:,.2f}
+24h Change: {change_24h:+.2f}%
+Funding Rate: {funding_rate}%"""
+
+            # Ask BASTION for a signal
+            async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=15.0)) as client:
+                model_api_key = os.getenv("BASTION_MODEL_API_KEY", "")
+                headers = {"Content-Type": "application/json"}
+                if model_api_key:
+                    headers["Authorization"] = f"Bearer {model_api_key}"
+
+                resp = await client.post(
+                    f"{model_url}/v1/chat/completions",
+                    headers=headers,
+                    json={
+                        "model": "bastion-32b",
+                        "messages": [
+                            {"role": "system", "content": """You are BASTION Signal Intelligence. Analyze the asset data and determine if there is a high-conviction trade setup. Respond with JSON only.
+
+If there IS a valid setup, respond:
+{"signal": true, "direction": "LONG" or "SHORT", "entry": price, "target": price, "stop": price, "confidence": 0-100, "reason": "brief reason"}
+
+If there is NO setup, respond:
+{"signal": false, "reason": "brief reason why no setup"}
+
+Be SELECTIVE — only signal when conviction is above 65%. Most scans should return no signal."""},
+                            {"role": "user", "content": context}
+                        ],
+                        "max_tokens": 300,
+                        "temperature": 0.2
+                    }
+                )
+
+                if resp.status_code == 200:
+                    result = resp.json()
+                    content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+
+                    # Try to parse JSON from response
+                    import re
+                    json_match = re.search(r'\{[\s\S]*\}', content)
+                    if json_match:
+                        try:
+                            signal_data = json.loads(json_match.group())
+
+                            if signal_data.get("signal"):
+                                direction = signal_data.get("direction", "LONG")
+                                entry = signal_data.get("entry", current_price)
+                                target = signal_data.get("target", 0)
+                                stop = signal_data.get("stop", 0)
+                                confidence = signal_data.get("confidence", 0)
+                                reason = signal_data.get("reason", "")
+
+                                if confidence >= 65:
+                                    # Add to live alerts
+                                    color = "green" if direction == "LONG" else "red"
+                                    alert_msg = f"{symbol} {direction} @ ${entry:,.0f} → TP ${target:,.0f} | SL ${stop:,.0f} | {confidence}% confidence | {reason}"
+
+                                    add_live_alert(
+                                        "bastion_signal",
+                                        f"🎯 BASTION: {symbol} {direction}",
+                                        alert_msg,
+                                        color=color,
+                                        data={
+                                            "symbol": symbol,
+                                            "direction": direction,
+                                            "entry": entry,
+                                            "target": target,
+                                            "stop": stop,
+                                            "confidence": confidence,
+                                            "reason": reason,
+                                            "source": "bastion-32b"
+                                        }
+                                    )
+
+                                    # Push to Telegram
+                                    try:
+                                        telegram_msg = f"""🎯 <b>BASTION SIGNAL</b>
+
+<b>{symbol}/USDT — {direction}</b>
+Entry: <code>${entry:,.2f}</code>
+Target: <code>${target:,.2f}</code>
+Stop: <code>${stop:,.2f}</code>
+Confidence: <b>{confidence}%</b>
+
+<i>{reason}</i>
+
+⚡ Powered by BASTION AI"""
+                                        await send_telegram_message(telegram_msg)
+                                    except Exception as tg_err:
+                                        logger.warning(f"[SIGNAL] Telegram push failed: {tg_err}")
+
+                                    signals_generated.append({
+                                        "symbol": symbol,
+                                        "direction": direction,
+                                        "entry": entry,
+                                        "target": target,
+                                        "stop": stop,
+                                        "confidence": confidence,
+                                        "reason": reason
+                                    })
+                        except json.JSONDecodeError:
+                            pass
+
+        except Exception as e:
+            logger.error(f"[SIGNAL] Scan failed for {symbol}: {e}")
+
+    return {
+        "success": True,
+        "signals_generated": len(signals_generated),
+        "signals": signals_generated,
+        "scanned": len(SCAN_SYMBOLS),
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+# =============================================================================
 # ACTIONS API
 # =============================================================================
 
