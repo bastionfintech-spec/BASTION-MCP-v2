@@ -306,8 +306,9 @@ class InstitutionalReportGenerator:
         scores = self._compute_mcf_scores(package)
         package.update(scores)
 
-        # Order flow analysis
-        package["order_flow"] = self._analyze_order_flow(taker, whale_analysis, ls_ratio)
+        # Order flow analysis (include Helsinki CVD if available)
+        helsinki_cvd = data.get("helsinki_cvd")
+        package["order_flow"] = self._analyze_order_flow(taker, whale_analysis, ls_ratio, helsinki_cvd)
 
         return package
 
@@ -418,13 +419,15 @@ class InstitutionalReportGenerator:
 
         return scores
 
-    def _analyze_order_flow(self, taker: Dict, whales: Dict, ls_ratio: float) -> Dict:
-        """Synthesize order flow analysis"""
+    def _analyze_order_flow(self, taker: Dict, whales: Dict, ls_ratio: float, helsinki_cvd=None) -> Dict:
+        """Synthesize order flow analysis using Coinglass taker + Helsinki CVD"""
         buy = taker.get("buy", 0)
         sell = taker.get("sell", 0)
         total = buy + sell
+        cvd_state = "Unknown"
+        buy_pct = 50
 
-        # CVD direction
+        # CVD direction from taker flow
         if total > 0:
             buy_pct = buy / total * 100
             if buy_pct > 55:
@@ -433,9 +436,31 @@ class InstitutionalReportGenerator:
                 cvd_state = "Selling"
             else:
                 cvd_state = "Neutral"
-        else:
-            cvd_state = "Unknown"
-            buy_pct = 50
+
+        # Fall back to Helsinki CVD data if taker flow is empty
+        if cvd_state == "Unknown" and helsinki_cvd:
+            cvd_raw = helsinki_cvd if isinstance(helsinki_cvd, dict) else {}
+            cvd_info = cvd_raw.get("cvd") if isinstance(cvd_raw.get("cvd"), dict) else cvd_raw
+            signal = (cvd_info.get("signal", "") or "").upper() if cvd_info else ""
+            cvd_4h = cvd_info.get("cvd_4h", 0) if cvd_info else 0
+
+            if signal in ("BUY", "BULLISH", "STRONG_BUY"):
+                cvd_state = "Buying"
+                buy_pct = 62
+            elif signal in ("SELL", "BEARISH", "STRONG_SELL"):
+                cvd_state = "Selling"
+                buy_pct = 38
+            elif cvd_4h and isinstance(cvd_4h, (int, float)):
+                if cvd_4h > 0:
+                    cvd_state = "Buying"
+                    buy_pct = 55 + min(abs(cvd_4h) * 10, 15)
+                elif cvd_4h < 0:
+                    cvd_state = "Selling"
+                    buy_pct = 45 - min(abs(cvd_4h) * 10, 15)
+                else:
+                    cvd_state = "Neutral"
+            else:
+                cvd_state = "Neutral"
 
         # Whale flow
         whale_bias = whales.get("net_bias", "UNKNOWN")
@@ -443,7 +468,7 @@ class InstitutionalReportGenerator:
         return {
             "cvd_state": cvd_state,
             "buy_percent": round(buy_pct, 1),
-            "sell_percent": round(100 - buy_pct, 1) if total > 0 else 50,
+            "sell_percent": round(100 - buy_pct, 1),
             "whale_bias": whale_bias,
             "ls_ratio": ls_ratio,
             "flow_bias": "BULLISH" if (cvd_state == "Buying" and whale_bias == "LONG") else

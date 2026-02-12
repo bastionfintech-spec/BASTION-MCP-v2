@@ -2183,6 +2183,18 @@
 
     <!-- BASTION TERMINAL API CONNECTION -->
     <script>
+      // Production console silencer — suppress verbose logging from client
+      (function() {
+        const noop = function() {};
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+          console.log = noop;
+          console.debug = noop;
+          console.info = noop;
+          console.warn = noop;
+          // console.error is preserved for real errors
+        }
+      })();
+
       const API_BASE = window.location.origin;
       let ws = null;
       let positions = [];

@@ -138,6 +138,9 @@
             <button onclick="generateReport('market_structure','BTC');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors">
               <iconify-icon icon="solar:chart-2-linear" class="text-green-500"></iconify-icon> BTC Market Structure
             </button>
+            <button onclick="generateReport('market_structure','ETH');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors">
+              <iconify-icon icon="solar:chart-2-linear" class="text-blue-500"></iconify-icon> ETH Market Structure
+            </button>
             <button onclick="generateReport('whale_intelligence','BTC');closeDropdown()" class="w-full text-left px-3 py-2 hover:bg-zinc-900 text-[10px] font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-colors">
               <iconify-icon icon="solar:eye-linear" class="text-cyan-500"></iconify-icon> BTC Whale Intel
             </button>
@@ -284,6 +287,17 @@
     </main>
 
     <script>
+    // Production console silencer — suppress verbose logging from client
+    (function() {
+      const noop = function() {};
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        console.log = noop;
+        console.debug = noop;
+        console.info = noop;
+        console.warn = noop;
+      }
+    })();
+
     // =========================================================================
     // BASTION RESEARCH TERMINAL v2.0 - Institutional Research
     // =========================================================================
@@ -548,7 +562,7 @@
             <span class="text-2xl font-mono font-bold ${upside >= 0 ? 'text-green-400' : 'text-red-400'}">$${formatNumber(targetPrice)}</span>
           </div>
           <div class="flex flex-col border-l border-zinc-800 pl-6">
-            <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider mb-1">Upside</span>
+            <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-wider mb-1">${upside >= 0 ? 'Upside' : 'Downside'}</span>
             <span class="text-xl font-mono font-bold ${upside >= 0 ? 'text-green-400' : 'text-red-400'}">${upside >= 0 ? '+' : ''}${upside.toFixed(1)}%</span>
           </div>
           <div class="flex flex-col border-l border-zinc-800 pl-6">
