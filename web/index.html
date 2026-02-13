@@ -181,78 +181,143 @@
             </div>
 
             <div class="hidden lg:flex flex-col items-end justify-center relative h-full pointer-events-none select-none">
-              <div class="relative w-full max-w-sm perspective-1000 mt-12 mr-8">
+              <div class="relative w-full max-w-sm mt-12 mr-8" style="min-height:420px;">
+                <!-- Cycling Hero Cards -->
                 <!-- Card 1: BASTION SHIELD — Live Monitoring -->
-                <div class="absolute -top-32 right-0 w-72 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-300 overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.08)]">
-                  <div class="p-2.5 flex justify-between items-center bg-zinc-900/50 border-b border-zinc-800">
-                    <span class="text-[9px] font-mono text-red-500 font-bold flex items-center gap-1.5">
-                      <iconify-icon icon="solar:shield-bold" class="text-red-500"></iconify-icon>BASTION SHIELD
-                    </span>
-                    <span class="text-[8px] font-mono text-green-500 animate-pulse">MONITORING</span>
-                  </div>
-                  <div class="p-2.5 border-b border-zinc-800/50">
-                    <div class="flex justify-between items-start mb-1">
-                      <span class="text-[10px] font-bold text-white font-mono">BTC-PERP</span>
-                      <span class="text-[8px] font-mono bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">HIGH</span>
+                <div class="hero-cycle-card absolute inset-0 flex items-center justify-end transition-all duration-700 ease-in-out" style="opacity:1;transform:translateY(0) scale(1);">
+                  <div class="w-80 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.1)]">
+                    <div class="p-2.5 flex justify-between items-center bg-zinc-900/50 border-b border-zinc-800">
+                      <span class="text-[9px] font-mono text-red-500 font-bold flex items-center gap-1.5">
+                        <iconify-icon icon="solar:shield-bold" class="text-red-500"></iconify-icon>BASTION SHIELD
+                      </span>
+                      <span class="text-[8px] font-mono text-green-500 animate-pulse">MONITORING</span>
                     </div>
-                    <div class="text-[9px] font-mono font-bold text-amber-400 mb-1">REDUCE 40%</div>
-                    <div class="text-[8px] text-zinc-500 leading-relaxed font-mono mb-1.5">$650M liquidation cluster within 2%. Funding negative.</div>
-                    <div class="flex justify-between items-center text-[8px] font-mono">
-                      <span class="text-zinc-600">Confidence</span>
-                      <div class="flex items-center gap-1"><div class="w-14 h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:87%"></div></div><span class="text-zinc-500">87%</span></div>
+                    <div class="p-2.5 border-b border-zinc-800/50">
+                      <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-white font-mono">BTC-PERP</span>
+                        <span class="text-[8px] font-mono bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">HIGH</span>
+                      </div>
+                      <div class="text-[9px] font-mono font-bold text-amber-400 mb-1">REDUCE 40%</div>
+                      <div class="text-[8px] text-zinc-500 leading-relaxed font-mono mb-1.5">$650M liquidation cluster within 2%. Funding negative.</div>
+                      <div class="flex justify-between items-center text-[8px] font-mono">
+                        <span class="text-zinc-600">Confidence</span>
+                        <div class="flex items-center gap-1"><div class="w-14 h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:87%"></div></div><span class="text-zinc-500">87%</span></div>
+                      </div>
                     </div>
-                  </div>
-                  <div class="p-2.5">
-                    <div class="flex justify-between items-start mb-1">
-                      <span class="text-[10px] font-bold text-white font-mono">SOL-PERP</span>
-                      <span class="text-[8px] font-mono bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">LOW</span>
+                    <div class="p-2.5 border-b border-zinc-800/50">
+                      <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-white font-mono">SOL-PERP</span>
+                        <span class="text-[8px] font-mono bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">LOW</span>
+                      </div>
+                      <div class="text-[9px] font-mono font-bold text-green-400">HOLD — MOMENTUM INTACT</div>
                     </div>
-                    <div class="text-[9px] font-mono font-bold text-green-400">HOLD — MOMENTUM INTACT</div>
+                    <div class="p-2.5">
+                      <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-white font-mono">ETH-PERP</span>
+                        <iconify-icon icon="solar:refresh-linear" class="text-red-500 text-sm animate-spin"></iconify-icon>
+                      </div>
+                      <div class="text-[8px] text-zinc-500 animate-pulse font-mono">Evaluating position...</div>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Card 2: AI Technical Analysis -->
-                <div class="relative w-80 bg-[#080808] border border-zinc-800 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 overflow-hidden pointer-events-auto group hover:border-red-600/30 transition-colors">
-                  <div class="absolute -left-px top-0 bottom-0 w-0.5 bg-red-600"></div>
-                  <div class="p-3 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
-                    <div class="flex items-center gap-2">
-                      <div class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500"><iconify-icon icon="solar:shield-bold" class="text-[10px]"></iconify-icon></div>
-                      <span class="text-[9px] font-mono text-zinc-400 font-bold">BASTION &bull; Neural Analysis</span>
+                <div class="hero-cycle-card absolute inset-0 flex items-center justify-end transition-all duration-700 ease-in-out" style="opacity:0;transform:translateY(30px) scale(0.97);">
+                  <div class="w-80 bg-[#080808] border border-zinc-800 shadow-2xl overflow-hidden border-l-2 border-l-red-600">
+                    <div class="p-3 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
+                      <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500"><iconify-icon icon="solar:shield-bold" class="text-[10px]"></iconify-icon></div>
+                        <span class="text-[9px] font-mono text-zinc-400 font-bold">BASTION &bull; Neural Analysis</span>
+                      </div>
+                      <span class="text-[7px] font-mono text-zinc-600">1.2s</span>
                     </div>
-                    <span class="text-[7px] font-mono text-zinc-600">1.2s</span>
-                  </div>
-                  <div class="p-4 text-[10px] font-mono leading-relaxed space-y-2.5">
-                    <p class="text-zinc-300"><span class="text-red-400 font-bold">Structure:</span> BTC 4H bearish divergence on RSI. CVD diverging negative since the $97,800 rejection. Sellers dominating flow.</p>
-                    <p class="text-zinc-300"><span class="text-amber-400 font-bold">Derivatives:</span> OI up +4.2% while price flat. Funding flipped to -0.008%. Longs clustered $96,100-$96,500 &mdash; liquidation magnet.</p>
-                    <p class="text-zinc-300"><span class="text-green-400 font-bold">Verdict:</span> Wait for sweep below $96,500. Wick + reclaim with positive CVD = entry. Size 1R, stop $95,800.</p>
-                    <div class="border-t border-zinc-800 pt-2 flex items-center gap-3 text-[8px] text-zinc-600">
-                      <span class="flex items-center gap-1"><iconify-icon icon="solar:database-linear" class="text-[9px]"></iconify-icon>147 streams</span>
-                      <span class="flex items-center gap-1"><iconify-icon icon="solar:shield-bold" class="text-[9px] text-red-600"></iconify-icon>Risk-aware</span>
+                    <div class="p-4 text-[10px] font-mono leading-relaxed space-y-2.5">
+                      <p class="text-zinc-300"><span class="text-red-400 font-bold">Structure:</span> BTC 4H bearish divergence on RSI. CVD diverging negative since the $97,800 rejection. Sellers dominating flow.</p>
+                      <p class="text-zinc-300"><span class="text-amber-400 font-bold">Derivatives:</span> OI up +4.2% while price flat. Funding flipped to -0.008%. Longs clustered $96,100-$96,500 &mdash; liquidation magnet.</p>
+                      <p class="text-zinc-300"><span class="text-green-400 font-bold">Verdict:</span> Wait for sweep below $96,500. Wick + reclaim with positive CVD = entry. Size 1R, stop $95,800.</p>
+                      <div class="border-t border-zinc-800 pt-2 flex items-center gap-3 text-[8px] text-zinc-600">
+                        <span class="flex items-center gap-1"><iconify-icon icon="solar:database-linear" class="text-[9px]"></iconify-icon>147 streams</span>
+                        <span class="flex items-center gap-1"><iconify-icon icon="solar:shield-bold" class="text-[9px] text-red-600"></iconify-icon>Risk-aware</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <!-- Card 3: Neural Chat Preview -->
-                <div class="absolute -bottom-28 right-8 w-72 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-400 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.06)]">
-                  <div class="p-2.5 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
-                    <div class="flex items-center gap-1.5">
-                      <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                      <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">NEURAL_CHAT</span>
+                <div class="hero-cycle-card absolute inset-0 flex items-center justify-end transition-all duration-700 ease-in-out" style="opacity:0;transform:translateY(30px) scale(0.97);">
+                  <div class="w-80 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.06)]">
+                    <div class="p-2.5 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
+                      <div class="flex items-center gap-1.5">
+                        <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">NEURAL_CHAT</span>
+                      </div>
+                      <span class="text-[8px] font-mono text-green-500 border border-green-900/40 bg-green-900/10 px-1.5 py-0.5">LIVE</span>
                     </div>
-                    <span class="text-[8px] font-mono text-green-500 border border-green-900/40 bg-green-900/10 px-1.5 py-0.5">LIVE</span>
-                  </div>
-                  <div class="p-3 space-y-2.5">
-                    <div class="flex gap-2">
-                      <div class="bg-red-600/10 border border-red-900/30 px-2 py-1.5 rounded-b-lg rounded-tl-lg text-[9px] font-mono text-zinc-300 max-w-[80%]">Should I add to my BTC long here?</div>
+                    <div class="p-3 space-y-3">
+                      <div class="flex gap-2 justify-end">
+                        <div class="bg-red-600/10 border border-red-900/30 px-2.5 py-2 rounded-b-lg rounded-tl-lg text-[9px] font-mono text-zinc-300 max-w-[80%]">Should I add to my BTC long here?</div>
+                      </div>
+                      <div class="flex gap-2">
+                        <div class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 shrink-0 mt-0.5"><iconify-icon icon="solar:shield-bold" class="text-[9px]"></iconify-icon></div>
+                        <div class="bg-[#080808] border border-zinc-800 px-2.5 py-2 rounded-b-lg rounded-tr-lg text-[9px] font-mono text-zinc-400 max-w-[85%]">Not yet. $420M liq cluster at $96.5K acting as magnet. Wait for the sweep &mdash; I'll alert you.</div>
+                      </div>
+                      <div class="flex gap-2 justify-end">
+                        <div class="bg-red-600/10 border border-red-900/30 px-2.5 py-2 rounded-b-lg rounded-tl-lg text-[9px] font-mono text-zinc-300 max-w-[80%]">What about SOL? Funding is positive.</div>
+                      </div>
+                      <div class="flex gap-2">
+                        <div class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 shrink-0 mt-0.5"><iconify-icon icon="solar:shield-bold" class="text-[9px]"></iconify-icon></div>
+                        <div class="bg-[#080808] border border-zinc-800 px-2.5 py-2 rounded-b-lg rounded-tr-lg text-[9px] font-mono text-zinc-400 max-w-[85%]">SOL looking strong. OI healthy, no liq clusters nearby. Your trailing stop at BE is protecting downside. Let it ride.</div>
+                      </div>
                     </div>
-                    <div class="flex gap-2">
-                      <div class="w-4 h-4 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 shrink-0 mt-0.5"><iconify-icon icon="solar:shield-bold" class="text-[8px]"></iconify-icon></div>
-                      <div class="bg-[#080808] border border-zinc-800 px-2 py-1.5 rounded-b-lg rounded-tr-lg text-[9px] font-mono text-zinc-400 max-w-[85%]">Not yet. $420M liq cluster at $96.5K acting as magnet. Wait for the sweep &mdash; I'll alert you.</div>
+                    <div class="p-2.5 bg-[#080808] border-t border-zinc-800">
+                      <div class="bg-[#050505] border border-zinc-800 text-[10px] font-mono text-zinc-600 pl-3 py-2 rounded">Query neural engine...</div>
                     </div>
                   </div>
                 </div>
+
+                <!-- Dot indicators -->
+                <div class="absolute -bottom-8 right-0 left-0 flex items-center justify-center gap-2 z-30">
+                  <button class="hero-dot w-1.5 h-1.5 rounded-full bg-red-600 transition-all duration-300" data-idx="0"></button>
+                  <button class="hero-dot w-1.5 h-1.5 rounded-full bg-zinc-700 transition-all duration-300" data-idx="1"></button>
+                  <button class="hero-dot w-1.5 h-1.5 rounded-full bg-zinc-700 transition-all duration-300" data-idx="2"></button>
+                </div>
               </div>
             </div>
+
+            <!-- Hero Card Cycling Script -->
+            <script>
+            (function(){
+              const cards = document.querySelectorAll('.hero-cycle-card');
+              const dots = document.querySelectorAll('.hero-dot');
+              if(!cards.length) return;
+              let current = 0;
+              let interval;
+              function show(idx){
+                cards.forEach((c,i) => {
+                  if(i === idx){
+                    c.style.opacity = '1';
+                    c.style.transform = 'translateY(0) scale(1)';
+                    c.style.pointerEvents = 'auto';
+                  } else {
+                    c.style.opacity = '0';
+                    c.style.transform = 'translateY(30px) scale(0.97)';
+                    c.style.pointerEvents = 'none';
+                  }
+                });
+                dots.forEach((d,i) => {
+                  d.className = i === idx
+                    ? 'hero-dot w-2 h-2 rounded-full bg-red-600 transition-all duration-300 shadow-[0_0_6px_#DC2626]'
+                    : 'hero-dot w-1.5 h-1.5 rounded-full bg-zinc-700 transition-all duration-300 hover:bg-zinc-500';
+                });
+                current = idx;
+              }
+              function next(){ show((current + 1) % cards.length); }
+              function start(){ interval = setInterval(next, 4000); }
+              function stop(){ clearInterval(interval); }
+              dots.forEach(d => d.addEventListener('click', () => { stop(); show(+d.dataset.idx); start(); }));
+              start();
+            })();
+            </script>
           </div>
         </div>
 
