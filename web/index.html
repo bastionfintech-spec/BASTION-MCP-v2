@@ -135,17 +135,17 @@
       <!-- Content Area -->
       <div class="flex-1 flex flex-col min-w-0 relative z-0 md:ml-16">
         <!-- Hero Section -->
-        <div id="hero" class="relative w-full min-h-[700px] flex items-center border-b border-zinc-800 overflow-hidden bg-[#050505]">
+        <div id="hero" class="relative w-full min-h-[700px] flex items-center overflow-hidden bg-[#050505]">
           <div class="absolute inset-0 z-0">
             <div class="aura-background-component w-full h-full absolute inset-0">
               <div data-us-project="hRFfUymDGOHwtFe7evR2" class="absolute w-full h-full left-0 top-0 opacity-40 mix-blend-screen" style="filter: hue-rotate(320deg) saturate(2);"></div>
               <script type="text/javascript">!function(){if(!window.UnicornStudio){window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.29/dist/unicornStudio.umd.js",i.onload=function(){window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)},(document.head || document.body).appendChild(i)}}();</script>
             </div>
             <div class="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/25 to-[#050505]/20 z-10 pointer-events-none"></div>
-            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#050505] z-10 pointer-events-none"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#050505]/80 z-10 pointer-events-none"></div>
           </div>
 
-          <div class="container lg:px-12 grid grid-cols-1 lg:grid-cols-2 md:pt-28 md:pb-36 h-full z-20 mr-auto ml-auto pt-20 pr-6 pb-28 pl-6 relative gap-x-12 gap-y-12 items-center">
+          <div class="container lg:px-12 grid grid-cols-1 lg:grid-cols-2 md:pt-28 md:pb-16 h-full z-20 mr-auto ml-auto pt-20 pr-6 pb-12 pl-6 relative gap-x-12 gap-y-12 items-center">
             <div class="flex flex-col justify-center max-w-2xl">
               <div class="flex items-center gap-3 mb-8 sys-reveal sys-rise">
                 <span class="relative flex h-2 w-2">
@@ -311,15 +311,17 @@
         </div>
 
         <!-- Neural Intelligence Section -->
-        <section id="ai-advisor" class="relative flex flex-col bg-[#050505] border-b border-zinc-800 overflow-hidden">
-          <!-- Background glow -->
+        <section id="ai-advisor" class="relative flex flex-col bg-transparent overflow-hidden">
+          <!-- Background glow — connects to hero animation -->
           <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-red-600/5 rounded-full blur-[120px]"></div>
-            <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-red-900/5 rounded-full blur-[100px]"></div>
+            <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-to-b from-red-900/10 via-red-950/5 to-transparent"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-red-600/[0.04] rounded-full blur-[150px]"></div>
+            <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
+            <div class="absolute inset-0 bg-[#050505]/90"></div>
           </div>
 
           <!-- Section Header -->
-          <div class="relative z-10 container mx-auto px-6 lg:px-12 pt-20 pb-4">
+          <div class="relative z-10 container mx-auto px-6 lg:px-12 pt-8 pb-4">
             <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
                 <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -460,7 +462,7 @@
           </div>
 
           <!-- Bottom Stats Bar -->
-          <div class="relative z-10 border-t border-zinc-800 bg-zinc-900/20">
+          <div class="relative z-10 border-t border-zinc-800/50 bg-zinc-900/10">
             <div class="container mx-auto px-6 lg:px-12 py-6">
               <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12">
                 <div class="flex flex-col">
