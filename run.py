@@ -24,7 +24,7 @@ load_dotenv()
 
 if __name__ == "__main__":
     host = os.getenv("API_HOST", "0.0.0.0")
-    port = int(os.getenv("API_PORT", "8001"))
+    port = int(os.getenv("API_PORT", "8003"))
     
     print(f"""
     +-----------------------------------------------+
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     """)
     
     uvicorn.run(
-        "api.server:app",
+        "api.terminal_api:app",
         host=host,
         port=port,
         reload=True,

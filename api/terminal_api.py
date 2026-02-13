@@ -437,6 +437,15 @@ async def serve_account():
     return HTMLResponse("<h1>Account page not found</h1>")
 
 
+@app.get("/lite", response_class=HTMLResponse)
+async def serve_lite():
+    """Serve the BASTION Lite dashboard for standard-tier users."""
+    lite_path = bastion_path / "web" / "dashboard.html"
+    if lite_path.exists():
+        return FileResponse(lite_path)
+    return HTMLResponse("<h1>Dashboard not found</h1>")
+
+
 @app.get("/settings.js")
 async def serve_settings_js():
     """Serve the settings.js file."""
