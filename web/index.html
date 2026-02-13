@@ -341,6 +341,43 @@
 
           <!-- Capabilities Grid -->
           <div class="relative z-10 container mx-auto px-6 lg:px-12 py-12">
+
+            <!-- Animated Tactical Chevrons — Left Side -->
+            <div class="hidden lg:block absolute left-0 top-0 bottom-0 w-20 pointer-events-none z-0 overflow-hidden" style="mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);-webkit-mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);">
+              <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chevL" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dc2626" stop-opacity="0"/><stop offset="30%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="70%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="100%" stop-color="#dc2626" stop-opacity="0"/></linearGradient>
+                </defs>
+                <!-- 5 descending chevrons, staggered animation -->
+                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="2.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.7;0.7;0" dur="3s" begin="0s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,-20;0,120" dur="3s" begin="0s" repeatCount="indefinite"/></polyline>
+                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="2.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.5;0.5;0" dur="3s" begin="0.6s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,60;0,200" dur="3s" begin="0.6s" repeatCount="indefinite"/></polyline>
+                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="2" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.4;0.4;0" dur="3s" begin="1.2s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,140;0,280" dur="3s" begin="1.2s" repeatCount="indefinite"/></polyline>
+                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="2" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.6;0.6;0" dur="3s" begin="1.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,220;0,360" dur="3s" begin="1.8s" repeatCount="indefinite"/></polyline>
+                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="1.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.35;0.35;0" dur="3s" begin="2.4s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,300;0,440" dur="3s" begin="2.4s" repeatCount="indefinite"/></polyline>
+                <!-- Static dim guide rails -->
+                <line x1="10" y1="0" x2="10" y2="100%" stroke="#dc2626" stroke-width="0.5" opacity="0.08"/>
+                <line x1="40" y1="0" x2="40" y2="100%" stroke="#dc2626" stroke-width="0.3" opacity="0.05"/>
+              </svg>
+            </div>
+
+            <!-- Animated Tactical Chevrons — Right Side -->
+            <div class="hidden lg:block absolute right-0 top-0 bottom-0 w-20 pointer-events-none z-0 overflow-hidden" style="mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);-webkit-mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);">
+              <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chevR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dc2626" stop-opacity="0"/><stop offset="30%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="70%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="100%" stop-color="#dc2626" stop-opacity="0"/></linearGradient>
+                </defs>
+                <!-- 5 descending chevrons, mirrored -->
+                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="2.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.7;0.7;0" dur="3s" begin="0.3s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,-20;0,120" dur="3s" begin="0.3s" repeatCount="indefinite"/></polyline>
+                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="2.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.5;0.5;0" dur="3s" begin="0.9s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,60;0,200" dur="3s" begin="0.9s" repeatCount="indefinite"/></polyline>
+                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="2" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.4;0.4;0" dur="3s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,140;0,280" dur="3s" begin="1.5s" repeatCount="indefinite"/></polyline>
+                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="2" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.6;0.6;0" dur="3s" begin="2.1s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,220;0,360" dur="3s" begin="2.1s" repeatCount="indefinite"/></polyline>
+                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="1.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.35;0.35;0" dur="3s" begin="2.7s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,300;0,440" dur="3s" begin="2.7s" repeatCount="indefinite"/></polyline>
+                <!-- Static dim guide rails -->
+                <line x1="70" y1="0" x2="70" y2="100%" stroke="#dc2626" stroke-width="0.5" opacity="0.08"/>
+                <line x1="40" y1="0" x2="40" y2="100%" stroke="#dc2626" stroke-width="0.3" opacity="0.05"/>
+              </svg>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-800/50">
 
               <!-- Neural Chat -->
