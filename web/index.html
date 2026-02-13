@@ -102,65 +102,6 @@
       </button>
     </header>
 
-    <!-- AI Advisor Section — full width, directly under header -->
-    <section id="ai-advisor" class="relative z-30 bg-[#050505] border-b border-zinc-800 py-16">
-      <div class="container mx-auto px-6 lg:px-12 relative z-10">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <iconify-icon icon="solar:chat-line-bold"></iconify-icon>// NEURAL_INTELLIGENCE
-            </div>
-            <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-none mb-6">
-              <span class="text-red-600">AI-POWERED</span> TRADE COACHING
-            </h2>
-            <p class="text-xs text-zinc-500 font-mono max-w-lg mb-8 border-l-2 border-red-600/30 pl-4">Neural network dedicated to your risk decisions. Institutional analysis in natural language.</p>
-
-            <div class="space-y-5">
-              <div class="flex gap-4 group">
-                <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:chat-square-code-linear" class="text-xl"></iconify-icon></div>
-                <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">TRADE NARRATIVE ENGINE</h4><p class="text-[11px] text-zinc-500 font-mono">Every decision explained in plain English</p></div>
-              </div>
-              <div class="flex gap-4 group">
-                <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:monitor-camera-linear" class="text-xl"></iconify-icon></div>
-                <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">REAL-TIME COACHING</h4><p class="text-[11px] text-zinc-500 font-mono">"Momentum trailing activated - slope strength 2.3x"</p></div>
-              </div>
-              <div class="flex gap-4 group">
-                <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:bell-bing-linear" class="text-xl"></iconify-icon></div>
-                <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">PREDICTIVE ALERTING</h4><p class="text-[11px] text-zinc-500 font-mono">"Volatility regime shift detected"</p></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="relative bg-black border border-zinc-800 p-1 shadow-[0_0_30px_rgba(220,38,38,0.15)] group">
-            <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-red-600"></div>
-            <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-red-600"></div>
-            <div class="bg-zinc-900/80 border-b border-zinc-800 p-3 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-2.5 h-2.5 bg-red-600 animate-pulse rounded-full shadow-[0_0_8px_#DC2626]"></div>
-                <span class="text-[10px] font-mono text-zinc-300 font-bold tracking-wider">BASTION_CLI_v2.0</span>
-              </div>
-              <div class="text-[9px] font-mono text-red-500 font-bold uppercase border border-red-900/50 px-2 py-0.5 bg-red-900/10">ENCRYPTED</div>
-            </div>
-            <div class="p-6 font-mono text-xs space-y-4 h-[300px] overflow-y-auto relative bg-[#050505]">
-              <div class="text-zinc-500"><span class="text-red-600 font-bold">root@bastion:~$</span> ./analyze_structure --target BTC</div>
-              <div class="text-zinc-400 pl-4 border-l border-zinc-800/50">
-                <span class="text-zinc-600">[10:42:01]</span> INGESTING 147 STREAMS... <span class="text-red-600">OK</span><br>
-                <span class="text-zinc-600">[10:42:02]</span> CALCULATING LIQUIDATION LEVELS... <span class="text-red-600">DONE</span><br>
-                <span class="text-red-500 font-bold">[10:42:03]</span> ALERT: VOLATILITY EXPANSION DETECTED
-              </div>
-              <div class="pl-4 space-y-2 mt-4">
-                <div class="bg-red-950/20 border-l-2 border-red-600 p-3 text-red-200">
-                  <span class="font-bold">&gt;&gt;&gt; TACTICAL REPORT:</span> Market structure bearish on 4H. Massive short liquidation cluster at <span class="text-white font-bold">$68,200</span>.
-                </div>
-                <div class="text-white mt-2 font-bold"><span class="text-zinc-500">RECOMMENDATION &gt;</span> REDUCE SIZE 40%</div>
-              </div>
-              <div class="text-zinc-500 mt-4 flex items-center gap-1"><span class="text-red-600 font-bold">root@bastion:~$</span><span class="w-2.5 h-5 bg-red-600 animate-pulse block"></span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Mobile Menu -->
     <div id="mobile-menu" class="fixed inset-x-0 top-16 bottom-0 z-40 bg-[#050505] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col border-t border-zinc-800 overflow-y-auto">
       <div class="flex flex-col p-6 space-y-4">
@@ -183,8 +124,8 @@
         <div class="h-full flex flex-col items-center py-12 w-full">
           <div class="absolute top-0 bottom-0 left-1/2 w-px bg-zinc-900 -translate-x-1/2 z-0"></div>
           <nav class="flex flex-col gap-10 relative z-10 w-full items-center">
-            <a href="#ai-advisor" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">01</a>
-            <a href="#hero" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">02</a>
+            <a href="#hero" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">01</a>
+            <a href="#ai-advisor" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">02</a>
             <a href="#features" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">03</a>
             <a href="#intelligence" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">04</a>
           </nav>
@@ -294,6 +235,65 @@
             </div>
           </div>
         </div>
+
+        <!-- AI Advisor Section -->
+        <section id="ai-advisor" class="flex flex-col bg-[#050505] border-b border-zinc-800 py-24">
+          <div class="container mx-auto px-6 lg:px-12 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <iconify-icon icon="solar:chat-line-bold"></iconify-icon>// NEURAL_INTELLIGENCE
+                </div>
+                <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-none mb-6">
+                  <span class="text-red-600">AI-POWERED</span> TRADE COACHING
+                </h2>
+                <p class="text-xs text-zinc-500 font-mono max-w-lg mb-8 border-l-2 border-red-600/30 pl-4">Neural network dedicated to your risk decisions. Institutional analysis in natural language.</p>
+
+                <div class="space-y-5">
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:chat-square-code-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">TRADE NARRATIVE ENGINE</h4><p class="text-[11px] text-zinc-500 font-mono">Every decision explained in plain English</p></div>
+                  </div>
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:monitor-camera-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">REAL-TIME COACHING</h4><p class="text-[11px] text-zinc-500 font-mono">"Momentum trailing activated - slope strength 2.3x"</p></div>
+                  </div>
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:bell-bing-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">PREDICTIVE ALERTING</h4><p class="text-[11px] text-zinc-500 font-mono">"Volatility regime shift detected"</p></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="relative bg-black border border-zinc-800 p-1 shadow-[0_0_30px_rgba(220,38,38,0.15)] group">
+                <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-red-600"></div>
+                <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-red-600"></div>
+                <div class="bg-zinc-900/80 border-b border-zinc-800 p-3 flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-2.5 bg-red-600 animate-pulse rounded-full shadow-[0_0_8px_#DC2626]"></div>
+                    <span class="text-[10px] font-mono text-zinc-300 font-bold tracking-wider">BASTION_CLI_v2.0</span>
+                  </div>
+                  <div class="text-[9px] font-mono text-red-500 font-bold uppercase border border-red-900/50 px-2 py-0.5 bg-red-900/10">ENCRYPTED</div>
+                </div>
+                <div class="p-6 font-mono text-xs space-y-4 h-[300px] overflow-y-auto relative bg-[#050505]">
+                  <div class="text-zinc-500"><span class="text-red-600 font-bold">root@bastion:~$</span> ./analyze_structure --target BTC</div>
+                  <div class="text-zinc-400 pl-4 border-l border-zinc-800/50">
+                    <span class="text-zinc-600">[10:42:01]</span> INGESTING 147 STREAMS... <span class="text-red-600">OK</span><br>
+                    <span class="text-zinc-600">[10:42:02]</span> CALCULATING LIQUIDATION LEVELS... <span class="text-red-600">DONE</span><br>
+                    <span class="text-red-500 font-bold">[10:42:03]</span> ALERT: VOLATILITY EXPANSION DETECTED
+                  </div>
+                  <div class="pl-4 space-y-2 mt-4">
+                    <div class="bg-red-950/20 border-l-2 border-red-600 p-3 text-red-200">
+                      <span class="font-bold">&gt;&gt;&gt; TACTICAL REPORT:</span> Market structure bearish on 4H. Massive short liquidation cluster at <span class="text-white font-bold">$68,200</span>.
+                    </div>
+                    <div class="text-white mt-2 font-bold"><span class="text-zinc-500">RECOMMENDATION &gt;</span> REDUCE SIZE 40%</div>
+                  </div>
+                  <div class="text-zinc-500 mt-4 flex items-center gap-1"><span class="text-red-600 font-bold">root@bastion:~$</span><span class="w-2.5 h-5 bg-red-600 animate-pulse block"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- Features Section - RISK ENGINE -->
         <section id="features" class="flex flex-col bg-[#050505] border-b border-zinc-800">
