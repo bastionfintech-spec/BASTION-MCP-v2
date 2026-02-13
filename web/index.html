@@ -182,52 +182,72 @@
 
             <div class="hidden lg:flex flex-col items-end justify-center relative h-full pointer-events-none select-none">
               <div class="relative w-full max-w-sm perspective-1000 mt-12 mr-8">
-                <div class="absolute -top-32 right-0 w-64 bg-[#050505]/90 backdrop-blur-sm border border-zinc-800 p-5 z-10 sys-reveal sys-slide-l sys-delay-300 border-l-2 border-l-red-600">
-                  <div class="flex justify-between items-center mb-3 border-b border-zinc-800 pb-2">
-                    <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">ACTIVE_POSITIONS</span>
-                    <div class="flex gap-1"><div class="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div></div>
+                <!-- Card 1: BASTION SHIELD — Live Monitoring -->
+                <div class="absolute -top-32 right-0 w-72 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-300 overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.08)]">
+                  <div class="p-2.5 flex justify-between items-center bg-zinc-900/50 border-b border-zinc-800">
+                    <span class="text-[9px] font-mono text-red-500 font-bold flex items-center gap-1.5">
+                      <iconify-icon icon="solar:shield-bold" class="text-red-500"></iconify-icon>BASTION SHIELD
+                    </span>
+                    <span class="text-[8px] font-mono text-green-500 animate-pulse">MONITORING</span>
                   </div>
-                  <div class="space-y-2">
-                    <div class="flex justify-between text-[10px] font-mono text-zinc-400"><span>BTC-PERP</span><span class="text-green-500 bg-green-500/10 px-1 rounded-sm">LONG</span></div>
-                    <div class="flex justify-between text-[10px] font-mono text-zinc-400"><span>ETH-PERP</span><span class="text-red-500 bg-red-500/10 px-1 rounded-sm">SHORT</span></div>
+                  <div class="p-2.5 border-b border-zinc-800/50">
+                    <div class="flex justify-between items-start mb-1">
+                      <span class="text-[10px] font-bold text-white font-mono">BTC-PERP</span>
+                      <span class="text-[8px] font-mono bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">HIGH</span>
+                    </div>
+                    <div class="text-[9px] font-mono font-bold text-amber-400 mb-1">REDUCE 40%</div>
+                    <div class="text-[8px] text-zinc-500 leading-relaxed font-mono mb-1.5">$650M liquidation cluster within 2%. Funding negative.</div>
+                    <div class="flex justify-between items-center text-[8px] font-mono">
+                      <span class="text-zinc-600">Confidence</span>
+                      <div class="flex items-center gap-1"><div class="w-14 h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:87%"></div></div><span class="text-zinc-500">87%</span></div>
+                    </div>
+                  </div>
+                  <div class="p-2.5">
+                    <div class="flex justify-between items-start mb-1">
+                      <span class="text-[10px] font-bold text-white font-mono">SOL-PERP</span>
+                      <span class="text-[8px] font-mono bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">LOW</span>
+                    </div>
+                    <div class="text-[9px] font-mono font-bold text-green-400">HOLD — MOMENTUM INTACT</div>
                   </div>
                 </div>
 
-                <div class="relative w-80 bg-[#080808] border border-zinc-800 p-6 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 group hover:border-red-600/30 transition-colors pointer-events-auto">
-                  <div class="absolute -left-px top-6 bottom-6 w-0.5 bg-red-600"></div>
-                  <div class="flex justify-between items-start mb-6">
-                    <div>
-                      <div class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-1">CURRENT P&L</div>
-                      <div class="text-3xl font-medium text-green-500 tracking-tight">+2.4R</div>
+                <!-- Card 2: AI Technical Analysis -->
+                <div class="relative w-80 bg-[#080808] border border-zinc-800 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 overflow-hidden pointer-events-auto group hover:border-red-600/30 transition-colors">
+                  <div class="absolute -left-px top-0 bottom-0 w-0.5 bg-red-600"></div>
+                  <div class="p-3 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
+                    <div class="flex items-center gap-2">
+                      <div class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500"><iconify-icon icon="solar:shield-bold" class="text-[10px]"></iconify-icon></div>
+                      <span class="text-[9px] font-mono text-zinc-400 font-bold">BASTION &bull; Neural Analysis</span>
                     </div>
-                    <div class="h-8 w-8 rounded-sm bg-red-600/10 border border-red-600/20 flex items-center justify-center">
-                      <iconify-icon icon="solar:shield-check-bold" class="text-red-600 text-lg"></iconify-icon>
-                    </div>
+                    <span class="text-[7px] font-mono text-zinc-600">1.2s</span>
                   </div>
-                  <div class="space-y-3">
-                    <div>
-                      <div class="flex justify-between text-[9px] font-mono text-zinc-600 uppercase mb-1">Risk Utilization</div>
-                      <div class="w-full bg-zinc-900 h-1"><div class="bg-red-600 h-full w-[42%] relative"><div class="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-2 bg-white"></div></div></div>
-                    </div>
-                    <div class="flex justify-between items-center pt-2">
-                      <div class="text-[10px] font-mono text-zinc-400">RISK: <span class="text-white">1.2%</span></div>
-                      <div class="text-[10px] font-mono text-green-500 border border-green-900 bg-green-900/10 px-1.5 py-0.5 rounded-sm">OPTIMAL</div>
+                  <div class="p-4 text-[10px] font-mono leading-relaxed space-y-2.5">
+                    <p class="text-zinc-300"><span class="text-red-400 font-bold">Structure:</span> BTC 4H bearish divergence on RSI. CVD diverging negative since the $97,800 rejection. Sellers dominating flow.</p>
+                    <p class="text-zinc-300"><span class="text-amber-400 font-bold">Derivatives:</span> OI up +4.2% while price flat. Funding flipped to -0.008%. Longs clustered $96,100-$96,500 &mdash; liquidation magnet.</p>
+                    <p class="text-zinc-300"><span class="text-green-400 font-bold">Verdict:</span> Wait for sweep below $96,500. Wick + reclaim with positive CVD = entry. Size 1R, stop $95,800.</p>
+                    <div class="border-t border-zinc-800 pt-2 flex items-center gap-3 text-[8px] text-zinc-600">
+                      <span class="flex items-center gap-1"><iconify-icon icon="solar:database-linear" class="text-[9px]"></iconify-icon>147 streams</span>
+                      <span class="flex items-center gap-1"><iconify-icon icon="solar:shield-bold" class="text-[9px] text-red-600"></iconify-icon>Risk-aware</span>
                     </div>
                   </div>
                 </div>
 
-                <div class="absolute -bottom-24 right-8 w-64 bg-[#050505]/90 backdrop-blur-sm border border-zinc-800 p-4 z-10 sys-reveal sys-slide-l sys-delay-400">
-                  <div class="flex justify-between items-center mb-3">
-                    <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">SESSION_STATUS</span>
-                    <span class="text-[9px] font-mono text-amber-500 border border-amber-900 bg-amber-900/10 px-1">TRAILING</span>
+                <!-- Card 3: Neural Chat Preview -->
+                <div class="absolute -bottom-28 right-8 w-72 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-400 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.06)]">
+                  <div class="p-2.5 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                      <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">NEURAL_CHAT</span>
+                    </div>
+                    <span class="text-[8px] font-mono text-green-500 border border-green-900/40 bg-green-900/10 px-1.5 py-0.5">LIVE</span>
                   </div>
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-3 border-l border-zinc-800 pl-3">
-                      <iconify-icon icon="solar:refresh-circle-linear" class="text-amber-500 animate-spin-slow" width="14"></iconify-icon>
-                      <div class="flex flex-col">
-                        <span class="text-[10px] text-white font-mono">Shot 2/3 Active</span>
-                        <span class="text-[8px] text-zinc-600 font-mono">Momentum TP engaged...</span>
-                      </div>
+                  <div class="p-3 space-y-2.5">
+                    <div class="flex gap-2">
+                      <div class="bg-red-600/10 border border-red-900/30 px-2 py-1.5 rounded-b-lg rounded-tl-lg text-[9px] font-mono text-zinc-300 max-w-[80%]">Should I add to my BTC long here?</div>
+                    </div>
+                    <div class="flex gap-2">
+                      <div class="w-4 h-4 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 shrink-0 mt-0.5"><iconify-icon icon="solar:shield-bold" class="text-[8px]"></iconify-icon></div>
+                      <div class="bg-[#080808] border border-zinc-800 px-2 py-1.5 rounded-b-lg rounded-tr-lg text-[9px] font-mono text-zinc-400 max-w-[85%]">Not yet. $420M liq cluster at $96.5K acting as magnet. Wait for the sweep &mdash; I'll alert you.</div>
                     </div>
                   </div>
                 </div>
@@ -236,174 +256,59 @@
           </div>
         </div>
 
-        <!-- Neural Intelligence Section -->
-        <section id="ai-advisor" class="relative flex flex-col bg-[#050505] border-b border-zinc-800 overflow-hidden">
-          <!-- Background glow -->
-          <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-red-600/5 rounded-full blur-[120px]"></div>
-            <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-red-900/5 rounded-full blur-[100px]"></div>
-          </div>
-
-          <!-- Section Header -->
-          <div class="relative z-10 container mx-auto px-6 lg:px-12 pt-20 pb-4">
-            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <!-- AI Advisor Section -->
+        <section id="ai-advisor" class="flex flex-col bg-[#050505] border-b border-zinc-800 py-24">
+          <div class="container mx-auto px-6 lg:px-12 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
                 <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span></span>
-                  // NEURAL_INTELLIGENCE &mdash; LIVE
+                  <iconify-icon icon="solar:chat-line-bold"></iconify-icon>// NEURAL_INTELLIGENCE
                 </div>
-                <h2 class="text-3xl md:text-5xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-4">
-                  <span class="text-red-600">72B PARAMETER</span><br>TRADING BRAIN
+                <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-none mb-6">
+                  <span class="text-red-600">AI-POWERED</span> TRADE COACHING
                 </h2>
-                <p class="text-xs text-zinc-500 font-mono max-w-lg border-l-2 border-red-600/30 pl-4 leading-relaxed">Fine-tuned on institutional risk frameworks. 33 real-time quant endpoints. Liquidation heatmaps, funding rate arbitrage, whale flow detection &mdash; all processed through a single neural architecture running on 4x RTX 5090s.</p>
-              </div>
-              <div class="flex items-center gap-3 shrink-0 pb-2">
-                <a href="/lite" class="group bg-red-600 hover:bg-red-500 text-white text-[10px] font-mono uppercase tracking-widest px-6 py-3 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-bold">Try BASTION AI<iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
-              </div>
-            </div>
-          </div>
+                <p class="text-xs text-zinc-500 font-mono max-w-lg mb-8 border-l-2 border-red-600/30 pl-4">Neural network dedicated to your risk decisions. Institutional analysis in natural language.</p>
 
-          <!-- Capabilities Grid -->
-          <div class="relative z-10 container mx-auto px-6 lg:px-12 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-800/50">
-
-              <!-- Neural Chat -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:chat-square-code-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
+                <div class="space-y-5">
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:chat-square-code-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">TRADE NARRATIVE ENGINE</h4><p class="text-[11px] text-zinc-500 font-mono">Every decision explained in plain English</p></div>
                   </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">01</span>
-                </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">Neural Chat Engine</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">Ask anything. The model sees your positions, live orderbook depth, funding rates, and 147 data streams simultaneously. Responses grounded in real market data, not hallucinations.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">LIVE DATA</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">POSITION-AWARE</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">72B PARAMS</span>
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:monitor-camera-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">REAL-TIME COACHING</h4><p class="text-[11px] text-zinc-500 font-mono">"Momentum trailing activated - slope strength 2.3x"</p></div>
+                  </div>
+                  <div class="flex gap-4 group">
+                    <div class="w-10 h-10 bg-zinc-900 flex items-center justify-center border border-zinc-800 text-red-600 shrink-0 group-hover:border-red-600 transition-colors"><iconify-icon icon="solar:bell-bing-linear" class="text-xl"></iconify-icon></div>
+                    <div><h4 class="text-white font-mono text-sm font-semibold uppercase mb-1">PREDICTIVE ALERTING</h4><p class="text-[11px] text-zinc-500 font-mono">"Volatility regime shift detected"</p></div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Risk Shield -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:shield-warning-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
+              <div class="relative bg-black border border-zinc-800 p-1 shadow-[0_0_30px_rgba(220,38,38,0.15)] group">
+                <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-red-600"></div>
+                <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-red-600"></div>
+                <div class="bg-zinc-900/80 border-b border-zinc-800 p-3 flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-2.5 bg-red-600 animate-pulse rounded-full shadow-[0_0_8px_#DC2626]"></div>
+                    <span class="text-[10px] font-mono text-zinc-300 font-bold tracking-wider">BASTION_CLI_v2.0</span>
                   </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">02</span>
+                  <div class="text-[9px] font-mono text-red-500 font-bold uppercase border border-red-900/50 px-2 py-0.5 bg-red-900/10">ENCRYPTED</div>
                 </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">Autonomous Risk Shield</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">One toggle. The AI scans every open position against live liquidation clusters, funding rate regimes, and whale movements. Outputs HOLD, REDUCE, or EXIT with conviction scores.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">AUTONOMOUS</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">MCF HIERARCHY</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">REAL-TIME</span>
-                </div>
-              </div>
-
-              <!-- MCF Reports -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:document-text-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
+                <div class="p-6 font-mono text-xs space-y-4 h-[300px] overflow-y-auto relative bg-[#050505]">
+                  <div class="text-zinc-500"><span class="text-red-600 font-bold">root@bastion:~$</span> ./analyze_structure --target BTC</div>
+                  <div class="text-zinc-400 pl-4 border-l border-zinc-800/50">
+                    <span class="text-zinc-600">[10:42:01]</span> INGESTING 147 STREAMS... <span class="text-red-600">OK</span><br>
+                    <span class="text-zinc-600">[10:42:02]</span> CALCULATING LIQUIDATION LEVELS... <span class="text-red-600">DONE</span><br>
+                    <span class="text-red-500 font-bold">[10:42:03]</span> ALERT: VOLATILITY EXPANSION DETECTED
                   </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">03</span>
-                </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">MCF Research Reports</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">Goldman-tier research generated on demand. Market Context Framework synthesizes orderflow, on-chain metrics, derivatives structure, and macro regime into actionable BULLISH/BEARISH thesis with price targets.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">ON-DEMAND</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">MULTI-ASSET</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">PRICE TARGETS</span>
-                </div>
-              </div>
-
-              <!-- Market Pulse -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:pulse-2-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
+                  <div class="pl-4 space-y-2 mt-4">
+                    <div class="bg-red-950/20 border-l-2 border-red-600 p-3 text-red-200">
+                      <span class="font-bold">&gt;&gt;&gt; TACTICAL REPORT:</span> Market structure bearish on 4H. Massive short liquidation cluster at <span class="text-white font-bold">$68,200</span>.
+                    </div>
+                    <div class="text-white mt-2 font-bold"><span class="text-zinc-500">RECOMMENDATION &gt;</span> REDUCE SIZE 40%</div>
                   </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">04</span>
-                </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">Market Pulse Feed</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">Streaming ticker: Fear & Greed index, perpetual funding rates across BTC/ETH/SOL, USDT dominance shifts, and active position count. Extreme readings trigger instant toast alerts.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">STREAMING</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">FEAR/GREED</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">ALERTS</span>
-                </div>
-              </div>
-
-              <!-- Signal Scanner -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:radar-2-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
-                  </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">05</span>
-                </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">Signal Scanner</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">AI-generated trade setups with entry zones, invalidation levels, and R:R ratios. Scans derivatives structure, CVD divergence, and liquidation imbalances across 6 major perpetual markets.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">6 MARKETS</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">CVD/OI</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">ENTRY/EXIT</span>
-                </div>
-              </div>
-
-              <!-- Live Terminal Preview -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-4">
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_6px_#DC2626]"></div>
-                    <span class="text-[10px] font-mono text-zinc-400 font-bold tracking-wider">BASTION_NEURAL_v3</span>
-                  </div>
-                  <span class="text-[8px] font-mono text-red-500 font-bold border border-red-900/50 px-1.5 py-0.5 bg-red-900/10">LIVE</span>
-                </div>
-                <div class="font-mono text-[10px] space-y-2.5 text-zinc-500">
-                  <div><span class="text-red-600 font-bold">bastion&gt;</span> <span class="text-zinc-400">evaluate --all-positions</span></div>
-                  <div class="pl-3 border-l border-zinc-800/50 space-y-1">
-                    <div><span class="text-zinc-600">[SCAN]</span> 3 active positions detected</div>
-                    <div><span class="text-zinc-600">[DATA]</span> Pulling OI, funding, liquidations...</div>
-                    <div class="text-red-500 font-bold">[ALERT] BTC-PERP: Liquidation cluster $650M within 2%</div>
-                  </div>
-                  <div class="bg-red-950/20 border-l-2 border-red-600 p-2 text-red-200 text-[10px]">
-                    <span class="font-bold">RISK VERDICT:</span> BTC-PERP &mdash; <span class="text-white font-bold">REDUCE 40%</span><br>
-                    <span class="text-zinc-500">Conviction: 0.87 | Funding: -0.03% | OI delta: +12%</span>
-                  </div>
-                  <div class="flex items-center gap-1"><span class="text-red-600 font-bold">bastion&gt;</span><span class="w-2 h-4 bg-red-600 animate-pulse block"></span></div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Bottom Stats Bar -->
-          <div class="relative z-10 border-t border-zinc-800 bg-zinc-900/20">
-            <div class="container mx-auto px-6 lg:px-12 py-6">
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12">
-                <div class="flex flex-col">
-                  <span class="text-2xl md:text-3xl font-semibold text-white tracking-tight font-mono">72B</span>
-                  <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Model Parameters</span>
-                </div>
-                <div class="flex flex-col">
-                  <span class="text-2xl md:text-3xl font-semibold text-white tracking-tight font-mono">4x</span>
-                  <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">RTX 5090 Cluster</span>
-                </div>
-                <div class="flex flex-col">
-                  <span class="text-2xl md:text-3xl font-semibold text-white tracking-tight font-mono">147</span>
-                  <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Live Data Streams</span>
-                </div>
-                <div class="flex flex-col">
-                  <span class="text-2xl md:text-3xl font-semibold text-white tracking-tight font-mono">&lt;2s</span>
-                  <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Response Latency</span>
+                  <div class="text-zinc-500 mt-4 flex items-center gap-1"><span class="text-red-600 font-bold">root@bastion:~$</span><span class="w-2.5 h-5 bg-red-600 animate-pulse block"></span></div>
                 </div>
               </div>
             </div>
