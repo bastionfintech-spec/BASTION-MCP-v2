@@ -29,7 +29,7 @@
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-      /* Grid / Scanline overlay */
+      /* Grid / Scanline */
       .bg-grid { background-size: 40px 40px; background-image: linear-gradient(to right, rgba(39,39,42,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(39,39,42,0.4) 1px, transparent 1px); }
       .scanline { background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15)); background-size: 100% 4px; pointer-events: none; }
 
@@ -43,36 +43,17 @@
       .typing-dot:nth-child(2) { animation-delay: -0.16s; }
       @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 
-      /* Shield glow on container */
+      /* Shield glow */
       .shield-active { box-shadow: 0 0 30px rgba(220,38,38,0.25), inset 0 0 30px rgba(220,38,38,0.08); transition: box-shadow 0.5s ease; }
-
-      /* Shield takeover effect on individual position cards */
-      @keyframes shieldSweep {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
-      }
+      @keyframes shieldSweep { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
       .shield-card-active {
         border-left: 2px solid #dc2626 !important;
         background: linear-gradient(90deg, transparent 0%, rgba(220,38,38,0.06) 25%, rgba(220,38,38,0.12) 50%, rgba(220,38,38,0.06) 75%, transparent 100%) !important;
-        background-size: 200% 100%;
-        animation: shieldSweep 3s ease-in-out infinite;
-        box-shadow: inset 0 0 20px rgba(220,38,38,0.08);
-        transition: all 0.4s ease;
+        background-size: 200% 100%; animation: shieldSweep 3s ease-in-out infinite;
+        box-shadow: inset 0 0 20px rgba(220,38,38,0.08); transition: all 0.4s ease;
       }
-      .shield-card-active::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        border: 1px solid rgba(220,38,38,0.15);
-        pointer-events: none;
-        border-radius: inherit;
-      }
-
-      /* Shield pulse on the toggle area */
-      @keyframes shieldPulse {
-        0%, 100% { box-shadow: 0 0 8px rgba(220,38,38,0.2), 0 0 16px rgba(220,38,38,0.1); }
-        50% { box-shadow: 0 0 16px rgba(220,38,38,0.4), 0 0 32px rgba(220,38,38,0.2); }
-      }
+      .shield-card-active::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 1px solid rgba(220,38,38,0.15); pointer-events: none; border-radius: inherit; }
+      @keyframes shieldPulse { 0%, 100% { box-shadow: 0 0 8px rgba(220,38,38,0.2), 0 0 16px rgba(220,38,38,0.1); } 50% { box-shadow: 0 0 16px rgba(220,38,38,0.4), 0 0 32px rgba(220,38,38,0.2); } }
       .shield-pulse { animation: shieldPulse 2s ease-in-out infinite; }
 
       /* Marquee */
@@ -86,34 +67,42 @@
       .toast-in { animation: slideIn 0.3s ease-out forwards; }
       .toast-out { animation: slideOut 0.3s ease-in forwards; }
 
-      /* Pulse glow for badges */
+      /* Pulse glow */
       @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 8px rgba(220,38,38,0.2); } 50% { box-shadow: 0 0 16px rgba(220,38,38,0.5); } }
       .pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
 
-      /* Smooth fade-in for chart area */
+      /* Animations */
       @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
       .fade-up { animation: fadeUp 0.4s ease-out forwards; }
+      @keyframes msgSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+      .msg-new { animation: msgSlide 0.25s ease-out forwards; }
 
-      /* Position card hover */
-      .pos-card { transition: all 0.2s ease; }
+      /* Position / Report cards */
+      .pos-card { transition: all 0.2s ease; cursor: pointer; }
       .pos-card:hover { background: rgba(24,24,27,0.5); }
+      .report-card { transition: all 0.2s ease; }
+      .report-card:hover { background: rgba(24,24,27,0.4) !important; }
 
-      /* Shield badge action colors */
+      /* Shield action badges */
       .action-hold { background: rgba(34,197,94,0.1); color: #22c55e; border-color: rgba(34,197,94,0.2); }
       .action-reduce { background: rgba(234,179,8,0.1); color: #eab308; border-color: rgba(234,179,8,0.2); }
       .action-exit { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.2); }
       .action-scale_in { background: rgba(59,130,246,0.1); color: #3b82f6; border-color: rgba(59,130,246,0.2); }
 
-      /* Report card */
-      .report-card { transition: all 0.2s ease; }
-      .report-card:hover { background: rgba(24,24,27,0.4) !important; }
+      /* Chart loading */
+      .chart-loading-bar { position: absolute; top: 0; left: 0; height: 2px; width: 100%; z-index: 20; overflow: hidden; }
+      .chart-loading-bar::after { content: ''; position: absolute; top: 0; left: -40%; height: 100%; width: 40%; background: linear-gradient(90deg, transparent, #dc2626, transparent); animation: loadSlide 0.8s ease-in-out infinite; }
+      @keyframes loadSlide { 0% { left: -40%; } 100% { left: 100%; } }
 
-      /* Chat message slide in */
-      @keyframes msgSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-      .msg-new { animation: msgSlide 0.25s ease-out forwards; }
+      /* Risk gauge */
+      .risk-ring { transition: stroke-dashoffset 1s ease-out; }
 
-      /* Safe area padding for mobile */
+      /* Safe area */
       .safe-pb { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+
+      /* Intel card hover */
+      .intel-card { transition: all 0.15s ease; }
+      .intel-card:hover { background: rgba(24,24,27,0.3); }
     </style>
   </head>
   <body class="bg-[#050505] text-zinc-400 h-screen flex flex-col overflow-hidden selection:bg-red-600/30 selection:text-red-100 relative">
@@ -121,23 +110,29 @@
     <div class="absolute inset-0 pointer-events-none opacity-[0.06] scanline z-50 mix-blend-overlay"></div>
 
     <!-- Header -->
-    <header class="h-12 border-b border-zinc-800/80 bg-[#050505]/95 backdrop-blur-md flex items-center justify-between shrink-0 px-4 md:px-6 relative z-40">
-      <div class="flex items-center gap-3">
-        <a href="/" class="flex items-center gap-2 group cursor-pointer no-underline">
+    <header class="h-12 border-b border-zinc-800/80 bg-[#050505]/95 backdrop-blur-md flex items-center justify-between shrink-0 px-3 md:px-6 relative z-40">
+      <div class="flex items-center gap-2 md:gap-3">
+        <a href="/" class="flex items-center gap-1.5 md:gap-2 group cursor-pointer no-underline">
           <iconify-icon icon="solar:shield-bold" class="text-red-600 text-lg group-hover:scale-110 transition-transform"></iconify-icon>
-          <span class="text-base font-mono font-bold tracking-tight text-white group-hover:text-red-500 transition-colors">BASTION</span>
-          <span class="text-[8px] font-mono bg-red-950/40 text-red-500 px-1.5 py-0.5 rounded border border-red-900/30 tracking-widest">LITE</span>
+          <span class="text-sm md:text-base font-mono font-bold tracking-tight text-white group-hover:text-red-500 transition-colors">BASTION</span>
+          <span class="text-[7px] md:text-[8px] font-mono bg-red-950/40 text-red-500 px-1 md:px-1.5 py-0.5 rounded border border-red-900/30 tracking-widest">LITE</span>
         </a>
       </div>
-      <div id="header-ticker" class="hidden md:flex items-center gap-3 px-4 py-1 border border-zinc-800/60 bg-zinc-900/20 rounded-full backdrop-blur-sm">
-        <span id="ticker-symbol" class="text-[11px] font-mono font-bold text-white tracking-wide">BTC-PERP</span>
-        <div class="w-px h-3 bg-zinc-800"></div>
-        <span id="ticker-price" class="text-[11px] font-mono text-zinc-300">--</span>
-        <span id="ticker-change" class="text-[10px] font-mono text-zinc-500 bg-zinc-900/30 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+      <!-- Ticker — visible on ALL screens -->
+      <div id="header-ticker" class="flex items-center gap-1.5 md:gap-3 px-2 md:px-4 py-1 border border-zinc-800/60 bg-zinc-900/20 rounded-full backdrop-blur-sm">
+        <span id="ticker-symbol" class="text-[9px] md:text-[11px] font-mono font-bold text-white tracking-wide">BTC-PERP</span>
+        <div class="w-px h-3 bg-zinc-800 hidden md:block"></div>
+        <span id="ticker-price" class="text-[10px] md:text-[11px] font-mono text-zinc-300">--</span>
+        <span id="ticker-change" class="text-[9px] md:text-[10px] font-mono text-zinc-500 bg-zinc-900/30 px-1 md:px-1.5 py-0.5 rounded flex items-center gap-0.5">
           <iconify-icon icon="solar:arrow-right-up-linear" class="text-[9px]"></iconify-icon>--
         </span>
       </div>
-      <div class="flex items-center gap-5">
+      <div class="flex items-center gap-3 md:gap-5">
+        <!-- Connection status -->
+        <div id="conn-status" class="flex items-center gap-1.5" title="API Status">
+          <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-40"></span><span id="conn-dot" class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span></span>
+          <span id="conn-label" class="text-[8px] font-mono text-zinc-600 hidden md:inline">CONNECTED</span>
+        </div>
         <nav class="hidden md:flex items-center gap-5 text-[10px] font-mono uppercase tracking-widest">
           <a href="/lite" class="text-white relative after:content-[''] after:absolute after:-bottom-[14px] after:left-0 after:w-full after:h-0.5 after:bg-red-600">Dashboard</a>
           <a href="/frontend" class="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
@@ -146,7 +141,7 @@
           <a href="/account" class="text-zinc-500 hover:text-zinc-300 transition-colors">Account</a>
         </nav>
         <button class="md:hidden text-zinc-400 hover:text-white" onclick="document.getElementById('mobile-nav').classList.toggle('hidden')">
-          <iconify-icon icon="solar:hamburger-menu-linear" width="22"></iconify-icon>
+          <iconify-icon icon="solar:hamburger-menu-linear" width="20"></iconify-icon>
         </button>
       </div>
     </header>
@@ -166,70 +161,30 @@
       </div>
       <div id="pulse-strip" class="flex-1 overflow-hidden relative">
         <div id="pulse-content" class="flex items-center gap-6 px-4 whitespace-nowrap animate-marquee">
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">Fear & Greed</span>
-            <span id="pulse-fg" class="text-zinc-400 font-bold">--</span>
-            <span id="pulse-fg-label" class="text-[8px] px-1 rounded bg-zinc-800 text-zinc-500">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">Fear & Greed</span><span id="pulse-fg" class="text-zinc-400 font-bold">--</span><span id="pulse-fg-label" class="text-[8px] px-1 rounded bg-zinc-800 text-zinc-500">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">BTC Fund</span>
-            <span id="pulse-funding" class="text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">BTC Fund</span><span id="pulse-funding" class="text-zinc-400 font-bold">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">USDT.D</span>
-            <span id="pulse-usdt" class="text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">USDT.D</span><span id="pulse-usdt" class="text-zinc-400 font-bold">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">ETH Fund</span>
-            <span id="pulse-eth-funding" class="text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">ETH Fund</span><span id="pulse-eth-funding" class="text-zinc-400 font-bold">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">SOL Fund</span>
-            <span id="pulse-sol-funding" class="text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">SOL Fund</span><span id="pulse-sol-funding" class="text-zinc-400 font-bold">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-red-600/50"><iconify-icon icon="solar:shield-bold" class="text-[9px]"></iconify-icon></span>
-            <span class="text-zinc-600">Tracked</span>
-            <span id="pulse-positions" class="text-zinc-400 font-bold">--</span>
-          </span>
-          <!-- Duplicate for seamless scroll -->
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-red-600/50"><iconify-icon icon="solar:shield-bold" class="text-[9px]"></iconify-icon></span><span class="text-zinc-600">Tracked</span><span id="pulse-positions" class="text-zinc-400 font-bold">--</span></span>
+          <!-- Dup for seamless scroll -->
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">Fear & Greed</span>
-            <span class="pulse-fg-dup text-zinc-400 font-bold">--</span>
-            <span class="pulse-fg-label-dup text-[8px] px-1 rounded bg-zinc-800 text-zinc-500">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">Fear & Greed</span><span class="pulse-fg-dup text-zinc-400 font-bold">--</span><span class="pulse-fg-label-dup text-[8px] px-1 rounded bg-zinc-800 text-zinc-500">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">BTC Fund</span>
-            <span class="pulse-funding-dup text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">BTC Fund</span><span class="pulse-funding-dup text-zinc-400 font-bold">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">USDT.D</span>
-            <span class="pulse-usdt-dup text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">USDT.D</span><span class="pulse-usdt-dup text-zinc-400 font-bold">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">ETH Fund</span>
-            <span class="pulse-eth-funding-dup text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">ETH Fund</span><span class="pulse-eth-funding-dup text-zinc-400 font-bold">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-zinc-600">SOL Fund</span>
-            <span class="pulse-sol-funding-dup text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-zinc-600">SOL Fund</span><span class="pulse-sol-funding-dup text-zinc-400 font-bold">--</span></span>
           <span class="text-zinc-800/50">|</span>
-          <span class="flex items-center gap-2 text-[10px] font-mono">
-            <span class="text-red-600/50"><iconify-icon icon="solar:shield-bold" class="text-[9px]"></iconify-icon></span>
-            <span class="text-zinc-600">Tracked</span>
-            <span class="pulse-positions-dup text-zinc-400 font-bold">--</span>
-          </span>
+          <span class="flex items-center gap-2 text-[10px] font-mono"><span class="text-red-600/50"><iconify-icon icon="solar:shield-bold" class="text-[9px]"></iconify-icon></span><span class="text-zinc-600">Tracked</span><span class="pulse-positions-dup text-zinc-400 font-bold">--</span></span>
         </div>
       </div>
     </div>
@@ -257,22 +212,20 @@
 
     <!-- Main Grid -->
     <main class="flex-1 grid grid-cols-1 md:grid-cols-5 min-h-0 bg-[#050505] overflow-y-auto md:overflow-hidden">
-      <!-- LEFT COLUMN: Chart + Chat -->
+      <!-- LEFT: Chart + Chat -->
       <div class="md:col-span-3 flex flex-col border-b md:border-b-0 md:border-r border-zinc-800/60 bg-[#050505] relative z-10 overflow-hidden min-h-[350px] md:min-h-0">
-        <!-- Chart area -->
         <div class="absolute inset-0 bottom-[100px] z-0 bg-[#080808]">
+          <!-- Chart loading bar -->
+          <div id="chart-loader" class="chart-loading-bar hidden"></div>
           <div id="tv-chart" class="w-full h-full"></div>
-          <!-- OHLC Overlay -->
           <div id="ohlc-overlay" class="absolute top-3 left-3 flex gap-2 pointer-events-none z-10">
             <span class="text-[9px] font-mono bg-[#080808]/90 text-zinc-500 px-2 py-1 border border-zinc-800/60 rounded backdrop-blur-sm">O: -- H: -- L: -- C: --</span>
           </div>
-          <!-- Live Feed badge -->
           <div class="absolute bottom-2 left-3 pointer-events-none z-10">
             <span class="flex items-center gap-1.5 text-[8px] font-mono text-red-500/80 bg-[#080808]/80 px-2 py-1 border border-red-900/20 rounded backdrop-blur-sm">
               <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span></span>LIVE
             </span>
           </div>
-          <!-- Symbol watermark -->
           <div id="chart-watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
             <span class="text-[80px] md:text-[120px] font-mono font-black text-zinc-800/[0.04] select-none tracking-tighter">BTC</span>
           </div>
@@ -294,7 +247,7 @@
                   <div class="flex flex-col gap-1">
                     <div class="text-[10px] font-mono text-zinc-600">BASTION &bull; System</div>
                     <div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg text-xs leading-relaxed text-zinc-400">
-                      <p>Neural engine online. Select a symbol and ask me anything — market structure, risk analysis, key levels, trade setups.</p>
+                      <p>Neural engine online. Ask me anything — market structure, risk analysis, key levels, trade setups.</p>
                     </div>
                   </div>
                 </div>
@@ -319,18 +272,18 @@
 
         <!-- FAB -->
         <div class="absolute bottom-[110px] right-4 z-40 flex flex-col-reverse items-end gap-2.5 pointer-events-none">
-          <button onclick="ui.toggleFab()" class="pointer-events-auto hover:bg-red-500 flex transition-all active:scale-95 group text-white bg-red-600 w-11 h-11 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.3)] items-center justify-center">
+          <button id="fab-btn" onclick="ui.toggleFab()" class="pointer-events-auto hover:bg-red-500 flex transition-all active:scale-95 group text-white bg-red-600 w-11 h-11 rounded-full shadow-[0_0_20px_rgba(220,38,38,0.3)] items-center justify-center">
             <iconify-icon icon="solar:shield-bold" class="text-xl group-hover:rotate-12 transition-transform"></iconify-icon>
           </button>
-          <div id="fab-menu" class="flex flex-col gap-2 items-end transition-all duration-300 opacity-0 translate-y-4 pointer-events-none scale-95 origin-bottom-right">
-            <button onclick="api.generateReport()" class="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-[#0A0A0A] border border-zinc-800/60 rounded-md shadow-xl text-[10px] font-mono text-zinc-400 hover:text-white hover:border-purple-600/40 transition-all">Generate Report<iconify-icon icon="solar:document-add-linear" class="text-purple-400 ml-1"></iconify-icon></button>
-            <button onclick="ui.switchTab('positions'); ui.toggleShield(true)" class="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-[#0A0A0A] border border-zinc-800/60 rounded-md shadow-xl text-[10px] font-mono text-zinc-400 hover:text-white hover:border-red-600/40 transition-all">Shield All<iconify-icon icon="solar:shield-check-bold" class="text-red-500 ml-1"></iconify-icon></button>
-            <button onclick="ui.toggleChat(true)" class="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-[#0A0A0A] border border-zinc-800/60 rounded-md shadow-xl text-[10px] font-mono text-zinc-400 hover:text-white hover:border-red-600/40 transition-all">Ask BASTION<iconify-icon icon="solar:chat-line-linear" class="text-red-400 ml-1"></iconify-icon></button>
+          <div id="fab-menu" class="flex flex-col gap-2 items-end transition-all duration-300 opacity-0 translate-y-4 pointer-events-none scale-95 origin-bottom-right" style="opacity:0;pointer-events:none;">
+            <button onclick="api.generateReport(); ui.toggleFab();" class="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-[#0A0A0A] border border-zinc-800/60 rounded-md shadow-xl text-[10px] font-mono text-zinc-400 hover:text-white hover:border-purple-600/40 transition-all">Generate Report<iconify-icon icon="solar:document-add-linear" class="text-purple-400 ml-1"></iconify-icon></button>
+            <button onclick="ui.switchTab('positions'); ui.toggleShield(true); ui.toggleFab();" class="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-[#0A0A0A] border border-zinc-800/60 rounded-md shadow-xl text-[10px] font-mono text-zinc-400 hover:text-white hover:border-red-600/40 transition-all">Shield All<iconify-icon icon="solar:shield-check-bold" class="text-red-500 ml-1"></iconify-icon></button>
+            <button onclick="ui.toggleChat(true); ui.toggleFab();" class="pointer-events-auto flex items-center gap-2 px-3 py-1.5 bg-[#0A0A0A] border border-zinc-800/60 rounded-md shadow-xl text-[10px] font-mono text-zinc-400 hover:text-white hover:border-red-600/40 transition-all">Ask BASTION<iconify-icon icon="solar:chat-line-linear" class="text-red-400 ml-1"></iconify-icon></button>
           </div>
         </div>
       </div>
 
-      <!-- RIGHT COLUMN: Positions + Reports -->
+      <!-- RIGHT: Positions + Intel + Reports -->
       <div class="md:col-span-2 flex flex-col bg-[#050505] h-full overflow-hidden relative">
         <!-- Upgrade CTA -->
         <a href="/frontend" class="shrink-0 block border-b border-zinc-800/40 bg-gradient-to-r from-red-950/20 via-[#070707] to-purple-950/10 px-4 py-2 group hover:from-red-950/30 hover:to-purple-950/20 transition-all cursor-pointer">
@@ -352,6 +305,10 @@
             POSITIONS
             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 transition-all" id="ind-positions"></span>
           </button>
+          <button onclick="ui.switchTab('intel')" id="tab-intel" class="flex-1 relative text-[10px] font-mono font-bold text-zinc-500 transition-all hover:text-zinc-300 hover:bg-zinc-800/50">
+            INTEL
+            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-transparent transition-all" id="ind-intel"></span>
+          </button>
           <button onclick="ui.switchTab('reports')" id="tab-reports" class="flex-1 relative text-[10px] font-mono font-bold text-zinc-500 transition-all hover:text-zinc-300 hover:bg-zinc-800/50">
             REPORTS
             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-transparent transition-all" id="ind-reports"></span>
@@ -361,6 +318,34 @@
         <div class="flex-1 relative overflow-hidden bg-[#050505]">
           <!-- Positions Tab -->
           <div id="view-positions" class="absolute inset-0 flex flex-col">
+            <!-- Risk Score Bar -->
+            <div id="risk-score-bar" class="shrink-0 border-b border-zinc-800/40 bg-[#070707] px-3 py-2.5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="relative w-9 h-9">
+                    <svg class="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="#18181b" stroke-width="2.5"/>
+                      <circle id="risk-ring" class="risk-ring" cx="18" cy="18" r="15.5" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" stroke-linecap="round"/>
+                    </svg>
+                    <span id="risk-value" class="absolute inset-0 flex items-center justify-center text-[10px] font-mono font-bold text-zinc-500">--</span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Portfolio Risk</span>
+                    <span id="risk-label" class="text-[8px] font-mono text-zinc-600">Analyzing...</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="flex flex-col items-end">
+                    <span class="text-[8px] font-mono text-zinc-600 uppercase">Exposure</span>
+                    <span id="total-exposure" class="text-[11px] font-mono text-zinc-300 font-medium">$0.00</span>
+                  </div>
+                  <div class="flex flex-col items-end">
+                    <span class="text-[8px] font-mono text-zinc-600 uppercase">PnL</span>
+                    <span id="total-pnl" class="text-[11px] font-mono text-zinc-500 font-bold">$0.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div id="positions-list" class="flex-1 overflow-y-auto bastion-scrollbar">
               <div id="positions-loading" class="p-8 text-center">
                 <iconify-icon icon="svg-spinners:ring-resize" class="text-red-600 text-xl"></iconify-icon>
@@ -369,7 +354,7 @@
             </div>
             <!-- Shield Footer -->
             <div class="p-3 bg-[#070707] border-t border-zinc-800/60 shrink-0 safe-pb">
-              <div class="flex items-center justify-between mb-3 bg-zinc-900/20 border border-zinc-800/40 p-2.5 rounded-md transition-all duration-500" id="shield-container">
+              <div class="flex items-center justify-between bg-zinc-900/20 border border-zinc-800/40 p-2.5 rounded-md transition-all duration-500" id="shield-container">
                 <div class="flex items-center gap-2.5">
                   <div class="w-8 h-8 rounded-md bg-red-950/30 border border-red-900/20 flex items-center justify-center">
                     <iconify-icon icon="solar:shield-warning-bold" class="text-red-600 text-base"></iconify-icon>
@@ -384,14 +369,51 @@
                   <label for="shield-toggle" class="toggle-label block overflow-hidden h-[18px] rounded-full bg-zinc-700 cursor-pointer transition-colors duration-300"></label>
                 </div>
               </div>
-              <div class="flex items-end justify-between">
-                <div class="flex flex-col">
-                  <span class="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">Total Exposure</span>
-                  <span id="total-exposure" class="text-xs font-mono text-zinc-300">$0.00</span>
+            </div>
+          </div>
+
+          <!-- Intel Tab -->
+          <div id="view-intel" class="absolute inset-0 flex flex-col hidden">
+            <div id="intel-content" class="flex-1 overflow-y-auto bastion-scrollbar">
+              <!-- OI Changes -->
+              <div class="border-b border-zinc-800/40">
+                <div class="flex items-center justify-between px-3 py-2 bg-[#070707]">
+                  <div class="flex items-center gap-2">
+                    <iconify-icon icon="solar:chart-2-bold" class="text-cyan-500 text-xs"></iconify-icon>
+                    <span class="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Open Interest Changes</span>
+                  </div>
+                  <span class="text-[8px] font-mono text-zinc-600">24H</span>
                 </div>
-                <div class="flex flex-col items-end">
-                  <span class="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">Unrealized PnL</span>
-                  <span id="total-pnl" class="text-sm font-mono text-zinc-500 font-bold">$0.00</span>
+                <div id="oi-list" class="divide-y divide-zinc-800/20">
+                  <div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-cyan-500 text-sm"></iconify-icon></div>
+                </div>
+              </div>
+              <!-- Whale Activity -->
+              <div class="border-b border-zinc-800/40">
+                <div class="flex items-center justify-between px-3 py-2 bg-[#070707]">
+                  <div class="flex items-center gap-2">
+                    <iconify-icon icon="solar:ghost-bold" class="text-blue-500 text-xs"></iconify-icon>
+                    <span class="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Whale Movements</span>
+                  </div>
+                  <span class="text-[8px] font-mono text-zinc-600">LIVE</span>
+                </div>
+                <div id="whale-list" class="divide-y divide-zinc-800/20">
+                  <div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-blue-500 text-sm"></iconify-icon></div>
+                </div>
+              </div>
+              <!-- Signal Scanner -->
+              <div>
+                <div class="flex items-center justify-between px-3 py-2 bg-[#070707]">
+                  <div class="flex items-center gap-2">
+                    <iconify-icon icon="solar:radar-2-bold" class="text-amber-500 text-xs"></iconify-icon>
+                    <span class="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Signal Scanner</span>
+                  </div>
+                  <button onclick="loadSignals()" class="text-[8px] font-mono text-red-500 hover:text-red-400 transition-colors flex items-center gap-1">
+                    <iconify-icon icon="solar:refresh-bold" class="text-[9px]"></iconify-icon>SCAN
+                  </button>
+                </div>
+                <div id="signal-list" class="divide-y divide-zinc-800/20">
+                  <div class="p-4 text-center text-[10px] font-mono text-zinc-600">Hit SCAN to run AI signal scanner</div>
                 </div>
               </div>
             </div>
@@ -416,7 +438,7 @@
       </div>
     </main>
 
-    <!-- Toast Notifications -->
+    <!-- Toast -->
     <div id="toast-container" class="fixed top-14 right-4 z-[70] flex flex-col gap-2 max-w-[340px] pointer-events-none"></div>
 
     <!-- Report Modal -->
@@ -439,24 +461,22 @@
     </div>
 
     <script>
-      // Console silencer (production only)
       (function(){const n=function(){};if(location.hostname!=='localhost'&&location.hostname!=='127.0.0.1'){console.log=n;console.debug=n;console.info=n;console.warn=n}})();
 
       // ── STATE ──────────────────────────────────────────────
       let currentSymbol = 'BTC';
       let currentTimeframe = '1h';
-      let chartInstance = null;
-      let candleSeries = null;
-      let volumeSeries = null;
-      let priceInterval = null;
-      let positionsInterval = null;
-      let shieldInterval = null;
+      let chartInstance = null, candleSeries = null, volumeSeries = null;
+      let priceInterval = null, positionsInterval = null, shieldInterval = null, liveTickInterval = null;
       let shieldActive = localStorage.getItem('bastion_shield_lite') === 'true';
       let cachedPositions = [];
-      let chartAbortController = null; // Fix: abort pending chart requests on symbol switch
+      let chartAbortController = null;
       let isChartLoading = false;
+      let lastCandleData = null; // For live updates
+      let fabOpen = false;
+      let apiAlive = true;
 
-      // ── API MODULE ─────────────────────────────────────────
+      // ── API ────────────────────────────────────────────────
       const api = {
         getKlines: async (symbol, interval, limit = 200, signal) => {
           try {
@@ -464,200 +484,137 @@
             if (!res.ok) throw new Error(`Klines ${res.status}`);
             return await res.json();
           } catch (e) {
-            if (e.name === 'AbortError') return null; // Silently handle aborted requests
-            console.error('Klines:', e);
+            if (e.name === 'AbortError') return null;
             return { candles: [] };
           }
         },
-
         getPrice: async (symbol) => {
           try {
             const res = await fetch(`/api/price/${symbol || currentSymbol}`);
             if (!res.ok) throw new Error(`Price ${res.status}`);
+            setConnected(true);
             return await res.json();
-          } catch (e) { console.error('Price:', e); return null; }
+          } catch (e) { setConnected(false); return null; }
         },
-
         getPositions: async () => {
-          try {
-            const res = await fetch('/api/positions/all');
-            if (!res.ok) throw new Error(`Positions ${res.status}`);
-            return await res.json();
-          } catch (e) { console.error('Positions:', e); return { positions: [] }; }
+          try { const res = await fetch('/api/positions/all'); if (!res.ok) throw new Error(); return await res.json(); }
+          catch (e) { return { positions: [] }; }
         },
-
         sendChat: async () => {
           const input = document.getElementById('chat-input');
-          const val = input.value.trim();
-          if (!val) return;
+          const val = input.value.trim(); if (!val) return;
           const box = document.getElementById('chat-messages');
           const now = new Date().toLocaleTimeString('en-US', { hour12: false });
-
-          // User message
-          box.insertAdjacentHTML('beforeend', `
-            <div class="flex gap-3 max-w-[80%] ml-auto flex-row-reverse msg-new">
-              <div class="w-7 h-7 rounded-md bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0 text-white">
-                <iconify-icon icon="solar:user-circle-bold" class="text-sm"></iconify-icon>
-              </div>
-              <div class="flex flex-col gap-1 items-end">
-                <div class="text-[10px] font-mono text-zinc-600">YOU &bull; ${now}</div>
-                <div class="bg-red-950/20 border border-red-900/20 p-3 rounded-tl-lg rounded-b-lg text-xs leading-relaxed text-zinc-200">${escapeHtml(val)}</div>
-              </div>
-            </div>`);
-          input.value = '';
-          ui.scrollToBottom();
-
-          // Typing indicator
+          box.insertAdjacentHTML('beforeend', `<div class="flex gap-3 max-w-[80%] ml-auto flex-row-reverse msg-new"><div class="w-7 h-7 rounded-md bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0 text-white"><iconify-icon icon="solar:user-circle-bold" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1 items-end"><div class="text-[10px] font-mono text-zinc-600">YOU &bull; ${now}</div><div class="bg-red-950/20 border border-red-900/20 p-3 rounded-tl-lg rounded-b-lg text-xs leading-relaxed text-zinc-200">${escapeHtml(val)}</div></div></div>`);
+          input.value = ''; ui.scrollToBottom();
           const tid = 'typing-' + Date.now();
-          box.insertAdjacentHTML('beforeend', `
-            <div id="${tid}" class="flex gap-3 max-w-[90%] msg-new">
-              <div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-500">
-                <iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon>
-              </div>
-              <div class="flex flex-col gap-1">
-                <div class="text-[10px] font-mono text-zinc-600">BASTION &bull; analyzing...</div>
-                <div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg flex items-center gap-1.5">
-                  <span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span>
-                  <span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span>
-                  <span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span>
-                </div>
-              </div>
-            </div>`);
+          box.insertAdjacentHTML('beforeend', `<div id="${tid}" class="flex gap-3 max-w-[90%] msg-new"><div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-500"><iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1"><div class="text-[10px] font-mono text-zinc-600">BASTION &bull; analyzing...</div><div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg flex items-center gap-1.5"><span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span><span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span><span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span></div></div></div>`);
           ui.scrollToBottom();
-
           try {
-            const res = await fetch('/api/neural/chat', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ query: val, symbol: currentSymbol, include_positions: true })
-            });
+            const res = await fetch('/api/neural/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: val, symbol: currentSymbol, include_positions: true }) });
             const data = await res.json();
             const el = document.getElementById(tid); if (el) el.remove();
             const rt = new Date().toLocaleTimeString('en-US', { hour12: false });
-            const rendered = renderMarkdown(data.response || data.error || 'No response.');
-            box.insertAdjacentHTML('beforeend', `
-              <div class="flex gap-3 max-w-[90%] msg-new">
-                <div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-500">
-                  <iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon>
-                </div>
-                <div class="flex flex-col gap-1">
-                  <div class="text-[10px] font-mono text-zinc-600">BASTION &bull; ${rt}</div>
-                  <div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg text-xs leading-relaxed text-zinc-300 bastion-response">${rendered}</div>
-                </div>
-              </div>`);
+            box.insertAdjacentHTML('beforeend', `<div class="flex gap-3 max-w-[90%] msg-new"><div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-500"><iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1"><div class="text-[10px] font-mono text-zinc-600">BASTION &bull; ${rt}</div><div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg text-xs leading-relaxed text-zinc-300 bastion-response">${renderMarkdown(data.response || data.error || 'No response.')}</div></div></div>`);
           } catch (e) {
             const el = document.getElementById(tid); if (el) el.remove();
-            box.insertAdjacentHTML('beforeend', `
-              <div class="flex gap-3 max-w-[90%] msg-new">
-                <div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-400">
-                  <iconify-icon icon="solar:danger-triangle-linear" class="text-sm"></iconify-icon>
-                </div>
-                <div class="flex flex-col gap-1">
-                  <div class="text-[10px] font-mono text-zinc-600">SYSTEM &bull; Error</div>
-                  <div class="bg-red-950/10 border border-red-900/20 p-3 rounded-tr-lg rounded-b-lg text-xs text-red-400/80">Neural engine unavailable. Check connection.</div>
-                </div>
-              </div>`);
+            box.insertAdjacentHTML('beforeend', `<div class="flex gap-3 max-w-[90%] msg-new"><div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-400"><iconify-icon icon="solar:danger-triangle-linear" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1"><div class="text-[10px] font-mono text-zinc-600">SYSTEM &bull; Error</div><div class="bg-red-950/10 border border-red-900/20 p-3 rounded-tr-lg rounded-b-lg text-xs text-red-400/80">Neural engine unavailable. Check connection.</div></div></div>`);
           }
           ui.scrollToBottom();
         },
-
         generateReport: async () => {
-          const btn = document.getElementById('btn-generate');
-          if (!btn) return;
-          const original = btn.innerHTML;
-          btn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize" class="text-xs"></iconify-icon> GENERATING...';
-          btn.disabled = true;
+          const btn = document.getElementById('btn-generate'); if (!btn) return;
+          const orig = btn.innerHTML;
+          btn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize" class="text-xs"></iconify-icon> GENERATING...'; btn.disabled = true;
           try {
             const res = await fetch(`/api/mcf/generate/institutional?symbol=${currentSymbol}`, { method: 'POST' });
             const data = await res.json();
             if (data.success && data.report) {
-              const r = data.report;
-              const el = document.createElement('div');
+              const r = data.report, el = document.createElement('div');
               el.className = 'report-card p-3 border-b border-zinc-800/40 hover:bg-zinc-900/30 cursor-pointer transition-all';
               el.onclick = () => openReport(r.id);
-              el.innerHTML = `<div class="flex justify-between items-start mb-1.5">
-                <span class="text-[9px] font-mono ${biasClass(r.bias||'NEUTRAL')} px-1.5 py-0.5 rounded uppercase border ${biasBorder(r.bias||'NEUTRAL')} font-bold">${r.bias||'NEW'}</span>
-                <span class="text-[9px] font-mono text-zinc-600">Just now</span>
-              </div>
-              <h4 class="text-xs font-semibold text-zinc-300 mb-2 leading-tight">${escapeHtml(r.title||'Institutional Report')}</h4>
-              <div class="flex gap-1.5">${(r.tags||[currentSymbol.toLowerCase()]).map(t=>`<span class="text-[8px] font-mono text-zinc-600 border border-zinc-800/50 px-1 rounded">#${t}</span>`).join('')}</div>`;
+              el.innerHTML = `<div class="flex justify-between items-start mb-1.5"><span class="text-[9px] font-mono ${biasClass(r.bias||'NEUTRAL')} px-1.5 py-0.5 rounded uppercase border ${biasBorder(r.bias||'NEUTRAL')} font-bold">${r.bias||'NEW'}</span><span class="text-[9px] font-mono text-zinc-600">Just now</span></div><h4 class="text-xs font-semibold text-zinc-300 mb-2 leading-tight">${escapeHtml(r.title||'Report')}</h4><div class="flex gap-1.5">${(r.tags||[currentSymbol.toLowerCase()]).map(t=>`<span class="text-[8px] font-mono text-zinc-600 border border-zinc-800/50 px-1 rounded">#${t}</span>`).join('')}</div>`;
               const list = document.getElementById('report-list');
               const ld = document.getElementById('reports-loading'); if (ld) ld.remove();
-              list.prepend(el);
-              ui.switchTab('reports');
-              showToast('Report generated successfully', 'success');
-            } else {
-              showToast('Report generation failed', 'warning');
-            }
-          } catch (e) { console.error('Generate:', e); showToast('Failed to generate report', 'warning'); }
-          btn.innerHTML = original; btn.disabled = false;
+              list.prepend(el); ui.switchTab('reports');
+              showToast('Report generated', 'success');
+            } else { showToast('Report generation failed', 'warning'); }
+          } catch (e) { showToast('Failed to generate report', 'warning'); }
+          btn.innerHTML = orig; btn.disabled = false;
         },
-
         getReports: async (limit = 20) => {
-          try {
-            const res = await fetch(`/api/mcf/reports?limit=${limit}`);
-            if (!res.ok) throw new Error(`Reports ${res.status}`);
-            return await res.json();
-          } catch (e) { console.error('Reports:', e); return { reports: [] }; }
+          try { const res = await fetch(`/api/mcf/reports?limit=${limit}`); if (!res.ok) throw new Error(); return await res.json(); }
+          catch (e) { return { reports: [] }; }
         },
-
         getReport: async (id) => {
-          try {
-            const res = await fetch(`/api/mcf/reports/${id}`);
-            if (!res.ok) throw new Error(`Report ${res.status}`);
-            return await res.json();
-          } catch (e) { console.error('Report detail:', e); return null; }
+          try { const res = await fetch(`/api/mcf/reports/${id}`); if (!res.ok) throw new Error(); return await res.json(); }
+          catch (e) { return null; }
         },
-
         evaluatePosition: async (position) => {
           try {
             const sym = (position.symbol||'').replace(/-PERP$/i, '');
-            const res = await fetch('/api/risk/evaluate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                position: {
-                  symbol: sym,
-                  direction: (position.direction||'').toUpperCase(),
-                  entry_price: position.entry_price,
-                  current_price: position.current_price,
-                  position_size: position.size || 1,
-                  leverage: position.leverage || 1,
-                  stop_loss: position.stop || position.stop_loss || null,
-                  take_profits: (position.targets||[]).map(t=>t.price)
-                }
-              })
-            });
-            if (!res.ok) throw new Error(`Evaluate ${res.status}`);
-            return await res.json();
-          } catch (e) { console.error('Evaluate:', e); return null; }
+            const res = await fetch('/api/risk/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ position: { symbol: sym, direction: (position.direction||'').toUpperCase(), entry_price: position.entry_price, current_price: position.current_price, position_size: position.size || 1, leverage: position.leverage || 1, stop_loss: position.stop || position.stop_loss || null, take_profits: (position.targets||[]).map(t=>t.price) } }) });
+            if (!res.ok) throw new Error(); return await res.json();
+          } catch (e) { return null; }
+        },
+        getOIChanges: async () => {
+          try { const res = await fetch('/api/oi-changes'); if (!res.ok) throw new Error(); return await res.json(); }
+          catch (e) { return null; }
+        },
+        getWhales: async () => {
+          try { const res = await fetch('/api/whales?min_value=1000000&limit=10'); if (!res.ok) throw new Error(); return await res.json(); }
+          catch (e) { return null; }
+        },
+        scanSignals: async () => {
+          try { const res = await fetch('/api/signals/scan', { method: 'POST' }); if (!res.ok) throw new Error(); return await res.json(); }
+          catch (e) { return null; }
+        },
+        getLiquidations: async (symbol) => {
+          try { const res = await fetch(`/api/liquidations/${symbol || currentSymbol}`); if (!res.ok) throw new Error(); return await res.json(); }
+          catch (e) { return null; }
         }
       };
 
-      // ── UI MODULE ──────────────────────────────────────────
+      // ── CONNECTION STATUS ──────────────────────────────────
+      function setConnected(alive) {
+        if (alive === apiAlive) return;
+        apiAlive = alive;
+        const dot = document.getElementById('conn-dot');
+        const label = document.getElementById('conn-label');
+        if (alive) {
+          dot.className = 'relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500';
+          dot.previousElementSibling.firstElementChild.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-40';
+          label.textContent = 'CONNECTED'; label.className = 'text-[8px] font-mono text-zinc-600 hidden md:inline';
+        } else {
+          dot.className = 'relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500';
+          dot.previousElementSibling.firstElementChild.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-40';
+          label.textContent = 'DISCONNECTED'; label.className = 'text-[8px] font-mono text-red-500 hidden md:inline';
+        }
+      }
+
+      // ── UI ─────────────────────────────────────────────────
+      const tabMap = {
+        positions: { view: 'view-positions', ind: 'ind-positions', btn: 'tab-positions', color: 'bg-red-600' },
+        intel: { view: 'view-intel', ind: 'ind-intel', btn: 'tab-intel', color: 'bg-cyan-600' },
+        reports: { view: 'view-reports', ind: 'ind-reports', btn: 'tab-reports', color: 'bg-purple-600' }
+      };
       const ui = {
         switchTab: (tab) => {
-          const posView = document.getElementById('view-positions');
-          const repView = document.getElementById('view-reports');
-          const indPos = document.getElementById('ind-positions');
-          const indRep = document.getElementById('ind-reports');
-          const btnPos = document.getElementById('tab-positions');
-          const btnRep = document.getElementById('tab-reports');
-          if (tab === 'positions') {
-            posView.classList.remove('hidden'); repView.classList.add('hidden');
-            indPos.className = 'absolute bottom-0 left-0 w-full h-0.5 bg-red-600 transition-all';
-            indRep.className = 'absolute bottom-0 left-0 w-full h-0.5 bg-transparent transition-all';
-            btnPos.className = 'flex-1 relative text-[10px] font-mono font-bold text-white bg-zinc-900/30 transition-all hover:bg-zinc-800/50';
-            btnRep.className = 'flex-1 relative text-[10px] font-mono font-bold text-zinc-500 transition-all hover:text-zinc-300 hover:bg-zinc-800/50';
-          } else {
-            repView.classList.remove('hidden'); posView.classList.add('hidden');
-            indRep.className = 'absolute bottom-0 left-0 w-full h-0.5 bg-purple-600 transition-all';
-            indPos.className = 'absolute bottom-0 left-0 w-full h-0.5 bg-transparent transition-all';
-            btnRep.className = 'flex-1 relative text-[10px] font-mono font-bold text-white bg-zinc-900/30 transition-all hover:bg-zinc-800/50';
-            btnPos.className = 'flex-1 relative text-[10px] font-mono font-bold text-zinc-500 transition-all hover:text-zinc-300 hover:bg-zinc-800/50';
-          }
+          Object.entries(tabMap).forEach(([key, cfg]) => {
+            const view = document.getElementById(cfg.view);
+            const ind = document.getElementById(cfg.ind);
+            const btn = document.getElementById(cfg.btn);
+            if (key === tab) {
+              view.classList.remove('hidden');
+              ind.className = `absolute bottom-0 left-0 w-full h-0.5 ${cfg.color} transition-all`;
+              btn.className = 'flex-1 relative text-[10px] font-mono font-bold text-white bg-zinc-900/30 transition-all hover:bg-zinc-800/50';
+            } else {
+              view.classList.add('hidden');
+              ind.className = 'absolute bottom-0 left-0 w-full h-0.5 bg-transparent transition-all';
+              btn.className = 'flex-1 relative text-[10px] font-mono font-bold text-zinc-500 transition-all hover:text-zinc-300 hover:bg-zinc-800/50';
+            }
+          });
         },
-
         toggleChat: (open) => {
           const backdrop = document.getElementById('chat-backdrop');
           const content = document.getElementById('chat-expanded-content');
@@ -670,35 +627,25 @@
             content.classList.add('h-0', 'opacity-0'); content.classList.remove('h-auto', 'opacity-100');
           }
         },
-
         toggleFab: () => {
+          fabOpen = !fabOpen;
           const menu = document.getElementById('fab-menu');
-          const isOpen = menu.style.opacity === '1';
-          menu.style.opacity = isOpen ? '0' : '1';
-          menu.style.pointerEvents = isOpen ? 'none' : 'auto';
-          menu.style.transform = isOpen ? 'translateY(1rem) scale(0.95)' : 'translateY(0) scale(1)';
+          menu.style.opacity = fabOpen ? '1' : '0';
+          menu.style.pointerEvents = fabOpen ? 'auto' : 'none';
+          menu.style.transform = fabOpen ? 'translateY(0) scale(1)' : 'translateY(1rem) scale(0.95)';
         },
-
         toggleShield: async (active) => {
           shieldActive = active;
           localStorage.setItem('bastion_shield_lite', active);
           const container = document.getElementById('shield-container');
           const status = document.getElementById('shield-status');
           document.getElementById('shield-toggle').checked = active;
-
           if (active) {
             container.classList.add('shield-active', 'shield-pulse');
             status.textContent = 'ACTIVE — Monitoring all positions...';
             status.className = 'text-[8px] text-red-500 font-mono';
-
-            // Apply red glow takeover to all position cards
-            document.querySelectorAll('.pos-card').forEach((card, i) => {
-              setTimeout(() => {
-                card.classList.add('shield-card-active');
-              }, i * 100); // Staggered activation
-            });
-
-            showToast('BASTION Shield activated — AI is monitoring your positions', 'shield', 4000);
+            document.querySelectorAll('.pos-card').forEach((card, i) => { setTimeout(() => card.classList.add('shield-card-active'), i * 100); });
+            showToast('BASTION Shield activated — AI monitoring your positions', 'shield', 4000);
             runShieldEvaluation();
             if (shieldInterval) clearInterval(shieldInterval);
             shieldInterval = setInterval(runShieldEvaluation, 60000);
@@ -706,29 +653,18 @@
             container.classList.remove('shield-active', 'shield-pulse');
             status.textContent = 'AI Risk Engine — Inactive';
             status.className = 'text-[8px] text-zinc-600 font-mono';
-
-            // Remove red glow from all cards
-            document.querySelectorAll('.pos-card').forEach(card => {
-              card.classList.remove('shield-card-active');
-            });
+            document.querySelectorAll('.pos-card').forEach(card => card.classList.remove('shield-card-active'));
             document.querySelectorAll('.shield-badge').forEach(el => el.remove());
-
             if (shieldInterval) clearInterval(shieldInterval); shieldInterval = null;
           }
         },
-
-        scrollToBottom: () => {
-          const box = document.getElementById('chat-messages');
-          if (box) box.scrollTop = box.scrollHeight;
-        }
+        scrollToBottom: () => { const box = document.getElementById('chat-messages'); if (box) box.scrollTop = box.scrollHeight; }
       };
 
       // ── SYMBOL / TIMEFRAME ─────────────────────────────────
       async function switchSymbol(sym) {
-        if (sym === currentSymbol && !isChartLoading) return; // Avoid redundant switches
+        if (sym === currentSymbol && !isChartLoading) return;
         currentSymbol = sym;
-
-        // Update button states
         document.querySelectorAll('.sym-btn').forEach(btn => {
           if (btn.dataset.sym === sym) {
             btn.className = 'sym-btn sym-active flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600/10 border border-red-600/40 text-red-500 text-[10px] font-mono font-bold hover:bg-red-600/20 transition-all whitespace-nowrap';
@@ -738,11 +674,9 @@
             btn.textContent = btn.dataset.sym;
           }
         });
-
-        // Update header ticker + watermark
         document.getElementById('ticker-symbol').textContent = sym + '-PERP';
         document.getElementById('chart-watermark').querySelector('span').textContent = sym;
-
+        lastCandleData = null;
         await loadChart();
         updatePrice();
       }
@@ -751,61 +685,66 @@
         if (tf === currentTimeframe) return;
         currentTimeframe = tf;
         document.querySelectorAll('.tf-btn').forEach(btn => {
-          if (btn.dataset.tf === tf) {
-            btn.className = 'tf-btn tf-active px-2.5 py-1 rounded-md bg-zinc-800/80 text-white text-[10px] font-mono font-bold transition-all border border-zinc-700/60';
-          } else {
-            btn.className = 'tf-btn px-2.5 py-1 rounded-md hover:bg-zinc-800/70 text-zinc-500 hover:text-zinc-300 text-[10px] font-mono transition-all';
-          }
+          if (btn.dataset.tf === tf) btn.className = 'tf-btn tf-active px-2.5 py-1 rounded-md bg-zinc-800/80 text-white text-[10px] font-mono font-bold transition-all border border-zinc-700/60';
+          else btn.className = 'tf-btn px-2.5 py-1 rounded-md hover:bg-zinc-800/70 text-zinc-500 hover:text-zinc-300 text-[10px] font-mono transition-all';
         });
+        lastCandleData = null;
         await loadChart();
       }
 
-      // ── CHART (with abort controller fix) ──────────────────
+      // ── CHART ──────────────────────────────────────────────
       async function loadChart() {
-        // Abort any pending chart request
-        if (chartAbortController) {
-          chartAbortController.abort();
-        }
+        if (chartAbortController) chartAbortController.abort();
         chartAbortController = new AbortController();
         isChartLoading = true;
-
+        document.getElementById('chart-loader').classList.remove('hidden');
         try {
           const data = await api.getKlines(currentSymbol, currentTimeframe, 200, chartAbortController.signal);
-          if (!data) return; // Aborted
-
-          if (!data.candles || data.candles.length === 0) {
-            console.warn('[BASTION] No candle data for', currentSymbol, currentTimeframe);
-            // Show empty state on chart
-            candleSeries.setData([]);
-            volumeSeries.setData([]);
-            return;
-          }
-
-          // Sort and deduplicate candles
-          const candles = data.candles
-            .map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close }))
-            .sort((a, b) => a.time - b.time)
-            .filter((c, i, arr) => i === 0 || c.time !== arr[i-1].time);
-
-          const volumes = data.candles
-            .map(c => ({ time: c.time, value: c.volume || 0, color: c.close >= c.open ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)' }))
-            .sort((a, b) => a.time - b.time)
-            .filter((c, i, arr) => i === 0 || c.time !== arr[i-1].time);
-
+          if (!data) return;
+          if (!data.candles || data.candles.length === 0) { candleSeries.setData([]); volumeSeries.setData([]); return; }
+          const candles = data.candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })).sort((a, b) => a.time - b.time).filter((c, i, arr) => i === 0 || c.time !== arr[i-1].time);
+          const volumes = data.candles.map(c => ({ time: c.time, value: c.volume || 0, color: c.close >= c.open ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)' })).sort((a, b) => a.time - b.time).filter((c, i, arr) => i === 0 || c.time !== arr[i-1].time);
           candleSeries.setData(candles);
           volumeSeries.setData(volumes);
-
+          lastCandleData = candles[candles.length - 1];
           const last = candles[candles.length - 1];
           document.getElementById('ohlc-overlay').innerHTML = `<span class="text-[9px] font-mono bg-[#080808]/90 text-zinc-500 px-2 py-1 border border-zinc-800/60 rounded backdrop-blur-sm">O: ${fmt(last.open)} H: ${fmt(last.high)} L: ${fmt(last.low)} C: ${fmt(last.close)}</span>`;
           chartInstance.timeScale().fitContent();
         } catch (e) {
-          if (e.name !== 'AbortError') console.error('[BASTION] Chart load error:', e);
+          if (e.name !== 'AbortError') console.error('[BASTION] Chart error:', e);
         } finally {
           isChartLoading = false;
+          document.getElementById('chart-loader').classList.add('hidden');
         }
       }
 
-      // ── PRICE TICKER ───────────────────────────────────────
+      // ── LIVE CANDLE UPDATE (every 500ms) ───────────────────
+      async function liveTickUpdate() {
+        if (!lastCandleData || isChartLoading) return;
+        const data = await api.getPrice(currentSymbol);
+        if (!data || !data.price) return;
+        const price = Number(data.price);
+        // Update header ticker
+        document.getElementById('ticker-price').textContent = '$' + fmtPrice(price);
+        const el = document.getElementById('ticker-change');
+        const ch = data.change_24h || 0;
+        const up = ch >= 0;
+        el.className = `text-[9px] md:text-[10px] font-mono ${up ? 'text-green-500 bg-green-900/15' : 'text-red-500 bg-red-900/15'} px-1 md:px-1.5 py-0.5 rounded flex items-center gap-0.5`;
+        el.innerHTML = `<iconify-icon icon="solar:arrow-right-${up?'up':'down'}-linear" class="text-[9px]"></iconify-icon>${Math.abs(ch).toFixed(1)}%`;
+        // Update last candle on chart in real time
+        if (lastCandleData && candleSeries) {
+          const updated = {
+            time: lastCandleData.time,
+            open: lastCandleData.open,
+            high: Math.max(lastCandleData.high, price),
+            low: Math.min(lastCandleData.low, price),
+            close: price
+          };
+          candleSeries.update(updated);
+          lastCandleData = updated;
+        }
+      }
+
       async function updatePrice() {
         const data = await api.getPrice(currentSymbol);
         if (data && data.price) {
@@ -813,7 +752,7 @@
           const el = document.getElementById('ticker-change');
           const ch = data.change_24h || 0;
           const up = ch >= 0;
-          el.className = `text-[10px] font-mono ${up ? 'text-green-500 bg-green-900/15' : 'text-red-500 bg-red-900/15'} px-1.5 py-0.5 rounded flex items-center gap-0.5`;
+          el.className = `text-[9px] md:text-[10px] font-mono ${up ? 'text-green-500 bg-green-900/15' : 'text-red-500 bg-red-900/15'} px-1 md:px-1.5 py-0.5 rounded flex items-center gap-0.5`;
           el.innerHTML = `<iconify-icon icon="solar:arrow-right-${up?'up':'down'}-linear" class="text-[9px]"></iconify-icon>${Math.abs(ch).toFixed(1)}%`;
         }
       }
@@ -825,75 +764,90 @@
         const ld = document.getElementById('positions-loading'); if (ld) ld.remove();
         const positions = data.positions || [];
         cachedPositions = positions;
-
-        // Update pulse positions count
         document.getElementById('pulse-positions').textContent = positions.length;
         document.querySelectorAll('.pulse-positions-dup').forEach(el => el.textContent = positions.length);
 
         if (positions.length === 0) {
-          list.innerHTML = `
-            <div class="p-8 text-center flex flex-col items-center gap-3">
-              <div class="w-12 h-12 rounded-full bg-zinc-900/50 border border-zinc-800/40 flex items-center justify-center">
-                <iconify-icon icon="solar:box-linear" class="text-zinc-700 text-2xl"></iconify-icon>
-              </div>
-              <div>
-                <p class="text-[11px] font-mono text-zinc-500 font-medium">No open positions</p>
-                <p class="text-[9px] font-mono text-zinc-700 mt-1">Connect an exchange to start tracking</p>
-              </div>
-            </div>`;
+          list.innerHTML = `<div class="p-8 text-center flex flex-col items-center gap-3"><div class="w-12 h-12 rounded-full bg-zinc-900/50 border border-zinc-800/40 flex items-center justify-center"><iconify-icon icon="solar:box-linear" class="text-zinc-700 text-2xl"></iconify-icon></div><div><p class="text-[11px] font-mono text-zinc-500 font-medium">No open positions</p><p class="text-[9px] font-mono text-zinc-700 mt-1">Connect an exchange to start tracking</p></div></div>`;
           document.getElementById('total-exposure').textContent = '$0.00';
           document.getElementById('total-pnl').textContent = '$0.00';
+          updateRiskScore(0, 0);
           return;
         }
 
-        let html = '', totalExp = 0, totalPnl = 0;
+        let html = '', totalExp = 0, totalPnl = 0, maxLev = 0;
         positions.forEach((pos, idx) => {
           const dir = (pos.direction||'').toUpperCase();
           const isLong = dir === 'LONG';
-          const entry = pos.entry_price || 0;
-          const current = pos.current_price || 0;
-          const size = pos.size || 0;
+          const entry = pos.entry_price || 0, current = pos.current_price || 0, size = pos.size || 0;
           const sizeUsd = pos.size_usd || (size * current);
           const pnl = pos.pnl != null ? pos.pnl : (isLong ? (current - entry) * size : (entry - current) * size);
           const pnlPct = entry > 0 ? ((isLong ? (current - entry) : (entry - current)) / entry * 100) : 0;
-          const leverage = pos.leverage || '';
+          const leverage = pos.leverage || 1;
           const sym = (pos.symbol||'').replace(/-PERP$/i, '');
           totalExp += Math.abs(sizeUsd); totalPnl += pnl;
+          if (leverage > maxLev) maxLev = leverage;
 
-          html += `
-            <div class="pos-card p-3 border-b border-zinc-800/30 relative ${shieldActive ? 'shield-card-active' : ''}" data-symbol="${pos.symbol}" style="${shieldActive ? 'animation-delay: ' + (idx * 0.3) + 's' : ''}">
-              <div class="flex justify-between items-start mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="font-mono font-bold text-[13px] text-white">${sym}</span>
-                  <span class="text-[9px] ${isLong ? 'bg-green-900/15 text-green-500 border-green-900/20' : 'bg-red-900/15 text-red-500 border-red-900/20'} border px-1.5 py-0.5 rounded font-mono font-bold">${dir}</span>
-                  ${leverage ? `<span class="text-[9px] font-mono text-zinc-600">${leverage}x</span>` : ''}
-                </div>
-                <div class="text-right">
-                  <span class="font-mono text-sm ${pnl >= 0 ? 'text-green-500' : 'text-red-500'} font-bold block">${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(2)}</span>
-                  <span class="font-mono text-[9px] ${pnlPct >= 0 ? 'text-green-600' : 'text-red-600'}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>
-                </div>
+          html += `<div class="pos-card p-3 border-b border-zinc-800/30 relative ${shieldActive ? 'shield-card-active' : ''}" data-symbol="${pos.symbol}" data-sym="${sym}" onclick="switchSymbol('${sym}')" style="${shieldActive ? 'animation-delay: ' + (idx * 0.3) + 's' : ''}">
+            <div class="flex justify-between items-start mb-2">
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-bold text-[13px] text-white">${sym}</span>
+                <span class="text-[9px] ${isLong ? 'bg-green-900/15 text-green-500 border-green-900/20' : 'bg-red-900/15 text-red-500 border-red-900/20'} border px-1.5 py-0.5 rounded font-mono font-bold">${dir}</span>
+                ${leverage > 1 ? `<span class="text-[9px] font-mono text-zinc-600">${leverage}x</span>` : ''}
               </div>
-              <div class="flex justify-between items-center text-[10px] font-mono text-zinc-600">
-                <span>Entry <span class="text-zinc-400">${fmt(entry)}</span></span>
-                <span>Mark <span class="text-zinc-400">${fmt(current)}</span></span>
-                <span>Size <span class="text-zinc-400">$${fmtPrice(sizeUsd)}</span></span>
+              <div class="text-right">
+                <span class="font-mono text-sm ${pnl >= 0 ? 'text-green-500' : 'text-red-500'} font-bold block">${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(2)}</span>
+                <span class="font-mono text-[9px] ${pnlPct >= 0 ? 'text-green-600' : 'text-red-600'}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>
               </div>
-            </div>`;
+            </div>
+            <div class="flex justify-between items-center text-[10px] font-mono text-zinc-600">
+              <span>Entry <span class="text-zinc-400">${fmt(entry)}</span></span>
+              <span>Mark <span class="text-zinc-400">${fmt(current)}</span></span>
+              <span>Size <span class="text-zinc-400">$${fmtPrice(sizeUsd)}</span></span>
+            </div>
+          </div>`;
         });
         list.innerHTML = html;
 
         document.getElementById('total-exposure').textContent = '$' + fmtPrice(totalExp);
         const pEl = document.getElementById('total-pnl');
         pEl.textContent = (totalPnl >= 0 ? '+' : '') + '$' + Math.abs(totalPnl).toFixed(2);
-        pEl.className = `text-sm font-mono ${totalPnl >= 0 ? 'text-green-500' : 'text-red-500'} font-bold`;
+        pEl.className = `text-[11px] font-mono ${totalPnl >= 0 ? 'text-green-500' : 'text-red-500'} font-bold`;
+
+        // Compute portfolio risk score (heuristic: leverage + drawdown + concentration)
+        const avgLev = positions.reduce((s, p) => s + (p.leverage || 1), 0) / positions.length;
+        const negPnlRatio = positions.filter(p => { const d = (p.direction||'').toUpperCase(); const pnl = d === 'LONG' ? (p.current_price - p.entry_price) : (p.entry_price - p.current_price); return pnl < 0; }).length / positions.length;
+        const riskScore = Math.min(100, Math.round((avgLev / 50) * 30 + negPnlRatio * 40 + (maxLev / 125) * 30));
+        updateRiskScore(riskScore, positions.length);
       }
 
-      // ── SHIELD EVALUATION ─────────────────────────────────
+      function updateRiskScore(score, posCount) {
+        const ring = document.getElementById('risk-ring');
+        const val = document.getElementById('risk-value');
+        const label = document.getElementById('risk-label');
+        const circumference = 97.4;
+        const offset = circumference - (score / 100) * circumference;
+        ring.style.strokeDashoffset = offset;
+        val.textContent = posCount > 0 ? score : '--';
+        if (posCount === 0) {
+          ring.style.stroke = '#27272a'; label.textContent = 'No positions';
+        } else if (score <= 30) {
+          ring.style.stroke = '#22c55e'; label.textContent = 'Low Risk';
+          val.className = 'absolute inset-0 flex items-center justify-center text-[10px] font-mono font-bold text-green-500';
+        } else if (score <= 60) {
+          ring.style.stroke = '#eab308'; label.textContent = 'Moderate Risk';
+          val.className = 'absolute inset-0 flex items-center justify-center text-[10px] font-mono font-bold text-amber-500';
+        } else {
+          ring.style.stroke = '#ef4444'; label.textContent = 'High Risk';
+          val.className = 'absolute inset-0 flex items-center justify-center text-[10px] font-mono font-bold text-red-500';
+        }
+      }
+
+      // ── SHIELD ─────────────────────────────────────────────
       async function runShieldEvaluation() {
         if (!shieldActive || cachedPositions.length === 0) return;
         const status = document.getElementById('shield-status');
         status.textContent = 'SCANNING POSITIONS...';
-
         for (const pos of cachedPositions) {
           const result = await api.evaluatePosition(pos);
           if (result && result.evaluation) {
@@ -903,16 +857,7 @@
               const old = card.querySelector('.shield-badge'); if (old) old.remove();
               const action = (ev.action || 'HOLD').toUpperCase();
               const urgency = ev.urgency || 'low';
-
-              card.insertAdjacentHTML('beforeend', `
-                <div class="shield-badge mt-2 flex items-center gap-2 text-[9px] font-mono px-2 py-1.5 rounded border action-${action.toLowerCase()} ${urgency === 'high' ? 'pulse-glow' : ''}">
-                  <iconify-icon icon="solar:shield-check-bold" class="text-xs"></iconify-icon>
-                  <span class="font-bold tracking-wide">${action}</span>
-                  <span class="text-zinc-500 truncate flex-1">${escapeHtml((ev.reason || '').substring(0, 80))}</span>
-                  ${urgency === 'high' ? '<span class="text-[8px] bg-red-900/20 text-red-400 px-1 rounded border border-red-900/20">URGENT</span>' : ''}
-                </div>`);
-
-              // Toast for EXIT or high urgency
+              card.insertAdjacentHTML('beforeend', `<div class="shield-badge mt-2 flex items-center gap-2 text-[9px] font-mono px-2 py-1.5 rounded border action-${action.toLowerCase()} ${urgency === 'high' ? 'pulse-glow' : ''}"><iconify-icon icon="solar:shield-check-bold" class="text-xs"></iconify-icon><span class="font-bold tracking-wide">${action}</span><span class="text-zinc-500 truncate flex-1">${escapeHtml((ev.reason || '').substring(0, 80))}</span>${urgency === 'high' ? '<span class="text-[8px] bg-red-900/20 text-red-400 px-1 rounded border border-red-900/20">URGENT</span>' : ''}</div>`);
               if (action === 'EXIT' || urgency === 'high') {
                 const sym = (pos.symbol || '').replace(/-PERP$/i, '');
                 showToast(`${sym}: ${action} — ${(ev.reason || 'Review position').substring(0, 50)}`, 'shield', 8000);
@@ -923,6 +868,89 @@
         status.textContent = 'ACTIVE — Last scan: ' + new Date().toLocaleTimeString('en-US', { hour12: false });
       }
 
+      // ── INTEL: OI CHANGES ──────────────────────────────────
+      async function loadOIChanges() {
+        const data = await api.getOIChanges();
+        const list = document.getElementById('oi-list');
+        if (!data || !data.success) { list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">OI data unavailable</div>'; return; }
+        const items = [...(data.increases || []).slice(0, 4), ...(data.decreases || []).slice(0, 4)].sort((a, b) => Math.abs(b.oi_change_pct || 0) - Math.abs(a.oi_change_pct || 0)).slice(0, 6);
+        if (items.length === 0) { list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">No significant OI changes</div>'; return; }
+        let html = '';
+        items.forEach(item => {
+          const pct = item.oi_change_pct || 0;
+          const up = pct >= 0;
+          const sym = item.symbol || '??';
+          html += `<div class="intel-card flex items-center justify-between px-3 py-2 cursor-pointer" onclick="switchSymbol('${sym}')">
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-bold text-[11px] text-white w-10">${sym}</span>
+              <span class="text-[9px] font-mono ${up ? 'text-green-500' : 'text-red-500'}">${item.oi_change_pct_formatted || (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%'}</span>
+            </div>
+            <span class="text-[9px] font-mono text-zinc-500">${item.oi_change_formatted || ''}</span>
+          </div>`;
+        });
+        list.innerHTML = html;
+      }
+
+      // ── INTEL: WHALES ──────────────────────────────────────
+      async function loadWhales() {
+        const data = await api.getWhales();
+        const list = document.getElementById('whale-list');
+        if (!data || !data.success || !data.transactions || data.transactions.length === 0) {
+          list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">No recent whale activity</div>'; return;
+        }
+        let html = '';
+        data.transactions.slice(0, 6).forEach(tx => {
+          const dirIcon = tx.direction === 'DEPOSIT' ? 'solar:arrow-to-down-left-bold' : tx.direction === 'WITHDRAWAL' ? 'solar:arrow-to-top-right-bold' : 'solar:transfer-horizontal-bold';
+          const dirColor = tx.direction === 'DEPOSIT' ? 'text-green-500' : tx.direction === 'WITHDRAWAL' ? 'text-red-500' : 'text-blue-500';
+          const amtStr = tx.amount_usd >= 1e9 ? '$' + (tx.amount_usd / 1e9).toFixed(1) + 'B' : tx.amount_usd >= 1e6 ? '$' + (tx.amount_usd / 1e6).toFixed(1) + 'M' : '$' + (tx.amount_usd / 1e3).toFixed(0) + 'K';
+          html += `<div class="intel-card flex items-center justify-between px-3 py-2">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="${dirIcon}" class="${dirColor} text-xs"></iconify-icon>
+              <span class="font-mono font-bold text-[11px] text-white">${tx.symbol || '??'}</span>
+              <span class="text-[9px] font-mono ${dirColor}">${tx.direction || ''}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-mono text-zinc-300 font-medium">${amtStr}</span>
+              <span class="text-[8px] font-mono text-zinc-600">${tx.timestamp || ''}</span>
+            </div>
+          </div>`;
+        });
+        list.innerHTML = html;
+      }
+
+      // ── INTEL: SIGNALS ─────────────────────────────────────
+      async function loadSignals() {
+        const list = document.getElementById('signal-list');
+        list.innerHTML = '<div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-amber-500 text-sm"></iconify-icon><p class="text-[9px] font-mono text-zinc-600 mt-1">Running AI scan...</p></div>';
+        const data = await api.scanSignals();
+        if (!data || !data.success || !data.signals || data.signals.length === 0) {
+          list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">No high-confidence signals detected</div>'; return;
+        }
+        let html = '';
+        data.signals.forEach(sig => {
+          const isLong = (sig.direction || '').toUpperCase() === 'LONG';
+          const conf = sig.confidence || 0;
+          const confColor = conf >= 80 ? 'text-green-500 bg-green-900/15 border-green-900/20' : conf >= 70 ? 'text-amber-500 bg-amber-900/15 border-amber-900/20' : 'text-zinc-400 bg-zinc-800 border-zinc-700';
+          html += `<div class="intel-card p-3 cursor-pointer" onclick="switchSymbol('${sig.symbol}')">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-bold text-[12px] text-white">${sig.symbol}</span>
+                <span class="text-[9px] ${isLong ? 'bg-green-900/15 text-green-500 border-green-900/20' : 'bg-red-900/15 text-red-500 border-red-900/20'} border px-1.5 py-0.5 rounded font-mono font-bold">${(sig.direction || '').toUpperCase()}</span>
+              </div>
+              <span class="text-[9px] font-mono ${confColor} border px-1.5 py-0.5 rounded font-bold">${conf}%</span>
+            </div>
+            <div class="flex gap-3 text-[9px] font-mono text-zinc-600">
+              <span>Entry <span class="text-zinc-400">${fmt(sig.entry)}</span></span>
+              <span>TP <span class="text-green-600">${fmt(sig.target)}</span></span>
+              <span>SL <span class="text-red-600">${fmt(sig.stop)}</span></span>
+            </div>
+            ${sig.reason ? `<p class="text-[9px] font-mono text-zinc-500 mt-1.5 truncate">${escapeHtml(sig.reason)}</p>` : ''}
+          </div>`;
+        });
+        list.innerHTML = html;
+        showToast(`${data.signals.length} signal${data.signals.length > 1 ? 's' : ''} detected`, 'success', 3000);
+      }
+
       // ── REPORTS ────────────────────────────────────────────
       async function loadReports() {
         const data = await api.getReports(20);
@@ -930,33 +958,15 @@
         const ld = document.getElementById('reports-loading'); if (ld) ld.remove();
         const reports = data.reports || [];
         if (reports.length === 0) {
-          list.innerHTML = `
-            <div class="p-8 text-center flex flex-col items-center gap-3">
-              <div class="w-12 h-12 rounded-full bg-zinc-900/50 border border-zinc-800/40 flex items-center justify-center">
-                <iconify-icon icon="solar:document-linear" class="text-zinc-700 text-2xl"></iconify-icon>
-              </div>
-              <div>
-                <p class="text-[11px] font-mono text-zinc-500 font-medium">No reports yet</p>
-                <p class="text-[9px] font-mono text-zinc-700 mt-1">Hit GENERATE to create your first report</p>
-              </div>
-            </div>`;
+          list.innerHTML = '<div class="p-8 text-center flex flex-col items-center gap-3"><div class="w-12 h-12 rounded-full bg-zinc-900/50 border border-zinc-800/40 flex items-center justify-center"><iconify-icon icon="solar:document-linear" class="text-zinc-700 text-2xl"></iconify-icon></div><div><p class="text-[11px] font-mono text-zinc-500 font-medium">No reports yet</p><p class="text-[9px] font-mono text-zinc-700 mt-1">Hit GENERATE to create your first</p></div></div>';
           return;
         }
         let html = '';
         reports.forEach(r => {
-          html += `
-            <div onclick="openReport('${r.id}')" class="report-card p-3 border-b border-zinc-800/30 cursor-pointer transition-all">
-              <div class="flex justify-between items-start mb-1.5">
-                <span class="text-[9px] font-mono ${biasClass(r.bias)} px-1.5 py-0.5 rounded uppercase border ${biasBorder(r.bias)} font-bold">${r.bias || 'N/A'}</span>
-                <span class="text-[9px] font-mono text-zinc-600">${timeAgo(r.timestamp)}</span>
-              </div>
-              <h4 class="text-xs font-semibold text-zinc-300 mb-2 leading-tight">${escapeHtml(r.title || 'Untitled')}</h4>
-              <div class="flex gap-1.5">${(r.tags || []).map(t => `<span class="text-[8px] font-mono text-zinc-600 border border-zinc-800/50 px-1 rounded">#${t}</span>`).join('')}</div>
-            </div>`;
+          html += `<div onclick="openReport('${r.id}')" class="report-card p-3 border-b border-zinc-800/30 cursor-pointer transition-all"><div class="flex justify-between items-start mb-1.5"><span class="text-[9px] font-mono ${biasClass(r.bias)} px-1.5 py-0.5 rounded uppercase border ${biasBorder(r.bias)} font-bold">${r.bias || 'N/A'}</span><span class="text-[9px] font-mono text-zinc-600">${timeAgo(r.timestamp)}</span></div><h4 class="text-xs font-semibold text-zinc-300 mb-2 leading-tight">${escapeHtml(r.title || 'Untitled')}</h4><div class="flex gap-1.5">${(r.tags || []).map(t => `<span class="text-[8px] font-mono text-zinc-600 border border-zinc-800/50 px-1 rounded">#${t}</span>`).join('')}</div></div>`;
         });
         list.innerHTML = html;
       }
-
       async function openReport(id) {
         const modal = document.getElementById('report-modal');
         const body = document.getElementById('modal-body');
@@ -967,16 +977,7 @@
         if (!data || !data.report) { body.innerHTML = '<div class="p-6 text-center text-red-400 text-xs font-mono">Failed to load report.</div>'; return; }
         const r = data.report;
         titleBar.textContent = 'MCF / ' + (r.id || 'REPORT').substring(0, 12).toUpperCase();
-        body.innerHTML = `
-          <div class="flex gap-2 mb-6">
-            <span class="px-2 py-0.5 ${biasClass(r.bias)} border ${biasBorder(r.bias)} text-[10px] font-mono uppercase font-bold rounded">${r.bias || 'N/A'}</span>
-            <span class="px-2 py-0.5 bg-zinc-900 text-zinc-500 border border-zinc-800 text-[10px] font-mono uppercase rounded">${r.type || 'Report'}</span>
-          </div>
-          <h2 class="text-lg font-bold text-white mb-2 font-mono tracking-tight">${escapeHtml(r.title || 'Untitled')}</h2>
-          <div class="text-[10px] font-mono text-zinc-600 mb-6 border-b border-zinc-800/40 pb-4">
-            Generated <span class="text-zinc-400">${timeAgo(r.timestamp)}</span> &bull; ${(r.tags || []).map(t => '#' + t).join(' ')}
-          </div>
-          <div class="space-y-4 text-sm leading-7 text-zinc-300 font-light bastion-response">${renderMarkdown(r.content || 'No content.')}</div>`;
+        body.innerHTML = `<div class="flex gap-2 mb-6"><span class="px-2 py-0.5 ${biasClass(r.bias)} border ${biasBorder(r.bias)} text-[10px] font-mono uppercase font-bold rounded">${r.bias || 'N/A'}</span><span class="px-2 py-0.5 bg-zinc-900 text-zinc-500 border border-zinc-800 text-[10px] font-mono uppercase rounded">${r.type || 'Report'}</span></div><h2 class="text-lg font-bold text-white mb-2 font-mono tracking-tight">${escapeHtml(r.title || 'Untitled')}</h2><div class="text-[10px] font-mono text-zinc-600 mb-6 border-b border-zinc-800/40 pb-4">Generated <span class="text-zinc-400">${timeAgo(r.timestamp)}</span> &bull; ${(r.tags || []).map(t => '#' + t).join(' ')}</div><div class="space-y-4 text-sm leading-7 text-zinc-300 font-light bastion-response">${renderMarkdown(r.content || 'No content.')}</div>`;
       }
 
       // ── HELPERS ────────────────────────────────────────────
@@ -986,7 +987,6 @@
       function biasClass(b) { b = (b || '').toUpperCase(); return b === 'BULLISH' ? 'bg-green-900/15 text-green-500' : b === 'BEARISH' ? 'bg-red-900/15 text-red-500' : 'bg-amber-900/15 text-amber-500'; }
       function biasBorder(b) { b = (b || '').toUpperCase(); return b === 'BULLISH' ? 'border-green-900/20' : b === 'BEARISH' ? 'border-red-900/20' : 'border-amber-900/20'; }
       function timeAgo(ts) { if (!ts) return ''; const m = Math.floor((Date.now() - new Date(ts).getTime()) / 60000); if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago'; const h = Math.floor(m / 60); if (h < 24) return h + 'h ago'; return Math.floor(h / 24) + 'd ago'; }
-
       function renderMarkdown(md) {
         if (!md) return '';
         let h = escapeHtml(md);
@@ -998,11 +998,7 @@
         h = h.replace(/^# (.+)$/gm, '<h2 class="text-white font-mono text-base uppercase tracking-wide font-bold mt-4 mb-2">$1</h2>');
         h = h.replace(/^[\-\*] (.+)$/gm, '<li class="ml-4 list-disc text-zinc-300">$1</li>');
         h = h.replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 list-decimal text-zinc-300">$2</li>');
-        h = h.replace(/\|(.+)\|/g, (match) => {
-          const cells = match.split('|').filter(c => c.trim());
-          if (cells.every(c => c.trim().match(/^[\-:]+$/))) return '';
-          return '<div class="flex gap-4 text-[10px] font-mono border-b border-zinc-800/40 py-1">' + cells.map(c => `<span class="flex-1">${c.trim()}</span>`).join('') + '</div>';
-        });
+        h = h.replace(/\|(.+)\|/g, (match) => { const cells = match.split('|').filter(c => c.trim()); if (cells.every(c => c.trim().match(/^[\-:]+$/))) return ''; return '<div class="flex gap-4 text-[10px] font-mono border-b border-zinc-800/40 py-1">' + cells.map(c => `<span class="flex-1">${c.trim()}</span>`).join('') + '</div>'; });
         h = h.replace(/\n\n/g, '</p><p class="mt-2">');
         h = h.replace(/\n/g, '<br>');
         return '<p>' + h + '</p>';
@@ -1016,70 +1012,51 @@
             fetch('/api/funding').then(r => r.json()),
             fetch('/api/usdt-dominance').then(r => r.json())
           ]);
-
           if (fgRes.status === 'fulfilled' && fgRes.value) {
             const fg = fgRes.value;
             const val = fg.value ?? fg.index ?? '--';
             const label = fg.label || fg.classification || '--';
-            const labelColor = val >= 60 ? 'bg-green-900/20 text-green-500' : val <= 40 ? 'bg-red-900/20 text-red-500' : 'bg-amber-900/20 text-amber-500';
+            const lc = val >= 60 ? 'bg-green-900/20 text-green-500' : val <= 40 ? 'bg-red-900/20 text-red-500' : 'bg-amber-900/20 text-amber-500';
             document.getElementById('pulse-fg').textContent = val;
             document.getElementById('pulse-fg-label').textContent = label;
-            document.getElementById('pulse-fg-label').className = `text-[8px] px-1 rounded ${labelColor}`;
+            document.getElementById('pulse-fg-label').className = `text-[8px] px-1 rounded ${lc}`;
             document.querySelectorAll('.pulse-fg-dup').forEach(el => el.textContent = val);
-            document.querySelectorAll('.pulse-fg-label-dup').forEach(el => { el.textContent = label; el.className = `pulse-fg-label-dup text-[8px] px-1 rounded ${labelColor}`; });
-            if (val <= 20) showToast('Extreme Fear detected — market may be oversold', 'warning');
-            else if (val >= 80) showToast('Extreme Greed — market may be overheated', 'warning');
+            document.querySelectorAll('.pulse-fg-label-dup').forEach(el => { el.textContent = label; el.className = `pulse-fg-label-dup text-[8px] px-1 rounded ${lc}`; });
           }
-
           if (fundingRes.status === 'fulfilled' && fundingRes.value) {
-            const fd = fundingRes.value;
-            const rates = fd.rates || fd;
-            const btcRate = rates.BTC ?? rates.btc ?? rates.BTCUSDT;
-            const ethRate = rates.ETH ?? rates.eth ?? rates.ETHUSDT;
-            const solRate = rates.SOL ?? rates.sol ?? rates.SOLUSDT;
-            const fmtRate = (r) => { if (r == null) return '--'; const pct = (Number(r) * 100); return (pct >= 0 ? '+' : '') + pct.toFixed(4) + '%'; };
-            const colorRate = (r) => { if (r == null) return 'text-zinc-400'; return Number(r) >= 0 ? 'text-green-500' : 'text-red-500'; };
-
-            const btcEl = document.getElementById('pulse-funding');
-            btcEl.textContent = fmtRate(btcRate); btcEl.className = `font-bold text-[10px] font-mono ${colorRate(btcRate)}`;
-            document.querySelectorAll('.pulse-funding-dup').forEach(el => { el.textContent = fmtRate(btcRate); el.className = `pulse-funding-dup font-bold text-[10px] font-mono ${colorRate(btcRate)}`; });
-
-            const ethEl = document.getElementById('pulse-eth-funding');
-            ethEl.textContent = fmtRate(ethRate); ethEl.className = `font-bold text-[10px] font-mono ${colorRate(ethRate)}`;
-            document.querySelectorAll('.pulse-eth-funding-dup').forEach(el => { el.textContent = fmtRate(ethRate); el.className = `pulse-eth-funding-dup font-bold text-[10px] font-mono ${colorRate(ethRate)}`; });
-
-            const solEl = document.getElementById('pulse-sol-funding');
-            solEl.textContent = fmtRate(solRate); solEl.className = `font-bold text-[10px] font-mono ${colorRate(solRate)}`;
-            document.querySelectorAll('.pulse-sol-funding-dup').forEach(el => { el.textContent = fmtRate(solRate); el.className = `pulse-sol-funding-dup font-bold text-[10px] font-mono ${colorRate(solRate)}`; });
+            const fd = fundingRes.value; const rates = fd.rates || fd;
+            const fmtR = (r) => { if (r == null) return '--'; const p = (Number(r) * 100); return (p >= 0 ? '+' : '') + p.toFixed(4) + '%'; };
+            const cR = (r) => { if (r == null) return 'text-zinc-400'; return Number(r) >= 0 ? 'text-green-500' : 'text-red-500'; };
+            const btc = rates.BTC ?? rates.btc ?? rates.BTCUSDT; const eth = rates.ETH ?? rates.eth ?? rates.ETHUSDT; const sol = rates.SOL ?? rates.sol ?? rates.SOLUSDT;
+            const bEl = document.getElementById('pulse-funding'); bEl.textContent = fmtR(btc); bEl.className = `font-bold text-[10px] font-mono ${cR(btc)}`;
+            document.querySelectorAll('.pulse-funding-dup').forEach(el => { el.textContent = fmtR(btc); el.className = `pulse-funding-dup font-bold text-[10px] font-mono ${cR(btc)}`; });
+            const eEl = document.getElementById('pulse-eth-funding'); eEl.textContent = fmtR(eth); eEl.className = `font-bold text-[10px] font-mono ${cR(eth)}`;
+            document.querySelectorAll('.pulse-eth-funding-dup').forEach(el => { el.textContent = fmtR(eth); el.className = `pulse-eth-funding-dup font-bold text-[10px] font-mono ${cR(eth)}`; });
+            const sEl = document.getElementById('pulse-sol-funding'); sEl.textContent = fmtR(sol); sEl.className = `font-bold text-[10px] font-mono ${cR(sol)}`;
+            document.querySelectorAll('.pulse-sol-funding-dup').forEach(el => { el.textContent = fmtR(sol); el.className = `pulse-sol-funding-dup font-bold text-[10px] font-mono ${cR(sol)}`; });
           }
-
           if (usdtRes.status === 'fulfilled' && usdtRes.value) {
-            const ud = usdtRes.value;
-            const dom = ud.dominance ?? ud.value ?? ud.usdt_dominance;
-            const domStr = dom != null ? Number(dom).toFixed(2) + '%' : '--';
-            document.getElementById('pulse-usdt').textContent = domStr;
-            document.querySelectorAll('.pulse-usdt-dup').forEach(el => el.textContent = domStr);
+            const ud = usdtRes.value; const dom = ud.dominance ?? ud.value ?? ud.usdt_dominance;
+            const s = dom != null ? Number(dom).toFixed(2) + '%' : '--';
+            document.getElementById('pulse-usdt').textContent = s;
+            document.querySelectorAll('.pulse-usdt-dup').forEach(el => el.textContent = s);
           }
-        } catch (e) { console.error('[BASTION] Pulse error:', e); }
+        } catch (e) {}
       }
 
-      // ── TOAST SYSTEM ───────────────────────────────────────
+      // ── TOAST ──────────────────────────────────────────────
       const toastCooldown = {};
       function showToast(message, type = 'info', duration = 6000) {
         const key = message.substring(0, 30);
         if (toastCooldown[key]) return;
-        toastCooldown[key] = true;
-        setTimeout(() => delete toastCooldown[key], 60000);
-
-        const container = document.getElementById('toast-container');
-        if (!container) return;
+        toastCooldown[key] = true; setTimeout(() => delete toastCooldown[key], 60000);
+        const container = document.getElementById('toast-container'); if (!container) return;
         const icons = { info: 'solar:info-circle-bold', warning: 'solar:danger-triangle-bold', success: 'solar:check-circle-bold', shield: 'solar:shield-bold' };
         const colors = { info: 'border-blue-800/30 bg-blue-950/40', warning: 'border-amber-800/30 bg-amber-950/40', success: 'border-green-800/30 bg-green-950/40', shield: 'border-red-800/30 bg-red-950/40' };
-        const iconColors = { info: 'text-blue-400', warning: 'text-amber-400', success: 'text-green-400', shield: 'text-red-400' };
-
+        const ic = { info: 'text-blue-400', warning: 'text-amber-400', success: 'text-green-400', shield: 'text-red-400' };
         const el = document.createElement('div');
         el.className = `toast-in pointer-events-auto flex items-start gap-3 px-4 py-3 border ${colors[type]} rounded-lg backdrop-blur-md shadow-xl`;
-        el.innerHTML = `<iconify-icon icon="${icons[type]}" class="${iconColors[type]} text-base mt-0.5 shrink-0"></iconify-icon><div class="flex-1"><p class="text-[11px] font-mono text-zinc-200 leading-relaxed">${escapeHtml(message)}</p></div><button onclick="this.parentElement.classList.replace('toast-in','toast-out');setTimeout(()=>this.parentElement.remove(),300)" class="text-zinc-600 hover:text-zinc-300 shrink-0 mt-0.5"><iconify-icon icon="solar:close-circle-linear" class="text-sm"></iconify-icon></button>`;
+        el.innerHTML = `<iconify-icon icon="${icons[type]}" class="${ic[type]} text-base mt-0.5 shrink-0"></iconify-icon><div class="flex-1"><p class="text-[11px] font-mono text-zinc-200 leading-relaxed">${escapeHtml(message)}</p></div><button onclick="this.parentElement.classList.replace('toast-in','toast-out');setTimeout(()=>this.parentElement.remove(),300)" class="text-zinc-600 hover:text-zinc-300 shrink-0 mt-0.5"><iconify-icon icon="solar:close-circle-linear" class="text-sm"></iconify-icon></button>`;
         container.appendChild(el);
         setTimeout(() => { if (el.parentNode) { el.classList.replace('toast-in', 'toast-out'); setTimeout(() => el.remove(), 300); } }, duration);
       }
@@ -1087,59 +1064,29 @@
       // ── GLOBALS ────────────────────────────────────────────
       window.fillPrompt = (txt) => { document.getElementById('chat-input').value = txt; ui.toggleChat(true); };
       window.ui = ui; window.api = api; window.showToast = showToast;
-      window.switchSymbol = switchSymbol; window.switchTimeframe = switchTimeframe; window.openReport = openReport;
+      window.switchSymbol = switchSymbol; window.switchTimeframe = switchTimeframe;
+      window.openReport = openReport; window.loadSignals = loadSignals;
 
       // ── INIT ───────────────────────────────────────────────
       async function initApp() {
         try {
           const container = document.getElementById('tv-chart');
           const rect = container.getBoundingClientRect();
-
           chartInstance = LightweightCharts.createChart(container, {
-            width: rect.width || 800,
-            height: rect.height || 500,
+            width: rect.width || 800, height: rect.height || 500,
             layout: { background: { color: '#080808' }, textColor: '#52525b', fontFamily: "'JetBrains Mono', monospace", fontSize: 10 },
             grid: { vertLines: { color: '#18181b' }, horzLines: { color: '#18181b' } },
-            crosshair: {
-              mode: LightweightCharts.CrosshairMode.Normal,
-              vertLine: { color: 'rgba(220,38,38,0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed },
-              horzLine: { color: 'rgba(220,38,38,0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed },
-            },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal, vertLine: { color: 'rgba(220,38,38,0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed }, horzLine: { color: 'rgba(220,38,38,0.15)', width: 1, style: LightweightCharts.LineStyle.Dashed } },
             rightPriceScale: { borderColor: '#1c1c1e', scaleMargins: { top: 0.05, bottom: 0.15 } },
             timeScale: { borderColor: '#1c1c1e', timeVisible: true, secondsVisible: false },
             handleScroll: { vertTouchDrag: false },
           });
-
-          // Hide TradingView watermark links
-          setTimeout(() => { container.querySelectorAll('a').forEach(a => { a.style.display = 'none'; }); }, 100);
-          new MutationObserver(() => { container.querySelectorAll('a').forEach(a => { a.style.display = 'none'; }); }).observe(container, { childList: true, subtree: true });
-
-          candleSeries = chartInstance.addCandlestickSeries({
-            upColor: '#22c55e', downColor: '#ef4444',
-            borderVisible: false,
-            wickUpColor: '#22c55e', wickDownColor: '#ef4444',
-          });
-          volumeSeries = chartInstance.addHistogramSeries({
-            priceFormat: { type: 'volume' },
-            priceScaleId: 'vol',
-          });
-          chartInstance.priceScale('vol').applyOptions({
-            scaleMargins: { top: 0.85, bottom: 0 },
-            drawTicks: false,
-            borderVisible: false,
-          });
-
-          // Responsive resize
-          new ResizeObserver(entries => {
-            for (const entry of entries) {
-              const cr = entry.contentRect;
-              if (cr.width > 0 && cr.height > 0) {
-                chartInstance.applyOptions({ width: cr.width, height: cr.height });
-              }
-            }
-          }).observe(container);
-
-          // Crosshair OHLC
+          setTimeout(() => { container.querySelectorAll('a').forEach(a => a.style.display = 'none'); }, 100);
+          new MutationObserver(() => { container.querySelectorAll('a').forEach(a => a.style.display = 'none'); }).observe(container, { childList: true, subtree: true });
+          candleSeries = chartInstance.addCandlestickSeries({ upColor: '#22c55e', downColor: '#ef4444', borderVisible: false, wickUpColor: '#22c55e', wickDownColor: '#ef4444' });
+          volumeSeries = chartInstance.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'vol' });
+          chartInstance.priceScale('vol').applyOptions({ scaleMargins: { top: 0.85, bottom: 0 }, drawTicks: false, borderVisible: false });
+          new ResizeObserver(entries => { for (const entry of entries) { const cr = entry.contentRect; if (cr.width > 0 && cr.height > 0) chartInstance.applyOptions({ width: cr.width, height: cr.height }); } }).observe(container);
           chartInstance.subscribeCrosshairMove(param => {
             if (param.seriesData && param.seriesData.get(candleSeries)) {
               const d = param.seriesData.get(candleSeries);
@@ -1153,19 +1100,38 @@
           loadPositions();
           loadReports();
           loadMarketPulse();
+          loadOIChanges();
+          loadWhales();
 
-          // Restore shield state
-          if (shieldActive) {
-            document.getElementById('shield-toggle').checked = true;
-            ui.toggleShield(true);
-          }
+          // Restore shield
+          if (shieldActive) { document.getElementById('shield-toggle').checked = true; ui.toggleShield(true); }
 
-          // Polling intervals
-          priceInterval = setInterval(updatePrice, 5000);
+          // Intervals
+          liveTickInterval = setInterval(liveTickUpdate, 500); // Live candle every 500ms
           positionsInterval = setInterval(loadPositions, 30000);
           setInterval(loadMarketPulse, 60000);
+          setInterval(loadOIChanges, 120000);
+          setInterval(loadWhales, 90000);
 
-          // Welcome toast
+          // Reload full chart data periodically (every 60s) to sync candle history
+          setInterval(() => { if (!isChartLoading) loadChart(); }, 60000);
+
+          // Close FAB on click outside
+          document.addEventListener('click', (e) => {
+            if (fabOpen && !e.target.closest('#fab-menu') && !e.target.closest('#fab-btn')) {
+              ui.toggleFab();
+            }
+          });
+
+          // Escape key closes modal/chat
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+              document.getElementById('report-modal').classList.add('hidden');
+              ui.toggleChat(false);
+              if (fabOpen) ui.toggleFab();
+            }
+          });
+
           setTimeout(() => showToast('BASTION Lite online — neural engine ready', 'shield', 4000), 1000);
         } catch (e) {
           console.error('[BASTION] Init error:', e);
