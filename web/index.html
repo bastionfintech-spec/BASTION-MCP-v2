@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BASTION - Institutional Crypto Risk Terminal</title>
+    <title>BASTION - Autonomous Crypto Risk AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     <style>
@@ -25,6 +25,8 @@
       }
       @keyframes spinSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       .animate-spin-slow { animation: spinSlow 6s linear infinite; }
+      @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.5); opacity: 0; } }
+      .animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
     </style>
     <style>
       @media (prefers-reduced-motion: no-preference) {
@@ -71,7 +73,7 @@
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
           </span>
-          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">ENV: LIVE</span>
+          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">AGENT: ACTIVE</span>
           <span class="text-[10px] font-mono text-zinc-600 leading-none">]</span>
         </div>
         <div class="hidden lg:flex items-center ml-4 px-2 py-1 bg-red-600/10 border border-red-600/30 rounded-sm">
@@ -84,17 +86,16 @@
           <a href="/lite" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Bastion AI<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
           <a href="/frontend" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Terminal<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
           <a href="/research" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Research<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
-          <a href="/visualizations" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Analytics<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
-          <a href="/account" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Account<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
-          <a href="#features" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">Features<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/institutional" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Institutional<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="#how-it-works" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">How It Works<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
         </div>
       </nav>
 
       <div class="hidden md:flex items-center h-full border-l border-zinc-800 bg-[#050505]">
         <a href="/login" class="h-full px-6 bg-transparent text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-widest transition-all flex items-center gap-2 border-r border-zinc-800">Login</a>
         <a href="/account" class="h-full px-8 bg-red-600 text-white text-[10px] font-mono uppercase tracking-widest hover:bg-red-500 transition-all flex items-center gap-2 group shadow-[inset_0_0_20px_rgba(0,0,0,0.4)]">
-          Connect Exchange
-          <iconify-icon icon="solar:link-circle-bold" width="14" class="group-hover:rotate-45 transition-transform"></iconify-icon>
+          Get Started Free
+          <iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
         </a>
       </div>
 
@@ -106,13 +107,12 @@
     <!-- Mobile Menu -->
     <div id="mobile-menu" class="fixed inset-x-0 top-16 bottom-0 z-40 bg-[#050505] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col border-t border-zinc-800 overflow-y-auto">
       <div class="flex flex-col p-6 space-y-4">
-        <a href="/account" class="w-full py-4 bg-red-600 text-white text-xs font-mono uppercase tracking-widest hover:bg-red-500 flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-900/20 font-bold">Connect Exchange<iconify-icon icon="solar:link-circle-bold" width="16"></iconify-icon></a>
+        <a href="/account" class="w-full py-4 bg-red-600 text-white text-xs font-mono uppercase tracking-widest hover:bg-red-500 flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-900/20 font-bold">Get Started Free<iconify-icon icon="solar:arrow-right-linear" width="16"></iconify-icon></a>
         <div class="flex flex-col border border-zinc-800 bg-zinc-900/20">
           <a href="/lite" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900 transition-colors group">Bastion AI<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
           <a href="/frontend" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Terminal<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
           <a href="/research" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Research<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
-          <a href="/visualizations" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Analytics<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
-          <a href="/account" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Account<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
+          <a href="/institutional" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Institutional<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
           <a href="/login" class="flex items-center justify-between p-4 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Login<iconify-icon icon="solar:arrow-right-linear" class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600" width="14"></iconify-icon></a>
         </div>
       </div>
@@ -126,16 +126,19 @@
           <div class="absolute top-0 bottom-0 left-1/2 w-px bg-zinc-900 -translate-x-1/2 z-0"></div>
           <nav class="flex flex-col gap-10 relative z-10 w-full items-center">
             <a href="#hero" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">01</a>
-            <a href="#ai-advisor" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">02</a>
-            <a href="#features" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">03</a>
-            <a href="#intelligence" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">04</a>
+            <a href="#how-it-works" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">02</a>
+            <a href="#capabilities" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">03</a>
+            <a href="#agent-live" class="nav-link group relative flex items-center justify-center w-6 h-6 bg-[#050505] border border-zinc-700 text-[9px] font-mono hover:text-white hover:border-red-600 transition-all duration-300 text-zinc-500">04</a>
           </nav>
         </div>
       </aside>
 
       <!-- Content Area -->
       <div class="flex-1 flex flex-col min-w-0 relative z-0 md:ml-16">
-        <!-- Hero Section -->
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- HERO — "Your AI Risk Agent" -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
         <div id="hero" class="relative w-full min-h-[700px] flex items-center overflow-hidden bg-[#050505]">
           <div class="absolute inset-0 z-0">
             <div class="aura-background-component w-full h-full absolute inset-0">
@@ -146,811 +149,317 @@
             <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#050505]/80 z-10 pointer-events-none"></div>
           </div>
 
-          <div class="container lg:px-12 grid grid-cols-1 lg:grid-cols-2 md:pt-28 md:pb-16 h-full z-20 mr-auto ml-auto pt-20 pr-6 pb-12 pl-6 relative gap-x-12 gap-y-12 items-center">
+          <div class="container lg:px-12 grid grid-cols-1 lg:grid-cols-2 md:pt-28 md:pb-16 h-full z-20 mr-auto ml-auto pt-20 pr-6 pb-12 pl-6 relative gap-x-12 gap-y-8 items-center">
             <div class="flex flex-col justify-center max-w-2xl">
               <div class="flex items-center gap-3 mb-8 sys-reveal sys-rise">
                 <span class="relative flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
                 </span>
-                <span class="text-[10px] uppercase text-zinc-400 tracking-widest font-mono">RISK ENGINE: ACTIVE <span class="text-zinc-600 mx-2">//</span> PROTECTION ENABLED</span>
+                <span class="text-[10px] uppercase text-zinc-400 tracking-widest font-mono">AI RISK AGENT <span class="text-zinc-600 mx-2">//</span> ALWAYS ON</span>
               </div>
 
-              <h1 class="md:text-7xl lg:text-8xl uppercase leading-[0.9] sys-reveal sys-rise sys-delay-100 text-5xl font-medium text-white pt-8 pb-8 tracking-tight">
-                risk <span class="inline-block min-w-[11ch] whitespace-nowrap text-red-600 text-left" id="hero-typewriter">ENGINEERED</span>
+              <h1 class="md:text-6xl lg:text-7xl uppercase leading-[0.9] sys-reveal sys-rise sys-delay-100 text-4xl font-medium text-white pt-4 pb-6 tracking-tight">
+                your trades.<br>
+                <span class="text-red-600" id="hero-typewriter">protected.</span>
               </h1>
 
-              <p class="text-base md:text-lg text-zinc-500 font-mono leading-relaxed mb-10 max-w-md border-l-2 border-red-600 pl-4 sys-reveal sys-rise sys-delay-200">
-                Institutional-grade risk management for retail traders. Multi-shot entries, dynamic stops, and momentum-capturing exits.
+              <p class="text-base md:text-lg text-zinc-500 font-mono leading-relaxed mb-8 max-w-lg border-l-2 border-red-600 pl-4 sys-reveal sys-rise sys-delay-200">
+                An autonomous AI agent that monitors your positions 24/7, detects danger before it hits, and tells you exactly what to do.
               </p>
 
-              <div class="flex flex-col gap-3 mb-10 sys-reveal sys-rise sys-delay-300">
-                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Strategy-agnostic risk shield</span></div>
-                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Real-time position management</span></div>
-                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Intelligent profit protection</span></div>
+              <div class="flex flex-col gap-3 mb-8 sys-reveal sys-rise sys-delay-300">
+                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Watches your positions while you sleep</span></div>
+                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Alerts you before liquidations hit</span></div>
+                <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Plain english. No jargon. Just answers.</span></div>
               </div>
 
-              <div class="flex flex-col sm:flex-row gap-4 mb-8 sys-reveal sys-rise sys-delay-400">
-                <a href="/frontend" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">Launch Terminal<iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
-                <a href="/lite" class="group bg-transparent border border-red-600/40 hover:border-red-500 text-red-400 hover:text-red-300 text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 font-medium shadow-[0_0_10px_rgba(220,38,38,0.1)] hover:shadow-[0_0_20px_rgba(220,38,38,0.2)]">Lite Version<iconify-icon icon="solar:bolt-circle-linear" width="16" class="group-hover:scale-110 transition-transform"></iconify-icon></a>
-                <a href="#features" class="group bg-transparent border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 font-medium">Learn More<iconify-icon icon="solar:arrow-down-linear" width="16"></iconify-icon></a>
+              <div class="flex flex-col sm:flex-row gap-4 mb-6 sys-reveal sys-rise sys-delay-400">
+                <a href="/lite" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">Start Free<iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
+                <a href="#how-it-works" class="group bg-transparent border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 font-medium">See How It Works<iconify-icon icon="solar:arrow-down-linear" width="16"></iconify-icon></a>
               </div>
 
-              <div class="flex items-center gap-4 text-[10px] font-mono text-zinc-600 uppercase tracking-wide pl-1 sys-reveal sys-rise sys-delay-500">
-                <span>Bitunix / Bybit / Binance</span><span class="w-1 h-1 bg-zinc-800 rounded-full"></span><span>Low Latency Execution</span>
-              </div>
-
-              <!-- Mobile Hero Card — Shield Evaluation -->
-              <div class="lg:hidden mt-8 sys-reveal sys-rise sys-delay-400">
-                <div class="bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.08)]">
-                  <div class="p-2.5 flex justify-between items-center bg-zinc-900/50 border-b border-zinc-800">
-                    <span class="text-[9px] font-mono text-red-500 font-bold flex items-center gap-1.5">
-                      <iconify-icon icon="solar:shield-bold" class="text-red-500"></iconify-icon>BASTION SHIELD
-                    </span>
-                    <span class="text-[8px] font-mono text-red-500 font-bold border border-red-900/40 bg-red-900/10 px-1.5 py-0.5">SCAN</span>
+              <div class="flex items-center gap-4 mt-2 sys-reveal sys-rise sys-delay-500">
+                <div class="flex items-center gap-1.5">
+                  <div class="flex -space-x-1.5">
+                    <div class="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700"></div>
+                    <div class="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700"></div>
+                    <div class="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700"></div>
+                    <div class="w-5 h-5 rounded-full bg-red-600 border border-red-500 flex items-center justify-center text-[7px] text-white font-bold">+</div>
                   </div>
-                  <div class="p-3 space-y-2">
-                    <div class="flex items-center justify-between">
-                      <span class="text-[10px] font-mono text-white font-bold">BTC-PERP</span>
-                      <span class="text-[8px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">HIGH</span>
-                    </div>
-                    <div class="text-[9px] font-mono text-amber-400 font-bold">REDUCE 40%</div>
-                    <div class="text-[8px] font-mono text-zinc-500 leading-relaxed">$650M liquidation cluster within 2%. Funding negative.</div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-[8px] font-mono text-zinc-600">Confidence</span>
-                      <div class="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:87%"></div></div>
-                      <span class="text-[8px] font-mono text-red-400 font-bold">87%</span>
-                    </div>
-                    <div class="border-t border-zinc-800 pt-2 mt-1">
-                      <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-mono text-white font-bold">SOL-PERP</span>
-                        <span class="text-[8px] font-mono px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">LOW</span>
-                      </div>
-                      <div class="text-[9px] font-mono text-green-400 font-bold mt-1">HOLD &mdash; MOMENTUM INTACT</div>
-                    </div>
-                  </div>
+                  <span class="text-[10px] font-mono text-zinc-500"><span class="text-white font-bold">2,400+</span> traders in beta</span>
                 </div>
+                <span class="w-px h-3 bg-zinc-800"></span>
+                <span class="text-[10px] font-mono text-zinc-600">Free during beta</span>
               </div>
             </div>
 
-            <div class="hidden lg:flex flex-col items-end justify-center relative h-full pointer-events-none select-none">
-              <div class="relative w-full max-w-sm perspective-1000 mt-12 mr-8">
-                <!-- Card 1 (top): BASTION SHIELD -->
-                <div class="absolute -top-32 right-0 w-72 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-300 overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.08)]">
-                  <div class="p-2.5 flex justify-between items-center bg-zinc-900/50 border-b border-zinc-800">
-                    <span class="text-[9px] font-mono text-red-500 font-bold flex items-center gap-1.5">
-                      <iconify-icon icon="solar:shield-bold" class="text-red-500"></iconify-icon>BASTION SHIELD
-                    </span>
-                    <span class="text-[8px] font-mono text-green-500 animate-pulse">MONITORING</span>
-                  </div>
-                  <!-- Cycling shield positions -->
-                  <div id="shield-cycle" class="transition-opacity duration-500">
-                    <div class="p-2.5 border-b border-zinc-800/50">
-                      <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-bold text-white font-mono" id="sh-sym1">BTC-PERP</span>
-                        <span class="text-[8px] font-mono px-1.5 py-0.5 rounded" id="sh-badge1">HIGH</span>
-                      </div>
-                      <div class="text-[9px] font-mono font-bold mb-1" id="sh-action1">REDUCE 40%</div>
-                      <div class="text-[8px] text-zinc-500 leading-relaxed font-mono mb-1.5" id="sh-reason1">$650M liquidation cluster within 2%. Funding negative.</div>
-                      <div class="flex justify-between items-center text-[8px] font-mono">
-                        <span class="text-zinc-600">Confidence</span>
-                        <div class="flex items-center gap-1"><div class="w-14 h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all duration-700" id="sh-bar1" style="width:87%;background:#ef4444"></div></div><span class="text-zinc-500" id="sh-conf1">87%</span></div>
-                      </div>
-                    </div>
-                    <div class="p-2.5">
-                      <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-bold text-white font-mono" id="sh-sym2">SOL-PERP</span>
-                        <span class="text-[8px] font-mono px-1.5 py-0.5 rounded" id="sh-badge2">LOW</span>
-                      </div>
-                      <div class="text-[9px] font-mono font-bold" id="sh-action2">HOLD — MOMENTUM INTACT</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Card 2 (middle): AI Technical Analysis -->
-                <div class="relative w-80 bg-[#080808] border border-zinc-800 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 overflow-hidden pointer-events-auto group hover:border-red-600/30 transition-colors border-l-2 border-l-red-600">
+            <!-- Hero Card — Live Agent Demo -->
+            <div class="flex flex-col items-end justify-center relative h-full pointer-events-none select-none">
+              <div class="relative w-full max-w-sm lg:mr-8">
+                <!-- Main Agent Card -->
+                <div class="w-full bg-[#080808] border border-zinc-800 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 overflow-hidden pointer-events-auto border-l-2 border-l-red-600">
                   <div class="p-3 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
                     <div class="flex items-center gap-2">
-                      <div class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500"><iconify-icon icon="solar:shield-bold" class="text-[10px]"></iconify-icon></div>
-                      <span class="text-[9px] font-mono text-zinc-400 font-bold">BASTION &bull; Neural Analysis</span>
+                      <div class="relative">
+                        <iconify-icon icon="solar:shield-bold" class="text-red-500 text-base"></iconify-icon>
+                        <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#080808]"></span>
+                      </div>
+                      <span class="text-[9px] font-mono text-zinc-400 font-bold">BASTION AGENT</span>
                     </div>
-                    <span class="text-[7px] font-mono text-zinc-600" id="ta-time">1.2s</span>
+                    <span class="text-[8px] font-mono text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>MONITORING</span>
                   </div>
-                  <div class="p-4 text-[10px] font-mono leading-relaxed space-y-2.5 transition-opacity duration-500" id="ta-body">
-                    <p class="text-zinc-300"><span class="text-red-400 font-bold">Structure:</span> <span id="ta-structure">BTC 4H bearish divergence on RSI. CVD diverging negative since the $97,800 rejection. Sellers dominating flow.</span></p>
-                    <p class="text-zinc-300"><span class="text-amber-400 font-bold">Derivatives:</span> <span id="ta-derivatives">OI up +4.2% while price flat. Funding flipped to -0.008%. Longs clustered $96,100-$96,500 &mdash; liquidation magnet.</span></p>
-                    <p class="text-zinc-300"><span class="text-green-400 font-bold">Verdict:</span> <span id="ta-verdict">Wait for sweep below $96,500. Wick + reclaim with positive CVD = entry. Size 1R, stop $95,800.</span></p>
-                    <div class="border-t border-zinc-800 pt-2 flex items-center gap-3 text-[8px] text-zinc-600">
-                      <span class="flex items-center gap-1"><iconify-icon icon="solar:database-linear" class="text-[9px]"></iconify-icon>560+ streams</span>
-                      <span class="flex items-center gap-1"><iconify-icon icon="solar:shield-bold" class="text-[9px] text-red-600"></iconify-icon>Risk-aware</span>
+
+                  <!-- Cycling agent alerts -->
+                  <div id="agent-cycle" class="transition-opacity duration-500">
+                    <div class="p-3 border-b border-zinc-800/50 space-y-2">
+                      <div class="flex items-center gap-2 text-[8px] font-mono text-zinc-600">
+                        <iconify-icon icon="solar:eye-bold" class="text-red-500 text-xs"></iconify-icon>
+                        <span>SCANNING YOUR POSITIONS...</span>
+                        <span class="ml-auto" id="agent-time">just now</span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-sm font-bold text-white font-mono" id="agent-sym">BTC-PERP</span>
+                        <span class="text-[8px] font-mono px-2 py-0.5" id="agent-badge">DANGER</span>
+                      </div>
+                      <div class="text-[10px] font-mono font-bold" id="agent-action">Reduce your position by 40%</div>
+                      <div class="text-[9px] font-mono text-zinc-500 leading-relaxed" id="agent-reason">There's a $420M liquidation cluster right below your entry. If price drops 2%, a cascade could wipe your position.</div>
+                    </div>
+                    <div class="p-3 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="text-[8px] font-mono text-zinc-600">Confidence</span>
+                        <div class="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all duration-700" id="agent-bar" style="width:87%;background:#ef4444"></div></div>
+                        <span class="text-[9px] font-mono font-bold" id="agent-conf">87%</span>
+                      </div>
+                      <span class="text-[8px] font-mono text-zinc-700" id="agent-positions">Watching 3 positions</span>
                     </div>
                   </div>
                 </div>
 
-                <!-- Card 3 (bottom): Neural Chat Preview -->
-                <div class="absolute -bottom-28 right-8 w-72 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-400 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.06)]">
-                  <div class="p-2.5 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
-                    <div class="flex items-center gap-1.5">
-                      <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                      <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">NEURAL_CHAT</span>
-                    </div>
-                    <span class="text-[8px] font-mono text-green-500 border border-green-900/40 bg-green-900/10 px-1.5 py-0.5">LIVE</span>
-                  </div>
-                  <div class="p-3 space-y-2.5 transition-opacity duration-500" id="chat-cycle">
+                <!-- Floating chat bubble -->
+                <div class="absolute -bottom-16 -left-4 sm:left-0 w-64 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-400 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.06)]">
+                  <div class="p-2.5 space-y-2 transition-opacity duration-500" id="chat-bubble">
                     <div class="flex gap-2 justify-end">
-                      <div class="bg-red-600/10 border border-red-900/30 px-2 py-1.5 rounded-b-lg rounded-tl-lg text-[9px] font-mono text-zinc-300 max-w-[80%]" id="ch-q">Should I add to my BTC long here?</div>
+                      <div class="bg-red-600/10 border border-red-900/30 px-2 py-1.5 rounded-b-lg rounded-tl-lg text-[9px] font-mono text-zinc-300 max-w-[85%]" id="bubble-q">Should I close my BTC long?</div>
                     </div>
                     <div class="flex gap-2">
                       <div class="w-4 h-4 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 shrink-0 mt-0.5"><iconify-icon icon="solar:shield-bold" class="text-[8px]"></iconify-icon></div>
-                      <div class="bg-[#080808] border border-zinc-800 px-2 py-1.5 rounded-b-lg rounded-tr-lg text-[9px] font-mono text-zinc-400 max-w-[85%]" id="ch-a">Not yet. $420M liq cluster at $96.5K acting as magnet. Wait for the sweep &mdash; I'll alert you.</div>
+                      <div class="bg-[#080808] border border-zinc-800 px-2 py-1.5 rounded-b-lg rounded-tr-lg text-[9px] font-mono text-zinc-400 max-w-[85%]" id="bubble-a">Not yet. Wait for the $96.5K sweep. I'll alert you the second it's safe to enter.</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Hero Cards Content Cycling Script -->
-            <script>
-            (function(){
-              const shieldData = [
-                { s1:'BTC-PERP', b1:'HIGH', b1c:'bg-red-500/20 text-red-400', a1:'REDUCE 40%', a1c:'text-amber-400', r1:'$650M liquidation cluster within 2%. Funding negative.', c1:87, bar1c:'#ef4444', s2:'SOL-PERP', b2:'LOW', b2c:'bg-green-500/20 text-green-400', a2:'HOLD — MOMENTUM INTACT', a2c:'text-green-400' },
-                { s1:'ETH-PERP', b1:'MODERATE', b1c:'bg-amber-500/20 text-amber-400', a1:'HOLD — MONITOR CLOSELY', a1c:'text-amber-400', r1:'Funding neutral but OI building. Watch for direction breakout above $3,420.', c1:71, bar1c:'#f59e0b', s2:'BTC-PERP', b2:'LOW', b2c:'bg-green-500/20 text-green-400', a2:'HOLD — TRAILING AT +1.8R', a2c:'text-green-400' },
-                { s1:'SOL-PERP', b1:'CRITICAL', b1c:'bg-red-500/20 text-red-400', a1:'EXIT IMMEDIATELY', a1c:'text-red-400', r1:'Whale dump detected — 245K SOL moved to exchange. Liq cascade imminent below $142.', c1:94, bar1c:'#ef4444', s2:'AVAX-PERP', b2:'LOW', b2c:'bg-green-500/20 text-green-400', a2:'HOLD — STRUCTURE INTACT', a2c:'text-green-400' },
-              ];
-              const taData = [
-                { t:'1.2s', s:'BTC 4H bearish divergence on RSI. CVD diverging negative since the $97,800 rejection. Sellers dominating flow.', d:'OI up +4.2% while price flat. Funding flipped to -0.008%. Longs clustered $96,100-$96,500 \u2014 liquidation magnet.', v:'Wait for sweep below $96,500. Wick + reclaim with positive CVD = entry. Size 1R, stop $95,800.' },
-                { t:'0.9s', s:'ETH reclaimed $3,380 with strong volume. Higher lows forming on 1H. Buyers stepping in at each dip \u2014 accumulation pattern.', d:'Funding positive +0.012%. OI steady, no aggressive short buildup. Whale wallets net +14K ETH in 48h.', v:'Strength confirmed. Add at $3,360-$3,380 zone if 1H closes above. Target $3,520. Stop below $3,310.' },
-                { t:'1.5s', s:'SOL broke below 4H ascending trendline. Volume spike on breakdown. Previous support at $148 now acting as resistance.', d:'Funding deeply negative -0.032%. Shorts piling in. But $120M in shorts clustered at $155 \u2014 short squeeze territory.', v:'Avoid longs here. If you\u2019re short, tighten stop to $149. Watch for V-reversal if shorts get trapped above $155.' },
-              ];
-              const chatData = [
-                { q:'Should I add to my BTC long here?', a:'Not yet. $420M liq cluster at $96.5K acting as magnet. Wait for the sweep \u2014 I\u2019ll alert you.' },
-                { q:'Is ETH a buy right now?', a:'Yes, accumulation zone confirmed. Add between $3,360-$3,380. Whale inflows up 14K ETH. Funding healthy.' },
-                { q:'SOL just broke structure. Exit?', a:'Hold your short. Trendline broke on volume. But tighten stop to $149 \u2014 $155 has a short squeeze pocket.' },
-                { q:'What\u2019s the overall market bias?', a:'Risk-off. BTC dominance rising, altcoin funding negative across the board. Reduce alt exposure, keep powder dry.' },
-              ];
-              let si=0, ti=0, ci=0;
-              function fade(el, cb){ el.style.opacity='0'; setTimeout(()=>{ cb(); el.style.opacity='1'; }, 400); }
-              function cycleShield(){
-                si = (si+1) % shieldData.length; const d = shieldData[si];
-                const wrap = document.getElementById('shield-cycle'); if(!wrap) return;
-                fade(wrap, ()=>{
-                  document.getElementById('sh-sym1').textContent=d.s1; document.getElementById('sh-badge1').className='text-[8px] font-mono px-1.5 py-0.5 rounded '+d.b1c; document.getElementById('sh-badge1').textContent=d.b1;
-                  document.getElementById('sh-action1').className='text-[9px] font-mono font-bold mb-1 '+d.a1c; document.getElementById('sh-action1').textContent=d.a1;
-                  document.getElementById('sh-reason1').textContent=d.r1; document.getElementById('sh-conf1').textContent=d.c1+'%';
-                  document.getElementById('sh-bar1').style.width=d.c1+'%'; document.getElementById('sh-bar1').style.background=d.bar1c;
-                  document.getElementById('sh-sym2').textContent=d.s2; document.getElementById('sh-badge2').className='text-[8px] font-mono px-1.5 py-0.5 rounded '+d.b2c; document.getElementById('sh-badge2').textContent=d.b2;
-                  document.getElementById('sh-action2').className='text-[9px] font-mono font-bold '+d.a2c; document.getElementById('sh-action2').textContent=d.a2;
-                });
-              }
-              function cycleTA(){
-                ti = (ti+1) % taData.length; const d = taData[ti];
-                const wrap = document.getElementById('ta-body'); if(!wrap) return;
-                fade(wrap, ()=>{
-                  document.getElementById('ta-structure').textContent=d.s; document.getElementById('ta-derivatives').textContent=d.d;
-                  document.getElementById('ta-verdict').textContent=d.v; document.getElementById('ta-time').textContent=d.t;
-                });
-              }
-              function cycleChat(){
-                ci = (ci+1) % chatData.length; const d = chatData[ci];
-                const wrap = document.getElementById('chat-cycle'); if(!wrap) return;
-                fade(wrap, ()=>{ document.getElementById('ch-q').textContent=d.q; document.getElementById('ch-a').textContent=d.a; });
-              }
-              setInterval(cycleShield, 5000);
-              setInterval(cycleTA, 6000);
-              setInterval(cycleChat, 4500);
-            })();
-            </script>
           </div>
         </div>
 
-        <!-- Neural Intelligence Section -->
-        <section id="ai-advisor" class="relative flex flex-col bg-transparent overflow-hidden">
-          <!-- Background glow — connects to hero animation -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- HOW IT WORKS — 3 Steps -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section id="how-it-works" class="relative flex flex-col bg-[#050505] border-b border-zinc-800 overflow-hidden">
           <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-full h-64 bg-gradient-to-b from-red-900/10 via-red-950/5 to-transparent"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-red-600/[0.04] rounded-full blur-[150px]"></div>
-            <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
-            <div class="absolute inset-0 bg-[#050505]/90"></div>
+            <div class="absolute top-1/3 left-1/3 w-[500px] h-[300px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
           </div>
 
-          <!-- Section Header -->
-          <div class="relative z-10 container mx-auto px-6 lg:px-12 pt-8 pb-4">
-            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-              <div>
-                <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span></span>
-                  // NEURAL_INTELLIGENCE &mdash; LIVE
-                </div>
-                <h2 class="text-3xl md:text-5xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-4">
-                  <span class="text-red-600">72B PARAMETER</span><br>TRADING BRAIN
-                </h2>
-                <p class="text-xs text-zinc-500 font-mono max-w-lg border-l-2 border-red-600/30 pl-4 leading-relaxed">Fine-tuned on institutional risk frameworks. 560+ live data streams. Liquidation heatmaps, funding rate arbitrage, whale flow detection &mdash; all processed through a single neural architecture running on 8x H200 GPUs.</p>
-              </div>
-              <div class="flex items-center gap-3 shrink-0 pb-2">
-                <a href="/lite" class="group bg-red-600 hover:bg-red-500 text-white text-[10px] font-mono uppercase tracking-widest px-6 py-3 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-bold">Try BASTION AI<iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
-              </div>
+          <div class="relative z-10 px-6 md:px-12 pt-16 pb-6">
+            <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
+              <span class="w-4 h-px bg-red-600"></span>
+              // HOW_IT_WORKS
             </div>
+            <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-2 sys-reveal sys-rise">
+              Three steps. <span class="text-red-600">Zero effort.</span>
+            </h2>
+            <p class="text-xs text-zinc-500 font-mono leading-relaxed max-w-lg sys-reveal sys-rise sys-delay-100">Connect your exchange, and BASTION's AI agent takes over. It watches everything so you don't have to.</p>
           </div>
 
-          <!-- Capabilities Grid -->
-          <div class="relative z-10 container mx-auto px-6 lg:px-12 py-12">
-
-            <!-- Animated Tactical Chevrons — Left Side -->
-            <div class="hidden lg:block absolute left-0 top-0 bottom-0 w-20 pointer-events-none z-0 overflow-hidden" style="mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);-webkit-mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);">
-              <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chevL" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dc2626" stop-opacity="0"/><stop offset="30%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="70%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="100%" stop-color="#dc2626" stop-opacity="0"/></linearGradient>
-                </defs>
-                <!-- 5 descending chevrons, staggered animation -->
-                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="2.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.7;0.7;0" dur="3s" begin="0s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,-20;0,120" dur="3s" begin="0s" repeatCount="indefinite"/></polyline>
-                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="2.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.5;0.5;0" dur="3s" begin="0.6s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,60;0,200" dur="3s" begin="0.6s" repeatCount="indefinite"/></polyline>
-                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="2" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.4;0.4;0" dur="3s" begin="1.2s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,140;0,280" dur="3s" begin="1.2s" repeatCount="indefinite"/></polyline>
-                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="2" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.6;0.6;0" dur="3s" begin="1.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,220;0,360" dur="3s" begin="1.8s" repeatCount="indefinite"/></polyline>
-                <polyline points="10,0 40,40 10,80" fill="none" stroke="url(#chevL)" stroke-width="1.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.35;0.35;0" dur="3s" begin="2.4s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,300;0,440" dur="3s" begin="2.4s" repeatCount="indefinite"/></polyline>
-                <!-- Static dim guide rails -->
-                <line x1="10" y1="0" x2="10" y2="100%" stroke="#dc2626" stroke-width="0.5" opacity="0.08"/>
-                <line x1="40" y1="0" x2="40" y2="100%" stroke="#dc2626" stroke-width="0.3" opacity="0.05"/>
-              </svg>
+          <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-800 border-t border-zinc-800">
+            <!-- Step 1 -->
+            <div class="bg-[#050505] p-8 md:p-10 flex flex-col sys-reveal sys-rise sys-delay-100">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 border border-red-600/40 bg-red-600/5 flex items-center justify-center">
+                  <iconify-icon icon="solar:link-circle-bold" class="text-red-500 text-2xl"></iconify-icon>
+                </div>
+                <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">STEP 01</span>
+              </div>
+              <h3 class="text-white font-semibold text-lg uppercase tracking-tight mb-3">Connect Your Exchange</h3>
+              <p class="text-xs font-mono text-zinc-500 leading-relaxed">Link your Binance, Bybit, or Bitunix account with read-only API keys. Takes 30 seconds. BASTION can see your positions but can never move your funds.</p>
+              <div class="mt-6 flex items-center gap-3 text-[9px] font-mono text-zinc-600">
+                <iconify-icon icon="solar:lock-bold" class="text-green-500 text-sm"></iconify-icon>
+                <span>Read-only access. Your funds stay in your control.</span>
+              </div>
             </div>
 
-            <!-- Animated Tactical Chevrons — Right Side -->
-            <div class="hidden lg:block absolute right-0 top-0 bottom-0 w-20 pointer-events-none z-0 overflow-hidden" style="mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);-webkit-mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);">
-              <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chevR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dc2626" stop-opacity="0"/><stop offset="30%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="70%" stop-color="#dc2626" stop-opacity="0.6"/><stop offset="100%" stop-color="#dc2626" stop-opacity="0"/></linearGradient>
-                </defs>
-                <!-- 5 descending chevrons, mirrored -->
-                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="2.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.7;0.7;0" dur="3s" begin="0.3s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,-20;0,120" dur="3s" begin="0.3s" repeatCount="indefinite"/></polyline>
-                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="2.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.5;0.5;0" dur="3s" begin="0.9s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,60;0,200" dur="3s" begin="0.9s" repeatCount="indefinite"/></polyline>
-                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="2" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.4;0.4;0" dur="3s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,140;0,280" dur="3s" begin="1.5s" repeatCount="indefinite"/></polyline>
-                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="2" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.6;0.6;0" dur="3s" begin="2.1s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,220;0,360" dur="3s" begin="2.1s" repeatCount="indefinite"/></polyline>
-                <polyline points="70,0 40,40 70,80" fill="none" stroke="url(#chevR)" stroke-width="1.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0.35;0.35;0" dur="3s" begin="2.7s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="0,300;0,440" dur="3s" begin="2.7s" repeatCount="indefinite"/></polyline>
-                <!-- Static dim guide rails -->
-                <line x1="70" y1="0" x2="70" y2="100%" stroke="#dc2626" stroke-width="0.5" opacity="0.08"/>
-                <line x1="40" y1="0" x2="40" y2="100%" stroke="#dc2626" stroke-width="0.3" opacity="0.05"/>
-              </svg>
+            <!-- Step 2 -->
+            <div class="bg-[#050505] p-8 md:p-10 flex flex-col sys-reveal sys-rise sys-delay-200">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 border border-red-600/40 bg-red-600/5 flex items-center justify-center">
+                  <iconify-icon icon="solar:eye-bold" class="text-red-500 text-2xl"></iconify-icon>
+                </div>
+                <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">STEP 02</span>
+              </div>
+              <h3 class="text-white font-semibold text-lg uppercase tracking-tight mb-3">Agent Starts Watching</h3>
+              <p class="text-xs font-mono text-zinc-500 leading-relaxed">The AI agent scans your open positions every few seconds. It monitors liquidation maps, whale movements, funding rates, and hundreds of other signals — all in real time.</p>
+              <div class="mt-6 flex items-center gap-3 text-[9px] font-mono text-zinc-600">
+                <iconify-icon icon="solar:clock-circle-bold" class="text-red-500 text-sm"></iconify-icon>
+                <span>24/7 monitoring. Even when your screen is off.</span>
+              </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-zinc-800/50">
-
-              <!-- Neural Chat -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:chat-square-code-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
-                  </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">01</span>
+            <!-- Step 3 -->
+            <div class="bg-[#050505] p-8 md:p-10 flex flex-col sys-reveal sys-rise sys-delay-300">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 border border-red-600/40 bg-red-600/5 flex items-center justify-center">
+                  <iconify-icon icon="solar:shield-bold" class="text-red-500 text-2xl"></iconify-icon>
                 </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">Neural Chat Engine</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">Ask anything. The model sees your positions, live orderbook depth, funding rates, and 147 data streams simultaneously. Responses grounded in real market data, not hallucinations.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">LIVE DATA</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">POSITION-AWARE</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">72B PARAMS</span>
-                </div>
+                <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">STEP 03</span>
               </div>
-
-              <!-- Risk Shield -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:shield-warning-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
-                  </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">02</span>
-                </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">Autonomous Risk Shield</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">One toggle. The AI scans every open position against live liquidation clusters, funding rate regimes, and whale movements. Outputs HOLD, REDUCE, or EXIT with conviction scores.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">AUTONOMOUS</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">MCF HIERARCHY</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">REAL-TIME</span>
-                </div>
-              </div>
-
-              <!-- MCF Reports -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:document-text-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
-                  </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">03</span>
-                </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">MCF Research Reports</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">Goldman-tier research generated on demand. Market Context Framework synthesizes orderflow, on-chain metrics, derivatives structure, and macro regime into actionable BULLISH/BEARISH thesis with price targets.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">ON-DEMAND</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">MULTI-ASSET</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">PRICE TARGETS</span>
-                </div>
-              </div>
-
-              <!-- Market Pulse -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:pulse-2-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
-                  </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">04</span>
-                </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">Market Pulse Feed</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">Streaming ticker: Fear & Greed index, perpetual funding rates across BTC/ETH/SOL, USDT dominance shifts, and active position count. Extreme readings trigger instant toast alerts.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">STREAMING</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">FEAR/GREED</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">ALERTS</span>
-                </div>
-              </div>
-
-              <!-- Signal Scanner -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-6">
-                  <div class="w-12 h-12 bg-red-600/10 border border-red-600/30 flex items-center justify-center group-hover:bg-red-600/20 group-hover:border-red-600/60 transition-all">
-                    <iconify-icon icon="solar:radar-2-bold-duotone" class="text-red-500 text-2xl"></iconify-icon>
-                  </div>
-                  <span class="text-[9px] font-mono text-zinc-700 border border-zinc-800 px-2 py-0.5 group-hover:text-red-600 group-hover:border-red-900/50 transition-colors">05</span>
-                </div>
-                <h3 class="text-white font-mono text-sm font-bold uppercase tracking-tight mb-3 group-hover:text-red-500 transition-colors">Signal Scanner</h3>
-                <p class="text-[11px] text-zinc-500 font-mono leading-relaxed mb-4">AI-generated trade setups with entry zones, invalidation levels, and R:R ratios. Scans derivatives structure, CVD divergence, and liquidation imbalances across 6 major perpetual markets.</p>
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">6 MARKETS</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">CVD/OI</span>
-                  <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5">ENTRY/EXIT</span>
-                </div>
-              </div>
-
-              <!-- Live Terminal Preview -->
-              <div class="group bg-[#050505] p-8 hover:bg-zinc-900/40 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-red-600/0 via-red-600/50 to-red-600/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-start justify-between mb-4">
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 bg-red-600 rounded-full animate-pulse shadow-[0_0_6px_#DC2626]"></div>
-                    <span class="text-[10px] font-mono text-zinc-400 font-bold tracking-wider">BASTION_NEURAL_v3</span>
-                  </div>
-                  <span class="text-[8px] font-mono text-red-500 font-bold border border-red-900/50 px-1.5 py-0.5 bg-red-900/10">LIVE</span>
-                </div>
-                <div class="font-mono text-[10px] space-y-2.5 text-zinc-500">
-                  <div><span class="text-red-600 font-bold">bastion&gt;</span> <span class="text-zinc-400">evaluate --all-positions</span></div>
-                  <div class="pl-3 border-l border-zinc-800/50 space-y-1">
-                    <div><span class="text-zinc-600">[SCAN]</span> 3 active positions detected</div>
-                    <div><span class="text-zinc-600">[DATA]</span> Pulling OI, funding, liquidations...</div>
-                    <div class="text-red-500 font-bold">[ALERT] BTC-PERP: Liquidation cluster $650M within 2%</div>
-                  </div>
-                  <div class="bg-red-950/20 border-l-2 border-red-600 p-2 text-red-200 text-[10px]">
-                    <span class="font-bold">RISK VERDICT:</span> BTC-PERP &mdash; <span class="text-white font-bold">REDUCE 40%</span><br>
-                    <span class="text-zinc-500">Conviction: 0.87 | Funding: -0.03% | OI delta: +12%</span>
-                  </div>
-                  <div class="flex items-center gap-1"><span class="text-red-600 font-bold">bastion&gt;</span><span class="w-2 h-4 bg-red-600 animate-pulse block"></span></div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Bottom Stats Bar -->
-          <div class="relative z-10 border-t border-zinc-800/50 bg-zinc-900/10">
-            <div class="container mx-auto px-6 lg:px-12 py-6">
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12">
-                <div class="flex flex-col items-center text-center">
-                  <span class="text-2xl md:text-3xl font-semibold text-white tracking-tight font-mono">72B</span>
-                  <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Model Parameters</span>
-                </div>
-                <div class="flex flex-col items-center text-center">
-                  <span class="text-2xl md:text-3xl font-semibold text-white tracking-tight font-mono">8x</span>
-                  <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">H200 GPU Cluster</span>
-                </div>
-                <div class="flex flex-col items-center text-center">
-                  <span class="text-2xl md:text-3xl font-semibold text-white tracking-tight font-mono">560+</span>
-                  <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Live Data Streams</span>
-                </div>
-                <div class="flex flex-col items-center text-center">
-                  <span class="text-2xl md:text-3xl font-semibold text-white tracking-tight font-mono">&lt;2s</span>
-                  <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Response Latency</span>
-                </div>
+              <h3 class="text-white font-semibold text-lg uppercase tracking-tight mb-3">You Get Protected</h3>
+              <p class="text-xs font-mono text-zinc-500 leading-relaxed">When danger is detected, BASTION tells you exactly what to do in plain English. "Reduce your BTC position by 40%." Not vague signals — clear, actionable instructions.</p>
+              <div class="mt-6 flex items-center gap-3 text-[9px] font-mono text-zinc-600">
+                <iconify-icon icon="solar:chat-round-bold" class="text-amber-500 text-sm"></iconify-icon>
+                <span>Plain language alerts. No trading jargon.</span>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- Features Section - RISK ENGINE -->
-        <section id="features" class="flex flex-col bg-[#050505] border-b border-zinc-800">
-          <div class="flex flex-col md:px-12 md:flex-row md:items-end md:pt-8 md:pb-6 bg-center bg-gradient-to-r from-white/5 via-white/0 to-white/5 border-zinc-800 border-b pt-8 pr-8 pb-6 pl-8 gap-x-6 gap-y-4 justify-between">
-            <div class="max-w-2xl">
-              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
-                <span class="w-1.5 h-1.5 bg-red-600"></span>// PROTECTION_LAYER
-              </div>
-              <h2 class="text-2xl md:text-3xl font-semibold text-white uppercase tracking-tight leading-none mb-2">
-                <span class="text-red-600">RISK ENGINE</span> <span class="text-white">PRIMITIVES</span>
-              </h2>
-              <p class="text-xs text-zinc-500 font-mono leading-relaxed max-w-md">Quantitative hedge fund technology. Now protecting your capital.</p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            <!-- FIG 01 -->
-            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-100">
-              <div>
-                <div class="flex justify-between items-start mb-4">
-                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 01</span>
-                  <iconify-icon icon="solar:layers-minimalistic-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
-                </div>
-                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
-                  <canvas id="canvas-fig-01" class="w-full h-full block"></canvas>
-                </div>
-                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">MULTI-SHOT POSITION SCALING</h3>
-                <ul class="space-y-1.5">
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Institutional-grade averaging system</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>3-tier entry with automatic sizing</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>R-multiple optimized allocation</li>
-                </ul>
-              </div>
-            </div>
-
-            <!-- FIG 02 -->
-            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-200">
-              <div>
-                <div class="flex justify-between items-start mb-4">
-                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 02</span>
-                  <iconify-icon icon="solar:shield-warning-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
-                </div>
-                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
-                  <canvas id="canvas-fig-02" class="w-full h-full block"></canvas>
-                </div>
-                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">ADAPTIVE STOP ARCHITECTURE</h3>
-                <ul class="space-y-1.5">
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Structural stops at key market levels</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Safety net hard floor protection</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Automatic breakeven at +1R</li>
-                </ul>
-              </div>
-            </div>
-
-            <!-- FIG 03 -->
-            <div class="group relative border-r border-b md:border-r-0 lg:border-r border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-300">
-              <div>
-                <div class="flex justify-between items-start mb-4">
-                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 03</span>
-                  <iconify-icon icon="solar:graph-up-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
-                </div>
-                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
-                  <canvas id="canvas-fig-03" class="w-full h-full block"></canvas>
-                </div>
-                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">MOMENTUM CAPTURE SYSTEM</h3>
-                <ul class="space-y-1.5">
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Slope-based trend measurement</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Candle body trailing algorithm</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Aggressive profit lock mechanism</li>
-                </ul>
-              </div>
-            </div>
-
-            <!-- FIG 04 -->
-            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-400">
-              <div>
-                <div class="flex justify-between items-start mb-4">
-                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 04</span>
-                  <iconify-icon icon="solar:umbrella-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
-                </div>
-                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
-                  <canvas id="canvas-fig-04" class="w-full h-full block"></canvas>
-                </div>
-                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">VOLATILITY REGIME ENGINE</h3>
-                <ul class="space-y-1.5">
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Real-time ATR regime classification</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>LOW → NORMAL → HIGH → EXTREME</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>50% reduction in extreme regimes</li>
-                </ul>
-              </div>
-            </div>
-
-            <!-- FIG 05 -->
-            <div class="group relative border-r border-b border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-500">
-              <div>
-                <div class="flex justify-between items-start mb-4">
-                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 05</span>
-                  <iconify-icon icon="solar:sitemap-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
-                </div>
-                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
-                  <canvas id="canvas-fig-05" class="w-full h-full block"></canvas>
-                </div>
-                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">STRUCTURE ANALYSIS</h3>
-                <ul class="space-y-1.5">
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Multi-timeframe level detection</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Confluence scoring algorithm</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Dynamic support/resistance mapping</li>
-                </ul>
-              </div>
-            </div>
-
-            <!-- FIG 06 -->
-            <div class="group relative border-b lg:border-b-0 border-zinc-800 p-6 min-h-[300px] flex flex-col justify-between hover:bg-zinc-900/30 transition-colors sys-reveal sys-rise sys-delay-600">
-              <div>
-                <div class="flex justify-between items-start mb-4">
-                  <span class="text-[10px] font-mono text-zinc-600 border border-zinc-800 px-2 py-1 group-hover:border-red-600/50 group-hover:text-red-600 transition-colors">FIG. 06</span>
-                  <iconify-icon icon="solar:chart-square-bold" class="text-zinc-600 group-hover:text-white transition-colors" width="20"></iconify-icon>
-                </div>
-                <div class="w-full h-24 mb-4 bg-zinc-900/30 rounded-sm border border-zinc-800/50 relative overflow-hidden flex items-center justify-center group-hover:border-red-600/30 transition-colors">
-                  <canvas id="canvas-fig-06" class="w-full h-full block"></canvas>
-                </div>
-                <h3 class="text-base font-semibold text-white uppercase tracking-tight mb-3 group-hover:text-red-600 transition-colors">DIVERGENCE INTELLIGENCE</h3>
-                <ul class="space-y-1.5">
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>RSI divergence across timeframes</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Trend exhaustion early warning</li>
-                  <li class="text-[11px] text-zinc-500 font-mono flex items-start gap-2"><span class="text-red-600/70 mt-0.5">•</span>Bullish/bearish classification</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Intelligence Section - MCF RESEARCH REPORT SHOWCASE -->
-        <section id="intelligence" class="relative flex flex-col bg-[#050505] border-b border-zinc-800 overflow-hidden">
-          <!-- Background glow -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- CAPABILITIES — What The Agent Does -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section id="capabilities" class="relative flex flex-col bg-[#050505] border-b border-zinc-800 overflow-hidden">
           <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute top-1/4 left-1/4 w-[600px] h-[400px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
-            <div class="absolute bottom-0 right-1/4 w-[500px] h-[300px] bg-red-600/[0.02] rounded-full blur-[100px]"></div>
+            <div class="absolute bottom-0 right-1/4 w-[600px] h-[400px] bg-red-900/[0.02] rounded-full blur-[100px]"></div>
           </div>
 
-          <!-- Section Header -->
-          <div class="relative z-10 flex flex-col md:px-12 md:flex-row md:items-end md:pt-10 md:pb-6 border-zinc-800 border-b pt-10 pr-6 pb-6 pl-6 gap-x-6 gap-y-4 justify-between">
-            <div class="max-w-2xl">
-              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
-                <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span></span>
-                // MCF_RESEARCH &mdash; INSTITUTIONAL GRADE
-              </div>
-              <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-2">
-                <span class="text-red-600">INSTITUTIONAL</span> RESEARCH REPORTS
-              </h2>
-              <p class="text-xs text-zinc-500 font-mono leading-relaxed max-w-lg">Goldman-tier research generated on demand. Market Context Framework synthesizes 560+ data streams into actionable BULLISH/BEARISH thesis with conviction scores and price targets.</p>
+          <div class="relative z-10 px-6 md:px-12 pt-16 pb-8">
+            <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
+              <span class="w-4 h-px bg-red-600"></span>
+              // AGENT_CAPABILITIES
             </div>
-            <div class="flex items-center gap-3 shrink-0 pb-1">
-              <a href="/lite" class="group bg-red-600 hover:bg-red-500 text-white text-[10px] font-mono uppercase tracking-widest px-5 py-2.5 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-bold">Generate Report<iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
+            <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-2 sys-reveal sys-rise">
+              what your agent <span class="text-red-600">sees</span>
+            </h2>
+            <p class="text-xs text-zinc-500 font-mono leading-relaxed max-w-lg sys-reveal sys-rise sys-delay-100">BASTION processes hundreds of data signals every second. Here's what it's doing behind the scenes to keep you safe.</p>
+          </div>
+
+          <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800 border-t border-zinc-800">
+            <!-- Capability 1: Liquidation Detection -->
+            <div class="bg-[#050505] p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-100 group hover:bg-zinc-900/30 transition-colors">
+              <div class="w-10 h-10 border border-red-600/30 bg-red-600/5 flex items-center justify-center mb-5">
+                <iconify-icon icon="solar:danger-triangle-bold" class="text-red-500 text-xl"></iconify-icon>
+              </div>
+              <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Liquidation Detection</h3>
+              <p class="text-[11px] font-mono text-zinc-500 leading-relaxed mb-4">Spots large liquidation clusters near your entry price. If $400M in longs is about to get wiped — you'll know first.</p>
+              <div class="mt-auto pt-4 border-t border-zinc-800/50">
+                <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">Example alert</div>
+                <div class="text-[10px] font-mono text-red-400 mt-1">"$420M liq cluster 2% below your entry"</div>
+              </div>
+            </div>
+
+            <!-- Capability 2: Whale Tracking -->
+            <div class="bg-[#050505] p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-200 group hover:bg-zinc-900/30 transition-colors">
+              <div class="w-10 h-10 border border-cyan-600/30 bg-cyan-600/5 flex items-center justify-center mb-5">
+                <iconify-icon icon="solar:eye-bold" class="text-cyan-400 text-xl"></iconify-icon>
+              </div>
+              <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Whale Tracking</h3>
+              <p class="text-[11px] font-mono text-zinc-500 leading-relaxed mb-4">Tracks large wallet movements in real time. When whales start dumping, your agent tells you before the price drops.</p>
+              <div class="mt-auto pt-4 border-t border-zinc-800/50">
+                <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">Example alert</div>
+                <div class="text-[10px] font-mono text-cyan-400 mt-1">"2,400 BTC just moved to Binance"</div>
+              </div>
+            </div>
+
+            <!-- Capability 3: Risk Scoring -->
+            <div class="bg-[#050505] p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-300 group hover:bg-zinc-900/30 transition-colors">
+              <div class="w-10 h-10 border border-amber-600/30 bg-amber-600/5 flex items-center justify-center mb-5">
+                <iconify-icon icon="solar:chart-bold" class="text-amber-400 text-xl"></iconify-icon>
+              </div>
+              <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Live Risk Scoring</h3>
+              <p class="text-[11px] font-mono text-zinc-500 leading-relaxed mb-4">Every position gets a real-time risk score based on market conditions. When your score goes critical, you get a clear action plan.</p>
+              <div class="mt-auto pt-4 border-t border-zinc-800/50">
+                <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">Example alert</div>
+                <div class="text-[10px] font-mono text-amber-400 mt-1">"BTC risk: HIGH. Reduce position by 40%"</div>
+              </div>
+            </div>
+
+            <!-- Capability 4: AI Chat -->
+            <div class="bg-[#050505] p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-400 group hover:bg-zinc-900/30 transition-colors">
+              <div class="w-10 h-10 border border-green-600/30 bg-green-600/5 flex items-center justify-center mb-5">
+                <iconify-icon icon="solar:chat-round-dots-bold" class="text-green-400 text-xl"></iconify-icon>
+              </div>
+              <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Ask Anything</h3>
+              <p class="text-[11px] font-mono text-zinc-500 leading-relaxed mb-4">Chat with your agent like a friend. Ask if you should hold, buy, or sell — get answers backed by real data, not guesswork.</p>
+              <div class="mt-auto pt-4 border-t border-zinc-800/50">
+                <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">Example</div>
+                <div class="text-[10px] font-mono text-green-400 mt-1">"Should I add to my SOL position?"</div>
+              </div>
             </div>
           </div>
 
-          <!-- Report Showcase - Split Layout -->
-          <div class="relative z-10 grid grid-cols-1 lg:grid-cols-5">
-
-            <!-- Left: Dense Data Feeds Panel (2 cols) -->
-            <div class="lg:col-span-2 lg:border-r border-b lg:border-b-0 border-zinc-800 p-4 md:p-5 flex flex-col gap-2">
-              <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-widest mb-1 flex items-center justify-between">
-                <span class="flex items-center gap-2"><iconify-icon icon="solar:database-bold" class="text-red-600 text-xs"></iconify-icon>LIVE DATA FEEDS</span>
-                <span class="text-green-500 flex items-center gap-1"><span class="w-1 h-1 bg-green-500 rounded-full animate-pulse"></span>560+ ACTIVE</span>
-              </div>
-
-              <!-- Liquidation Heatmap -->
-              <div class="bg-zinc-900/40 border border-zinc-800 p-2.5 hover:border-red-900/40 transition-colors">
-                <div class="text-[8px] font-mono text-red-500 font-bold uppercase mb-1.5">Liquidation Heatmap</div>
-                <div class="space-y-1">
-                  <div class="flex justify-between text-[8px] font-mono"><span class="text-zinc-500">BTC Longs $96.1-96.5K</span><span class="text-red-400 font-bold">$420M</span></div>
-                  <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:82%"></div></div>
-                  <div class="flex justify-between text-[8px] font-mono"><span class="text-zinc-500">BTC Shorts $98.2-98.8K</span><span class="text-amber-400 font-bold">$180M</span></div>
-                  <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full bg-amber-500 rounded-full" style="width:45%"></div></div>
-                  <div class="flex justify-between text-[8px] font-mono"><span class="text-zinc-500">ETH Longs $3,340-3,380</span><span class="text-red-400 font-bold">$95M</span></div>
-                  <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full bg-red-500/70 rounded-full" style="width:34%"></div></div>
-                </div>
-              </div>
-
-              <!-- Whale Flow -->
-              <div class="bg-zinc-900/40 border border-zinc-800 p-2.5 hover:border-red-900/40 transition-colors">
-                <div class="text-[8px] font-mono text-cyan-400 font-bold uppercase mb-1.5">Whale Flow Tracker</div>
-                <div class="space-y-1 text-[8px] font-mono">
-                  <div class="flex items-center gap-1.5 text-zinc-400"><span class="text-red-400 text-[6px]">&#9660;</span>2,400 BTC &rarr; Binance<span class="text-zinc-700 ml-auto">3m</span></div>
-                  <div class="flex items-center gap-1.5 text-zinc-400"><span class="text-green-400 text-[6px]">&#9650;</span>14,200 ETH &rarr; cold wallet<span class="text-zinc-700 ml-auto">8m</span></div>
-                  <div class="flex items-center gap-1.5 text-zinc-400"><span class="text-red-400 text-[6px]">&#9660;</span>245K SOL &rarr; exchange<span class="text-zinc-700 ml-auto">14m</span></div>
-                  <div class="flex items-center gap-1.5 text-zinc-400"><span class="text-green-400 text-[6px]">&#9650;</span>8,100 ETH &rarr; Aave deposit<span class="text-zinc-700 ml-auto">22m</span></div>
-                  <div class="flex items-center gap-1.5 text-zinc-400"><span class="text-red-400 text-[6px]">&#9660;</span>1,200 BTC &rarr; Bybit<span class="text-zinc-700 ml-auto">31m</span></div>
-                </div>
-              </div>
-
-              <!-- Derivatives Grid -->
-              <div class="bg-zinc-900/40 border border-zinc-800 p-2.5 hover:border-red-900/40 transition-colors">
-                <div class="text-[8px] font-mono text-amber-400 font-bold uppercase mb-1.5">Derivatives Matrix</div>
-                <div class="grid grid-cols-3 gap-1.5 text-[8px] font-mono text-center">
-                  <div class="bg-zinc-800/50 p-1.5"><div class="text-zinc-600 text-[6px] mb-0.5">FUNDING</div><div class="text-red-400 font-bold">-0.032%</div></div>
-                  <div class="bg-zinc-800/50 p-1.5"><div class="text-zinc-600 text-[6px] mb-0.5">OI DELTA</div><div class="text-green-400 font-bold">+4.2%</div></div>
-                  <div class="bg-zinc-800/50 p-1.5"><div class="text-zinc-600 text-[6px] mb-0.5">CVD</div><div class="text-red-400 font-bold">-2.4M</div></div>
-                  <div class="bg-zinc-800/50 p-1.5"><div class="text-zinc-600 text-[6px] mb-0.5">PUT/CALL</div><div class="text-amber-400 font-bold">1.34</div></div>
-                  <div class="bg-zinc-800/50 p-1.5"><div class="text-zinc-600 text-[6px] mb-0.5">OI/MCAP</div><div class="text-zinc-300 font-bold">0.42</div></div>
-                  <div class="bg-zinc-800/50 p-1.5"><div class="text-zinc-600 text-[6px] mb-0.5">IV RANK</div><div class="text-red-400 font-bold">78%</div></div>
-                </div>
-              </div>
-
-              <!-- Sentiment + Macro -->
-              <div class="bg-zinc-900/40 border border-zinc-800 p-2.5 hover:border-red-900/40 transition-colors">
-                <div class="text-[8px] font-mono text-purple-400 font-bold uppercase mb-1.5">Sentiment &amp; Macro</div>
-                <div class="space-y-1.5">
-                  <div class="flex justify-between text-[8px] font-mono"><span class="text-zinc-500">Fear &amp; Greed</span><span class="text-amber-400 font-bold">62 &mdash; GREED</span></div>
-                  <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-red-600 via-amber-500 to-green-500 rounded-full" style="width:62%"></div></div>
-                  <div class="grid grid-cols-2 gap-1.5 text-[8px] font-mono">
-                    <div class="flex justify-between"><span class="text-zinc-600">BTC Dominance</span><span class="text-green-400">58.4%</span></div>
-                    <div class="flex justify-between"><span class="text-zinc-600">DXY</span><span class="text-red-400">104.2 &#9660;</span></div>
-                    <div class="flex justify-between"><span class="text-zinc-600">Social Score</span><span class="text-amber-400">+14.2%</span></div>
-                    <div class="flex justify-between"><span class="text-zinc-600">Net Flow 24H</span><span class="text-red-400">-$340M</span></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Order Flow -->
-              <div class="bg-zinc-900/40 border border-zinc-800 p-2.5 hover:border-red-900/40 transition-colors">
-                <div class="text-[8px] font-mono text-green-400 font-bold uppercase mb-1.5">Order Flow Intelligence</div>
-                <div class="space-y-1 text-[8px] font-mono">
-                  <div class="flex justify-between"><span class="text-zinc-500">Absorption detected</span><span class="text-amber-400">$97,200</span></div>
-                  <div class="flex justify-between"><span class="text-zinc-500">Iceberg bid cluster</span><span class="text-green-400">$96,400</span></div>
-                  <div class="flex justify-between"><span class="text-zinc-500">Spoofing activity</span><span class="text-red-400">$98,100 asks</span></div>
-                  <div class="flex justify-between"><span class="text-zinc-500">Aggressive seller delta</span><span class="text-red-400">-$18.4M/hr</span></div>
-                </div>
-              </div>
-
-              <!-- MCF Synthesis Arrow (mobile: vertical, desktop: horizontal) -->
-              <div class="lg:hidden flex items-center justify-center py-2">
-                <div class="flex items-center gap-2 text-[7px] font-mono text-zinc-600">
-                  <div class="w-8 h-px bg-gradient-to-r from-transparent to-red-600/50"></div>
-                  <iconify-icon icon="solar:arrow-down-bold" class="text-red-600 text-sm animate-pulse"></iconify-icon>
-                  <span class="text-red-600/60 uppercase">MCF SYNTHESIS</span>
-                  <iconify-icon icon="solar:arrow-down-bold" class="text-red-600 text-sm animate-pulse"></iconify-icon>
-                  <div class="w-8 h-px bg-gradient-to-r from-red-600/50 to-transparent"></div>
-                </div>
-              </div>
-              <div class="hidden lg:flex items-center justify-center py-1">
-                <div class="flex items-center gap-2 text-[7px] font-mono text-zinc-600">
-                  <div class="w-6 h-px bg-gradient-to-r from-transparent to-red-600/50"></div>
-                  <iconify-icon icon="solar:arrow-right-bold" class="text-red-600 text-sm animate-pulse"></iconify-icon>
-                  <span class="text-red-600/60 uppercase">MCF v3.2 Synthesis</span>
-                  <iconify-icon icon="solar:arrow-right-bold" class="text-red-600 text-sm animate-pulse"></iconify-icon>
-                  <div class="w-6 h-px bg-gradient-to-r from-red-600/50 to-transparent"></div>
-                </div>
-              </div>
+          <!-- Stats bar -->
+          <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 border-t border-zinc-800">
+            <div class="p-6 flex flex-col items-center text-center border-r border-b md:border-b-0 border-zinc-800 sys-reveal sys-rise sys-delay-100">
+              <div class="text-2xl md:text-3xl font-bold text-white font-mono tracking-tight">24/7</div>
+              <div class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Always On</div>
             </div>
+            <div class="p-6 flex flex-col items-center text-center md:border-r border-b md:border-b-0 border-zinc-800 sys-reveal sys-rise sys-delay-200">
+              <div class="text-2xl md:text-3xl font-bold text-white font-mono tracking-tight">&lt;2s</div>
+              <div class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Alert Speed</div>
+            </div>
+            <div class="p-6 flex flex-col items-center text-center border-r border-zinc-800 sys-reveal sys-rise sys-delay-300">
+              <div class="text-2xl md:text-3xl font-bold text-white font-mono tracking-tight">560+</div>
+              <div class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Data Signals</div>
+            </div>
+            <div class="p-6 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-400">
+              <div class="text-2xl md:text-3xl font-bold text-white font-mono tracking-tight">3</div>
+              <div class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-1">Exchanges Supported</div>
+            </div>
+          </div>
+        </section>
 
-            <!-- Right: Generated Report — Matching Terminal Design (3 cols) -->
-            <div class="lg:col-span-3 p-4 md:p-5 relative">
-              <div class="bg-[#080808] border border-zinc-800 overflow-hidden shadow-[0_0_40px_rgba(220,38,38,0.06)]">
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- AGENT LIVE — See It In Action -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section id="agent-live" class="relative flex flex-col bg-[#050505] border-b border-zinc-800 overflow-hidden">
+          <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-1/4 right-1/4 w-[500px] h-[400px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
+          </div>
 
-                <!-- Report Header Bar — SOL-PERP style -->
-                <div class="bg-zinc-900/60 border-b border-zinc-800 px-3 sm:px-4 py-3">
-                  <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                      <iconify-icon icon="solar:shield-bold" class="text-red-500 text-sm"></iconify-icon>
-                      <span class="text-[8px] sm:text-[9px] font-mono text-zinc-500 uppercase tracking-wider">MCF Labs / Research Desk</span>
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
-                    <span class="text-white font-bold text-lg md:text-xl font-mono uppercase tracking-tight">SOL-PERP</span>
-                    <span class="text-[9px] font-mono text-black font-bold bg-green-500 px-2 py-0.5">OVERWEIGHT</span>
-                    <div class="flex items-center gap-2 sm:gap-3 text-[8px] sm:text-[9px] font-mono ml-auto">
-                      <div><span class="text-zinc-600">TARGET</span><div class="text-white font-bold">184.50</div></div>
-                      <div><span class="text-zinc-600">UPSIDE</span><div class="text-green-400 font-bold">+12.4%</div></div>
-                      <div><span class="text-zinc-600">HORIZON</span><div class="text-white font-bold">2-5D</div></div>
-                    </div>
-                  </div>
+          <div class="relative z-10 px-6 md:px-12 pt-16 pb-8">
+            <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
+              <span class="w-4 h-px bg-red-600"></span>
+              // LIVE_DEMO
+            </div>
+            <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-2 sys-reveal sys-rise">
+              see the agent <span class="text-red-600">think</span>
+            </h2>
+            <p class="text-xs text-zinc-500 font-mono leading-relaxed max-w-lg sys-reveal sys-rise sys-delay-100">This is what happens behind the scenes when BASTION detects a threat to one of your positions.</p>
+          </div>
+
+          <div class="relative z-10 px-6 md:px-12 pb-16">
+            <div class="max-w-3xl mx-auto">
+              <!-- Terminal Window -->
+              <div class="bg-[#080808] border border-zinc-800 overflow-hidden shadow-[0_0_40px_rgba(220,38,38,0.06)] sys-reveal sys-scale">
+                <!-- Title Bar -->
+                <div class="flex items-center justify-between px-4 py-2.5 bg-zinc-900/60 border-b border-zinc-800">
                   <div class="flex items-center gap-2">
-                    <span class="text-[7px] sm:text-[8px] font-mono text-zinc-600">CONVICTION</span>
-                    <div class="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden max-w-[140px] sm:max-w-[200px]"><div class="h-full bg-green-500 rounded-full" style="width:85%"></div></div>
-                    <span class="text-[7px] sm:text-[8px] font-mono text-zinc-400">85%</span>
+                    <div class="flex gap-1.5">
+                      <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                      <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+                      <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                    </div>
+                    <span class="text-[9px] font-mono text-zinc-600 ml-2">bastion-agent — risk-monitor</span>
                   </div>
+                  <span class="text-[8px] font-mono text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>LIVE</span>
                 </div>
-
-                <!-- Metadata Row -->
-                <div class="border-b border-zinc-800 px-3 sm:px-4 py-2 flex flex-wrap items-center gap-2 sm:gap-3 text-[7px] sm:text-[8px] font-mono text-zinc-500">
-                  <span>By <span class="text-white">Maximus Fay</span></span>
-                  <span class="text-zinc-700 hidden sm:inline">|</span>
-                  <span class="hidden sm:inline">Desk: Macro / L1</span>
-                  <span class="text-zinc-700 hidden sm:inline">|</span>
-                  <span>10:42 AM EST</span>
-                  <span class="border border-zinc-700 px-1.5 py-0.5">v2.1</span>
-                  <span class="ml-auto flex items-center gap-1 text-green-500"><iconify-icon icon="solar:check-circle-bold" class="text-[10px]"></iconify-icon><span class="hidden sm:inline">Compliance</span> Approved</span>
-                </div>
-
-                <!-- Rating + Target History -->
-                <div class="border-b border-zinc-800 px-3 sm:px-4 py-2 flex flex-wrap gap-1.5 sm:gap-3 text-[7px] sm:text-[8px] font-mono">
-                  <div class="border border-zinc-800 px-2 sm:px-2.5 py-1"><span class="text-zinc-600">RATING: </span><span class="text-zinc-500">Neutral &rarr; </span><span class="text-green-400 font-bold">Overweight</span></div>
-                  <div class="border border-zinc-800 px-2 sm:px-2.5 py-1"><span class="text-zinc-600">TARGET: </span><span class="text-zinc-500">165 &rarr; </span><span class="text-white font-bold">184.50</span></div>
-                </div>
-
-                <!-- AI Badge -->
-                <div class="border-b border-zinc-800 px-3 sm:px-4 py-2 flex flex-wrap items-center gap-2 sm:gap-3 text-[7px] sm:text-[8px] font-mono">
-                  <span class="bg-green-900/30 border border-green-800/40 text-green-400 font-bold px-2 py-0.5 text-[7px]">% AI GENERATED</span>
-                  <span class="text-zinc-500">Confidence: <span class="text-white font-bold">92%</span></span>
-                  <span class="text-zinc-500 hidden sm:inline">Sources (4)</span>
-                  <span class="text-zinc-500 hidden sm:inline">Model Logic</span>
-                </div>
-
-                <!-- Report Body -->
-                <div class="p-3 sm:p-4 space-y-3 font-mono text-[8px] sm:text-[9px]">
-
-                  <!-- Thesis -->
-                  <div class="border-l-2 border-green-500 pl-3">
-                    <div class="text-white font-bold uppercase text-[9px] tracking-wider mb-1.5">Thesis</div>
-                    <p class="text-zinc-400 leading-relaxed text-[9px]">Solana has shown remarkable resilience in the face of broader market volatility. On-chain activity is reaching ATHs driven by memecoin volume and renewed DeFi interest. The 4H structure has flipped bullish following a reclaim of the 145 level. We expect a continuation toward the <span class="text-green-400 bg-green-900/20 px-1">180-185 supply zone</span> as shorts are squeezed and funding rates remain neutral.</p>
-                  </div>
-
-                  <!-- Key Drivers -->
-                  <div>
-                    <div class="text-white font-bold uppercase text-[8px] tracking-wider mb-1.5 border-l-2 border-green-500 pl-3">Key Drivers</div>
-                    <div class="space-y-1.5 pl-3">
-                      <div class="flex items-start gap-2"><span class="text-green-400 mt-0.5 shrink-0">&#8226;</span><div><span class="text-zinc-300 font-bold">Network TVL expansion &gt; 15% WoW</span><div class="mt-0.5"><span class="text-[7px] bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 text-zinc-500">DefiLlama &bull; 2h ago</span></div></div></div>
-                      <div class="flex items-start gap-2"><span class="text-green-400 mt-0.5 shrink-0">&#8226;</span><div><span class="text-zinc-300 font-bold">Stablecoin inflows dominance vs ETH</span><div class="mt-0.5"><span class="text-[7px] bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 text-zinc-500">Artemis &bull; 4h ago</span></div></div></div>
-                    </div>
-                  </div>
-
-                  <!-- OI/Funding + Valuation side by side -->
-                  <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-zinc-900/30 border border-zinc-800 p-2.5">
-                      <div class="text-[7px] text-zinc-600 uppercase mb-1">OI / MCAP</div>
-                      <div class="text-white font-bold text-sm">0.42 <span class="text-green-400 text-[9px]">+5%</span></div>
-                      <div class="text-[7px] text-zinc-600 mt-0.5">Source: Coinglass</div>
-                    </div>
-                    <div class="bg-zinc-900/30 border border-zinc-800 p-2.5">
-                      <div class="text-[7px] text-zinc-600 uppercase mb-1">FUNDING (8H)</div>
-                      <div class="text-white font-bold text-sm">0.010% <span class="text-zinc-500 text-[9px]">Neutral</span></div>
-                      <div class="text-[7px] text-zinc-600 mt-0.5">Source: Velo</div>
-                    </div>
-                  </div>
-
-                  <!-- Valuation Scenarios -->
-                  <div class="bg-zinc-900/30 border border-zinc-800 p-2.5">
-                    <div class="text-[7px] font-mono text-zinc-600 uppercase tracking-wider mb-2">Valuation Scenarios</div>
-                    <div class="grid grid-cols-3 gap-2 text-center">
-                      <div class="border border-zinc-700 p-2"><div class="text-red-400 text-[7px] mb-0.5">BEAR <span class="text-zinc-600">20%</span></div><div class="text-red-400 font-bold text-sm">145</div></div>
-                      <div class="border border-zinc-700 p-2"><div class="text-zinc-400 text-[7px] mb-0.5">BASE <span class="text-zinc-600">50%</span></div><div class="text-white font-bold text-sm">165</div></div>
-                      <div class="border border-zinc-700 p-2"><div class="text-green-400 text-[7px] mb-0.5">BULL <span class="text-zinc-600">30%</span></div><div class="text-green-400 font-bold text-sm">185</div></div>
-                    </div>
-                  </div>
-
-                  <!-- Risks -->
-                  <div>
-                    <div class="text-white font-bold uppercase text-[8px] tracking-wider mb-1.5 border-l-2 border-red-500 pl-3">Risks</div>
-                    <div class="space-y-1 pl-3 text-[8px] text-zinc-500">
-                      <div class="flex items-start gap-2"><span class="text-red-400 mt-0.5 shrink-0">&#8226;</span>BTC rejection at 69k range high (Correlation: 0.85)</div>
-                      <div class="flex items-start gap-2"><span class="text-red-400 mt-0.5 shrink-0">&#8226;</span>Congestion events impacting DEX volumes</div>
-                    </div>
-                  </div>
-
-                  <!-- Tactical Trade Structures -->
-                  <div class="border border-zinc-800 overflow-hidden">
-                    <div class="bg-zinc-900/40 px-3 py-1.5 flex items-center justify-between border-b border-zinc-800">
-                      <div class="text-white font-bold uppercase text-[7px] sm:text-[8px] tracking-wider border-l-2 border-green-500 pl-2">Tactical Trade Structures</div>
-                      <div class="hidden sm:flex items-center gap-2 text-[7px] font-mono text-zinc-500"><span class="border border-zinc-700 px-1.5 py-0.5">AUTO</span><span>EXECUTION VIA BASTION_V6</span></div>
-                      <div class="sm:hidden text-[6px] font-mono text-zinc-500 border border-zinc-700 px-1.5 py-0.5">AUTO</div>
-                    </div>
-                    <table class="w-full text-[7px] sm:text-[8px] font-mono">
-                      <thead><tr class="text-zinc-600 border-b border-zinc-800"><th class="text-left py-1.5 px-2 sm:px-3">TYPE</th><th class="text-left py-1.5 px-2 sm:px-3">ENTRY</th><th class="text-left py-1.5 px-2 sm:px-3">TARGET</th><th class="text-left py-1.5 px-2 sm:px-3">STOP</th><th class="text-left py-1.5 px-3 hidden sm:table-cell">SIZE</th><th class="text-right py-1.5 px-2 sm:px-3">ACTION</th></tr></thead>
-                      <tbody>
-                        <tr class="border-b border-zinc-800/50">
-                          <td class="py-2 px-2 sm:px-3"><span class="text-green-400 font-bold border-l-2 border-green-500 pl-1.5">MOMENTUM</span></td>
-                          <td class="py-2 px-2 sm:px-3 text-zinc-300">162.50</td>
-                          <td class="py-2 px-2 sm:px-3 text-green-400">184.50</td>
-                          <td class="py-2 px-2 sm:px-3 text-red-400">158.00</td>
-                          <td class="py-2 px-3 text-zinc-400 hidden sm:table-cell">Aggressive (1.5%)</td>
-                          <td class="py-2 px-2 sm:px-3 text-right"><span class="bg-white text-black text-[7px] font-bold px-2 py-0.5 inline-flex items-center gap-1"><iconify-icon icon="solar:refresh-bold" class="text-[8px]"></iconify-icon>QUEUE</span></td>
-                        </tr>
-                        <tr>
-                          <td class="py-2 px-2 sm:px-3"><span class="text-zinc-400 font-bold border-l-2 border-zinc-600 pl-1.5">PULLBACK</span></td>
-                          <td class="py-2 px-2 sm:px-3 text-zinc-300">155.00</td>
-                          <td class="py-2 px-2 sm:px-3 text-green-400">180.00</td>
-                          <td class="py-2 px-2 sm:px-3 text-red-400">149.50</td>
-                          <td class="py-2 px-3 text-zinc-400 hidden sm:table-cell">House (1.0%)</td>
-                          <td class="py-2 px-2 sm:px-3 text-right"><span class="border border-zinc-700 text-zinc-500 text-[7px] font-bold px-2 py-0.5">WAIT</span></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <!-- Report Footer -->
-                  <div class="border-t border-zinc-800 pt-2 flex items-center justify-between text-[6px] sm:text-[7px] text-zinc-600">
-                    <div class="flex items-center gap-1.5 sm:gap-2">
-                      <span class="flex items-center gap-1"><iconify-icon icon="solar:shield-bold" class="text-red-600 text-[9px]"></iconify-icon>MCF v3.2</span>
-                      <span class="text-zinc-800">|</span>
-                      <span>560+ pts</span>
-                      <span class="text-zinc-800 hidden sm:inline">|</span>
-                      <span class="hidden sm:inline">1.8s generation</span>
-                    </div>
-                    <span class="text-red-600/30 font-bold tracking-widest text-[5px] sm:text-[7px]">CONFIDENTIAL</span>
+                <!-- Terminal Content -->
+                <div class="p-5 font-mono text-[11px] leading-relaxed min-h-[280px]" id="demo-terminal">
+                  <div class="text-zinc-600 mb-1">$ bastion agent --watch</div>
+                  <div id="demo-cmd" class="text-zinc-300"></div>
+                  <div id="demo-output" class="mt-2 space-y-1"></div>
+                  <div class="flex items-center gap-1 mt-2">
+                    <span class="text-red-600">$</span>
+                    <span id="demo-cursor" class="w-2 h-4 bg-red-600/80 animate-pulse inline-block"></span>
                   </div>
                 </div>
               </div>
@@ -958,115 +467,126 @@
           </div>
         </section>
 
-        <!-- Exchange Partners -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- EXCHANGE PARTNERS -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
         <section class="bg-[#050505] border-b border-zinc-800 py-8">
-          <div class="container mx-auto px-6 lg:px-12">
-            <div class="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12">
-              <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">Compatible With</span>
-              <div class="flex items-center gap-8 md:gap-12">
-                <div class="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors group">
-                  <iconify-icon icon="simple-icons:binance" width="20" class="group-hover:text-amber-400 transition-colors"></iconify-icon>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-wider">Binance</span>
-                </div>
-                <div class="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors group">
-                  <iconify-icon icon="simple-icons:bybit" width="20" class="group-hover:text-amber-400 transition-colors"></iconify-icon>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-wider">Bybit</span>
-                </div>
-                <div class="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors group">
-                  <iconify-icon icon="solar:chart-square-bold" width="20" class="group-hover:text-amber-400 transition-colors"></iconify-icon>
-                  <span class="text-[10px] font-mono font-bold uppercase tracking-wider">Bitunix</span>
-                </div>
+          <div class="px-6 md:px-12 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+            <span class="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Works With</span>
+            <div class="flex items-center gap-10 md:gap-16">
+              <div class="flex items-center gap-2 text-zinc-600 hover:text-amber-400 transition-colors">
+                <iconify-icon icon="simple-icons:binance" width="20"></iconify-icon>
+                <span class="text-xs font-mono uppercase tracking-wider font-semibold">Binance</span>
+              </div>
+              <div class="flex items-center gap-2 text-zinc-600 hover:text-amber-400 transition-colors">
+                <iconify-icon icon="simple-icons:bybit" width="20"></iconify-icon>
+                <span class="text-xs font-mono uppercase tracking-wider font-semibold">Bybit</span>
+              </div>
+              <div class="flex items-center gap-2 text-zinc-600 hover:text-amber-400 transition-colors">
+                <iconify-icon icon="solar:shield-bold" width="16"></iconify-icon>
+                <span class="text-xs font-mono uppercase tracking-wider font-semibold">Bitunix</span>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- FAQ Section -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- FAQ — Retail Focused -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
         <section class="bg-[#050505] border-b border-zinc-800 py-12">
-          <div class="container mx-auto px-6 lg:px-12 max-w-4xl">
-            <div class="text-center mb-8">
-              <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">
-                <span class="w-1.5 h-1.5 bg-red-600"></span>// FAQ
-              </div>
-              <h2 class="text-xl md:text-2xl font-semibold text-white uppercase tracking-tight">Frequently Asked Questions</h2>
+          <div class="px-6 md:px-12 max-w-3xl mx-auto">
+            <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-6">
+              <span class="w-4 h-px bg-red-600"></span>
+              // FAQ
             </div>
-            <div class="space-y-px">
+            <h2 class="text-xl md:text-2xl font-semibold text-white uppercase tracking-tight mb-8 sys-reveal sys-rise">Common Questions</h2>
+
+            <div class="space-y-2">
               <details class="group bg-zinc-900/20 border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <summary class="flex items-center justify-between px-5 py-4 cursor-pointer text-xs font-mono text-white uppercase tracking-wide select-none">
-                  How does BASTION's AI model work?
+                  Can BASTION access or move my funds?
                   <iconify-icon icon="solar:alt-arrow-down-linear" class="text-zinc-600 group-open:rotate-180 transition-transform" width="16"></iconify-icon>
                 </summary>
-                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">BASTION runs a fine-tuned 72B parameter language model on 8x H200 GPUs. It processes 560+ live data streams including orderbook depth, funding rates, liquidation maps, whale flows, and on-chain metrics. The model generates risk assessments, research reports, and trade structures in under 2 seconds &mdash; grounded entirely in real market data, not hallucinations.</div>
+                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">No. BASTION uses read-only API keys. It can see your positions to monitor them, but it cannot place trades, withdraw funds, or make any changes to your account. Your money never leaves your exchange.</div>
               </details>
+
               <details class="group bg-zinc-900/20 border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <summary class="flex items-center justify-between px-5 py-4 cursor-pointer text-xs font-mono text-white uppercase tracking-wide select-none">
-                  Which exchanges are supported?
+                  Do I need to be an experienced trader?
                   <iconify-icon icon="solar:alt-arrow-down-linear" class="text-zinc-600 group-open:rotate-180 transition-transform" width="16"></iconify-icon>
                 </summary>
-                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">Currently supporting Binance, Bybit, and Bitunix for perpetual futures trading. Connect your exchange via read-only API keys &mdash; BASTION never has withdrawal access. More exchanges coming in Q2 2026.</div>
+                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">Not at all. BASTION was built for everyone. The agent explains everything in plain English — no trading jargon, no confusing charts. It tells you exactly what to do and why, like having a smart friend watching your back.</div>
               </details>
+
               <details class="group bg-zinc-900/20 border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <summary class="flex items-center justify-between px-5 py-4 cursor-pointer text-xs font-mono text-white uppercase tracking-wide select-none">
-                  Is BASTION free during beta?
+                  Is it really free?
                   <iconify-icon icon="solar:alt-arrow-down-linear" class="text-zinc-600 group-open:rotate-180 transition-transform" width="16"></iconify-icon>
                 </summary>
-                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">Yes. Full access to the terminal, AI chat, risk shield, research reports, and signal scanner during beta. No credit card required. After beta, we'll introduce tiered pricing &mdash; beta users get priority access to early-bird pricing.</div>
+                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">Yes. BASTION is completely free during beta. No credit card required, no hidden fees. We're focused on building the best risk AI possible right now — pricing comes later.</div>
               </details>
+
               <details class="group bg-zinc-900/20 border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <summary class="flex items-center justify-between px-5 py-4 cursor-pointer text-xs font-mono text-white uppercase tracking-wide select-none">
-                  What is the Risk Shield and how does it protect me?
+                  How fast are the alerts?
                   <iconify-icon icon="solar:alt-arrow-down-linear" class="text-zinc-600 group-open:rotate-180 transition-transform" width="16"></iconify-icon>
                 </summary>
-                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">The Autonomous Risk Shield continuously scans every open position against live liquidation clusters, funding rate regimes, and whale movements. It outputs HOLD, REDUCE, or EXIT recommendations with conviction scores. One toggle to enable &mdash; it runs 24/7 while you sleep.</div>
+                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">Under 2 seconds. When the agent detects a threat to your position, you'll get an alert almost instantly. It processes over 560 data signals in real time so you're always ahead of the market.</div>
               </details>
+
               <details class="group bg-zinc-900/20 border border-zinc-800 hover:border-zinc-700 transition-colors">
                 <summary class="flex items-center justify-between px-5 py-4 cursor-pointer text-xs font-mono text-white uppercase tracking-wide select-none">
-                  What latency should I expect?
+                  What makes this different from other trading tools?
                   <iconify-icon icon="solar:alt-arrow-down-linear" class="text-zinc-600 group-open:rotate-180 transition-transform" width="16"></iconify-icon>
                 </summary>
-                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">AI chat responses generate in under 2 seconds. Risk Shield evaluations process in ~800ms. MCF Research Reports synthesize 560+ data points in 1.5-2 seconds. Market pulse data streams in real-time with sub-second WebSocket delivery.</div>
+                <div class="px-5 pb-4 text-[11px] font-mono text-zinc-500 leading-relaxed border-t border-zinc-800">Most tools give you signals or charts and leave you to figure it out. BASTION is an autonomous agent — it watches your specific positions, understands your risk, and tells you exactly what to do. It's like having a risk manager that never sleeps.</div>
               </details>
             </div>
           </div>
         </section>
 
-        <!-- CTA Section — Terminal Style -->
-        <section class="relative bg-[#050505] py-16 border-b border-zinc-800 overflow-hidden">
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- CTA — Simple and Clear -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <section class="relative bg-[#050505] py-16 md:py-24 border-b border-zinc-800 overflow-hidden">
           <div class="absolute inset-0 pointer-events-none">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-red-600/[0.03] rounded-full blur-[120px]"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-red-900/[0.05] rounded-full blur-[150px]"></div>
           </div>
-          <div class="relative z-10 container mx-auto px-6 lg:px-12">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <!-- Left: Terminal Animation -->
-              <div class="bg-[#080808] border border-zinc-800 rounded-sm overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.05)]">
-                <div class="flex items-center gap-2 px-4 py-2 bg-zinc-900/60 border-b border-zinc-800">
-                  <div class="flex gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500/60"></span><span class="w-2.5 h-2.5 rounded-full bg-amber-500/40"></span><span class="w-2.5 h-2.5 rounded-full bg-green-500/40"></span></div>
-                  <span class="text-[9px] font-mono text-zinc-600 ml-2">bastion_terminal</span>
-                </div>
-                <div class="p-4 font-mono text-[10px] space-y-2 min-h-[180px]" id="cta-terminal">
-                  <div class="text-zinc-600"># Initialize BASTION Risk Engine</div>
-                  <div><span class="text-red-500">bastion&gt;</span> <span class="text-zinc-300" id="cta-cmd"></span><span class="w-2 h-3.5 bg-red-500 inline-block animate-pulse ml-0.5" id="cta-cursor"></span></div>
-                  <div class="space-y-1 text-zinc-500" id="cta-output"></div>
-                </div>
-              </div>
-              <!-- Right: CTA Content -->
-              <div class="text-center lg:text-left">
-                <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest mb-3 flex items-center justify-center lg:justify-start gap-2">
-                  <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span></span>
-                  // BETA_ACCESS &mdash; FREE TIER AVAILABLE
-                </div>
-                <h2 class="text-2xl md:text-3xl font-semibold text-white uppercase tracking-tight mb-3 leading-tight">Ready to <span class="text-red-600">Weaponize</span> Your Risk?</h2>
-                <p class="text-xs text-zinc-500 font-mono mb-6 max-w-md mx-auto lg:mx-0 leading-relaxed">Join the beta. Get institutional-grade risk management powered by 72B parameters on 8x H200 GPUs. Free during beta &mdash; no credit card required.</p>
-                <div class="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                  <a href="/frontend" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">Launch Terminal<iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
-                  <a href="/lite" class="group bg-transparent border border-red-600/40 hover:border-red-500 text-red-400 hover:text-red-300 text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 font-medium shadow-[0_0_10px_rgba(220,38,38,0.1)] hover:shadow-[0_0_20px_rgba(220,38,38,0.2)]">Try Lite Free<iconify-icon icon="solar:bolt-circle-linear" width="16" class="group-hover:scale-110 transition-transform"></iconify-icon></a>
-                </div>
-                <div class="flex items-center gap-4 mt-5 justify-center lg:justify-start text-[9px] font-mono text-zinc-600">
-                  <div class="flex items-center gap-1.5"><div class="flex -space-x-1.5"><span class="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[7px] text-zinc-400">M</span><span class="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[7px] text-zinc-400">K</span><span class="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[7px] text-zinc-400">J</span><span class="w-5 h-5 rounded-full bg-red-900/50 border border-red-800/50 flex items-center justify-center text-[7px] text-red-400">+</span></div><span class="text-zinc-500"><span class="text-white font-bold">2,400+</span> traders in beta</span></div>
-                  <span class="w-px h-3 bg-zinc-800"></span>
-                  <span class="flex items-center gap-1"><iconify-icon icon="solar:star-bold" class="text-amber-500 text-[10px]"></iconify-icon><span class="text-zinc-500">No credit card required</span></span>
-                </div>
-              </div>
+
+          <div class="relative z-10 px-6 md:px-12 max-w-2xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 bg-zinc-900/50 border border-zinc-800 px-4 py-2 mb-8 sys-reveal sys-rise">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <span class="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">Beta spots available</span>
+            </div>
+
+            <h2 class="text-3xl md:text-5xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-6 sys-reveal sys-rise sys-delay-100">
+              Stop watching charts.<br><span class="text-red-600">Let the agent watch for you.</span>
+            </h2>
+
+            <p class="text-sm md:text-base text-zinc-500 font-mono leading-relaxed mb-10 max-w-lg mx-auto sys-reveal sys-rise sys-delay-200">
+              Join 2,400+ traders who sleep better knowing BASTION is watching their positions. Free during beta. No credit card needed.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8 sys-reveal sys-rise sys-delay-300">
+              <a href="/lite" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-10 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:shadow-[0_0_40px_rgba(220,38,38,0.5)] font-bold">
+                Start Free Now
+                <iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
+              </a>
+              <a href="/frontend" class="group bg-transparent border border-red-600/40 hover:border-red-500 text-red-400 hover:text-red-300 text-xs font-mono uppercase tracking-widest px-10 py-4 transition-all flex items-center justify-center gap-3 font-medium">
+                View Full Terminal
+                <iconify-icon icon="solar:monitor-linear" width="16"></iconify-icon>
+              </a>
+            </div>
+
+            <div class="flex items-center justify-center gap-6 text-[10px] font-mono text-zinc-600 sys-reveal sys-rise sys-delay-400">
+              <span class="flex items-center gap-1.5"><iconify-icon icon="solar:lock-bold" class="text-green-500 text-xs"></iconify-icon>Read-only access</span>
+              <span class="w-px h-3 bg-zinc-800"></span>
+              <span class="flex items-center gap-1.5"><iconify-icon icon="solar:clock-circle-bold" class="text-red-500 text-xs"></iconify-icon>Setup in 30s</span>
+              <span class="w-px h-3 bg-zinc-800"></span>
+              <span class="flex items-center gap-1.5"><iconify-icon icon="solar:wallet-bold" class="text-zinc-500 text-xs"></iconify-icon>$0 during beta</span>
             </div>
           </div>
         </section>
@@ -1075,17 +595,17 @@
         <footer class="border-t border-zinc-800 bg-[#080808] relative z-20">
           <!-- Risk Disclaimer -->
           <div class="border-b border-zinc-800/50 px-6 md:px-8 py-3">
-            <p class="text-[8px] font-mono text-zinc-600 leading-relaxed text-center max-w-4xl mx-auto">RISK DISCLAIMER: Cryptocurrency trading involves substantial risk of loss and is not suitable for every investor. The content provided by BASTION is for informational purposes only and does not constitute financial advice. Past performance does not guarantee future results. Never trade with funds you cannot afford to lose. All research reports, risk scores, and trade structures are AI-generated and should be independently verified before making trading decisions.</p>
+            <p class="text-[8px] font-mono text-zinc-600 leading-relaxed text-center max-w-4xl mx-auto">RISK DISCLAIMER: Cryptocurrency trading involves substantial risk of loss and is not suitable for every investor. The content provided by BASTION is for informational purposes only and does not constitute financial advice. Past performance does not guarantee future results. Never trade with funds you cannot afford to lose. All risk scores and alerts are AI-generated and should be independently verified before making trading decisions.</p>
           </div>
           <!-- Footer Bar -->
           <div class="px-6 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
             <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-2 md:mb-0">
-              <span class="cursor-default font-mono">© 2026 BASTION SYSTEMS.</span>
+              <span class="cursor-default font-mono">&copy; 2026 BASTION SYSTEMS.</span>
               <span class="hidden md:inline w-px h-3 bg-zinc-800"></span>
-              <div class="flex gap-6 font-mono"><a href="#" class="hover:text-white transition-colors">Privacy</a><a href="#" class="hover:text-white transition-colors">Terms</a><a href="#" class="hover:text-white transition-colors">Docs</a></div>
+              <div class="flex gap-6 font-mono"><a href="#" class="hover:text-white transition-colors">Privacy</a><a href="#" class="hover:text-white transition-colors">Terms</a><a href="/institutional" class="hover:text-white transition-colors">Institutional</a></div>
             </div>
             <div class="flex items-center gap-6 font-mono">
-              <div class="flex items-center gap-2"><iconify-icon icon="solar:clock-circle-linear" width="12"></iconify-icon><span>MARKET OPEN</span></div>
+              <div class="flex items-center gap-2"><iconify-icon icon="solar:clock-circle-linear" width="12"></iconify-icon><span>AGENT ACTIVE</span></div>
               <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
               <div class="flex items-center gap-2 text-red-600"><iconify-icon icon="solar:shield-check-linear" width="12"></iconify-icon><span>SECURE_CONNECTION</span></div>
             </div>
@@ -1094,6 +614,9 @@
       </div>
     </main>
 
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SCRIPTS -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
     <script>
       document.getElementById('mobile-menu-btn').addEventListener('click', function() {
         document.getElementById('mobile-menu').classList.toggle('translate-x-full');
@@ -1107,62 +630,104 @@
       });
     </script>
 
+    <!-- Hero Typewriter -->
     <script>
       (function() {
         const el = document.getElementById("hero-typewriter");
         if (!el) return;
-        const words = ["ENGINEERED", "ARMED", "WEAPONIZED"];
+        const words = ["PROTECTED.", "MONITORED.", "SHIELDED."];
         let wordIdx = 0, charIdx = 0, isDeleting = false;
         function type() {
           const currentWord = words[wordIdx];
           if (!isDeleting && charIdx <= currentWord.length) {
             el.textContent = currentWord.substring(0, charIdx);
             charIdx++;
-            if (charIdx > currentWord.length) { isDeleting = true; setTimeout(type, currentWord === "WEAPONIZED" ? 2000 : 1500); }
-            else setTimeout(type, 100);
+            if (charIdx > currentWord.length) { isDeleting = true; setTimeout(type, 2000); }
+            else setTimeout(type, 80);
           } else if (isDeleting && charIdx >= 0) {
             el.textContent = currentWord.substring(0, charIdx);
             charIdx--;
-            if (charIdx < 0) { isDeleting = false; wordIdx = (wordIdx + 1) % words.length; charIdx = 0; setTimeout(type, 200); }
-            else setTimeout(type, 50);
+            if (charIdx < 0) { isDeleting = false; wordIdx = (wordIdx + 1) % words.length; charIdx = 0; setTimeout(type, 300); }
+            else setTimeout(type, 40);
           }
         }
         setTimeout(type, 1000);
       })();
     </script>
 
-    <!-- CTA Terminal Animation -->
+    <!-- Hero Agent Card Cycling -->
     <script>
     (function(){
-      const cmd = document.getElementById('cta-cmd');
-      const output = document.getElementById('cta-output');
-      const cursor = document.getElementById('cta-cursor');
+      const agentData = [
+        { sym:'BTC-PERP', badge:'DANGER', badgeClass:'bg-red-500/20 text-red-400', action:'Reduce your position by 40%', actionClass:'text-red-400', reason:"There's a $420M liquidation cluster right below your entry. If price drops 2%, a cascade could wipe your position.", conf:87, barColor:'#ef4444', confClass:'text-red-400', time:'just now', positions:'Watching 3 positions' },
+        { sym:'ETH-PERP', badge:'CAUTION', badgeClass:'bg-amber-500/20 text-amber-400', action:'Hold — but tighten your stop', actionClass:'text-amber-400', reason:"Funding is neutral but open interest is building fast. If BTC drops, ETH follows. Move your stop to $3,310 to lock in profits.", conf:71, barColor:'#f59e0b', confClass:'text-amber-400', time:'2m ago', positions:'Watching 3 positions' },
+        { sym:'SOL-PERP', badge:'SAFE', badgeClass:'bg-green-500/20 text-green-400', action:'All clear. Momentum is strong.', actionClass:'text-green-400', reason:"On-chain activity hitting all-time highs. Whale wallets accumulating. Your long is well-positioned — ride the trend.", conf:92, barColor:'#22c55e', confClass:'text-green-400', time:'5m ago', positions:'Watching 3 positions' },
+      ];
+      const chatData = [
+        { q:'Should I close my BTC long?', a:"Not yet. Wait for the $96.5K sweep. I'll alert you the second it's safe to enter." },
+        { q:'Is ETH going to dump?', a:"Not likely right now. Whale inflows are strong and funding is healthy. Keep your position." },
+        { q:'Am I over-exposed right now?', a:"A little. Your BTC position is 60% of your portfolio. I'd trim it to 40% given current conditions." },
+        { q:'When should I take profit on SOL?', a:"I'd start scaling out at $180. The 180-185 zone has heavy resistance. Take 50% there, trail the rest." },
+      ];
+      let ai=0, ci=0;
+      function fade(el, cb){ el.style.opacity='0'; setTimeout(()=>{ cb(); el.style.opacity='1'; }, 400); }
+      function cycleAgent(){
+        ai = (ai+1) % agentData.length; const d = agentData[ai];
+        const wrap = document.getElementById('agent-cycle'); if(!wrap) return;
+        fade(wrap, ()=>{
+          document.getElementById('agent-sym').textContent=d.sym;
+          const badge = document.getElementById('agent-badge'); badge.textContent=d.badge; badge.className='text-[8px] font-mono px-2 py-0.5 '+d.badgeClass;
+          const action = document.getElementById('agent-action'); action.textContent=d.action; action.className='text-[10px] font-mono font-bold '+d.actionClass;
+          document.getElementById('agent-reason').textContent=d.reason;
+          document.getElementById('agent-bar').style.width=d.conf+'%'; document.getElementById('agent-bar').style.background=d.barColor;
+          const conf = document.getElementById('agent-conf'); conf.textContent=d.conf+'%'; conf.className='text-[9px] font-mono font-bold '+d.confClass;
+          document.getElementById('agent-time').textContent=d.time;
+        });
+      }
+      function cycleChat(){
+        ci = (ci+1) % chatData.length; const d = chatData[ci];
+        const wrap = document.getElementById('chat-bubble'); if(!wrap) return;
+        fade(wrap, ()=>{ document.getElementById('bubble-q').textContent=d.q; document.getElementById('bubble-a').textContent=d.a; });
+      }
+      setInterval(cycleAgent, 5000);
+      setInterval(cycleChat, 4500);
+    })();
+    </script>
+
+    <!-- Demo Terminal Animation -->
+    <script>
+    (function(){
+      const cmd = document.getElementById('demo-cmd');
+      const output = document.getElementById('demo-output');
       if(!cmd || !output) return;
       const sequences = [
-        { cmd: 'init --risk-engine --gpu-cluster', output: [
-          {t:'[OK] Connected to 8x H200 GPU cluster', c:'text-green-400'},
-          {t:'[OK] 72B parameter model loaded (1.4s)', c:'text-green-400'},
-          {t:'[OK] 560+ data streams active', c:'text-green-400'},
-          {t:'[OK] Risk Shield: ARMED', c:'text-red-400 font-bold'},
+        { cmd: 'agent --scan-positions', output: [
+          {t:'[SCAN] Checking your 3 open positions...', c:'text-zinc-400'},
+          {t:'[OK] SOL-PERP: SAFE — momentum intact, holding', c:'text-green-400'},
+          {t:'[OK] ETH-PERP: SAFE — no threats detected', c:'text-green-400'},
+          {t:'[ALERT] BTC-PERP: DANGER — $420M liq cluster within 2%', c:'text-red-400 font-bold'},
+          {t:'[ACTION] Recommendation: Reduce BTC by 40%. Confidence: 87%', c:'text-amber-400 font-bold'},
         ]},
-        { cmd: 'scan --all-markets --deep', output: [
-          {t:'[SCAN] Analyzing BTC, ETH, SOL, AVAX, DOGE, LINK...', c:'text-zinc-400'},
-          {t:'[DATA] Pulling liquidation maps, whale flows, derivatives...', c:'text-zinc-400'},
-          {t:'[ALERT] BTC-PERP: $420M liq cluster within 2%', c:'text-red-400 font-bold'},
-          {t:'[VERDICT] REDUCE BTC exposure by 40% — Conviction: 87%', c:'text-amber-400 font-bold'},
+        { cmd: 'agent --explain BTC-PERP', output: [
+          {t:'[AGENT] Analyzing your BTC-PERP long position...', c:'text-zinc-400'},
+          {t:'[DATA] $420M in long liquidations clustered at $96,100-$96,500', c:'text-zinc-300'},
+          {t:'[DATA] Funding rate flipped negative — sellers gaining control', c:'text-zinc-300'},
+          {t:'[DATA] Whale flow: 2,400 BTC moved to exchanges in last hour', c:'text-red-400'},
+          {t:'[VERDICT] High probability of downward sweep. Reduce now, re-enter after the flush.', c:'text-amber-400 font-bold'},
         ]},
-        { cmd: 'generate --mcf-report BTC', output: [
-          {t:'[MCF] Synthesizing 560+ data points...', c:'text-zinc-400'},
-          {t:'[MCF] Structure: Bearish | Derivatives: Overheated | Whale: Distribution', c:'text-red-400'},
-          {t:'[MCF] Downside target: $94,200 | Invalidation: $98,800', c:'text-zinc-300'},
-          {t:'[MCF] Report generated in 1.8s — CONFIDENTIAL', c:'text-green-400'},
+        { cmd: 'agent --what-should-i-do', output: [
+          {t:'[AGENT] Here\'s your action plan right now:', c:'text-zinc-400'},
+          {t:'[1] BTC-PERP: Reduce position by 40% immediately', c:'text-red-400'},
+          {t:'[2] ETH-PERP: Hold. Move stop to $3,310 to protect profits', c:'text-amber-400'},
+          {t:'[3] SOL-PERP: All clear. Let it ride. Trailing stop active.', c:'text-green-400'},
+          {t:'[AGENT] I\'ll alert you when conditions change. Stay safe.', c:'text-zinc-500'},
         ]},
       ];
       let si=0;
       function runSequence(){
         const seq = sequences[si]; let ci=0; cmd.textContent=''; output.innerHTML='';
         function typeCmd(){
-          if(ci <= seq.cmd.length){ cmd.textContent = seq.cmd.substring(0,ci); ci++; setTimeout(typeCmd, 40); }
+          if(ci <= seq.cmd.length){ cmd.textContent = seq.cmd.substring(0,ci); ci++; setTimeout(typeCmd, 35); }
           else { setTimeout(showOutput, 300); }
         }
         let oi=0;
@@ -1170,119 +735,20 @@
           if(oi < seq.output.length){
             const line = seq.output[oi];
             const div = document.createElement('div');
-            div.className = line.c + ' text-[10px]';
+            div.className = line.c + ' text-[11px]';
             div.textContent = line.t;
             div.style.opacity = '0'; output.appendChild(div);
             requestAnimationFrame(()=>{ div.style.transition='opacity 0.3s'; div.style.opacity='1'; });
-            oi++; setTimeout(showOutput, 400);
-          } else { setTimeout(()=>{ si=(si+1)%sequences.length; runSequence(); }, 3000); }
+            oi++; setTimeout(showOutput, 500);
+          } else { setTimeout(()=>{ si=(si+1)%sequences.length; runSequence(); }, 4000); }
         }
         typeCmd();
       }
       const obs = new IntersectionObserver(entries => {
         if(entries[0].isIntersecting){ obs.disconnect(); setTimeout(runSequence, 500); }
       }, {threshold:0.3});
-      obs.observe(document.getElementById('cta-terminal'));
+      obs.observe(document.getElementById('demo-terminal'));
     })();
-    </script>
-
-    <!-- Canvas Animations -->
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const C = { R: "#DC2626", G: "#22C55E", A: "#F59E0B", C: "#06B6D4", W: "#FFFFFF", Z: "#52525b", B: "rgba(0,0,0,0.5)" };
-        const drawCircle = (ctx, x, y, r, c, fill=false) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); fill ? (ctx.fillStyle=c, ctx.fill()) : (ctx.strokeStyle=c, ctx.stroke()); };
-        const drawLine = (ctx, x1, y1, x2, y2, c, w=1, d=[]) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.setLineDash(d); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]); };
-        const drawText = (ctx, t, x, y, c, s=10) => { ctx.font = `bold ${s}px 'JetBrains Mono', monospace`; ctx.fillStyle = c; ctx.fillText(t, x, y); };
-
-        const anims = {
-          "canvas-fig-01": (ctx, w, h, t) => {
-            ctx.clearRect(0,0,w,h); const cx = w/2, cy = h/2; const loop = t % 4000;
-            [30, 20, 10].forEach((r, i) => { ctx.shadowBlur = 0; drawCircle(ctx, cx, cy, r, '#333'); });
-            [1000, 1600, 2200].forEach((st, i) => {
-              if (loop > st) {
-                const age = loop - st;
-                if (age < 600) { ctx.shadowBlur = 10; ctx.shadowColor = C.R; drawCircle(ctx, cx, cy, 10 + age/10, `rgba(220,38,38,${1-age/600})`); }
-                ctx.shadowBlur = 10; ctx.shadowColor = C.R; drawCircle(ctx, cx, cy, 2, C.R, true);
-                ctx.shadowBlur = 0; drawText(ctx, ["40%","30%","30%"][i], cx+20, cy - 10 + i*12, C.R, 9);
-              }
-            });
-          },
-          "canvas-fig-02": (ctx, w, h, t) => {
-            ctx.clearRect(0,0,w,h); const loop = t % 5000; const p = loop / 5000;
-            ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 1; ctx.beginPath();
-            for(let i=0; i<w; i+=15) { ctx.moveTo(i,0); ctx.lineTo(i,h); }
-            for(let i=0; i<h; i+=15) { ctx.moveTo(0,i); ctx.lineTo(w,i); }
-            ctx.stroke();
-            const candleW = w/10; const candles = [0.3, 0.32, 0.45, 0.42, 0.6, 0.7, 0.75, 0.72];
-            const count = Math.floor(p * 12); let maxY = h;
-            candles.forEach((val, i) => {
-              if (i >= count) return;
-              const x = i * (candleW+2) + 10; const base = h - 15; const top = base - (val * (h*0.7));
-              if (top < maxY) maxY = top;
-              ctx.fillStyle = (i === 3 || i === 7) ? C.R : C.G;
-              ctx.fillRect(x, top, candleW, base - top);
-            });
-            const safeY = h - 8; const structY = h * 0.5;
-            drawLine(ctx, 0, safeY, w, safeY, C.R, 2); drawText(ctx, "SAFETY", 5, safeY-3, C.R, 7);
-            drawLine(ctx, 0, structY, w, structY, C.A, 1, [4,4]); drawText(ctx, "STRUCT", 5, structY-3, C.A, 7);
-          },
-          "canvas-fig-03": (ctx, w, h, t) => {
-            ctx.fillStyle = '#050505'; ctx.fillRect(0,0,w,h);
-            const loop = t % 6000; const p = loop / 6000;
-            const step = w/12; const pts = [];
-            for(let i=0; i<12; i++) { let y = h*0.7; if (i > 2) y -= (i-2)*(h*0.06); pts.push({x: i*step, y}); }
-            const cur = Math.floor(p * 15);
-            pts.forEach((pt, i) => {
-              if (i > cur) return;
-              const isPump = (i > 2);
-              ctx.fillStyle = isPump ? C.G : '#333';
-              if(isPump) { ctx.shadowBlur = 8; ctx.shadowColor = C.G; } else ctx.shadowBlur = 0;
-              ctx.fillRect(pt.x, pt.y - 6, step-3, 12);
-            });
-            if (p > 0.7) { drawText(ctx, "CAPTURED", w/2-30, h/2-5, C.W, 11); drawText(ctx, "+3.2R LOCKED", w/2-35, h/2+10, C.G, 10); }
-          },
-          "canvas-fig-04": (ctx, w, h, t) => {
-            ctx.clearRect(0,0,w,h); const cx = w/2, cy = h-8, r = w/2.5;
-            ctx.lineWidth = 6; const zones = [C.G, C.A, C.R, "#7F1D1D"];
-            zones.forEach((c, i) => { ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI + (i/4)*Math.PI, Math.PI + ((i+1)/4)*Math.PI); ctx.strokeStyle = c; ctx.globalAlpha = 0.3; ctx.stroke(); });
-            const v = (Math.sin(t/1500)+1)/2; const ang = Math.PI + v * Math.PI;
-            ctx.globalAlpha = 1; ctx.strokeStyle = C.W; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang)*r, cy + Math.sin(ang)*r); ctx.stroke();
-            if(v > 0.75) { drawText(ctx, "SIZE: -50%", cx-25, cy-15, C.R, 9); }
-          },
-          "canvas-fig-05": (ctx, w, h, t) => {
-            ctx.clearRect(0,0,w,h);
-            ctx.beginPath(); ctx.moveTo(0, h/2);
-            for(let i=0; i<w; i+=8) ctx.lineTo(i, h/2 + Math.sin(i/15 + t/1000)*15);
-            ctx.strokeStyle = '#333'; ctx.stroke();
-            const lvls = [h/3, h/2, h/1.5];
-            lvls.forEach((y, i) => {
-              const active = Math.abs((h/2 + Math.sin(w/15 + t/1000)*15) - y) < 8;
-              ctx.shadowBlur = active ? 8 : 0; ctx.shadowColor = active ? C.G : 'transparent';
-              drawLine(ctx, 0, y, w, y, active ? C.W : '#333', 1, [2,2]);
-              if(active) drawText(ctx, "CONF: " + (80+i*5), w-50, y-3, C.G, 8);
-            });
-          },
-          "canvas-fig-06": (ctx, w, h, t) => {
-            ctx.clearRect(0,0,w,h);
-            const p1 = h/3, p2 = h/3 - 8; const r1 = h*0.7, r2 = h*0.7 + 8;
-            drawLine(ctx, 15, p1, w-15, p2, C.G, 2); drawLine(ctx, 15, r1, w-15, r2, '#A855F7', 2);
-            if (t%2000 < 1000) { drawLine(ctx, 15, p1, 15, r1, '#333', 1, [2,2]); drawLine(ctx, w-15, p2, w-15, r2, C.R, 1, [2,2]); drawText(ctx, "⚠️ DIV", w/2-15, h/2, C.A, 9); }
-          },
-        };
-
-        const obs = new IntersectionObserver(entries => { entries.forEach(e => { if(e.target.tagName === 'CANVAS') e.target._visible = e.isIntersecting; }); });
-        Object.keys(anims).forEach(id => {
-          const c = document.getElementById(id);
-          if(!c) return;
-          obs.observe(c);
-          const ctx = c.getContext('2d');
-          const loop = (t) => {
-            if(c._visible) { if(c.width !== c.clientWidth) { c.width = c.clientWidth; c.height = c.clientHeight; } anims[id](ctx, c.width, c.height, t); }
-            requestAnimationFrame(loop);
-          };
-          requestAnimationFrame(loop);
-        });
-      });
     </script>
 </body>
 </html>
