@@ -375,47 +375,117 @@
           <!-- Intel Tab -->
           <div id="view-intel" class="absolute inset-0 flex flex-col hidden">
             <div id="intel-content" class="flex-1 overflow-y-auto bastion-scrollbar">
-              <!-- OI Changes -->
-              <div class="border-b border-zinc-800/40">
-                <div class="flex items-center justify-between px-3 py-2 bg-[#070707]">
-                  <div class="flex items-center gap-2">
-                    <iconify-icon icon="solar:chart-2-bold" class="text-cyan-500 text-xs"></iconify-icon>
-                    <span class="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Open Interest Changes</span>
-                  </div>
-                  <span class="text-[8px] font-mono text-zinc-600">24H</span>
+
+              <!-- Market Sentiment Card -->
+              <div class="mx-3 mt-3 mb-2 bg-[#0A0A0A] border border-zinc-800/50 rounded-lg overflow-hidden">
+                <div class="px-3 py-2 bg-[#080808] border-b border-zinc-800/30 flex items-center gap-2">
+                  <iconify-icon icon="solar:heart-pulse-bold" class="text-red-500 text-xs"></iconify-icon>
+                  <span class="text-[9px] font-mono font-bold text-zinc-300 uppercase tracking-wider">Market Sentiment</span>
                 </div>
-                <div id="oi-list" class="divide-y divide-zinc-800/20">
-                  <div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-cyan-500 text-sm"></iconify-icon></div>
+                <div class="grid grid-cols-3 divide-x divide-zinc-800/30" id="sentiment-grid">
+                  <div class="p-2.5 text-center">
+                    <div class="text-[8px] font-mono text-zinc-600 uppercase mb-1">Fear & Greed</div>
+                    <div id="sent-fg-val" class="text-lg font-mono font-bold text-zinc-500">--</div>
+                    <div id="sent-fg-label" class="text-[8px] font-mono text-zinc-600 mt-0.5">--</div>
+                  </div>
+                  <div class="p-2.5 text-center">
+                    <div class="text-[8px] font-mono text-zinc-600 uppercase mb-1">BTC Funding</div>
+                    <div id="sent-funding" class="text-lg font-mono font-bold text-zinc-500">--</div>
+                    <div class="text-[8px] font-mono text-zinc-600 mt-0.5">8h Rate</div>
+                  </div>
+                  <div class="p-2.5 text-center">
+                    <div class="text-[8px] font-mono text-zinc-600 uppercase mb-1">USDT.D</div>
+                    <div id="sent-usdt" class="text-lg font-mono font-bold text-zinc-500">--</div>
+                    <div class="text-[8px] font-mono text-zinc-600 mt-0.5">Dominance</div>
+                  </div>
                 </div>
               </div>
+
+              <!-- OI Changes Table -->
+              <div class="mx-3 mb-2 bg-[#0A0A0A] border border-zinc-800/50 rounded-lg overflow-hidden">
+                <div class="px-3 py-2 bg-[#080808] border-b border-zinc-800/30 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <iconify-icon icon="solar:chart-2-bold" class="text-red-500 text-xs"></iconify-icon>
+                    <span class="text-[9px] font-mono font-bold text-zinc-300 uppercase tracking-wider">Open Interest</span>
+                  </div>
+                  <span class="text-[7px] font-mono text-zinc-600 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800/40">24H</span>
+                </div>
+                <!-- Table header -->
+                <div class="grid grid-cols-4 px-3 py-1.5 bg-[#080808]/50 border-b border-zinc-800/30 text-[8px] font-mono text-zinc-600 uppercase tracking-wider">
+                  <span>Asset</span><span class="text-right">Change</span><span class="text-right">USD</span><span class="text-right">Price</span>
+                </div>
+                <div id="oi-list">
+                  <div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-red-500/60 text-sm"></iconify-icon></div>
+                </div>
+              </div>
+
+              <!-- Funding Rates Table -->
+              <div class="mx-3 mb-2 bg-[#0A0A0A] border border-zinc-800/50 rounded-lg overflow-hidden">
+                <div class="px-3 py-2 bg-[#080808] border-b border-zinc-800/30 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <iconify-icon icon="solar:wallet-money-bold" class="text-red-500 text-xs"></iconify-icon>
+                    <span class="text-[9px] font-mono font-bold text-zinc-300 uppercase tracking-wider">Funding Rates</span>
+                  </div>
+                  <span class="text-[7px] font-mono text-zinc-600 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800/40">LIVE</span>
+                </div>
+                <div class="grid grid-cols-3 px-3 py-1.5 bg-[#080808]/50 border-b border-zinc-800/30 text-[8px] font-mono text-zinc-600 uppercase tracking-wider">
+                  <span>Asset</span><span class="text-right">Rate</span><span class="text-right">Annual</span>
+                </div>
+                <div id="funding-list">
+                  <div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-red-500/60 text-sm"></iconify-icon></div>
+                </div>
+              </div>
+
               <!-- Whale Activity -->
-              <div class="border-b border-zinc-800/40">
-                <div class="flex items-center justify-between px-3 py-2 bg-[#070707]">
+              <div class="mx-3 mb-2 bg-[#0A0A0A] border border-zinc-800/50 rounded-lg overflow-hidden">
+                <div class="px-3 py-2 bg-[#080808] border-b border-zinc-800/30 flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <iconify-icon icon="solar:ghost-bold" class="text-blue-500 text-xs"></iconify-icon>
-                    <span class="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Whale Movements</span>
+                    <iconify-icon icon="solar:ghost-bold" class="text-red-500 text-xs"></iconify-icon>
+                    <span class="text-[9px] font-mono font-bold text-zinc-300 uppercase tracking-wider">Whale Alerts</span>
                   </div>
-                  <span class="text-[8px] font-mono text-zinc-600">LIVE</span>
+                  <span class="text-[7px] font-mono text-zinc-600 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800/40">$1M+</span>
                 </div>
-                <div id="whale-list" class="divide-y divide-zinc-800/20">
-                  <div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-blue-500 text-sm"></iconify-icon></div>
+                <div class="grid grid-cols-4 px-3 py-1.5 bg-[#080808]/50 border-b border-zinc-800/30 text-[8px] font-mono text-zinc-600 uppercase tracking-wider">
+                  <span>Asset</span><span>Type</span><span class="text-right">Value</span><span class="text-right">Time</span>
+                </div>
+                <div id="whale-list">
+                  <div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-red-500/60 text-sm"></iconify-icon></div>
                 </div>
               </div>
-              <!-- Signal Scanner -->
-              <div>
-                <div class="flex items-center justify-between px-3 py-2 bg-[#070707]">
+
+              <!-- Liquidations -->
+              <div class="mx-3 mb-2 bg-[#0A0A0A] border border-zinc-800/50 rounded-lg overflow-hidden">
+                <div class="px-3 py-2 bg-[#080808] border-b border-zinc-800/30 flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <iconify-icon icon="solar:radar-2-bold" class="text-amber-500 text-xs"></iconify-icon>
-                    <span class="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Signal Scanner</span>
+                    <iconify-icon icon="solar:fire-bold" class="text-red-500 text-xs"></iconify-icon>
+                    <span class="text-[9px] font-mono font-bold text-zinc-300 uppercase tracking-wider">Liquidations</span>
                   </div>
-                  <button onclick="loadSignals()" class="text-[8px] font-mono text-red-500 hover:text-red-400 transition-colors flex items-center gap-1">
-                    <iconify-icon icon="solar:refresh-bold" class="text-[9px]"></iconify-icon>SCAN
+                  <span id="liq-symbol-label" class="text-[7px] font-mono text-red-500 bg-red-950/30 px-1.5 py-0.5 rounded border border-red-900/20">BTC</span>
+                </div>
+                <div id="liq-list">
+                  <div class="p-4 text-center"><iconify-icon icon="svg-spinners:ring-resize" class="text-red-500/60 text-sm"></iconify-icon></div>
+                </div>
+              </div>
+
+              <!-- Signal Scanner -->
+              <div class="mx-3 mb-3 bg-[#0A0A0A] border border-zinc-800/50 rounded-lg overflow-hidden">
+                <div class="px-3 py-2 bg-[#080808] border-b border-zinc-800/30 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <iconify-icon icon="solar:radar-2-bold" class="text-red-500 text-xs"></iconify-icon>
+                    <span class="text-[9px] font-mono font-bold text-zinc-300 uppercase tracking-wider">AI Signal Scanner</span>
+                  </div>
+                  <button onclick="loadSignals()" class="text-[8px] font-mono text-red-500 hover:text-red-400 bg-red-950/20 hover:bg-red-950/40 px-2 py-0.5 rounded border border-red-900/20 transition-all flex items-center gap-1">
+                    <iconify-icon icon="solar:radar-2-bold" class="text-[9px]"></iconify-icon>SCAN NOW
                   </button>
                 </div>
-                <div id="signal-list" class="divide-y divide-zinc-800/20">
-                  <div class="p-4 text-center text-[10px] font-mono text-zinc-600">Hit SCAN to run AI signal scanner</div>
+                <div id="signal-list">
+                  <div class="p-4 text-center flex flex-col items-center gap-2">
+                    <iconify-icon icon="solar:radar-2-linear" class="text-zinc-700 text-xl"></iconify-icon>
+                    <span class="text-[10px] font-mono text-zinc-600">Run the AI scanner to detect trade signals</span>
+                  </div>
                 </div>
               </div>
+
             </div>
           </div>
 
@@ -679,6 +749,7 @@
         lastCandleData = null;
         await loadChart();
         updatePrice();
+        loadLiquidations();
       }
 
       async function switchTimeframe(tf) {
@@ -868,30 +939,87 @@
         status.textContent = 'ACTIVE — Last scan: ' + new Date().toLocaleTimeString('en-US', { hour12: false });
       }
 
-      // ── INTEL: OI CHANGES ──────────────────────────────────
+      // ── INTEL: SENTIMENT CARD ────────────────────────────────
+      function updateSentimentCard(fgValue, fgLabel, btcFunding, usdtDom) {
+        const fgVal = document.getElementById('sent-fg-val');
+        const fgLbl = document.getElementById('sent-fg-label');
+        const fundEl = document.getElementById('sent-funding');
+        const usdtEl = document.getElementById('sent-usdt');
+        if (fgVal && fgValue != null) {
+          fgVal.textContent = fgValue;
+          const fc = fgValue >= 60 ? 'text-green-500' : fgValue <= 40 ? 'text-red-500' : 'text-amber-500';
+          fgVal.className = `text-lg font-mono font-bold ${fc}`;
+        }
+        if (fgLbl && fgLabel) {
+          fgLbl.textContent = fgLabel;
+          const lc = (fgValue >= 60) ? 'text-green-600' : (fgValue <= 40) ? 'text-red-600' : 'text-amber-600';
+          fgLbl.className = `text-[8px] font-mono ${lc} mt-0.5`;
+        }
+        if (fundEl && btcFunding != null) {
+          const pct = (Number(btcFunding) * 100);
+          fundEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(4) + '%';
+          fundEl.className = `text-lg font-mono font-bold ${pct >= 0 ? 'text-green-500' : 'text-red-500'}`;
+        }
+        if (usdtEl && usdtDom != null) {
+          usdtEl.textContent = Number(usdtDom).toFixed(2) + '%';
+          usdtEl.className = 'text-lg font-mono font-bold text-zinc-300';
+        }
+      }
+
+      // ── INTEL: OI CHANGES (grid-cols-4 table) ───────────────
       async function loadOIChanges() {
         const data = await api.getOIChanges();
         const list = document.getElementById('oi-list');
         if (!data || !data.success) { list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">OI data unavailable</div>'; return; }
-        const items = [...(data.increases || []).slice(0, 4), ...(data.decreases || []).slice(0, 4)].sort((a, b) => Math.abs(b.oi_change_pct || 0) - Math.abs(a.oi_change_pct || 0)).slice(0, 6);
+        const items = [...(data.increases || []).slice(0, 4), ...(data.decreases || []).slice(0, 4)].sort((a, b) => Math.abs(b.oi_change_pct || 0) - Math.abs(a.oi_change_pct || 0)).slice(0, 8);
         if (items.length === 0) { list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">No significant OI changes</div>'; return; }
         let html = '';
         items.forEach(item => {
           const pct = item.oi_change_pct || 0;
           const up = pct >= 0;
           const sym = item.symbol || '??';
-          html += `<div class="intel-card flex items-center justify-between px-3 py-2 cursor-pointer" onclick="switchSymbol('${sym}')">
-            <div class="flex items-center gap-2">
-              <span class="font-mono font-bold text-[11px] text-white w-10">${sym}</span>
-              <span class="text-[9px] font-mono ${up ? 'text-green-500' : 'text-red-500'}">${item.oi_change_pct_formatted || (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%'}</span>
-            </div>
-            <span class="text-[9px] font-mono text-zinc-500">${item.oi_change_formatted || ''}</span>
+          const usdVal = item.oi_change_formatted || (item.oi_change_usd ? (item.oi_change_usd >= 1e9 ? '$' + (item.oi_change_usd / 1e9).toFixed(1) + 'B' : item.oi_change_usd >= 1e6 ? '$' + (item.oi_change_usd / 1e6).toFixed(1) + 'M' : '$' + (item.oi_change_usd / 1e3).toFixed(0) + 'K') : '--');
+          const priceStr = item.price ? '$' + fmtPrice(item.price) : '--';
+          html += `<div class="grid grid-cols-4 px-3 py-2 border-b border-zinc-800/20 intel-card cursor-pointer items-center" onclick="switchSymbol('${sym}')">
+            <span class="font-mono font-bold text-[10px] text-white">${sym}</span>
+            <span class="text-right text-[10px] font-mono font-medium ${up ? 'text-green-500' : 'text-red-500'}">${item.oi_change_pct_formatted || (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%'}</span>
+            <span class="text-right text-[9px] font-mono text-zinc-500">${usdVal}</span>
+            <span class="text-right text-[9px] font-mono text-zinc-600">${priceStr}</span>
           </div>`;
         });
         list.innerHTML = html;
       }
 
-      // ── INTEL: WHALES ──────────────────────────────────────
+      // ── INTEL: FUNDING TABLE ────────────────────────────────
+      async function loadFundingTable() {
+        const list = document.getElementById('funding-list');
+        try {
+          const res = await fetch('/api/funding');
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          const rates = data.rates || data;
+          const symbols = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'AVAX', 'DOGE', 'LINK', 'ARB'];
+          let html = '';
+          symbols.forEach(sym => {
+            const rate = rates[sym] ?? rates[sym.toLowerCase()] ?? rates[sym + 'USDT'];
+            if (rate == null) return;
+            const pct = Number(rate) * 100;
+            const annual = pct * 3 * 365; // 3 funding per day * 365
+            const rateColor = pct >= 0 ? 'text-green-500' : 'text-red-500';
+            const annColor = annual >= 0 ? 'text-green-600' : 'text-red-600';
+            html += `<div class="grid grid-cols-3 px-3 py-2 border-b border-zinc-800/20 intel-card items-center">
+              <span class="font-mono font-bold text-[10px] text-white">${sym}</span>
+              <span class="text-right text-[10px] font-mono font-medium ${rateColor}">${(pct >= 0 ? '+' : '') + pct.toFixed(4)}%</span>
+              <span class="text-right text-[9px] font-mono ${annColor}">${(annual >= 0 ? '+' : '') + annual.toFixed(1)}%</span>
+            </div>`;
+          });
+          list.innerHTML = html || '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">Funding data unavailable</div>';
+        } catch (e) {
+          list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">Funding data unavailable</div>';
+        }
+      }
+
+      // ── INTEL: WHALES (grid-cols-4 table) ───────────────────
       async function loadWhales() {
         const data = await api.getWhales();
         const list = document.getElementById('whale-list');
@@ -899,23 +1027,78 @@
           list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">No recent whale activity</div>'; return;
         }
         let html = '';
-        data.transactions.slice(0, 6).forEach(tx => {
-          const dirIcon = tx.direction === 'DEPOSIT' ? 'solar:arrow-to-down-left-bold' : tx.direction === 'WITHDRAWAL' ? 'solar:arrow-to-top-right-bold' : 'solar:transfer-horizontal-bold';
-          const dirColor = tx.direction === 'DEPOSIT' ? 'text-green-500' : tx.direction === 'WITHDRAWAL' ? 'text-red-500' : 'text-blue-500';
+        data.transactions.slice(0, 8).forEach(tx => {
+          const dir = tx.direction || 'TRANSFER';
+          const dirColor = dir === 'DEPOSIT' ? 'text-green-500' : dir === 'WITHDRAWAL' ? 'text-red-500' : 'text-blue-400';
+          const dirLabel = dir === 'DEPOSIT' ? 'IN' : dir === 'WITHDRAWAL' ? 'OUT' : 'XFER';
           const amtStr = tx.amount_usd >= 1e9 ? '$' + (tx.amount_usd / 1e9).toFixed(1) + 'B' : tx.amount_usd >= 1e6 ? '$' + (tx.amount_usd / 1e6).toFixed(1) + 'M' : '$' + (tx.amount_usd / 1e3).toFixed(0) + 'K';
-          html += `<div class="intel-card flex items-center justify-between px-3 py-2">
-            <div class="flex items-center gap-2">
-              <iconify-icon icon="${dirIcon}" class="${dirColor} text-xs"></iconify-icon>
-              <span class="font-mono font-bold text-[11px] text-white">${tx.symbol || '??'}</span>
-              <span class="text-[9px] font-mono ${dirColor}">${tx.direction || ''}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-mono text-zinc-300 font-medium">${amtStr}</span>
-              <span class="text-[8px] font-mono text-zinc-600">${tx.timestamp || ''}</span>
-            </div>
+          const ts = tx.timestamp ? timeAgo(tx.timestamp) : '--';
+          html += `<div class="grid grid-cols-4 px-3 py-2 border-b border-zinc-800/20 intel-card items-center">
+            <span class="font-mono font-bold text-[10px] text-white">${tx.symbol || '??'}</span>
+            <span class="text-[9px] font-mono font-medium ${dirColor}">${dirLabel}</span>
+            <span class="text-right text-[10px] font-mono text-zinc-300 font-medium">${amtStr}</span>
+            <span class="text-right text-[8px] font-mono text-zinc-600">${ts}</span>
           </div>`;
         });
         list.innerHTML = html;
+      }
+
+      // ── INTEL: LIQUIDATIONS ─────────────────────────────────
+      async function loadLiquidations() {
+        const list = document.getElementById('liq-list');
+        const symLabel = document.getElementById('liq-symbol-label');
+        if (symLabel) symLabel.textContent = currentSymbol;
+        try {
+          const data = await api.getLiquidations(currentSymbol);
+          if (!data) { list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">Liquidation data unavailable</div>'; return; }
+          // Handle various response formats
+          const liqs = Array.isArray(data) ? data : data.liquidations || data.data || [];
+          if (liqs.length === 0) {
+            list.innerHTML = '<div class="p-4 text-center flex flex-col items-center gap-1.5"><iconify-icon icon="solar:fire-linear" class="text-zinc-700 text-lg"></iconify-icon><span class="text-[10px] font-mono text-zinc-600">No recent liquidations for ' + currentSymbol + '</span></div>';
+            return;
+          }
+          // Aggregate: total long liqs, total short liqs, largest single
+          let totalLong = 0, totalShort = 0, largest = 0, count = liqs.length;
+          liqs.forEach(l => {
+            const val = l.usd_value || l.value || l.amount_usd || l.quantity * (l.price || 0) || 0;
+            const side = (l.side || l.direction || '').toUpperCase();
+            if (side === 'BUY' || side === 'LONG') totalLong += val;
+            else totalShort += val;
+            if (val > largest) largest = val;
+          });
+          const fmtUsd = (v) => v >= 1e9 ? '$' + (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? '$' + (v / 1e6).toFixed(2) + 'M' : v >= 1e3 ? '$' + (v / 1e3).toFixed(0) + 'K' : '$' + v.toFixed(0);
+          const total = totalLong + totalShort;
+          const longPct = total > 0 ? Math.round((totalLong / total) * 100) : 50;
+          const shortPct = 100 - longPct;
+          list.innerHTML = `
+            <div class="px-3 py-3 space-y-3">
+              <div class="flex items-center gap-2">
+                <div class="flex-1 h-2 rounded-full bg-zinc-800 overflow-hidden flex">
+                  <div class="h-full bg-green-600/80 transition-all" style="width: ${longPct}%"></div>
+                  <div class="h-full bg-red-600/80 transition-all" style="width: ${shortPct}%"></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="bg-[#080808] border border-zinc-800/30 rounded-md p-2 text-center">
+                  <div class="text-[8px] font-mono text-green-600 uppercase mb-0.5">Longs Liq'd</div>
+                  <div class="text-[11px] font-mono font-bold text-green-500">${fmtUsd(totalLong)}</div>
+                  <div class="text-[8px] font-mono text-zinc-600">${longPct}%</div>
+                </div>
+                <div class="bg-[#080808] border border-zinc-800/30 rounded-md p-2 text-center">
+                  <div class="text-[8px] font-mono text-red-600 uppercase mb-0.5">Shorts Liq'd</div>
+                  <div class="text-[11px] font-mono font-bold text-red-500">${fmtUsd(totalShort)}</div>
+                  <div class="text-[8px] font-mono text-zinc-600">${shortPct}%</div>
+                </div>
+                <div class="bg-[#080808] border border-zinc-800/30 rounded-md p-2 text-center">
+                  <div class="text-[8px] font-mono text-zinc-600 uppercase mb-0.5">Largest</div>
+                  <div class="text-[11px] font-mono font-bold text-amber-500">${fmtUsd(largest)}</div>
+                  <div class="text-[8px] font-mono text-zinc-600">${count} events</div>
+                </div>
+              </div>
+            </div>`;
+        } catch (e) {
+          list.innerHTML = '<div class="p-3 text-center text-[10px] font-mono text-zinc-600">Liquidation data unavailable</div>';
+        }
       }
 
       // ── INTEL: SIGNALS ─────────────────────────────────────
@@ -1012,10 +1195,12 @@
             fetch('/api/funding').then(r => r.json()),
             fetch('/api/usdt-dominance').then(r => r.json())
           ]);
+          let _fgVal = null, _fgLabel = null, _btcFunding = null, _usdtDom = null;
           if (fgRes.status === 'fulfilled' && fgRes.value) {
             const fg = fgRes.value;
             const val = fg.value ?? fg.index ?? '--';
             const label = fg.label || fg.classification || '--';
+            _fgVal = val; _fgLabel = label;
             const lc = val >= 60 ? 'bg-green-900/20 text-green-500' : val <= 40 ? 'bg-red-900/20 text-red-500' : 'bg-amber-900/20 text-amber-500';
             document.getElementById('pulse-fg').textContent = val;
             document.getElementById('pulse-fg-label').textContent = label;
@@ -1028,6 +1213,7 @@
             const fmtR = (r) => { if (r == null) return '--'; const p = (Number(r) * 100); return (p >= 0 ? '+' : '') + p.toFixed(4) + '%'; };
             const cR = (r) => { if (r == null) return 'text-zinc-400'; return Number(r) >= 0 ? 'text-green-500' : 'text-red-500'; };
             const btc = rates.BTC ?? rates.btc ?? rates.BTCUSDT; const eth = rates.ETH ?? rates.eth ?? rates.ETHUSDT; const sol = rates.SOL ?? rates.sol ?? rates.SOLUSDT;
+            _btcFunding = btc;
             const bEl = document.getElementById('pulse-funding'); bEl.textContent = fmtR(btc); bEl.className = `font-bold text-[10px] font-mono ${cR(btc)}`;
             document.querySelectorAll('.pulse-funding-dup').forEach(el => { el.textContent = fmtR(btc); el.className = `pulse-funding-dup font-bold text-[10px] font-mono ${cR(btc)}`; });
             const eEl = document.getElementById('pulse-eth-funding'); eEl.textContent = fmtR(eth); eEl.className = `font-bold text-[10px] font-mono ${cR(eth)}`;
@@ -1037,10 +1223,13 @@
           }
           if (usdtRes.status === 'fulfilled' && usdtRes.value) {
             const ud = usdtRes.value; const dom = ud.dominance ?? ud.value ?? ud.usdt_dominance;
+            _usdtDom = dom;
             const s = dom != null ? Number(dom).toFixed(2) + '%' : '--';
             document.getElementById('pulse-usdt').textContent = s;
             document.querySelectorAll('.pulse-usdt-dup').forEach(el => el.textContent = s);
           }
+          // Feed sentiment card in Intel tab
+          updateSentimentCard(_fgVal, _fgLabel, _btcFunding, _usdtDom);
         } catch (e) {}
       }
 
@@ -1066,6 +1255,7 @@
       window.ui = ui; window.api = api; window.showToast = showToast;
       window.switchSymbol = switchSymbol; window.switchTimeframe = switchTimeframe;
       window.openReport = openReport; window.loadSignals = loadSignals;
+      window.loadLiquidations = loadLiquidations; window.loadFundingTable = loadFundingTable;
 
       // ── INIT ───────────────────────────────────────────────
       async function initApp() {
@@ -1102,6 +1292,8 @@
           loadMarketPulse();
           loadOIChanges();
           loadWhales();
+          loadFundingTable();
+          loadLiquidations();
 
           // Restore shield
           if (shieldActive) { document.getElementById('shield-toggle').checked = true; ui.toggleShield(true); }
@@ -1112,6 +1304,8 @@
           setInterval(loadMarketPulse, 60000);
           setInterval(loadOIChanges, 120000);
           setInterval(loadWhales, 90000);
+          setInterval(loadFundingTable, 120000);
+          setInterval(loadLiquidations, 60000);
 
           // Reload full chart data periodically (every 60s) to sync candle history
           setInterval(() => { if (!isChartLoading) loadChart(); }, 60000);
