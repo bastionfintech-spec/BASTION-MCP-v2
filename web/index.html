@@ -161,7 +161,7 @@
 
               <h1 class="md:text-6xl lg:text-7xl uppercase leading-[0.9] sys-reveal sys-rise sys-delay-100 text-4xl font-medium text-white pt-4 pb-6 tracking-tight">
                 your trades.<br>
-                <span class="text-red-600" id="hero-typewriter">protected.</span>
+                <span class="inline-block min-w-[10ch] min-h-[1em] text-red-600" id="hero-typewriter">protected.</span>
               </h1>
 
               <p class="text-base md:text-lg text-zinc-500 font-mono leading-relaxed mb-8 max-w-lg border-l-2 border-red-600 pl-4 sys-reveal sys-rise sys-delay-200">
@@ -194,57 +194,76 @@
               </div>
             </div>
 
-            <!-- Hero Card — Live Agent Demo -->
-            <div class="flex flex-col items-end justify-center relative h-full pointer-events-none select-none">
-              <div class="relative w-full max-w-sm lg:mr-8">
-                <!-- Main Agent Card -->
-                <div class="w-full bg-[#080808] border border-zinc-800 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 overflow-hidden pointer-events-auto border-l-2 border-l-red-600">
-                  <div class="p-3 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
-                    <div class="flex items-center gap-2">
-                      <div class="relative">
-                        <iconify-icon icon="solar:shield-bold" class="text-red-500 text-base"></iconify-icon>
-                        <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-[#080808]"></span>
-                      </div>
-                      <span class="text-[9px] font-mono text-zinc-400 font-bold">BASTION AGENT</span>
-                    </div>
-                    <span class="text-[8px] font-mono text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>MONITORING</span>
+            <!-- Hero Cards — Stacked 3-Card Layout (from institutional) -->
+            <div class="hidden lg:flex flex-col items-end justify-center relative h-full pointer-events-none select-none">
+              <div class="relative w-full max-w-sm perspective-1000 mt-12 mr-8">
+                <!-- Card 1 (top): Risk Shield — live position monitoring -->
+                <div class="absolute -top-32 right-0 w-72 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-300 overflow-hidden shadow-[0_0_30px_rgba(220,38,38,0.08)]">
+                  <div class="p-2.5 flex justify-between items-center bg-zinc-900/50 border-b border-zinc-800">
+                    <span class="text-[9px] font-mono text-red-500 font-bold flex items-center gap-1.5">
+                      <iconify-icon icon="solar:shield-bold" class="text-red-500"></iconify-icon>RISK SHIELD
+                    </span>
+                    <span class="text-[8px] font-mono text-green-500 animate-pulse">WATCHING</span>
                   </div>
-
-                  <!-- Cycling agent alerts -->
-                  <div id="agent-cycle" class="transition-opacity duration-500">
-                    <div class="p-3 border-b border-zinc-800/50 space-y-2">
-                      <div class="flex items-center gap-2 text-[8px] font-mono text-zinc-600">
-                        <iconify-icon icon="solar:eye-bold" class="text-red-500 text-xs"></iconify-icon>
-                        <span>SCANNING YOUR POSITIONS...</span>
-                        <span class="ml-auto" id="agent-time">just now</span>
+                  <div id="shield-cycle" class="transition-opacity duration-500">
+                    <div class="p-2.5 border-b border-zinc-800/50">
+                      <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-white font-mono" id="sh-sym1">BTC-PERP</span>
+                        <span class="text-[8px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-400" id="sh-badge1">HIGH</span>
                       </div>
-                      <div class="flex items-center justify-between">
-                        <span class="text-sm font-bold text-white font-mono" id="agent-sym">BTC-PERP</span>
-                        <span class="text-[8px] font-mono px-2 py-0.5" id="agent-badge">DANGER</span>
+                      <div class="text-[9px] font-mono font-bold mb-1 text-amber-400" id="sh-action1">REDUCE 40%</div>
+                      <div class="text-[8px] text-zinc-500 leading-relaxed font-mono mb-1.5" id="sh-reason1">$650M liquidation cluster within 2%. Funding negative.</div>
+                      <div class="flex justify-between items-center text-[8px] font-mono">
+                        <span class="text-zinc-600">Confidence</span>
+                        <div class="flex items-center gap-1"><div class="w-14 h-1 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all duration-700" id="sh-bar1" style="width:87%;background:#ef4444"></div></div><span class="text-zinc-500" id="sh-conf1">87%</span></div>
                       </div>
-                      <div class="text-[10px] font-mono font-bold" id="agent-action">Reduce your position by 40%</div>
-                      <div class="text-[9px] font-mono text-zinc-500 leading-relaxed" id="agent-reason">There's a $420M liquidation cluster right below your entry. If price drops 2%, a cascade could wipe your position.</div>
                     </div>
-                    <div class="p-3 flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <span class="text-[8px] font-mono text-zinc-600">Confidence</span>
-                        <div class="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all duration-700" id="agent-bar" style="width:87%;background:#ef4444"></div></div>
-                        <span class="text-[9px] font-mono font-bold" id="agent-conf">87%</span>
+                    <div class="p-2.5">
+                      <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-white font-mono" id="sh-sym2">SOL-PERP</span>
+                        <span class="text-[8px] font-mono px-1.5 py-0.5 rounded bg-green-500/20 text-green-400" id="sh-badge2">LOW</span>
                       </div>
-                      <span class="text-[8px] font-mono text-zinc-700" id="agent-positions">Watching 3 positions</span>
+                      <div class="text-[9px] font-mono font-bold text-green-400" id="sh-action2">HOLD &mdash; MOMENTUM INTACT</div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Floating chat bubble -->
-                <div class="absolute -bottom-16 -left-4 sm:left-0 w-64 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-400 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.06)]">
-                  <div class="p-2.5 space-y-2 transition-opacity duration-500" id="chat-bubble">
+                <!-- Card 2 (middle): AI Analysis — the brain at work -->
+                <div class="relative w-80 bg-[#080808] border border-zinc-800 z-20 shadow-2xl sys-reveal sys-scale sys-delay-200 overflow-hidden pointer-events-auto group hover:border-red-600/30 transition-colors border-l-2 border-l-red-600">
+                  <div class="p-3 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
+                    <div class="flex items-center gap-2">
+                      <div class="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500"><iconify-icon icon="solar:shield-bold" class="text-[10px]"></iconify-icon></div>
+                      <span class="text-[9px] font-mono text-zinc-400 font-bold">BASTION &bull; AI Analysis</span>
+                    </div>
+                    <span class="text-[7px] font-mono text-zinc-600" id="ta-time">1.2s</span>
+                  </div>
+                  <div class="p-4 text-[10px] font-mono leading-relaxed space-y-2.5 transition-opacity duration-500" id="ta-body">
+                    <p class="text-zinc-300"><span class="text-red-400 font-bold">What it sees:</span> <span id="ta-structure">BTC showing weakness on the 4H chart. Sellers have been in control since the $97,800 rejection. Momentum fading.</span></p>
+                    <p class="text-zinc-300"><span class="text-amber-400 font-bold">The data:</span> <span id="ta-derivatives">Open interest up +4.2% while price is flat. Funding flipped negative. $420M in longs clustered at $96.1-96.5K &mdash; liquidation magnet.</span></p>
+                    <p class="text-zinc-300"><span class="text-green-400 font-bold">What to do:</span> <span id="ta-verdict">Wait for price to sweep below $96,500 first. If it bounces back with volume, that's your entry. Keep your position small.</span></p>
+                    <div class="border-t border-zinc-800 pt-2 flex items-center gap-3 text-[8px] text-zinc-600">
+                      <span class="flex items-center gap-1"><iconify-icon icon="solar:database-linear" class="text-[9px]"></iconify-icon>560+ data points</span>
+                      <span class="flex items-center gap-1"><iconify-icon icon="solar:shield-bold" class="text-[9px] text-red-600"></iconify-icon>Risk-aware</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 3 (bottom): Chat — ask the agent anything -->
+                <div class="absolute -bottom-28 right-8 w-72 bg-[#0a0a0a]/95 backdrop-blur-sm border border-zinc-800 z-10 sys-reveal sys-slide-l sys-delay-400 overflow-hidden shadow-[0_0_20px_rgba(220,38,38,0.06)]">
+                  <div class="p-2.5 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                      <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">ASK BASTION</span>
+                    </div>
+                    <span class="text-[8px] font-mono text-green-500 border border-green-900/40 bg-green-900/10 px-1.5 py-0.5">LIVE</span>
+                  </div>
+                  <div class="p-3 space-y-2.5 transition-opacity duration-500" id="chat-cycle">
                     <div class="flex gap-2 justify-end">
-                      <div class="bg-red-600/10 border border-red-900/30 px-2 py-1.5 rounded-b-lg rounded-tl-lg text-[9px] font-mono text-zinc-300 max-w-[85%]" id="bubble-q">Should I close my BTC long?</div>
+                      <div class="bg-red-600/10 border border-red-900/30 px-2 py-1.5 rounded-b-lg rounded-tl-lg text-[9px] font-mono text-zinc-300 max-w-[80%]" id="ch-q">Should I add to my BTC long here?</div>
                     </div>
                     <div class="flex gap-2">
                       <div class="w-4 h-4 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 shrink-0 mt-0.5"><iconify-icon icon="solar:shield-bold" class="text-[8px]"></iconify-icon></div>
-                      <div class="bg-[#080808] border border-zinc-800 px-2 py-1.5 rounded-b-lg rounded-tr-lg text-[9px] font-mono text-zinc-400 max-w-[85%]" id="bubble-a">Not yet. Wait for the $96.5K sweep. I'll alert you the second it's safe to enter.</div>
+                      <div class="bg-[#080808] border border-zinc-800 px-2 py-1.5 rounded-b-lg rounded-tr-lg text-[9px] font-mono text-zinc-400 max-w-[85%]" id="ch-a">Not yet. $420M in liquidations sitting at $96.5K. Wait for the sweep &mdash; I'll alert you when it's safe.</div>
                     </div>
                   </div>
                 </div>
@@ -655,41 +674,54 @@
       })();
     </script>
 
-    <!-- Hero Agent Card Cycling -->
+    <!-- Hero Cards Content Cycling — 3 independent card cycles -->
     <script>
     (function(){
-      const agentData = [
-        { sym:'BTC-PERP', badge:'DANGER', badgeClass:'bg-red-500/20 text-red-400', action:'Reduce your position by 40%', actionClass:'text-red-400', reason:"There's a $420M liquidation cluster right below your entry. If price drops 2%, a cascade could wipe your position.", conf:87, barColor:'#ef4444', confClass:'text-red-400', time:'just now', positions:'Watching 3 positions' },
-        { sym:'ETH-PERP', badge:'CAUTION', badgeClass:'bg-amber-500/20 text-amber-400', action:'Hold — but tighten your stop', actionClass:'text-amber-400', reason:"Funding is neutral but open interest is building fast. If BTC drops, ETH follows. Move your stop to $3,310 to lock in profits.", conf:71, barColor:'#f59e0b', confClass:'text-amber-400', time:'2m ago', positions:'Watching 3 positions' },
-        { sym:'SOL-PERP', badge:'SAFE', badgeClass:'bg-green-500/20 text-green-400', action:'All clear. Momentum is strong.', actionClass:'text-green-400', reason:"On-chain activity hitting all-time highs. Whale wallets accumulating. Your long is well-positioned — ride the trend.", conf:92, barColor:'#22c55e', confClass:'text-green-400', time:'5m ago', positions:'Watching 3 positions' },
+      const shieldData = [
+        { s1:'BTC-PERP', b1:'HIGH', b1c:'bg-red-500/20 text-red-400', a1:'REDUCE 40%', a1c:'text-amber-400', r1:'$650M liquidation cluster within 2%. Funding negative.', c1:87, bar1c:'#ef4444', s2:'SOL-PERP', b2:'LOW', b2c:'bg-green-500/20 text-green-400', a2:'HOLD \u2014 MOMENTUM INTACT', a2c:'text-green-400' },
+        { s1:'ETH-PERP', b1:'MODERATE', b1c:'bg-amber-500/20 text-amber-400', a1:'HOLD \u2014 TIGHTEN STOP', a1c:'text-amber-400', r1:'Funding neutral but open interest building fast. Watch closely.', c1:71, bar1c:'#f59e0b', s2:'BTC-PERP', b2:'LOW', b2c:'bg-green-500/20 text-green-400', a2:'HOLD \u2014 TRAILING AT +1.8R', a2c:'text-green-400' },
+        { s1:'SOL-PERP', b1:'CRITICAL', b1c:'bg-red-500/20 text-red-400', a1:'EXIT IMMEDIATELY', a1c:'text-red-400', r1:'Whale dump detected \u2014 245K SOL moved to exchange. Cascade imminent.', c1:94, bar1c:'#ef4444', s2:'AVAX-PERP', b2:'LOW', b2c:'bg-green-500/20 text-green-400', a2:'HOLD \u2014 STRUCTURE INTACT', a2c:'text-green-400' },
+      ];
+      const taData = [
+        { t:'1.2s', s:'BTC showing weakness on the 4H chart. Sellers have been in control since the $97,800 rejection. Momentum fading.', d:'Open interest up +4.2% while price is flat. Funding flipped negative. $420M in longs clustered at $96.1-96.5K \u2014 liquidation magnet.', v:'Wait for price to sweep below $96,500 first. If it bounces back with volume, that\u2019s your entry. Keep your position small.' },
+        { t:'0.9s', s:'ETH reclaimed $3,380 with strong buying volume. Higher lows forming. Buyers stepping in at every dip \u2014 accumulation pattern.', d:'Funding healthy at +0.012%. No aggressive shorts building. Whale wallets added +14K ETH in the last 48 hours.', v:'Strength confirmed. You can add between $3,360-$3,380. Target $3,520. Set stop below $3,310 to protect yourself.' },
+        { t:'1.5s', s:'SOL broke below its ascending trendline. Big volume on the breakdown. Previous support at $148 is now acting as resistance.', d:'Funding deeply negative at -0.032%. Shorts piling in. But $120M in shorts clustered at $155 \u2014 squeeze territory.', v:'Don\u2019t go long here. If you\u2019re short, tighten your stop to $149. Watch for a sharp reversal if shorts get trapped above $155.' },
       ];
       const chatData = [
-        { q:'Should I close my BTC long?', a:"Not yet. Wait for the $96.5K sweep. I'll alert you the second it's safe to enter." },
-        { q:'Is ETH going to dump?', a:"Not likely right now. Whale inflows are strong and funding is healthy. Keep your position." },
-        { q:'Am I over-exposed right now?', a:"A little. Your BTC position is 60% of your portfolio. I'd trim it to 40% given current conditions." },
-        { q:'When should I take profit on SOL?', a:"I'd start scaling out at $180. The 180-185 zone has heavy resistance. Take 50% there, trail the rest." },
+        { q:'Should I add to my BTC long here?', a:'Not yet. $420M in liquidations sitting at $96.5K. Wait for the sweep \u2014 I\u2019ll alert you when it\u2019s safe.' },
+        { q:'Is ETH a buy right now?', a:'Yes, accumulation confirmed. Add between $3,360-$3,380. Whale inflows are strong. Funding is healthy.' },
+        { q:'SOL just broke structure. Exit?', a:'If you\u2019re long, yes. The trendline broke on volume. If short, tighten stop to $149 \u2014 $155 is a squeeze zone.' },
+        { q:'What\u2019s the market doing right now?', a:'Risk-off mode. BTC dominance rising, altcoin funding negative everywhere. I\u2019d reduce alt exposure and keep cash ready.' },
       ];
-      let ai=0, ci=0;
+      let si=0, ti=0, ci=0;
       function fade(el, cb){ el.style.opacity='0'; setTimeout(()=>{ cb(); el.style.opacity='1'; }, 400); }
-      function cycleAgent(){
-        ai = (ai+1) % agentData.length; const d = agentData[ai];
-        const wrap = document.getElementById('agent-cycle'); if(!wrap) return;
+      function cycleShield(){
+        si = (si+1) % shieldData.length; const d = shieldData[si];
+        const wrap = document.getElementById('shield-cycle'); if(!wrap) return;
         fade(wrap, ()=>{
-          document.getElementById('agent-sym').textContent=d.sym;
-          const badge = document.getElementById('agent-badge'); badge.textContent=d.badge; badge.className='text-[8px] font-mono px-2 py-0.5 '+d.badgeClass;
-          const action = document.getElementById('agent-action'); action.textContent=d.action; action.className='text-[10px] font-mono font-bold '+d.actionClass;
-          document.getElementById('agent-reason').textContent=d.reason;
-          document.getElementById('agent-bar').style.width=d.conf+'%'; document.getElementById('agent-bar').style.background=d.barColor;
-          const conf = document.getElementById('agent-conf'); conf.textContent=d.conf+'%'; conf.className='text-[9px] font-mono font-bold '+d.confClass;
-          document.getElementById('agent-time').textContent=d.time;
+          document.getElementById('sh-sym1').textContent=d.s1; document.getElementById('sh-badge1').className='text-[8px] font-mono px-1.5 py-0.5 rounded '+d.b1c; document.getElementById('sh-badge1').textContent=d.b1;
+          document.getElementById('sh-action1').className='text-[9px] font-mono font-bold mb-1 '+d.a1c; document.getElementById('sh-action1').textContent=d.a1;
+          document.getElementById('sh-reason1').textContent=d.r1; document.getElementById('sh-conf1').textContent=d.c1+'%';
+          document.getElementById('sh-bar1').style.width=d.c1+'%'; document.getElementById('sh-bar1').style.background=d.bar1c;
+          document.getElementById('sh-sym2').textContent=d.s2; document.getElementById('sh-badge2').className='text-[8px] font-mono px-1.5 py-0.5 rounded '+d.b2c; document.getElementById('sh-badge2').textContent=d.b2;
+          document.getElementById('sh-action2').className='text-[9px] font-mono font-bold '+d.a2c; document.getElementById('sh-action2').textContent=d.a2;
+        });
+      }
+      function cycleTA(){
+        ti = (ti+1) % taData.length; const d = taData[ti];
+        const wrap = document.getElementById('ta-body'); if(!wrap) return;
+        fade(wrap, ()=>{
+          document.getElementById('ta-structure').textContent=d.s; document.getElementById('ta-derivatives').textContent=d.d;
+          document.getElementById('ta-verdict').textContent=d.v; document.getElementById('ta-time').textContent=d.t;
         });
       }
       function cycleChat(){
         ci = (ci+1) % chatData.length; const d = chatData[ci];
-        const wrap = document.getElementById('chat-bubble'); if(!wrap) return;
-        fade(wrap, ()=>{ document.getElementById('bubble-q').textContent=d.q; document.getElementById('bubble-a').textContent=d.a; });
+        const wrap = document.getElementById('chat-cycle'); if(!wrap) return;
+        fade(wrap, ()=>{ document.getElementById('ch-q').textContent=d.q; document.getElementById('ch-a').textContent=d.a; });
       }
-      setInterval(cycleAgent, 5000);
+      setInterval(cycleShield, 5000);
+      setInterval(cycleTA, 6000);
       setInterval(cycleChat, 4500);
     })();
     </script>
