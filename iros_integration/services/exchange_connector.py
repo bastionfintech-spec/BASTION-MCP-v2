@@ -29,6 +29,23 @@ class ExchangeCredentials:
 
 
 @dataclass
+class OrderResult:
+    """Standardized result from an order execution."""
+    success: bool
+    order_id: str = ""
+    exchange: str = ""
+    symbol: str = ""
+    side: str = ""        # BUY or SELL
+    order_type: str = ""  # MARKET, LIMIT, STOP_MARKET, TAKE_PROFIT_MARKET
+    quantity: float = 0.0
+    price: Optional[float] = None
+    executed_price: Optional[float] = None
+    error: str = ""
+    raw_response: Optional[dict] = None
+    timestamp: str = ""
+
+
+@dataclass
 class Position:
     """Standardized position format across exchanges."""
     id: str
@@ -81,7 +98,30 @@ class BaseExchangeClient(ABC):
     async def get_balance(self) -> ExchangeBalance:
         """Fetch account balance."""
         pass
-    
+
+    # ─── Order Execution Methods (Phase 3) ─────────────────────────────
+
+    async def close_position(self, symbol: str, direction: str, quantity: float,
+                             reduce_only: bool = True) -> OrderResult:
+        """Close a position (full or partial) with a market order.
+        direction: 'long' or 'short' — we place the opposite side.
+        """
+        return OrderResult(success=False, error=f"{self.exchange_name}: close_position not implemented")
+
+    async def set_stop_loss(self, symbol: str, direction: str, stop_price: float,
+                            quantity: Optional[float] = None) -> OrderResult:
+        """Set or update a stop-loss order for an existing position."""
+        return OrderResult(success=False, error=f"{self.exchange_name}: set_stop_loss not implemented")
+
+    async def set_take_profit(self, symbol: str, direction: str, tp_price: float,
+                              quantity: Optional[float] = None) -> OrderResult:
+        """Set or update a take-profit order for an existing position."""
+        return OrderResult(success=False, error=f"{self.exchange_name}: set_take_profit not implemented")
+
+    async def cancel_all_orders(self, symbol: str) -> OrderResult:
+        """Cancel all open orders for a symbol."""
+        return OrderResult(success=False, error=f"{self.exchange_name}: cancel_all_orders not implemented")
+
     def _generate_signature(self, message: str) -> str:
         """Generate HMAC signature."""
         return hmac.new(
@@ -532,13 +572,177 @@ class BybitClient(BaseExchangeClient):
                     )
         except Exception as e:
             logger.error(f"Bybit get_balance error: {e}")
-        
+
         return ExchangeBalance(0, 0, 0, 0)
+
+    # ─── Bybit Order Execution ────────────────────────────────────────
+
+    def _bybit_post_sign(self, timestamp: str, payload: str) -> str:
+        """Generate Bybit V5 POST signature."""
+        recv_window = "5000"
+        param_str = f"{timestamp}{self.credentials.api_key}{recv_window}{payload}"
+        return hmac.new(
+            self.credentials.api_secret.encode(),
+            param_str.encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+    async def _bybit_post_order(self, endpoint: str, body: dict) -> OrderResult:
+        """Send a signed POST to Bybit V5 trade endpoints."""
+        if self.credentials.read_only:
+            return OrderResult(success=False, error="Bybit: read-only mode — order execution disabled")
+        try:
+            async with httpx.AsyncClient() as client:
+                timestamp = str(int(time.time() * 1000))
+                payload = json.dumps(body)
+                sign = self._bybit_post_sign(timestamp, payload)
+                headers = {
+                    "X-BAPI-API-KEY": self.credentials.api_key,
+                    "X-BAPI-SIGN": sign,
+                    "X-BAPI-TIMESTAMP": timestamp,
+                    "X-BAPI-RECV-WINDOW": "5000",
+                    "Content-Type": "application/json"
+                }
+                res = await client.post(
+                    f"{self.base_url}{endpoint}",
+                    content=payload,
+                    headers=headers,
+                    timeout=15.0
+                )
+                data = res.json()
+                ret_code = data.get("retCode", -1)
+                if ret_code == 0:
+                    result_data = data.get("result", {})
+                    return OrderResult(
+                        success=True,
+                        order_id=result_data.get("orderId", ""),
+                        exchange="bybit",
+                        symbol=body.get("symbol", ""),
+                        side=body.get("side", ""),
+                        order_type=body.get("orderType", ""),
+                        quantity=float(body.get("qty", 0)),
+                        raw_response=data,
+                        timestamp=datetime.now().isoformat()
+                    )
+                else:
+                    err = data.get("retMsg", "Unknown error")
+                    logger.error(f"[BYBIT] Order failed: {err} | Body: {body}")
+                    return OrderResult(success=False, error=f"Bybit: {err}", raw_response=data)
+        except Exception as e:
+            logger.error(f"[BYBIT] Order exception: {e}")
+            return OrderResult(success=False, error=f"Bybit exception: {str(e)}")
+
+    async def close_position(self, symbol: str, direction: str, quantity: float,
+                             reduce_only: bool = True) -> OrderResult:
+        """Close position on Bybit with a market order."""
+        # To close a LONG, we SELL. To close a SHORT, we BUY.
+        close_side = "Sell" if direction.lower() == "long" else "Buy"
+        body = {
+            "category": "linear",
+            "symbol": symbol,
+            "side": close_side,
+            "orderType": "Market",
+            "qty": str(quantity),
+            "reduceOnly": reduce_only,
+            "timeInForce": "GTC"
+        }
+        logger.info(f"[BYBIT] CLOSE {direction.upper()} {symbol} qty={quantity} side={close_side}")
+        return await self._bybit_post_order("/v5/order/create", body)
+
+    async def set_stop_loss(self, symbol: str, direction: str, stop_price: float,
+                            quantity: Optional[float] = None) -> OrderResult:
+        """Set/update SL on Bybit using trading-stop endpoint."""
+        if self.credentials.read_only:
+            return OrderResult(success=False, error="Bybit: read-only mode")
+        try:
+            async with httpx.AsyncClient() as client:
+                timestamp = str(int(time.time() * 1000))
+                pos_side = "Buy" if direction.lower() == "long" else "Sell"
+                body = {
+                    "category": "linear",
+                    "symbol": symbol,
+                    "positionIdx": 0,  # One-Way Mode
+                    "stopLoss": str(stop_price),
+                    "slTriggerBy": "MarkPrice"
+                }
+                payload = json.dumps(body)
+                sign = self._bybit_post_sign(timestamp, payload)
+                headers = {
+                    "X-BAPI-API-KEY": self.credentials.api_key,
+                    "X-BAPI-SIGN": sign,
+                    "X-BAPI-TIMESTAMP": timestamp,
+                    "X-BAPI-RECV-WINDOW": "5000",
+                    "Content-Type": "application/json"
+                }
+                res = await client.post(
+                    f"{self.base_url}/v5/position/trading-stop",
+                    content=payload,
+                    headers=headers,
+                    timeout=15.0
+                )
+                data = res.json()
+                if data.get("retCode") == 0:
+                    logger.info(f"[BYBIT] SL set {symbol} @ {stop_price}")
+                    return OrderResult(success=True, exchange="bybit", symbol=symbol,
+                                       order_type="STOP_LOSS", price=stop_price,
+                                       raw_response=data, timestamp=datetime.now().isoformat())
+                else:
+                    err = data.get("retMsg", "Unknown")
+                    return OrderResult(success=False, error=f"Bybit SL: {err}", raw_response=data)
+        except Exception as e:
+            return OrderResult(success=False, error=f"Bybit SL exception: {str(e)}")
+
+    async def set_take_profit(self, symbol: str, direction: str, tp_price: float,
+                              quantity: Optional[float] = None) -> OrderResult:
+        """Set/update TP on Bybit using trading-stop endpoint."""
+        if self.credentials.read_only:
+            return OrderResult(success=False, error="Bybit: read-only mode")
+        try:
+            async with httpx.AsyncClient() as client:
+                timestamp = str(int(time.time() * 1000))
+                body = {
+                    "category": "linear",
+                    "symbol": symbol,
+                    "positionIdx": 0,
+                    "takeProfit": str(tp_price),
+                    "tpTriggerBy": "MarkPrice"
+                }
+                payload = json.dumps(body)
+                sign = self._bybit_post_sign(timestamp, payload)
+                headers = {
+                    "X-BAPI-API-KEY": self.credentials.api_key,
+                    "X-BAPI-SIGN": sign,
+                    "X-BAPI-TIMESTAMP": timestamp,
+                    "X-BAPI-RECV-WINDOW": "5000",
+                    "Content-Type": "application/json"
+                }
+                res = await client.post(
+                    f"{self.base_url}/v5/position/trading-stop",
+                    content=payload,
+                    headers=headers,
+                    timeout=15.0
+                )
+                data = res.json()
+                if data.get("retCode") == 0:
+                    logger.info(f"[BYBIT] TP set {symbol} @ {tp_price}")
+                    return OrderResult(success=True, exchange="bybit", symbol=symbol,
+                                       order_type="TAKE_PROFIT", price=tp_price,
+                                       raw_response=data, timestamp=datetime.now().isoformat())
+                else:
+                    err = data.get("retMsg", "Unknown")
+                    return OrderResult(success=False, error=f"Bybit TP: {err}", raw_response=data)
+        except Exception as e:
+            return OrderResult(success=False, error=f"Bybit TP exception: {str(e)}")
+
+    async def cancel_all_orders(self, symbol: str) -> OrderResult:
+        """Cancel all orders for a symbol on Bybit."""
+        body = {"category": "linear", "symbol": symbol}
+        return await self._bybit_post_order("/v5/order/cancel-all", body)
 
 
 class OKXClient(BaseExchangeClient):
     """OKX exchange client."""
-    
+
     def __init__(self, credentials: ExchangeCredentials):
         super().__init__(credentials)
         self.base_url = "https://www.okx.com"
@@ -645,8 +849,106 @@ class BinanceClient(BaseExchangeClient):
                     )
         except Exception as e:
             logger.error(f"Binance get_balance error: {e}")
-        
+
         return ExchangeBalance(0, 0, 0, 0)
+
+    # ─── Binance Order Execution ──────────────────────────────────────
+
+    async def _binance_post_order(self, endpoint: str, params: dict) -> OrderResult:
+        """Send a signed POST to Binance Futures endpoints."""
+        if self.credentials.read_only:
+            return OrderResult(success=False, error="Binance: read-only mode — order execution disabled")
+        try:
+            async with httpx.AsyncClient() as client:
+                timestamp = str(int(time.time() * 1000))
+                params["timestamp"] = timestamp
+                query_string = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
+                sign = self._generate_signature(query_string)
+                params["signature"] = sign
+                res = await client.post(
+                    f"{self.base_url}{endpoint}",
+                    params=params,
+                    headers={"X-MBX-APIKEY": self.credentials.api_key},
+                    timeout=15.0
+                )
+                data = res.json()
+                if res.status_code == 200:
+                    return OrderResult(
+                        success=True,
+                        order_id=str(data.get("orderId", "")),
+                        exchange="binance",
+                        symbol=params.get("symbol", ""),
+                        side=params.get("side", ""),
+                        order_type=params.get("type", ""),
+                        quantity=float(params.get("quantity", 0)),
+                        executed_price=float(data.get("avgPrice", 0)) or None,
+                        raw_response=data,
+                        timestamp=datetime.now().isoformat()
+                    )
+                else:
+                    err = data.get("msg", f"HTTP {res.status_code}")
+                    logger.error(f"[BINANCE] Order failed: {err} | Params: {params}")
+                    return OrderResult(success=False, error=f"Binance: {err}", raw_response=data)
+        except Exception as e:
+            logger.error(f"[BINANCE] Order exception: {e}")
+            return OrderResult(success=False, error=f"Binance exception: {str(e)}")
+
+    async def close_position(self, symbol: str, direction: str, quantity: float,
+                             reduce_only: bool = True) -> OrderResult:
+        """Close position on Binance Futures with a market order."""
+        close_side = "SELL" if direction.lower() == "long" else "BUY"
+        params = {
+            "symbol": symbol,
+            "side": close_side,
+            "type": "MARKET",
+            "quantity": str(quantity),
+            "reduceOnly": "true" if reduce_only else "false"
+        }
+        logger.info(f"[BINANCE] CLOSE {direction.upper()} {symbol} qty={quantity} side={close_side}")
+        return await self._binance_post_order("/fapi/v1/order", params)
+
+    async def set_stop_loss(self, symbol: str, direction: str, stop_price: float,
+                            quantity: Optional[float] = None) -> OrderResult:
+        """Set SL on Binance Futures via STOP_MARKET order."""
+        close_side = "SELL" if direction.lower() == "long" else "BUY"
+        params = {
+            "symbol": symbol,
+            "side": close_side,
+            "type": "STOP_MARKET",
+            "stopPrice": str(stop_price),
+            "closePosition": "true",
+            "workingType": "MARK_PRICE",
+            "priceProtect": "TRUE"
+        }
+        if quantity:
+            params["quantity"] = str(quantity)
+            del params["closePosition"]
+        logger.info(f"[BINANCE] SL set {symbol} @ {stop_price}")
+        return await self._binance_post_order("/fapi/v1/order", params)
+
+    async def set_take_profit(self, symbol: str, direction: str, tp_price: float,
+                              quantity: Optional[float] = None) -> OrderResult:
+        """Set TP on Binance Futures via TAKE_PROFIT_MARKET order."""
+        close_side = "SELL" if direction.lower() == "long" else "BUY"
+        params = {
+            "symbol": symbol,
+            "side": close_side,
+            "type": "TAKE_PROFIT_MARKET",
+            "stopPrice": str(tp_price),
+            "closePosition": "true",
+            "workingType": "MARK_PRICE",
+            "priceProtect": "TRUE"
+        }
+        if quantity:
+            params["quantity"] = str(quantity)
+            del params["closePosition"]
+        logger.info(f"[BINANCE] TP set {symbol} @ {tp_price}")
+        return await self._binance_post_order("/fapi/v1/order", params)
+
+    async def cancel_all_orders(self, symbol: str) -> OrderResult:
+        """Cancel all open orders for a symbol on Binance."""
+        params = {"symbol": symbol}
+        return await self._binance_post_order("/fapi/v1/allOpenOrders", params)
 
 
 class DeribitClient(BaseExchangeClient):
@@ -957,6 +1259,50 @@ class UserContextService:
                 context_parts.append(f"  Liquidation: ${pos.liquidation_price:,.2f}")
         
         return "\n".join(context_parts)
+
+    # ─── Order Execution Routing ──────────────────────────────────────
+
+    def get_client_for_position(self, position: Position) -> Optional[BaseExchangeClient]:
+        """Get the exchange client that owns a position."""
+        exchange = position.exchange
+        if exchange and exchange in self.connections:
+            return self.connections[exchange]
+        # Fallback: try to find by position ID prefix
+        for ex_name, client in self.connections.items():
+            if position.id.startswith(ex_name):
+                return client
+        return None
+
+    async def close_position(self, position: Position, quantity: Optional[float] = None) -> OrderResult:
+        """Close a position via its owning exchange."""
+        client = self.get_client_for_position(position)
+        if not client:
+            return OrderResult(success=False, error=f"No exchange client for position {position.id}")
+        qty = quantity or position.size
+        return await client.close_position(position.symbol, position.direction, qty)
+
+    async def close_position_partial(self, position: Position, exit_pct: float) -> OrderResult:
+        """Close a percentage of a position. exit_pct: 0.0-1.0"""
+        qty = round(position.size * exit_pct, 8)
+        if qty <= 0:
+            return OrderResult(success=False, error="Calculated close quantity is zero")
+        return await self.close_position(position, quantity=qty)
+
+    async def set_stop_loss(self, position: Position, stop_price: float,
+                            quantity: Optional[float] = None) -> OrderResult:
+        """Set/update SL for a position via its exchange."""
+        client = self.get_client_for_position(position)
+        if not client:
+            return OrderResult(success=False, error=f"No exchange client for position {position.id}")
+        return await client.set_stop_loss(position.symbol, position.direction, stop_price, quantity)
+
+    async def set_take_profit(self, position: Position, tp_price: float,
+                              quantity: Optional[float] = None) -> OrderResult:
+        """Set/update TP for a position via its exchange."""
+        client = self.get_client_for_position(position)
+        if not client:
+            return OrderResult(success=False, error=f"No exchange client for position {position.id}")
+        return await client.set_take_profit(position.symbol, position.direction, tp_price, quantity)
 
 
 # Global instance

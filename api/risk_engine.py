@@ -5,6 +5,7 @@ Automated position monitoring with MCF Exit Hierarchy enforcement.
 Adaptive polling, data caching, hard-code safety checks, and AI evaluation.
 
 Phase 1: Position State Store, Data Cache, Evaluation Loop, API endpoints
+Phase 3: Execution Engine integration — actions now route to real exchange orders
 """
 
 import asyncio
@@ -285,15 +286,22 @@ class RiskEngine:
         self._helsinki = None
         self._coinglass = None
         self._whale_alert = None
+        self._execution_engine = None  # ExecutionEngine instance
+        self._scope_id = "default"     # User scope for execution routing
 
     def inject_dependencies(self, get_positions_fn=None, evaluate_fn=None,
-                             helsinki=None, coinglass=None, whale_alert=None):
+                             helsinki=None, coinglass=None, whale_alert=None,
+                             execution_engine=None, scope_id=None):
         """Inject external service dependencies."""
         self._get_positions_fn = get_positions_fn
         self._evaluate_fn = evaluate_fn
         self._helsinki = helsinki
         self._coinglass = coinglass
         self._whale_alert = whale_alert
+        if execution_engine:
+            self._execution_engine = execution_engine
+        if scope_id:
+            self._scope_id = scope_id
 
     # ─── Lifecycle ─────────────────────────────────────────────────────
 
@@ -613,12 +621,50 @@ class RiskEngine:
                 confidence >= self.config.confidence_threshold):
 
             logger.info(f"[ENGINE] AUTO-EXECUTE: {state.symbol} → {action_type} (conf={confidence:.2f})")
-            self.audit.log("AUTO_EXECUTE", state.position_id, {
-                "action": action_type,
-                "confidence": confidence,
-            })
-            self._total_actions_taken += 1
-            # TODO: Wire to exchange order execution in Phase 3
+
+            # ── Phase 3: Route to Execution Engine ──
+            if self._execution_engine:
+                try:
+                    exec_result = await self._execution_engine.execute_action(
+                        position_state=state.to_dict(),
+                        action=action,
+                        scope_id=self._scope_id
+                    )
+                    if exec_result.success:
+                        self.audit.log("EXECUTED", state.position_id, {
+                            "action": action_type,
+                            "confidence": confidence,
+                            "order_id": exec_result.order_id,
+                            "exchange": exec_result.exchange,
+                            "exit_pct": exec_result.exit_pct,
+                            "executed_price": exec_result.executed_price,
+                        })
+                        self._total_actions_taken += 1
+                        logger.info(f"[ENGINE] ✓ EXECUTED {action_type} on {state.symbol} "
+                                    f"| order={exec_result.order_id} | exit={exec_result.exit_pct*100:.0f}%")
+                    else:
+                        self.audit.log("EXECUTION_FAILED", state.position_id, {
+                            "action": action_type,
+                            "confidence": confidence,
+                            "error": exec_result.error,
+                        })
+                        logger.error(f"[ENGINE] ✗ EXECUTION FAILED {state.symbol}: {exec_result.error}")
+                except Exception as exec_err:
+                    self.audit.log("EXECUTION_ERROR", state.position_id, {
+                        "action": action_type,
+                        "error": str(exec_err),
+                    })
+                    logger.error(f"[ENGINE] Execution exception for {state.symbol}: {exec_err}")
+            else:
+                # No execution engine wired — log as advisory
+                self.audit.log("AUTO_EXECUTE_NO_ENGINE", state.position_id, {
+                    "action": action_type,
+                    "confidence": confidence,
+                    "note": "Execution engine not connected"
+                })
+                self._total_actions_taken += 1
+                logger.warning(f"[ENGINE] AUTO-EXECUTE queued but no execution engine wired: "
+                               f"{state.symbol} → {action_type}")
 
         elif action_type != "HOLD":
             logger.info(f"[ENGINE] ADVISORY: {state.symbol} → {action_type} [{urgency}] {reason}")

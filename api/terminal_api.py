@@ -104,6 +104,18 @@ except ImportError:
         risk_engine = None
         logger.warning("Risk Engine not available")
 
+# Import Execution Engine
+try:
+    from api.execution_engine import execution_engine
+    logger.info("Execution Engine module loaded")
+except ImportError:
+    try:
+        from execution_engine import execution_engine
+        logger.info("Execution Engine module loaded (direct)")
+    except ImportError:
+        execution_engine = None
+        logger.warning("Execution Engine not available")
+
 # Global clients
 helsinki: HelsinkiClient = None
 query_processor: QueryProcessor = None
@@ -254,8 +266,13 @@ async def lifespan(app: FastAPI):
                 helsinki=helsinki,
                 coinglass=coinglass,
                 whale_alert=whale_alert,
+                execution_engine=execution_engine,
             )
             logger.info("[ENGINE] Risk Engine dependencies injected")
+
+            # Wire execution engine with default context
+            if execution_engine:
+                logger.info("[ENGINE] Execution Engine ready for user context registration")
         except Exception as e:
             logger.warning(f"[ENGINE] Dependency injection failed: {e}")
 
@@ -5298,10 +5315,27 @@ async def partial_close(request: Dict[str, Any]):
 # =============================================================================
 
 @app.post("/api/engine/start")
-async def engine_start():
+async def engine_start(token: Optional[str] = None, session_id: Optional[str] = None):
     """Start the BASTION Risk Engine for autonomous position monitoring."""
     if not risk_engine:
         raise HTTPException(status_code=503, detail="Risk Engine not available")
+
+    # If user context available, wire it up for execution
+    try:
+        scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+        if ctx and execution_engine:
+            execution_engine.register_user_context(scope_id, ctx)
+            risk_engine._scope_id = scope_id
+            # Register all current positions for routing
+            try:
+                all_pos = await ctx.get_all_positions()
+                for p in all_pos:
+                    execution_engine.register_position(p.id, p)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     result = await risk_engine.start()
     return result
 
@@ -5320,7 +5354,13 @@ async def engine_status():
     """Get current Risk Engine state, tracked positions, and urgency breakdown."""
     if not risk_engine:
         return {"running": False, "available": False}
-    return risk_engine.status()
+    status = risk_engine.status()
+    # Inject execution engine status
+    if execution_engine:
+        status["execution"] = execution_engine.status()
+    else:
+        status["execution"] = {"available": False}
+    return status
 
 
 @app.post("/api/engine/configure")
@@ -5411,6 +5451,206 @@ async def engine_positions():
         "positions": [p.to_dict() for p in positions],
         "total": len(positions)
     }
+
+
+# =============================================================================
+# EXECUTION ENGINE API
+# =============================================================================
+
+@app.post("/api/engine/arm")
+async def engine_arm(request: Dict[str, Any], token: Optional[str] = None, session_id: Optional[str] = None):
+    """
+    Arm the execution engine for a user — enables auto-execute on their positions.
+
+    This is the critical step that transitions from advisory-only to live trading.
+    The user's exchange connections MUST be configured with read+write API keys.
+
+    Accepts:
+    {
+        "auto_execute": true,
+        "confidence_threshold": 0.7,
+        "daily_loss_limit_usd": 5000,
+        "position_ids": ["bybit_BTCUSDT_Buy"]  // optional: arm specific positions only
+    }
+    """
+    if not risk_engine or not execution_engine:
+        raise HTTPException(status_code=503, detail="Engine not available")
+
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+
+    if not ctx or not ctx.connections:
+        raise HTTPException(status_code=400, detail="No exchange connections. Connect an exchange first.")
+
+    # Check if any connections have write access
+    read_only_exchanges = []
+    write_exchanges = []
+    for ex_name, client in ctx.connections.items():
+        if client.credentials.read_only:
+            read_only_exchanges.append(ex_name)
+        else:
+            write_exchanges.append(ex_name)
+
+    if not write_exchanges:
+        return {
+            "success": False,
+            "error": "All connected exchanges are in read-only mode. Reconnect with trade-enabled API keys.",
+            "read_only_exchanges": read_only_exchanges
+        }
+
+    # Register user context with execution engine
+    execution_engine.register_user_context(scope_id, ctx)
+
+    # Inject execution engine into risk engine
+    risk_engine._execution_engine = execution_engine
+    risk_engine._scope_id = scope_id
+
+    # Configure execution safety
+    auto_exec = request.get("auto_execute", True)
+    conf_threshold = request.get("confidence_threshold", 0.7)
+    daily_limit = request.get("daily_loss_limit_usd", 0)
+
+    risk_engine.config.auto_execute = auto_exec
+    risk_engine.config.confidence_threshold = conf_threshold
+    if daily_limit > 0:
+        execution_engine.safety.daily_loss_limit_usd = daily_limit
+
+    # Arm specific positions if requested
+    position_ids = request.get("position_ids", [])
+    armed_positions = []
+
+    if position_ids:
+        for pid in position_ids:
+            state = await risk_engine.store.get(pid)
+            if state:
+                state.auto_execute = True
+                armed_positions.append(pid)
+    else:
+        # Arm all tracked positions
+        all_positions = await risk_engine.store.get_all()
+        for state in all_positions:
+            state.auto_execute = True
+            armed_positions.append(state.position_id)
+
+    # Register position objects for routing
+    try:
+        all_pos = await ctx.get_all_positions()
+        for p in all_pos:
+            execution_engine.register_position(p.id, p)
+    except Exception as e:
+        logger.warning(f"[ARM] Could not register positions: {e}")
+
+    risk_engine.audit.log("ENGINE_ARMED", "SYSTEM", {
+        "scope_id": scope_id,
+        "auto_execute": auto_exec,
+        "confidence_threshold": conf_threshold,
+        "daily_loss_limit": daily_limit,
+        "armed_positions": armed_positions,
+        "write_exchanges": write_exchanges,
+        "read_only_exchanges": read_only_exchanges,
+    })
+
+    logger.info(f"[ENGINE] ⚡ ARMED for {scope_id} | write={write_exchanges} | "
+                f"positions={len(armed_positions)} | auto={auto_exec}")
+
+    return {
+        "success": True,
+        "armed": True,
+        "scope_id": scope_id,
+        "auto_execute": auto_exec,
+        "confidence_threshold": conf_threshold,
+        "daily_loss_limit_usd": daily_limit,
+        "armed_positions": armed_positions,
+        "write_exchanges": write_exchanges,
+        "read_only_exchanges": read_only_exchanges,
+    }
+
+
+@app.post("/api/engine/disarm")
+async def engine_disarm():
+    """
+    Disarm the execution engine — switch back to advisory-only mode.
+    Positions continue to be monitored, but no orders will be placed.
+    """
+    if not risk_engine:
+        raise HTTPException(status_code=503, detail="Engine not available")
+
+    risk_engine.config.auto_execute = False
+
+    # Disarm all positions
+    all_positions = await risk_engine.store.get_all()
+    for state in all_positions:
+        state.auto_execute = False
+
+    risk_engine.audit.log("ENGINE_DISARMED", "SYSTEM", {})
+    logger.info("[ENGINE] Execution DISARMED — advisory mode only")
+
+    return {"success": True, "armed": False, "mode": "advisory"}
+
+
+@app.post("/api/engine/kill-switch")
+async def engine_kill_switch(request: Dict[str, Any]):
+    """
+    Emergency kill switch — immediately halt ALL execution.
+    Pass {"activate": true} to halt, {"activate": false} to resume.
+    """
+    if not execution_engine:
+        raise HTTPException(status_code=503, detail="Execution Engine not available")
+
+    activate = request.get("activate", True)
+    if activate:
+        execution_engine.activate_kill_switch()
+        if risk_engine:
+            risk_engine.config.auto_execute = False
+        return {"success": True, "kill_switch": True, "message": "ALL EXECUTION HALTED"}
+    else:
+        execution_engine.deactivate_kill_switch()
+        return {"success": True, "kill_switch": False, "message": "Kill switch deactivated"}
+
+
+@app.get("/api/engine/execution-status")
+async def engine_execution_status():
+    """Get execution engine status including safety state and audit trail."""
+    if not execution_engine:
+        return {"available": False}
+
+    status = execution_engine.status()
+    # Add recent execution history
+    status["recent_executions"] = execution_engine.get_execution_history(limit=20)
+    return status
+
+
+@app.get("/api/engine/execution-history")
+async def engine_execution_history(limit: int = 50, position_id: Optional[str] = None,
+                                   action: Optional[str] = None):
+    """Get detailed execution history with optional filters."""
+    if not execution_engine:
+        return {"entries": [], "total": 0}
+
+    entries = execution_engine.get_execution_history(
+        limit=limit, position_id=position_id, action_filter=action
+    )
+    return {"entries": entries, "total": execution_engine.audit.total_count}
+
+
+@app.post("/api/engine/configure-safety")
+async def engine_configure_safety(request: Dict[str, Any]):
+    """
+    Configure execution safety limits.
+
+    Accepts any subset of:
+    {
+        "min_confidence": 0.7,
+        "max_executions_per_hour": 10,
+        "max_total_executions_per_hour": 50,
+        "daily_loss_limit_usd": 5000,
+        "max_single_close_pct": 1.0
+    }
+    """
+    if not execution_engine:
+        raise HTTPException(status_code=503, detail="Execution Engine not available")
+
+    execution_engine.configure(**request)
+    return {"success": True, "safety": execution_engine.status()}
 
 
 # =============================================================================
