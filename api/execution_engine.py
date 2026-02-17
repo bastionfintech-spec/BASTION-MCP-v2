@@ -126,7 +126,7 @@ ACTION_EXECUTION_MAP = {
     "TP_PARTIAL": {
         "execute": True,
         "order_type": "close_partial",
-        "default_exit_pct": 0.33,   # Close 33% by default
+        "default_exit_pct": 0.33,   # Fallback only — AI should specify via execution.exit_pct
         "description": "Take partial profit at structure target"
     },
     "TP_FULL": {
@@ -156,7 +156,7 @@ ACTION_EXECUTION_MAP = {
     "REDUCE_SIZE": {
         "execute": True,
         "order_type": "close_partial",
-        "default_exit_pct": 0.5,    # Reduce by 50%
+        "default_exit_pct": 0.50,   # Fallback only — AI should specify via execution.exit_pct
         "description": "Risk management — reduce exposure"
     },
     "ADJUST_STOP": {
@@ -442,11 +442,8 @@ class ExecutionEngine:
         if stop_at == "entry":
             new_stop = position_state.get("entry_price", 0)
         elif stop_at == "dynamic":
-            # Use hints from AI evaluation, or fall back to position state
-            new_stop = (
-                hints.get("stop_adjustment") if isinstance(hints.get("stop_adjustment"), (int, float))
-                else self._parse_stop_from_hints(hints, position_state)
-            )
+            # Priority: execution.stop_price (new) → stop_adjustment (legacy) → position state
+            new_stop = self._parse_stop_from_hints(hints, position_state)
         else:
             new_stop = position_state.get("stop_loss", 0)
 
@@ -500,11 +497,30 @@ class ExecutionEngine:
 
     def _resolve_exit_pct(self, action_spec: dict, hints: dict,
                           position_state: dict) -> float:
-        """Determine what % of the position to close."""
-        # Check if AI provided specific execution hints
+        """
+        Determine what % of the position to close.
+
+        Priority:
+        1. AI-provided execution.exit_pct (integer 1-100) — new standardized format
+        2. AI-provided execution.primary_action text parsing — legacy format
+        3. Position state take_profits — structural targets
+        4. Action spec default — hardcoded fallback
+        """
+        # ── 1. New standardized format: execution.exit_pct (integer 1-100) ──
+        exit_pct_raw = hints.get("exit_pct")
+        if exit_pct_raw is not None:
+            try:
+                pct = float(exit_pct_raw)
+                if 1 <= pct <= 100:
+                    return pct / 100.0  # Convert 25 → 0.25
+                elif 0 < pct < 1:
+                    return pct          # Already a fraction
+            except (TypeError, ValueError):
+                pass
+
+        # ── 2. Legacy format: parse "Close 50%", "Exit 33%" from primary_action ──
         primary = hints.get("primary_action", "")
         if isinstance(primary, str):
-            # Parse patterns like "Close 50%", "Exit 33%", "Reduce by 25%"
             for word in primary.split():
                 word = word.strip("% ,")
                 try:
@@ -516,7 +532,7 @@ class ExecutionEngine:
                 except ValueError:
                     continue
 
-        # Check position state for TP-based exit
+        # ── 3. Position state take profits ──
         tps_hit = position_state.get("tps_hit", [])
         take_profits = position_state.get("take_profits", [])
         if take_profits:
@@ -524,16 +540,33 @@ class ExecutionEngine:
                 if i not in tps_hit and isinstance(tp, dict):
                     return tp.get("exit_pct", action_spec.get("default_exit_pct", 0.33))
 
+        # ── 4. Hardcoded fallback ──
         return action_spec.get("default_exit_pct", 0.33)
 
     def _parse_stop_from_hints(self, hints: dict, position_state: dict) -> float:
-        """Extract a stop price from AI execution hints or position state."""
-        # Try hints first
+        """
+        Extract a stop price from AI execution hints or position state.
+
+        Priority:
+        1. AI-provided execution.stop_price (float) — new standardized format
+        2. AI-provided execution.stop_adjustment (legacy, numeric or string)
+        3. Position state trailing_stop or guarding_line — structural fallback
+        """
+        # ── 1. New standardized format: execution.stop_price (float) ──
+        stop_price = hints.get("stop_price")
+        if stop_price is not None:
+            try:
+                val = float(stop_price)
+                if val > 0:
+                    return val
+            except (TypeError, ValueError):
+                pass
+
+        # ── 2. Legacy format: stop_adjustment (numeric or string) ──
         stop_adj = hints.get("stop_adjustment", "")
         if isinstance(stop_adj, (int, float)) and stop_adj > 0:
             return float(stop_adj)
         if isinstance(stop_adj, str):
-            # Parse "$93,800" or "93800" from the string
             import re
             nums = re.findall(r'[\d,]+\.?\d*', stop_adj.replace(",", ""))
             for n in nums:
@@ -544,7 +577,7 @@ class ExecutionEngine:
                 except ValueError:
                     continue
 
-        # Fall back to trailing_stop or guarding_line from position state
+        # ── 3. Structural fallback from position state ──
         trail = position_state.get("trailing_stop")
         if trail and trail > 0:
             return float(trail)

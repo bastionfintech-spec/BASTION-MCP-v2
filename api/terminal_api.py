@@ -4885,7 +4885,7 @@ MCF EXIT HIERARCHY (check in this EXACT order — first trigger wins):
 5) TRAILING STOP — ATR-based dynamic stop adjustment. Exit remaining position if hit.
 6) TIME EXIT — Max holding period exceeded with no progress. Exit 50% gradually.
 
-CORE PHILOSOPHY: Exit on STRUCTURE BREAKS, not arbitrary price targets. Let winners run when structure holds. The market tells you when a trade is over — listen to structure, not emotions.
+CORE PHILOSOPHY: Exit on STRUCTURE BREAKS, not arbitrary price targets. Let winners run when structure holds. Scale out intelligently — decide HOW MUCH to exit based on structure strength, R-multiple, and market context.
 
 CRITICAL REASONING RULES:
 - Every recommendation MUST explain the specific data that drives the decision
@@ -4893,32 +4893,43 @@ CRITICAL REASONING RULES:
 - Explain what WOULD change the recommendation (invalidation conditions)
 - If multiple signals conflict, state the conflict and explain which signal takes priority and WHY
 - Confidence score must reflect uncertainty honestly — 0.5 means genuinely uncertain, 0.9+ means overwhelming evidence
+- For partial exits, explain WHY you chose that specific percentage (not arbitrary)
 
 LIVE MARKET DATA ({datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC):
 {live_context}
 
-RESPOND WITH ONLY A JSON CODE BLOCK. No text before or after the code block.
+RESPOND WITH ONLY VALID JSON. No markdown, no code fences, no text before or after.
 
-```json
 {{
   "action": "HOLD|TP_PARTIAL|TP_FULL|MOVE_STOP_TO_BREAKEVEN|TRAIL_STOP|EXIT_FULL|REDUCE_SIZE|ADJUST_STOP|EXIT_100_PERCENT_IMMEDIATELY",
   "urgency": "LOW|MEDIUM|HIGH|CRITICAL",
+  "confidence": 0.0-1.0,
   "reason": "One clear sentence explaining what is happening and what you are doing about it",
   "reasoning": {{
-    "market_analysis": "What the live data is telling you — reference specific numbers from the data above. Funding rate, whale positioning, liquidation clusters, CVD, momentum. Connect each data point to what it means for this position.",
-    "structure_assessment": "Is the trend intact? Are key levels holding? Has support/resistance been broken or is it being tested? What does the price action structure look like on 15m and 1H?",
-    "risk_calculation": "Current P&L in R-multiples. Distance to stop in ATR units. Slippage risk. What happens if the worst case plays out — exact dollar impact.",
-    "decision_logic": "Walk through the MCF hierarchy. Which level triggered? Why this action over alternatives? What would you do differently if one data point changed?"
+    "structure_analysis": "Is the trend intact? Are key levels holding? Has support/resistance been broken or tested? What does price action structure look like?",
+    "data_assessment": "What the live data is telling you — reference specific numbers. Funding rate, whale positioning, liquidation clusters, CVD, momentum.",
+    "risk_factors": "Current P&L in R-multiples. Distance to stop. Slippage risk. What could go wrong.",
+    "exit_logic": "WHY this specific exit percentage or stop price was chosen. What factors determined the exact number."
   }},
   "execution": {{
-    "primary_action": "Exact order to place — order type, size, price",
-    "stop_adjustment": "New stop level if applicable, or 'KEEP CURRENT' with reason",
-    "do_NOT": "What the user must NOT do — common mistakes for this scenario",
-    "monitor": "Specific conditions to watch for — what triggers the next evaluation"
-  }},
-  "confidence": 0.0-1.0
+    "exit_pct": 0,
+    "stop_price": null,
+    "order_type": "NONE|MARKET|STOP_MARKET"
+  }}
 }}
-```"""
+
+EXECUTION FIELD RULES:
+- HOLD: exit_pct=0, stop_price=null, order_type="NONE"
+- TP_PARTIAL: exit_pct=15-75 (intelligent choice based on context), stop_price=null, order_type="MARKET"
+- TP_FULL: exit_pct=100, stop_price=null, order_type="MARKET"
+- MOVE_STOP_TO_BREAKEVEN: exit_pct=0, stop_price=entry_price, order_type="STOP_MARKET"
+- TRAIL_STOP: exit_pct=0, stop_price=new_trail_price, order_type="STOP_MARKET"
+- EXIT_FULL: exit_pct=100, stop_price=null, order_type="MARKET"
+- REDUCE_SIZE: exit_pct=20-75 (intelligent choice), stop_price=null, order_type="MARKET"
+- ADJUST_STOP: exit_pct=0, stop_price=new_stop_price, order_type="STOP_MARKET"
+- EXIT_100_PERCENT_IMMEDIATELY: exit_pct=100, stop_price=null, order_type="MARKET"
+
+exit_pct is an INTEGER (1-100). stop_price is a NUMBER (not a string)."""
 
     # ── Call the model ──
     model_url = os.getenv("BASTION_MODEL_URL")
@@ -4967,15 +4978,23 @@ DECISION REQUIRED: Evaluate this {direction} position using MCF exit hierarchy a
     parsed_action = None
     if risk_response:
         try:
-            import re
-            json_match = re.search(r'```json\s*(.*?)\s*```', risk_response, re.DOTALL)
-            if json_match:
-                parsed_action = json.loads(json_match.group(1))
-            else:
-                # Try direct JSON parse
-                parsed_action = json.loads(risk_response)
-        except (json.JSONDecodeError, AttributeError):
-            logger.warning(f"[RISK] Could not parse JSON from response")
+            # Try direct JSON parse first (new format — pure JSON, no fences)
+            parsed_action = json.loads(risk_response.strip())
+        except (json.JSONDecodeError, ValueError):
+            try:
+                # Fallback: extract from markdown code fence (legacy format)
+                import re
+                json_match = re.search(r'```(?:json)?\s*(.*?)\s*```', risk_response, re.DOTALL)
+                if json_match:
+                    parsed_action = json.loads(json_match.group(1))
+                else:
+                    # Last resort: find first { to last }
+                    first_brace = risk_response.find('{')
+                    last_brace = risk_response.rfind('}')
+                    if first_brace != -1 and last_brace > first_brace:
+                        parsed_action = json.loads(risk_response[first_brace:last_brace + 1])
+            except (json.JSONDecodeError, AttributeError):
+                logger.warning(f"[RISK] Could not parse JSON from response: {risk_response[:200]}")
 
     logger.info(f"[RISK] Evaluated {symbol} {direction} position: {parsed_action.get('action', 'UNKNOWN') if parsed_action else 'NO_RESPONSE'}")
 
