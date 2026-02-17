@@ -92,6 +92,18 @@ except ImportError as e:
         def get_position_context_for_ai(self, positions): return ''
     user_context = UserContext()
 
+# Import Risk Engine
+try:
+    from api.risk_engine import risk_engine
+    logger.info("Risk Engine module loaded")
+except ImportError:
+    try:
+        from risk_engine import risk_engine
+        logger.info("Risk Engine module loaded (direct)")
+    except ImportError:
+        risk_engine = None
+        logger.warning("Risk Engine not available")
+
 # Global clients
 helsinki: HelsinkiClient = None
 query_processor: QueryProcessor = None
@@ -216,9 +228,48 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"[MCF] Scheduler startup failed: {e}")
     
+    # Inject dependencies into Risk Engine
+    if risk_engine:
+        try:
+            async def _get_positions_for_engine():
+                """Fetch positions for the engine from connected exchanges."""
+                try:
+                    all_pos = await user_context.get_all_positions()
+                    return [
+                        {
+                            "id": p.id, "symbol": p.symbol, "direction": p.direction,
+                            "entry_price": p.entry_price, "current_price": p.current_price,
+                            "size": p.size, "size_usd": p.size_usd, "leverage": p.leverage,
+                            "stop_loss": getattr(p, 'stop_loss', 0),
+                            "exchange": p.exchange, "updated_at": p.updated_at,
+                        }
+                        for p in all_pos
+                    ] if all_pos else []
+                except:
+                    return []
+
+            risk_engine.inject_dependencies(
+                get_positions_fn=_get_positions_for_engine,
+                evaluate_fn=risk_evaluate,
+                helsinki=helsinki,
+                coinglass=coinglass,
+                whale_alert=whale_alert,
+            )
+            logger.info("[ENGINE] Risk Engine dependencies injected")
+        except Exception as e:
+            logger.warning(f"[ENGINE] Dependency injection failed: {e}")
+
     logger.info("BASTION Terminal API LIVE")
     yield
-    
+
+    # Stop Risk Engine on shutdown
+    if risk_engine and risk_engine._running:
+        try:
+            await risk_engine.stop()
+            logger.info("[ENGINE] Risk Engine stopped")
+        except:
+            pass
+
     # Stop scheduler on shutdown
     try:
         from mcf_labs.scheduler import stop_scheduler
@@ -5239,6 +5290,126 @@ async def partial_close(request: Dict[str, Any]):
     return {
         "success": True,
         "message": f"Closed {percentage}% of {position_id}"
+    }
+
+
+# =============================================================================
+# BASTION RISK ENGINE API (Autonomous TP/SL Management)
+# =============================================================================
+
+@app.post("/api/engine/start")
+async def engine_start():
+    """Start the BASTION Risk Engine for autonomous position monitoring."""
+    if not risk_engine:
+        raise HTTPException(status_code=503, detail="Risk Engine not available")
+    result = await risk_engine.start()
+    return result
+
+
+@app.post("/api/engine/stop")
+async def engine_stop():
+    """Stop the Risk Engine."""
+    if not risk_engine:
+        raise HTTPException(status_code=503, detail="Risk Engine not available")
+    result = await risk_engine.stop()
+    return result
+
+
+@app.get("/api/engine/status")
+async def engine_status():
+    """Get current Risk Engine state, tracked positions, and urgency breakdown."""
+    if not risk_engine:
+        return {"running": False, "available": False}
+    return risk_engine.status()
+
+
+@app.post("/api/engine/configure")
+async def engine_configure(request: Dict[str, Any]):
+    """
+    Update Risk Engine configuration.
+
+    Accepts any subset of:
+    {
+        "auto_execute": false,
+        "poll_interval_low": 120,
+        "poll_interval_medium": 60,
+        "poll_interval_high": 15,
+        "poll_interval_critical": 5,
+        "position_sync_interval": 30,
+        "max_evaluations_per_minute": 10,
+        "hard_stop_enabled": true,
+        "safety_net_enabled": true,
+        "confidence_threshold": 0.6
+    }
+    """
+    if not risk_engine:
+        raise HTTPException(status_code=503, detail="Risk Engine not available")
+
+    config = risk_engine.config
+    changed = []
+    for key, value in request.items():
+        if hasattr(config, key):
+            old = getattr(config, key)
+            setattr(config, key, value)
+            changed.append(f"{key}: {old} → {value}")
+
+    risk_engine.audit.log("CONFIG_CHANGE", "SYSTEM", {"changes": changed})
+    return {"success": True, "changes": changed, "config": config.to_dict()}
+
+
+@app.get("/api/engine/history")
+async def engine_history(limit: int = 50, position_id: str = None):
+    """Get Risk Engine audit trail."""
+    if not risk_engine:
+        return {"entries": []}
+    entries = risk_engine.audit.get_recent(limit=limit, position_id=position_id)
+    return {"entries": entries, "total": len(risk_engine.audit.entries)}
+
+
+@app.post("/api/engine/position/{position_id}/override")
+async def engine_position_override(position_id: str, request: Dict[str, Any]):
+    """
+    Override MCF state for a specific position.
+
+    Accepts:
+    {
+        "stop_loss": 93000,
+        "guarding_line": 94800,
+        "trailing_stop": 95200,
+        "take_profits": [{"price": 96500, "exit_pct": 33}, {"price": 98000, "exit_pct": 33}],
+        "auto_execute": true,
+        "engine_active": true,
+        "current_urgency": "HIGH"
+    }
+    """
+    if not risk_engine:
+        raise HTTPException(status_code=503, detail="Risk Engine not available")
+    result = await risk_engine.override_position(position_id, request)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error"))
+    return result
+
+
+@app.post("/api/engine/position/{position_id}/evaluate")
+async def engine_force_evaluate(position_id: str):
+    """Force immediate AI evaluation of a specific position."""
+    if not risk_engine:
+        raise HTTPException(status_code=503, detail="Risk Engine not available")
+    result = await risk_engine.force_evaluate(position_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error"))
+    return result
+
+
+@app.get("/api/engine/positions")
+async def engine_positions():
+    """Get all positions tracked by the Risk Engine with their MCF state."""
+    if not risk_engine:
+        return {"positions": []}
+    positions = await risk_engine.store.get_all()
+    return {
+        "positions": [p.to_dict() for p in positions],
+        "total": len(positions)
     }
 
 
