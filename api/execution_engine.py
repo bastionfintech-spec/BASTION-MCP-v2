@@ -125,9 +125,9 @@ ACTION_EXECUTION_MAP = {
     },
     "TP_PARTIAL": {
         "execute": True,
-        "order_type": "close_partial",
+        "order_type": "close_partial_and_trail",
         "default_exit_pct": 0.33,   # Fallback only — AI should specify via execution.exit_pct
-        "description": "Take partial profit at structure target"
+        "description": "Take partial profit and trail stop on remainder"
     },
     "TP_FULL": {
         "execute": True,
@@ -364,6 +364,23 @@ class ExecutionEngine:
                 result = await self._execute_stop_update(
                     user_ctx, position, position_state, action_spec, execution_hints
                 )
+            elif order_type == "set_tp":
+                result = await self._execute_tp_update(
+                    user_ctx, position, position_state, action_spec, execution_hints
+                )
+            elif order_type == "close_partial_and_trail":
+                # TP_PARTIAL with trailing: close partial, then set new SL
+                exit_pct = self._resolve_exit_pct(action_spec, execution_hints, position_state)
+                result = await self._execute_close(
+                    user_ctx, position, position_state, action_spec, execution_hints, exit_pct
+                )
+                # If partial close succeeded, update trailing stop
+                if result.success:
+                    trail_result = await self._execute_stop_update(
+                        user_ctx, position, position_state, action_spec, execution_hints
+                    )
+                    if trail_result.success:
+                        logger.info(f"[EXEC] ✓ Trailed SL after partial close on {symbol}")
             else:
                 result = self._fail(action_type, symbol, f"Unknown order type: {order_type}",
                                     confidence, urgency, source)
@@ -487,6 +504,73 @@ class ExecutionEngine:
             )
         else:
             logger.error(f"[EXEC] ✗ SL UPDATE FAILED {symbol}: {order_result.error}")
+            return ExecutionResult(
+                success=False, action="", symbol=symbol, exchange=exchange,
+                error=order_result.error,
+                timestamp=datetime.utcnow().isoformat()
+            )
+
+    async def _execute_tp_update(
+        self, user_ctx, position, position_state: dict,
+        action_spec: dict, hints: dict
+    ) -> ExecutionResult:
+        """Execute a take-profit order placement/update."""
+        symbol = position.symbol
+        exchange = position.exchange
+
+        # Get TP price from execution hints or action spec
+        tp_price = None
+        if hints:
+            tp_price = hints.get("tp_price") or hints.get("take_profit") or hints.get("stop_price")
+        if not tp_price:
+            # Try take_profits list from position state
+            tps = position_state.get("take_profits", [])
+            if tps:
+                tp_price = tps[0]  # Use first TP target
+
+        if not tp_price or tp_price <= 0:
+            return ExecutionResult(
+                success=False, action="", symbol=symbol, exchange=exchange,
+                error=f"No valid TP price found",
+                timestamp=datetime.utcnow().isoformat()
+            )
+
+        # Validate TP direction
+        direction = position_state.get("direction", "LONG").upper()
+        current = position.current_price
+
+        if direction == "LONG" and tp_price <= current:
+            return ExecutionResult(
+                success=False, action="", symbol=symbol, exchange=exchange,
+                error=f"LONG TP {tp_price} <= current price {current}",
+                timestamp=datetime.utcnow().isoformat()
+            )
+        if direction == "SHORT" and tp_price >= current:
+            return ExecutionResult(
+                success=False, action="", symbol=symbol, exchange=exchange,
+                error=f"SHORT TP {tp_price} >= current price {current}",
+                timestamp=datetime.utcnow().isoformat()
+            )
+
+        # Get optional quantity for partial TP
+        qty = None
+        if hints:
+            exit_pct = hints.get("exit_pct")
+            if exit_pct and 0 < exit_pct <= 100:
+                qty = round(position.size * (exit_pct / 100.0), 8)
+
+        order_result = await user_ctx.set_take_profit(position, tp_price, quantity=qty)
+
+        if order_result.success:
+            logger.info(f"[EXEC] ✓ TP set {symbol} → ${tp_price:,.2f} on {exchange}"
+                        + (f" (qty={qty})" if qty else " (full position)"))
+            return ExecutionResult(
+                success=True, action="", symbol=symbol, exchange=exchange,
+                order_id=order_result.order_id, executed_price=tp_price,
+                timestamp=datetime.utcnow().isoformat()
+            )
+        else:
+            logger.error(f"[EXEC] ✗ TP SET FAILED {symbol}: {order_result.error}")
             return ExecutionResult(
                 success=False, action="", symbol=symbol, exchange=exchange,
                 error=order_result.error,

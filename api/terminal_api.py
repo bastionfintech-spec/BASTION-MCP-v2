@@ -5311,9 +5311,50 @@ async def flatten_winners(token: Optional[str] = None, session_id: Optional[str]
 
 
 @app.post("/api/actions/move-to-breakeven")
-async def move_to_breakeven(request: Dict[str, Any]):
-    """Move stops to breakeven — not yet implemented."""
-    return {"success": False, "error": "Not yet implemented — use the exchange interface to move stops manually"}
+async def move_to_breakeven(request: Dict[str, Any], token: Optional[str] = None, session_id: Optional[str] = None):
+    """Move stop loss to entry price (breakeven) for a specific position or all positions."""
+    scope_id, ctx, exchanges = await get_user_scope(
+        token or request.get("token"),
+        session_id or request.get("session_id")
+    )
+
+    target_symbol = request.get("symbol")  # Optional: specific symbol
+    moved_count = 0
+    errors = []
+
+    for exchange_name, client in ctx.connections.items():
+        try:
+            positions = await client.get_positions()
+            for pos in positions:
+                if target_symbol and not pos.symbol.startswith(target_symbol):
+                    continue
+                # Only move to BE if position is in profit
+                is_long = pos.direction.lower() == "long"
+                in_profit = (pos.pnl and pos.pnl > 0) or (
+                    (is_long and pos.current_price > pos.entry_price) or
+                    (not is_long and pos.current_price < pos.entry_price)
+                )
+                if not in_profit:
+                    errors.append(f"{pos.symbol}: position not in profit — cannot move SL to BE")
+                    continue
+
+                result = await client.set_stop_loss(
+                    pos.symbol, pos.direction, pos.entry_price
+                )
+                if result.success:
+                    moved_count += 1
+                    logger.info(f"[BE] Moved {pos.symbol} SL to BE @ ${pos.entry_price:,.2f} on {exchange_name}")
+                else:
+                    errors.append(f"{exchange_name}/{pos.symbol}: {result.error}")
+        except Exception as e:
+            errors.append(f"{exchange_name}: {str(e)}")
+
+    return {
+        "success": moved_count > 0,
+        "message": f"Moved {moved_count} position(s) SL to breakeven",
+        "positions_moved": moved_count,
+        "errors": errors if errors else None
+    }
 
 
 @app.post("/api/actions/add-shot")
@@ -5323,9 +5364,159 @@ async def add_shot(request: Dict[str, Any]):
 
 
 @app.post("/api/actions/partial-close")
-async def partial_close(request: Dict[str, Any]):
-    """Close a percentage of a position — not yet implemented."""
-    return {"success": False, "error": "Not yet implemented — use emergency-exit or flatten-winners instead"}
+async def partial_close(request: Dict[str, Any], token: Optional[str] = None, session_id: Optional[str] = None):
+    """Close a percentage of a specific position.
+
+    Expects: { "symbol": "BTCUSDT", "exit_pct": 50, "session_id": "..." }
+    exit_pct: integer 1-100 (percentage of position to close)
+    """
+    scope_id, ctx, exchanges = await get_user_scope(
+        token or request.get("token"),
+        session_id or request.get("session_id")
+    )
+
+    symbol = request.get("symbol")
+    exit_pct = request.get("exit_pct", 50)
+
+    if not symbol:
+        return {"success": False, "error": "symbol is required"}
+    if not (1 <= exit_pct <= 100):
+        return {"success": False, "error": "exit_pct must be between 1 and 100"}
+
+    exit_fraction = exit_pct / 100.0
+
+    for exchange_name, client in ctx.connections.items():
+        try:
+            positions = await client.get_positions()
+            for pos in positions:
+                sym_clean = pos.symbol.replace("-PERP", "").replace("USDT", "")
+                if pos.symbol == symbol or sym_clean == symbol:
+                    close_qty = round(pos.size * exit_fraction, 8)
+                    if close_qty <= 0:
+                        return {"success": False, "error": f"Calculated close qty is zero (size={pos.size}, pct={exit_pct}%)"}
+
+                    result = await client.close_position(
+                        pos.symbol, pos.direction, close_qty, reduce_only=True
+                    )
+                    if result.success:
+                        logger.info(f"[PARTIAL] Closed {exit_pct}% of {pos.symbol} ({close_qty} qty) on {exchange_name}")
+                        return {
+                            "success": True,
+                            "message": f"Closed {exit_pct}% of {pos.symbol} ({close_qty} units)",
+                            "order_id": result.order_id,
+                            "symbol": pos.symbol,
+                            "exit_pct": exit_pct,
+                            "quantity_closed": close_qty,
+                            "exchange": exchange_name
+                        }
+                    else:
+                        return {"success": False, "error": f"Order failed: {result.error}"}
+        except Exception as e:
+            return {"success": False, "error": f"{exchange_name}: {str(e)}"}
+
+    return {"success": False, "error": f"No position found for {symbol}"}
+
+
+@app.post("/api/actions/set-take-profit")
+async def set_take_profit_action(request: Dict[str, Any], token: Optional[str] = None, session_id: Optional[str] = None):
+    """Set/update take-profit for a position.
+
+    Expects: { "symbol": "BTCUSDT", "tp_price": 68000, "exit_pct": 50, "session_id": "..." }
+    tp_price: target price for take profit
+    exit_pct: optional — percentage of position to TP (partial TP). If omitted, full position.
+    """
+    scope_id, ctx, exchanges = await get_user_scope(
+        token or request.get("token"),
+        session_id or request.get("session_id")
+    )
+
+    symbol = request.get("symbol")
+    tp_price = request.get("tp_price")
+    exit_pct = request.get("exit_pct")  # Optional: for partial TP
+
+    if not symbol:
+        return {"success": False, "error": "symbol is required"}
+    if not tp_price or tp_price <= 0:
+        return {"success": False, "error": "tp_price is required and must be > 0"}
+
+    qty = None
+
+    for exchange_name, client in ctx.connections.items():
+        try:
+            positions = await client.get_positions()
+            for pos in positions:
+                sym_clean = pos.symbol.replace("-PERP", "").replace("USDT", "")
+                if pos.symbol == symbol or sym_clean == symbol:
+                    if exit_pct and 1 <= exit_pct <= 100:
+                        qty = round(pos.size * (exit_pct / 100.0), 8)
+
+                    result = await client.set_take_profit(
+                        pos.symbol, pos.direction, tp_price, quantity=qty
+                    )
+                    if result.success:
+                        logger.info(f"[TP] Set TP {pos.symbol} @ ${tp_price:,.2f}"
+                                    + (f" ({exit_pct}% = {qty} qty)" if qty else " (full position)")
+                                    + f" on {exchange_name}")
+                        return {
+                            "success": True,
+                            "message": f"TP set for {pos.symbol} @ ${tp_price:,.2f}"
+                                       + (f" ({exit_pct}%)" if exit_pct else ""),
+                            "symbol": pos.symbol,
+                            "tp_price": tp_price,
+                            "exit_pct": exit_pct,
+                            "exchange": exchange_name
+                        }
+                    else:
+                        return {"success": False, "error": f"TP failed: {result.error}"}
+        except Exception as e:
+            return {"success": False, "error": f"{exchange_name}: {str(e)}"}
+
+    return {"success": False, "error": f"No position found for {symbol}"}
+
+
+@app.post("/api/actions/set-stop-loss")
+async def set_stop_loss_action(request: Dict[str, Any], token: Optional[str] = None, session_id: Optional[str] = None):
+    """Set/update stop-loss for a position.
+
+    Expects: { "symbol": "BTCUSDT", "sl_price": 65000, "session_id": "..." }
+    """
+    scope_id, ctx, exchanges = await get_user_scope(
+        token or request.get("token"),
+        session_id or request.get("session_id")
+    )
+
+    symbol = request.get("symbol")
+    sl_price = request.get("sl_price")
+
+    if not symbol:
+        return {"success": False, "error": "symbol is required"}
+    if not sl_price or sl_price <= 0:
+        return {"success": False, "error": "sl_price is required and must be > 0"}
+
+    for exchange_name, client in ctx.connections.items():
+        try:
+            positions = await client.get_positions()
+            for pos in positions:
+                sym_clean = pos.symbol.replace("-PERP", "").replace("USDT", "")
+                if pos.symbol == symbol or sym_clean == symbol:
+                    result = await client.set_stop_loss(
+                        pos.symbol, pos.direction, sl_price
+                    )
+                    if result.success:
+                        logger.info(f"[SL] Set SL {pos.symbol} @ ${sl_price:,.2f} on {exchange_name}")
+                        return {
+                            "success": True,
+                            "message": f"SL set for {pos.symbol} @ ${sl_price:,.2f}",
+                            "symbol": pos.symbol,
+                            "sl_price": sl_price,
+                            "exchange": exchange_name
+                        }
+                    else:
+                        return {"success": False, "error": f"SL failed: {result.error}"}
+        except Exception as e:
+            return {"success": False, "error": f"{exchange_name}: {str(e)}"}
+
+    return {"success": False, "error": f"No position found for {symbol}"}
 
 
 # =============================================================================
