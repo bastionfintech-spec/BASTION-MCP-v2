@@ -312,6 +312,15 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"[ENGINE] Dependency injection failed: {e}")
 
+    # Wire Supabase persistence into execution engine audit log
+    if execution_engine and user_service and user_service.is_db_available:
+        try:
+            execution_engine.audit.set_db_client(user_service.client)
+            await execution_engine.audit.load_recent_from_db(limit=200)
+            logger.info("[AUDIT] Execution audit log wired to Supabase")
+        except Exception as e:
+            logger.warning(f"[AUDIT] Could not wire audit persistence: {e}")
+
     # Load persisted stats from Supabase BEFORE any requests can fire
     try:
         await load_bastion_stats()
@@ -365,9 +374,11 @@ from starlette.responses import Response
 import hashlib
 
 # Rate limiting storage (in-memory, resets on restart)
+# Uses maxlen dict to prevent unbounded growth from unique IPs
 rate_limit_store: Dict[str, List[float]] = {}
 RATE_LIMIT_REQUESTS = 500  # requests per window (increased for heavy UI polling)
 RATE_LIMIT_WINDOW = 60  # seconds
+RATE_LIMIT_MAX_IPS = 10000  # Max tracked IPs before eviction
 
 class SecurityMiddleware(BaseHTTPMiddleware):
     """Add security headers and rate limiting."""
@@ -384,10 +395,19 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             now = time.time()
             ip_key = hashlib.md5(client_ip.encode()).hexdigest()[:16]
             
-            # Clean old entries
+            # Clean old entries and evict empty keys
             if ip_key in rate_limit_store:
                 rate_limit_store[ip_key] = [t for t in rate_limit_store[ip_key] if now - t < RATE_LIMIT_WINDOW]
-            else:
+                if not rate_limit_store[ip_key]:
+                    del rate_limit_store[ip_key]
+
+            # Evict oldest IPs if store gets too large (prevent memory leak from botnets)
+            if len(rate_limit_store) > RATE_LIMIT_MAX_IPS:
+                oldest_keys = sorted(rate_limit_store, key=lambda k: min(rate_limit_store[k]) if rate_limit_store[k] else 0)
+                for old_key in oldest_keys[:len(rate_limit_store) - RATE_LIMIT_MAX_IPS]:
+                    del rate_limit_store[old_key]
+
+            if ip_key not in rate_limit_store:
                 rate_limit_store[ip_key] = []
             
             # Check rate limit
@@ -4419,9 +4439,29 @@ async def get_alerts(limit: int = 10):
 # NEURAL ASSISTANT API
 # =============================================================================
 
+def _save_chat_message(user_id: str, session_id: str, role: str, content: str,
+                       symbol: str = "", model: str = "", response_time_ms: int = 0):
+    """Persist a chat message to Supabase (fire-and-forget, never fails loudly)."""
+    if not (user_service and user_service.is_db_available):
+        return
+    try:
+        user_service.client.table("bastion_chat_history").insert({
+            "user_id": user_id or "anonymous",
+            "session_id": session_id or "",
+            "role": role,
+            "content": content[:10000],  # Cap at 10k chars
+            "symbol": symbol,
+            "model": model,
+            "response_time_ms": response_time_ms,
+        }).execute()
+    except Exception as e:
+        logger.debug(f"[CHAT] Could not persist message (table may not exist): {e}")
+
+
 @app.post("/api/neural/chat")
 async def neural_chat(request: Dict[str, Any]):
     """Chat with the Bastion AI - includes user position context."""
+    _neural_start = time.time()
     query = request.get("query", "")
     symbol = request.get("symbol", "BTC")
     include_positions = request.get("include_positions", True)
@@ -4605,6 +4645,26 @@ VERIFIED {symbol} DATA (LIVE — {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} 
 
 Set BASTION_MODEL_URL to enable AI analysis."""
     
+    # Persist chat messages to Supabase (non-blocking, errors don't break response)
+    _save_chat_message(
+        user_id=request.get("user_id", "anonymous"),
+        session_id=request.get("session_id", ""),
+        role="user",
+        content=query,
+        symbol=symbol,
+        model="",
+    )
+    response_time_ms = int((time.time() - _neural_start) * 1000)
+    _save_chat_message(
+        user_id=request.get("user_id", "anonymous"),
+        session_id=request.get("session_id", ""),
+        role="assistant",
+        content=response,
+        symbol=symbol,
+        model="bastion-32b" if "BASTION-32B" in data_sources else "fallback",
+        response_time_ms=response_time_ms,
+    )
+
     return {
         "success": True,
         "response": response,
@@ -4620,6 +4680,47 @@ Set BASTION_MODEL_URL to enable AI analysis."""
         "data_sources": data_sources,
         "verified_data": {"price_line": price_line, "whale_line": whale_line}
     }
+
+
+@app.get("/api/neural/chat/history")
+async def get_chat_history(session_id: Optional[str] = None, user_id: Optional[str] = None,
+                           limit: int = 50):
+    """
+    Retrieve chat history from Supabase.
+    Filter by session_id (conversation thread) or user_id (all conversations).
+    Returns messages in chronological order (oldest first).
+    """
+    if not (user_service and user_service.is_db_available):
+        return {"success": False, "messages": [], "error": "Database not available"}
+
+    try:
+        query = user_service.client.table("bastion_chat_history") \
+            .select("*") \
+            .order("created_at", desc=False) \
+            .limit(min(limit, 200))
+
+        if session_id:
+            query = query.eq("session_id", session_id)
+        elif user_id:
+            query = query.eq("user_id", user_id)
+        else:
+            # No filter — return most recent messages (newest first, then reverse)
+            query = user_service.client.table("bastion_chat_history") \
+                .select("*") \
+                .order("created_at", desc=True) \
+                .limit(min(limit, 200))
+
+        result = query.execute()
+        messages = result.data or []
+
+        # If we fetched newest-first (no filter), reverse to chronological
+        if not session_id and not user_id:
+            messages = list(reversed(messages))
+
+        return {"success": True, "messages": messages, "count": len(messages)}
+    except Exception as e:
+        logger.warning(f"[CHAT] History fetch failed: {e}")
+        return {"success": False, "messages": [], "error": str(e)[:100]}
 
 
 # =============================================================================
@@ -6449,7 +6550,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     active_connections.append(websocket)
     logger.info(f"WebSocket connected. Total: {len(active_connections)}")
-    
+
     try:
         # Send initial data
         await websocket.send_json({
@@ -6457,11 +6558,10 @@ async def websocket_endpoint(websocket: WebSocket):
             "message": "BASTION Terminal connected",
             "timestamp": datetime.now().isoformat()
         })
-        
+
         # Start sending updates
         while True:
             # Fetch real prices from cache or API
-            import httpx
             prices = {}
             try:
                 async with httpx.AsyncClient(timeout=2.0) as client:
@@ -6476,9 +6576,9 @@ async def websocket_endpoint(websocket: WebSocket):
                                 prices["ETH-PERP"] = price
                             elif "SOL" in key:
                                 prices["SOL-PERP"] = price
-            except:
+            except Exception:
                 pass
-            
+
             # Only send if we got prices
             if prices:
                 price_update = {
@@ -6487,7 +6587,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "timestamp": datetime.now().isoformat()
                 }
                 await websocket.send_json(price_update)
-            
+
             # Check for incoming messages
             try:
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=1.0)
@@ -6495,11 +6595,18 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.info(f"Received: {message}")
             except asyncio.TimeoutError:
                 pass
-            
+
             await asyncio.sleep(1)
-            
-    except WebSocketDisconnect:
-        active_connections.remove(websocket)
+
+    except (WebSocketDisconnect, Exception) as e:
+        if not isinstance(e, WebSocketDisconnect):
+            logger.warning(f"WebSocket died unexpectedly: {type(e).__name__}: {e}")
+    finally:
+        # ALWAYS clean up — handles both graceful and ungraceful disconnects
+        try:
+            active_connections.remove(websocket)
+        except ValueError:
+            pass
         logger.info(f"WebSocket disconnected. Total: {len(active_connections)}")
 
 

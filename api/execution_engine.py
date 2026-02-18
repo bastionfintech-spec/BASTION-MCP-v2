@@ -89,11 +89,25 @@ class SafetyConfig:
 # =============================================================================
 
 class ExecutionAuditLog:
-    """Immutable audit trail for all execution attempts."""
+    """
+    Immutable audit trail for all execution attempts.
+
+    Dual-write: keeps recent entries in memory (fast reads) AND persists
+    every entry to Supabase bastion_execution_log table (survives redeploys).
+    If Supabase is unavailable, falls back to memory-only gracefully.
+    """
 
     def __init__(self, max_entries: int = 5000):
         self._entries: deque = deque(maxlen=max_entries)
         self._lock = asyncio.Lock()
+        self._db_client = None   # Injected from terminal_api.py
+        self._db_table = "bastion_execution_log"
+        self._total_count_db: int = 0  # Tracks total including DB-only entries
+
+    def set_db_client(self, supabase_client):
+        """Inject Supabase client for persistence."""
+        self._db_client = supabase_client
+        logger.info("[AUDIT] Supabase persistence enabled for execution log")
 
     async def log(self, result: ExecutionResult, position_state: Optional[dict] = None):
         async with self._lock:
@@ -103,6 +117,70 @@ class ExecutionAuditLog:
                 "position_state_snapshot": position_state,
             }
             self._entries.append(entry)
+
+        # Persist to Supabase (non-blocking, errors don't break execution)
+        if self._db_client:
+            try:
+                row = {
+                    "action": result.action,
+                    "symbol": result.symbol,
+                    "exchange": result.exchange or "",
+                    "success": result.success,
+                    "order_id": result.order_id or "",
+                    "side": result.side or "",
+                    "quantity": result.quantity,
+                    "executed_price": result.executed_price or 0,
+                    "exit_pct": result.exit_pct,
+                    "confidence": result.confidence,
+                    "urgency": result.urgency or "LOW",
+                    "source": result.source or "",
+                    "error": result.error or "",
+                    "metadata": json.dumps(result.metadata) if result.metadata else "{}",
+                    "position_state": json.dumps(position_state) if position_state else "{}",
+                }
+                self._db_client.table(self._db_table).insert(row).execute()
+                self._total_count_db += 1
+            except Exception as e:
+                logger.warning(f"[AUDIT] Supabase insert failed (memory-only): {e}")
+
+    async def load_recent_from_db(self, limit: int = 200):
+        """Load recent entries from Supabase on startup to populate in-memory cache."""
+        if not self._db_client:
+            return
+        try:
+            result = self._db_client.table(self._db_table) \
+                .select("*", count="exact") \
+                .order("created_at", desc=True) \
+                .limit(limit) \
+                .execute()
+            if result.data:
+                # Insert oldest first so newest are at the end
+                for row in reversed(result.data):
+                    entry = {
+                        "timestamp": row.get("created_at", ""),
+                        "result": {
+                            "action": row.get("action", ""),
+                            "symbol": row.get("symbol", ""),
+                            "exchange": row.get("exchange", ""),
+                            "success": row.get("success", False),
+                            "order_id": row.get("order_id", ""),
+                            "side": row.get("side", ""),
+                            "quantity": row.get("quantity", 0),
+                            "executed_price": row.get("executed_price"),
+                            "exit_pct": row.get("exit_pct", 0),
+                            "confidence": row.get("confidence", 0),
+                            "urgency": row.get("urgency", "LOW"),
+                            "source": row.get("source", ""),
+                            "error": row.get("error", ""),
+                            "metadata": row.get("metadata"),
+                        },
+                        "position_state_snapshot": row.get("position_state"),
+                    }
+                    self._entries.append(entry)
+                self._total_count_db = result.count or len(result.data)
+                logger.info(f"[AUDIT] Loaded {len(result.data)} entries from DB ({self._total_count_db} total)")
+        except Exception as e:
+            logger.warning(f"[AUDIT] Could not load from DB (table may not exist): {e}")
 
     def get_history(self, limit: int = 100, position_id: Optional[str] = None,
                     action_filter: Optional[str] = None) -> List[dict]:
@@ -120,7 +198,7 @@ class ExecutionAuditLog:
 
     @property
     def total_count(self) -> int:
-        return len(self._entries)
+        return max(len(self._entries), self._total_count_db)
 
 
 # =============================================================================
@@ -242,12 +320,21 @@ class ExecutionEngine:
         now = time.time()
         one_hour_ago = now - 3600
 
-        # Per-position rate limit
+        # Per-position rate limit + evict stale entries
         if position_id in self._execution_counts:
             recent = [t for t in self._execution_counts[position_id] if t > one_hour_ago]
-            self._execution_counts[position_id] = recent
+            if recent:
+                self._execution_counts[position_id] = recent
+            else:
+                del self._execution_counts[position_id]  # Evict empty
             if len(recent) >= self.safety.max_executions_per_hour:
                 return f"Rate limit: {len(recent)}/{self.safety.max_executions_per_hour} executions per hour for this position"
+
+        # Periodic cleanup: evict all stale position keys
+        stale_keys = [k for k, v in self._execution_counts.items()
+                      if not any(t > one_hour_ago for t in v)]
+        for k in stale_keys:
+            del self._execution_counts[k]
 
         # Global rate limit
         total_recent = sum(
