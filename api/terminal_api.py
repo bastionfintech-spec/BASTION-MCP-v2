@@ -6941,36 +6941,34 @@ async def get_options_data(symbol: str = "BTC"):
         total_oi = 0
         volume = 0
 
-        # Parse options info — array of exchanges
+        # Parse options info — array of exchanges (OI + volume only)
+        # NOTE: "rate" field = market share %, NOT put/call ratio!
         if isinstance(info_result, CoinglassResponse) and info_result.success and info_result.data:
             data = info_result.data
             if isinstance(data, list) and len(data) > 0:
-                # Sum across all exchanges for aggregate OI and volume
-                total_oi = sum(d.get("openInterestUsd", d.get("openInterest", 0)) for d in data)
-                volume = sum(d.get("volUsd", d.get("vol24h", 0)) for d in data)
-                # Weighted put/call ratio by OI
-                weighted_pc = 0
-                oi_sum = 0
-                for d in data:
-                    oi = d.get("openInterestUsd", d.get("openInterest", 0))
-                    pc = d.get("rate", d.get("putCallRatio", d.get("pcRatio", 0)))
-                    if oi > 0 and pc > 0:
-                        weighted_pc += pc * oi
-                        oi_sum += oi
-                if oi_sum > 0:
-                    put_call = weighted_pc / oi_sum
-            elif isinstance(data, dict):
-                put_call = data.get("rate", data.get("putCallRatio", 1.0))
-                total_oi = data.get("openInterestUsd", data.get("openInterest", 0))
-                volume = data.get("volUsd", data.get("vol24h", 0))
+                # Find "All" aggregate row, or sum exchanges
+                all_row = next((d for d in data if d.get("exchangeName") == "All"), None)
+                if all_row:
+                    total_oi = all_row.get("openInterestUsd", 0)
+                    volume = all_row.get("volUsd", 0)
+                else:
+                    total_oi = sum(d.get("openInterestUsd", 0) for d in data)
+                    volume = sum(d.get("volUsd", 0) for d in data)
 
-        # Parse max pain — array of expiry dates, get nearest (first entry)
+        # Parse max pain — array of expiry dates from Deribit
+        # Also compute put/call ratio from aggregate putOi / callOi across all expiries
         if isinstance(pain_result, CoinglassResponse) and pain_result.success and pain_result.data:
             data = pain_result.data
             if isinstance(data, list) and len(data) > 0:
-                # maxPain is a string in the response, convert to number
+                # Nearest expiry max pain
                 mp_val = data[0].get("maxPain", 0)
                 max_pain = float(mp_val) if mp_val else 0
+
+                # Aggregate put/call ratio across all expiries
+                total_put_oi = sum(item.get("putOi", 0) for item in data)
+                total_call_oi = sum(item.get("callOi", 0) for item in data)
+                if total_call_oi > 0:
+                    put_call = total_put_oi / total_call_oi
             elif isinstance(data, dict):
                 mp_val = data.get("maxPain", 0)
                 max_pain = float(mp_val) if mp_val else 0
