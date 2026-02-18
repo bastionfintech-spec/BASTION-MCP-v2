@@ -193,11 +193,11 @@ class CoinglassClient:
             {"symbol": symbol}
         )
     
-    async def get_options_max_pain(self, symbol: str = "BTC") -> CoinglassResponse:
-        """Get options max pain price"""
+    async def get_options_max_pain(self, symbol: str = "BTC", exchange: str = "Deribit") -> CoinglassResponse:
+        """Get options max pain price. Requires exName param (Deribit has largest OI)."""
         return await self._request(
             "/option/max-pain",
-            {"symbol": symbol}
+            {"symbol": symbol, "exName": exchange}
         )
     
     async def get_options_oi_expiry(self, symbol: str = "BTC") -> CoinglassResponse:

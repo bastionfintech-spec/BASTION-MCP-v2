@@ -6827,79 +6827,91 @@ async def get_etf_flows():
 
 @app.get("/api/top-traders/{symbol}")
 async def get_top_traders(symbol: str = "BTC"):
-    """Get top trader (whale) long/short sentiment."""
-    import asyncio
-    
+    """Get top trader (whale) vs retail long/short sentiment.
+
+    Uses coins-markets mega endpoint — L/S ratio at multiple timeframes.
+    'Top traders' = 4h L/S (institutional timeframe), 'Retail' = 5m L/S (scalper timeframe).
+    Divergence between the two = smart money signal.
+    """
     try:
-        # Fetch both top trader and global sentiment
-        top_result, global_result = await asyncio.gather(
-            coinglass.get_top_trader_sentiment(symbol.upper()),
-            coinglass.get_long_short_ratio(symbol.upper()),
-            return_exceptions=True
-        )
-        
-        # Parse top trader data (whales)
-        top_long = 50
-        top_short = 50
-        if hasattr(top_result, 'success') and top_result.success and top_result.data:
-            data = top_result.data[-1] if isinstance(top_result.data, list) and len(top_result.data) > 0 else top_result.data
-            # Handle different field names from Coinglass
-            top_long = data.get("longAccount", data.get("longRatio", data.get("longShortRatio", 50)))
-            top_short = data.get("shortAccount", data.get("shortRatio", 100 - top_long))
-            # Convert ratio to percentage if needed
-            if top_long > 1 and top_long < 5:  # It's a ratio like 1.5
-                total = top_long + 1
-                top_long = (top_long / total) * 100
-                top_short = 100 - top_long
-        
-        # Parse global (retail) data
-        retail_long = 50
-        retail_short = 50
-        if hasattr(global_result, 'success') and global_result.success and global_result.data:
-            data = global_result.data[-1] if isinstance(global_result.data, list) and len(global_result.data) > 0 else global_result.data
-            retail_long = data.get("longAccount", data.get("longRatio", data.get("longShortRatio", 50)))
-            retail_short = data.get("shortAccount", data.get("shortRatio", 100 - retail_long))
-            if retail_long > 1 and retail_long < 5:
-                total = retail_long + 1
-                retail_long = (retail_long / total) * 100
+        result = await coinglass.get_coins_markets()
+
+        if result.success and result.data:
+            sym = symbol.upper()
+            coin = next((c for c in result.data if c.get("symbol", "").upper() == sym), None)
+
+            if coin:
+                # Top traders = 4h L/S ratio (institutional, slower-moving money)
+                ls_4h = coin.get("ls4h", 1.0)
+                long_vol_4h = coin.get("longVolUsd4h", 0)
+                short_vol_4h = coin.get("shortVolUsd4h", 0)
+                total_4h = long_vol_4h + short_vol_4h
+                whale_long = (long_vol_4h / total_4h * 100) if total_4h > 0 else (ls_4h / (1 + ls_4h) * 100)
+                whale_short = 100 - whale_long
+
+                # Retail = 5m L/S ratio (fast, retail-driven scalper activity)
+                ls_5m = coin.get("ls5m", 1.0)
+                long_vol_5m = coin.get("longVolUsd5m", 0)
+                short_vol_5m = coin.get("shortVolUsd5m", 0)
+                total_5m = long_vol_5m + short_vol_5m
+                retail_long = (long_vol_5m / total_5m * 100) if total_5m > 0 else (ls_5m / (1 + ls_5m) * 100)
                 retail_short = 100 - retail_long
-        
-        # Detect divergence
-        divergence = "NONE"
-        if top_long > 55 and retail_long > 70:
-            divergence = "CROWDED_LONG"
-        elif top_short > 55 and retail_short > 70:
-            divergence = "CROWDED_SHORT"
-        elif abs(top_long - retail_long) > 15:
-            if top_long > retail_long:
-                divergence = "SMART_MONEY_LONG"
-            else:
-                divergence = "SMART_MONEY_SHORT"
-        
+
+                # Also grab 1h and 24h for extra context
+                ls_1h = coin.get("ls1h", 1.0)
+                ls_24h = coin.get("ls24h", 1.0)
+
+                # Divergence detection: whale vs retail positioning
+                divergence = "NONE"
+                if whale_long > 55 and retail_long > 65:
+                    divergence = "CROWDED_LONG"
+                elif whale_short > 55 and retail_short > 65:
+                    divergence = "CROWDED_SHORT"
+                elif abs(whale_long - retail_long) > 10:
+                    if whale_long > retail_long:
+                        divergence = "SMART_MONEY_LONG"
+                    else:
+                        divergence = "SMART_MONEY_SHORT"
+
+                return {
+                    "success": True,
+                    "symbol": sym,
+                    "topTraders": {
+                        "long": round(whale_long, 1),
+                        "short": round(whale_short, 1),
+                    },
+                    "retail": {
+                        "long": round(retail_long, 1),
+                        "short": round(retail_short, 1),
+                    },
+                    "divergence": divergence,
+                    "signal": "BULLISH" if divergence == "SMART_MONEY_LONG" else "BEARISH" if divergence == "SMART_MONEY_SHORT" else "NEUTRAL",
+                    "context": {
+                        "ls_5m": round(ls_5m, 4),
+                        "ls_1h": round(ls_1h, 4),
+                        "ls_4h": round(ls_4h, 4),
+                        "ls_24h": round(ls_24h, 4),
+                        "longVolUsd4h": long_vol_4h,
+                        "shortVolUsd4h": short_vol_4h,
+                    }
+                }
+
+        logger.warning(f"[TOP-TRADERS] coins-markets returned no data for {symbol}")
         return {
             "success": True,
             "symbol": symbol.upper(),
-            "topTraders": {
-                "long": round(top_long, 1),
-                "short": round(top_short, 1),
-            },
-            "retail": {
-                "long": round(retail_long, 1),
-                "short": round(retail_short, 1),
-            },
-            "divergence": divergence,
-            "signal": "BULLISH" if divergence == "SMART_MONEY_LONG" else "BEARISH" if divergence == "SMART_MONEY_SHORT" else "NEUTRAL"
+            "topTraders": {"long": 50.0, "short": 50.0},
+            "retail": {"long": 50.0, "short": 50.0},
+            "divergence": "NONE",
+            "signal": "NEUTRAL",
+            "source": "no_data"
         }
     except Exception as e:
         logger.error(f"Top traders error: {e}")
         return {
-            "success": True,
+            "success": False,
             "symbol": symbol.upper(),
-            "topTraders": {"long": 58.2, "short": 41.8},
-            "retail": {"long": 72.4, "short": 27.6},
-            "divergence": "SMART_MONEY_LONG",
-            "signal": "BULLISH",
-            "source": "fallback"
+            "error": str(e)
         }
 
 
@@ -6909,53 +6921,60 @@ async def get_top_traders(symbol: str = "BTC"):
 
 @app.get("/api/options/{symbol}")
 async def get_options_data(symbol: str = "BTC"):
-    """Get options data - max pain, put/call ratio."""
+    """Get options data - max pain, put/call ratio, OI, volume.
+
+    Uses /option/info (put/call, OI, volume by exchange) +
+    /option/max-pain with exName=Deribit (largest options OI).
+    """
     import asyncio
-    
+
     try:
         # Fetch both options info and max pain in parallel
         info_result, pain_result = await asyncio.gather(
             coinglass.get_options_info(symbol.upper()),
-            coinglass.get_options_max_pain(symbol.upper()),
+            coinglass.get_options_max_pain(symbol.upper(), exchange="Deribit"),
             return_exceptions=True
         )
-        
+
         max_pain = 0
         put_call = 1.0
         total_oi = 0
         volume = 0
-        
-        # Parse options info
+
+        # Parse options info — array of exchanges
         if isinstance(info_result, CoinglassResponse) and info_result.success and info_result.data:
             data = info_result.data
-            # Handle array response - Coinglass returns array with "All" aggregate
-            if isinstance(data, list):
-                for item in data:
-                    if item.get("exchange") == "All" or item.get("exchangeName") == "All":
-                        put_call = item.get("putCallRatio", item.get("pcRatio", 1.0))
-                        total_oi = item.get("totalOpenInterest", item.get("openInterest", 0))
-                        volume = item.get("totalVolume24h", item.get("volume24h", 0))
-                        break
-                if not total_oi and len(data) > 0:
-                    # Sum all exchanges if no "All" found
-                    put_call = data[0].get("putCallRatio", data[0].get("pcRatio", 1.0))
-                    total_oi = sum(d.get("openInterest", 0) for d in data)
-                    volume = sum(d.get("volume24h", 0) for d in data)
-            else:
-                put_call = data.get("putCallRatio", data.get("pcRatio", 1.0))
-                total_oi = data.get("totalOpenInterest", data.get("openInterest", 0))
-                volume = data.get("totalVolume24h", data.get("volume24h", 0))
-        
-        # Parse max pain
+            if isinstance(data, list) and len(data) > 0:
+                # Sum across all exchanges for aggregate OI and volume
+                total_oi = sum(d.get("openInterestUsd", d.get("openInterest", 0)) for d in data)
+                volume = sum(d.get("volUsd", d.get("vol24h", 0)) for d in data)
+                # Weighted put/call ratio by OI
+                weighted_pc = 0
+                oi_sum = 0
+                for d in data:
+                    oi = d.get("openInterestUsd", d.get("openInterest", 0))
+                    pc = d.get("rate", d.get("putCallRatio", d.get("pcRatio", 0)))
+                    if oi > 0 and pc > 0:
+                        weighted_pc += pc * oi
+                        oi_sum += oi
+                if oi_sum > 0:
+                    put_call = weighted_pc / oi_sum
+            elif isinstance(data, dict):
+                put_call = data.get("rate", data.get("putCallRatio", 1.0))
+                total_oi = data.get("openInterestUsd", data.get("openInterest", 0))
+                volume = data.get("volUsd", data.get("vol24h", 0))
+
+        # Parse max pain — array of expiry dates, get nearest (first entry)
         if isinstance(pain_result, CoinglassResponse) and pain_result.success and pain_result.data:
             data = pain_result.data
-            # Get the nearest expiry max pain
             if isinstance(data, list) and len(data) > 0:
-                # Sort by expiry date, get nearest
-                max_pain = data[0].get("maxPain", data[0].get("maxPainPrice", 0))
+                # maxPain is a string in the response, convert to number
+                mp_val = data[0].get("maxPain", 0)
+                max_pain = float(mp_val) if mp_val else 0
             elif isinstance(data, dict):
-                max_pain = data.get("maxPain", data.get("maxPainPrice", 0))
-        
+                mp_val = data.get("maxPain", 0)
+                max_pain = float(mp_val) if mp_val else 0
+
         if max_pain > 0 or put_call != 1.0 or total_oi > 0:
             return {
                 "success": True,
@@ -6966,17 +6985,17 @@ async def get_options_data(symbol: str = "BTC"):
                 "volume24h": volume,
                 "signal": "BULLISH" if put_call < 0.9 else "BEARISH" if put_call > 1.1 else "NEUTRAL"
             }
-        
-        # Fallback if both fail
+
+        # If no data at all, report honestly
         return {
             "success": True,
             "symbol": symbol.upper(),
-            "maxPain": 95000,
-            "putCallRatio": 0.78,
-            "totalOI": 12500000000,
-            "volume24h": 890000000,
-            "signal": "BULLISH",
-            "source": "fallback"
+            "maxPain": 0,
+            "putCallRatio": 0,
+            "totalOI": 0,
+            "volume24h": 0,
+            "signal": "NEUTRAL",
+            "source": "no_data"
         }
     except Exception as e:
         logger.error(f"Options error: {e}")
@@ -7112,54 +7131,59 @@ async def get_oi_by_exchange(symbol: str = "BTC"):
 
 @app.get("/api/taker-ratio/{symbol}")
 async def get_taker_ratio(symbol: str = "BTC"):
-    """Get taker buy/sell ratio - real-time order flow pressure."""
+    """Get taker buy/sell ratio - real-time order flow pressure.
+
+    Uses coins-markets mega endpoint: longVolUsd / shortVolUsd at 1h timeframe.
+    """
     try:
-        result = await coinglass.get_taker_buy_sell(symbol.upper())
-        
+        result = await coinglass.get_coins_markets()
+
         if result.success and result.data:
-            data = result.data
-            
-            # Handle array response - sum across exchanges
-            total_buy = 0
-            total_sell = 0
-            
-            if isinstance(data, list):
-                for ex in data:
-                    total_buy += ex.get("buyVolUsd", ex.get("buyVol", 0))
-                    total_sell += ex.get("sellVolUsd", ex.get("sellVol", 0))
-            else:
-                total_buy = data.get("buyVolUsd", data.get("buyVol", data.get("buyRatio", 0.5)))
-                total_sell = data.get("sellVolUsd", data.get("sellVol", data.get("sellRatio", 0.5)))
-            
-            total = total_buy + total_sell
-            buy_ratio = total_buy / total if total > 0 else 0.5
-            sell_ratio = total_sell / total if total > 0 else 0.5
-            
-            return {
-                "success": True,
-                "symbol": symbol.upper(),
-                "buyRatio": round(buy_ratio, 4),
-                "sellRatio": round(sell_ratio, 4),
-                "netFlow": "BUY" if buy_ratio > sell_ratio else "SELL",
-                "buyPercent": round(buy_ratio * 100, 1),
-                "sellPercent": round(sell_ratio * 100, 1),
-                "buyVolUsd": total_buy,
-                "sellVolUsd": total_sell,
-                "signal": "BULLISH" if buy_ratio > 0.55 else "BEARISH" if sell_ratio > 0.55 else "NEUTRAL",
-                "latency_ms": result.latency_ms
-            }
-        
-        # Fallback
+            sym = symbol.upper()
+            coin = next((c for c in result.data if c.get("symbol", "").upper() == sym), None)
+
+            if coin:
+                # Use 1h taker volumes (most actionable timeframe)
+                long_vol = coin.get("longVolUsd1h", 0)
+                short_vol = coin.get("shortVolUsd1h", 0)
+                total = long_vol + short_vol
+
+                buy_ratio = long_vol / total if total > 0 else 0.5
+                sell_ratio = short_vol / total if total > 0 else 0.5
+
+                # Also grab multi-TF L/S for context
+                ls_5m = coin.get("ls5m", 1.0)
+                ls_1h = coin.get("ls1h", 1.0)
+                ls_4h = coin.get("ls4h", 1.0)
+
+                return {
+                    "success": True,
+                    "symbol": sym,
+                    "buyRatio": round(buy_ratio, 4),
+                    "sellRatio": round(sell_ratio, 4),
+                    "netFlow": "BUY" if buy_ratio > sell_ratio else "SELL",
+                    "buyPercent": round(buy_ratio * 100, 1),
+                    "sellPercent": round(sell_ratio * 100, 1),
+                    "buyVolUsd": long_vol,
+                    "sellVolUsd": short_vol,
+                    "signal": "BULLISH" if buy_ratio > 0.55 else "BEARISH" if sell_ratio > 0.55 else "NEUTRAL",
+                    "context": {
+                        "ls_5m": round(ls_5m, 4),
+                        "ls_1h": round(ls_1h, 4),
+                        "ls_4h": round(ls_4h, 4),
+                    }
+                }
+
         return {
             "success": True,
             "symbol": symbol.upper(),
-            "buyRatio": 0.52,
-            "sellRatio": 0.48,
-            "netFlow": "BUY",
-            "buyPercent": 52,
-            "sellPercent": 48,
+            "buyRatio": 0.5,
+            "sellRatio": 0.5,
+            "netFlow": "NEUTRAL",
+            "buyPercent": 50.0,
+            "sellPercent": 50.0,
             "signal": "NEUTRAL",
-            "source": "fallback"
+            "source": "no_data"
         }
     except Exception as e:
         logger.error(f"Taker ratio error: {e}")
@@ -7782,54 +7806,109 @@ async def get_onchain_data():
 
 @app.get("/api/orderflow/{symbol}")
 async def get_orderflow_data(symbol: str = "BTC"):
-    """Get live order flow intelligence - bid/ask imbalance, aggressor side, large orders."""
+    """Get REAL order flow intelligence from Helsinki + Coinglass.
+
+    Data sources (ALL REAL — zero simulation):
+      - Helsinki /quant/orderbook/{symbol} → bid/ask imbalance, support/resistance
+      - Helsinki /quant/cvd/{symbol} → cumulative volume delta, divergence
+      - Helsinki /quant/large-trades/{symbol} → real whale orders ($100K+)
+      - Coinglass /futures/coins-markets → volume changes (trade intensity proxy)
+    """
+    import asyncio
+
     try:
-        # Fetch CVD and market data
-        cvd_data = await helsinki.get(f"quant/cvd/{symbol}")
-        market_data = await helsinki.get(f"quant/full/{symbol}")
-        
-        current_price = market_data.get("current_price", 83700)
-        cvd_1h = cvd_data.get("cvd_1h_usd", 0)
-        
-        # Calculate bid/ask imbalance from available metrics
-        ls_ratio = market_data.get("long_short_ratio", 1.5)
-        
-        # Simulate bid/ask based on L/S ratio
-        bid_pct = min(75, max(35, 50 + (ls_ratio - 1) * 20))
-        ask_pct = 100 - bid_pct
+        # Parallel fetch from Helsinki (3 endpoints) + Coinglass coins-markets
+        orderbook_task = helsinki.fetch_endpoint("/quant/orderbook/{symbol}", symbol)
+        cvd_task = helsinki.fetch_endpoint("/quant/cvd/{symbol}", symbol)
+        trades_task = helsinki.fetch_endpoint("/quant/large-trades/{symbol}", symbol)
+        cg_task = coinglass.get_coins_markets()
+
+        ob_result, cvd_result, trades_result, cg_result = await asyncio.gather(
+            orderbook_task, cvd_task, trades_task, cg_task,
+            return_exceptions=True
+        )
+
+        # --- BID/ASK IMBALANCE (from Helsinki orderbook) ---
+        bid_pct = 50.0
+        ask_pct = 50.0
+        imbalance_text = "BALANCED"
+        ob_data = ob_result.data if hasattr(ob_result, 'data') and ob_result.data else {}
+        if ob_data:
+            bid_pct = ob_data.get("bid_pct", 50.0)
+            ask_pct = 100 - bid_pct
+            interpretation = ob_data.get("interpretation", "BALANCED")
+            imbalance_text = interpretation
+
         imbalance_signal = "BUY" if bid_pct > 55 else "SELL" if bid_pct < 45 else "NEUTRAL"
-        
-        # Aggressor side calculation from CVD
-        buyer_vol = abs(cvd_1h) if cvd_1h > 0 else random.uniform(15, 30) * 1e6
-        seller_vol = abs(cvd_1h) if cvd_1h < 0 else random.uniform(10, 25) * 1e6
-        total_vol = buyer_vol + seller_vol
-        buyer_pct = buyer_vol / total_vol * 100 if total_vol > 0 else 50
-        
-        # Generate realistic large orders
+
+        # --- CVD MOMENTUM (from Helsinki CVD) ---
+        cvd_data = cvd_result.data if hasattr(cvd_result, 'data') and cvd_result.data else {}
+        cvd_value = cvd_data.get("cvd_1h_usd", 0)
+        cvd_divergence = cvd_data.get("divergence", "NEUTRAL")
+
+        # --- AGGRESSOR SIDE (from Helsinki large trades) ---
+        tr_data = trades_result.data if hasattr(trades_result, 'data') and trades_result.data else {}
+        buy_vol = tr_data.get("total_buy_volume_usd", 0)
+        sell_vol = tr_data.get("total_sell_volume_usd", 0)
+        total_vol = buy_vol + sell_vol
+        buyer_pct = (buy_vol / total_vol * 100) if total_vol > 0 else 50
+
+        # --- LARGE ORDERS (from Helsinki — real whale trades $100K+) ---
+        raw_trades = tr_data.get("large_trades", [])
         large_orders = []
-        for i in range(5):
-            is_buy = random.random() > 0.45
-            order = {
-                "time": f"{14-i//2}:{32-i*5:02d}",
-                "side": "BUY" if is_buy else "SELL",
-                "size": f"${random.uniform(0.5, 4):.1f}M",
-                "price": f"@{current_price + random.randint(-200, 200):,.0f}"
-            }
-            large_orders.append(order)
-        
-        # CVD momentum
-        cvd_value = cvd_1h if cvd_1h else random.uniform(-10, 15) * 1e6
-        
-        # Trade intensity - simulate based on volatility
-        volatility = market_data.get("daily_volatility_pct", 2.0)
-        intensity_pct = min(95, max(20, volatility * 30 + random.uniform(-10, 10)))
-        intensity_signal = "HIGH" if intensity_pct > 70 else "ELEVATED" if intensity_pct > 50 else "NORMAL" if intensity_pct > 30 else "LOW"
-        trades_per_sec = int(300 + intensity_pct * 10 + random.randint(-50, 50))
-        
-        # Spoofing detection (simulate occasional alerts)
-        has_spoof = random.random() < 0.1
-        spoof_status = "ALERT" if has_spoof else "CLEAR"
-        
+        for t in raw_trades[:8]:
+            usd_val = t.get("usd_value", 0)
+            large_orders.append({
+                "time": t.get("time", ""),
+                "side": t.get("side", "BUY").upper(),
+                "size": f"${usd_val/1e6:.1f}M" if usd_val >= 1e6 else f"${usd_val/1e3:.0f}K",
+                "price": f"@{t.get('price', 0):,.0f}"
+            })
+
+        # --- TRADE INTENSITY (from Coinglass volume changes — real data) ---
+        intensity_pct = 50.0
+        intensity_signal = "NORMAL"
+        trades_per_sec = 0
+        if hasattr(cg_result, 'success') and cg_result.success and cg_result.data:
+            coin = next((c for c in cg_result.data if c.get("symbol", "").upper() == symbol.upper()), None)
+            if coin:
+                # Use 1h volume change as intensity proxy
+                vol_change_1h = abs(coin.get("volChangePercent1h", 0))
+                vol_change_5m = abs(coin.get("volChangePercent5m", 0))
+                # Map volume change to 0-100 intensity
+                # >5% 1h change = HIGH, >3% = ELEVATED, >1% = NORMAL, else LOW
+                intensity_pct = min(95, max(10, vol_change_1h * 15 + vol_change_5m * 5))
+                intensity_signal = "HIGH" if intensity_pct > 70 else "ELEVATED" if intensity_pct > 50 else "NORMAL" if intensity_pct > 30 else "LOW"
+                # Estimate trades/sec from volume — $50B/day BTC ≈ 1000 trades/sec on major exchanges
+                vol_24h = coin.get("volUsd", 0)
+                trades_per_sec = int(vol_24h / 50_000_000) if vol_24h > 0 else 0  # ~$50K avg trade
+
+        # --- SPOOF DETECTION (from Helsinki orderbook imbalance) ---
+        # Real signal: extreme bid/ask imbalance (>70/30) with thin depth = potential spoof
+        spoof_status = "CLEAR"
+        spoof_alerts = []
+        if ob_data:
+            imbalance_ratio = ob_data.get("imbalance_ratio", 1.0)
+            bid_vol_usd = ob_data.get("bid_volume_usd", 0)
+            ask_vol_usd = ob_data.get("ask_volume_usd", 0)
+            # Extreme imbalance (>1.8x or <0.55x) with significant volume = suspicious
+            if imbalance_ratio > 1.8 and bid_vol_usd > 5_000_000:
+                spoof_status = "ALERT"
+                spoof_alerts.append({
+                    "time": "now",
+                    "side": "BUY",
+                    "size": f"${bid_vol_usd/1e6:.1f}M",
+                    "note": f"Heavy bid wall ({imbalance_ratio:.1f}x imbalance)"
+                })
+            elif imbalance_ratio < 0.55 and ask_vol_usd > 5_000_000:
+                spoof_status = "ALERT"
+                spoof_alerts.append({
+                    "time": "now",
+                    "side": "SELL",
+                    "size": f"${ask_vol_usd/1e6:.1f}M",
+                    "note": f"Heavy ask wall ({1/imbalance_ratio:.1f}x imbalance)"
+                })
+
         return {
             "success": True,
             "symbol": symbol.upper(),
@@ -7837,23 +7916,24 @@ async def get_orderflow_data(symbol: str = "BTC"):
                 "bidPct": round(bid_pct, 0),
                 "askPct": round(ask_pct, 0),
                 "signal": imbalance_signal,
-                "text": "STRONG BUY PRESSURE" if bid_pct > 60 else "BUY PRESSURE" if bid_pct > 55 else "STRONG SELL PRESSURE" if bid_pct < 40 else "SELL PRESSURE" if bid_pct < 45 else "BALANCED"
+                "text": imbalance_text
             },
             "aggressorSide": {
-                "buyerVol": buyer_vol,
-                "buyerFormatted": f"${buyer_vol/1e6:.1f}M",
+                "buyerVol": buy_vol,
+                "buyerFormatted": f"${buy_vol/1e6:.1f}M" if buy_vol >= 1e6 else f"${buy_vol/1e3:.0f}K",
                 "buyerPct": round(buyer_pct, 0),
-                "sellerVol": seller_vol,
-                "sellerFormatted": f"${seller_vol/1e6:.1f}M",
+                "sellerVol": sell_vol,
+                "sellerFormatted": f"${sell_vol/1e6:.1f}M" if sell_vol >= 1e6 else f"${sell_vol/1e3:.0f}K",
                 "sellerPct": round(100 - buyer_pct, 0),
-                "delta": buyer_vol - seller_vol,
-                "deltaFormatted": f"+${(buyer_vol-seller_vol)/1e6:.1f}M" if buyer_vol > seller_vol else f"-${abs(buyer_vol-seller_vol)/1e6:.1f}M"
+                "delta": buy_vol - sell_vol,
+                "deltaFormatted": f"+${(buy_vol-sell_vol)/1e6:.1f}M" if buy_vol > sell_vol else f"-${abs(buy_vol-sell_vol)/1e6:.1f}M"
             },
             "largeOrders": large_orders,
             "cvdMomentum": {
                 "value": cvd_value,
                 "formatted": f"+${cvd_value/1e6:.1f}M" if cvd_value > 0 else f"-${abs(cvd_value)/1e6:.1f}M",
-                "isPositive": cvd_value > 0
+                "isPositive": cvd_value > 0,
+                "divergence": cvd_divergence
             },
             "tradeIntensity": {
                 "pct": round(intensity_pct, 0),
@@ -7862,26 +7942,12 @@ async def get_orderflow_data(symbol: str = "BTC"):
             },
             "spoofDetection": {
                 "status": spoof_status,
-                "alerts": [{"time": "14:28", "side": "BUY", "size": "$8.2M", "note": "Pulled after 3s"}] if has_spoof else []
+                "alerts": spoof_alerts
             }
         }
     except Exception as e:
         logger.error(f"Order flow error: {e}")
-        return {
-            "success": True,
-            "symbol": symbol.upper(),
-            "bidAskImbalance": {"bidPct": 62, "askPct": 38, "signal": "BUY", "text": "STRONG BUY PRESSURE"},
-            "aggressorSide": {"buyerVol": 24.7e6, "buyerFormatted": "$24.7M", "buyerPct": 58, "sellerVol": 17.8e6, "sellerFormatted": "$17.8M", "sellerPct": 42, "delta": 6.9e6, "deltaFormatted": "+$6.9M"},
-            "largeOrders": [
-                {"time": "14:32", "side": "BUY", "size": "$2.4M", "price": "@83,420"},
-                {"time": "14:28", "side": "SELL", "size": "$1.8M", "price": "@83,510"},
-                {"time": "14:25", "side": "BUY", "size": "$3.1M", "price": "@83,380"}
-            ],
-            "cvdMomentum": {"value": 8.4e6, "formatted": "+$8.4M", "isPositive": True},
-            "tradeIntensity": {"pct": 68, "signal": "ELEVATED", "tradesPerSec": 847},
-            "spoofDetection": {"status": "CLEAR", "alerts": []},
-            "source": "fallback"
-        }
+        return {"success": False, "symbol": symbol.upper(), "error": str(e)}
 
 
 # =============================================================================
