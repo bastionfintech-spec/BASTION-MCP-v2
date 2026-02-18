@@ -5,10 +5,10 @@ Full API for the Trading Terminal - connects all IROS intelligence
 GIF/Avatar cloud sync, 2MB upload limit
 """
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
 from contextlib import asynccontextmanager
 import asyncio
 import json
@@ -284,8 +284,30 @@ async def lifespan(app: FastAPI):
             )
             logger.info("[ENGINE] Risk Engine dependencies injected")
 
-            # Wire execution engine with default context
+            # Wire execution engine with structure service for TP sizing
             if execution_engine:
+                if structure_service:
+                    async def _structure_context_for_engine(symbol: str, current_price: float, direction: str):
+                        """Wrapper: creates a LiveDataFetcher, calls structure_service, cleans up."""
+                        try:
+                            from data.fetcher import LiveDataFetcher
+                            _fetcher = LiveDataFetcher(timeout=10)
+                            ctx = await structure_service.get_structural_context(
+                                symbol=symbol,
+                                current_price=current_price,
+                                direction=direction,
+                                fetcher=_fetcher,
+                            )
+                            await _fetcher.close()
+                            return ctx
+                        except Exception as e:
+                            logger.warning(f"[EXEC] Structure context wrapper failed: {e}")
+                            return None
+
+                    execution_engine.set_structure_context_fn(_structure_context_for_engine)
+                    logger.info("[ENGINE] Execution Engine wired with Structure Service for TP sizing")
+                else:
+                    logger.warning("[ENGINE] Structure Service not available — TP sizing will use static percentages")
                 logger.info("[ENGINE] Execution Engine ready for user context registration")
         except Exception as e:
             logger.warning(f"[ENGINE] Dependency injection failed: {e}")
@@ -5943,6 +5965,91 @@ async def engine_configure_safety(request: Dict[str, Any]):
     execution_engine.configure(**request)
     logger.info(f"[ENGINE] Safety config updated by {scope_id}: {request}")
     return {"success": True, "safety": execution_engine.status()}
+
+
+# =============================================================================
+# SSE — REAL-TIME EXECUTION EVENT STREAM
+# =============================================================================
+
+# SSE subscribers: list of asyncio.Queue objects, one per connected client
+_sse_subscribers: List[asyncio.Queue] = []
+
+
+def _sse_broadcast(event: dict):
+    """Push an execution event to all SSE subscribers (sync callback for execution engine)."""
+    dead_queues = []
+    for q in _sse_subscribers:
+        try:
+            q.put_nowait(event)
+        except asyncio.QueueFull:
+            dead_queues.append(q)
+    for q in dead_queues:
+        try:
+            _sse_subscribers.remove(q)
+        except ValueError:
+            pass
+
+
+# Wire the SSE broadcaster into the execution engine at module level
+if execution_engine:
+    execution_engine.add_event_listener(_sse_broadcast)
+    logger.info("[SSE] Execution event broadcaster registered")
+
+
+@app.get("/api/engine/events")
+async def engine_events_stream(request: Request):
+    """
+    Server-Sent Events (SSE) stream for real-time execution notifications.
+
+    The dashboard connects to this endpoint and receives events whenever the
+    execution engine processes an action (TP_PARTIAL, EXIT_FULL, REDUCE_SIZE, etc.).
+
+    Event format:
+        data: {"type":"execution","action":"TP_PARTIAL","symbol":"BTCUSDT",...}
+
+    Heartbeat every 30s to keep the connection alive:
+        data: {"type":"heartbeat","timestamp":"..."}
+
+    Usage (frontend):
+        const es = new EventSource('/api/engine/events');
+        es.onmessage = (e) => { const data = JSON.parse(e.data); ... };
+    """
+    queue: asyncio.Queue = asyncio.Queue(maxsize=200)
+    _sse_subscribers.append(queue)
+    logger.info(f"[SSE] Client connected ({len(_sse_subscribers)} total)")
+
+    async def event_generator():
+        try:
+            while True:
+                # Check if client disconnected
+                if await request.is_disconnected():
+                    break
+
+                try:
+                    # Wait up to 30 seconds for an event, then send heartbeat
+                    event = await asyncio.wait_for(queue.get(), timeout=30.0)
+                    yield f"data: {json.dumps(event)}\n\n"
+                except asyncio.TimeoutError:
+                    # Heartbeat to keep connection alive
+                    yield f"data: {json.dumps({'type': 'heartbeat', 'timestamp': datetime.utcnow().isoformat()})}\n\n"
+        except asyncio.CancelledError:
+            pass
+        finally:
+            try:
+                _sse_subscribers.remove(queue)
+            except ValueError:
+                pass
+            logger.info(f"[SSE] Client disconnected ({len(_sse_subscribers)} remaining)")
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Nginx: don't buffer SSE
+        }
+    )
 
 
 # =============================================================================

@@ -22,6 +22,9 @@ from .orderflow_detector import OrderFlowDetector, OrderFlowAnalysis, FlowDirect
 from .auto_support import AutoSupportDetector, AutoSupportAnalysis, AutoLevel
 from .structure_service import StructureService, StructuralContext
 
+# Structure-Aware TP Sizing (deterministic math, not LLM)
+from .tp_sizer import StructureTPSizer, TPSizerConfig, TPSizeResult
+
 # Multi-shot entry system (separate feature)
 from .adaptive_budget import AdaptiveRiskBudget, TradeBudget, Shot, ShotStatus
 
@@ -63,6 +66,10 @@ __all__ = [
     # Structure Service
     "StructureService",
     "StructuralContext",
+    # TP Sizer
+    "StructureTPSizer",
+    "TPSizerConfig",
+    "TPSizeResult",
     # Multi-Shot
     "AdaptiveRiskBudget",
     "TradeBudget",

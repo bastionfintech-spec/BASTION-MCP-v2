@@ -24,6 +24,15 @@ from collections import deque
 
 logger = logging.getLogger("bastion.execution")
 
+# Structure-aware TP sizer (deterministic math, not LLM)
+try:
+    from core.tp_sizer import StructureTPSizer
+    _tp_sizer = StructureTPSizer()
+    logger.info("[EXEC] Structure-aware TP sizer loaded")
+except ImportError:
+    _tp_sizer = None
+    logger.warning("[EXEC] TP sizer not available — falling back to static percentages")
+
 
 # =============================================================================
 # EXECUTION RESULT
@@ -46,6 +55,7 @@ class ExecutionResult:
     confidence: float = 0.0
     urgency: str = "LOW"
     source: str = ""              # MCF_LEVEL_1_CODE, MCF_LEVEL_2_CODE, AI_EVALUATION
+    metadata: Optional[Dict[str, Any]] = None  # TP sizing details, structure data
 
     def to_dict(self):
         return asdict(self)
@@ -202,6 +212,8 @@ class ExecutionEngine:
         self._pending_confirmations: deque = deque(maxlen=100)
         self._total_executions: int = 0
         self._total_volume_usd: float = 0.0
+        self._structure_context_fn: Optional[Callable] = None  # Injected from terminal_api
+        self._event_listeners: List[Callable] = []  # For SSE notifications
 
     # ─── Context Registration ─────────────────────────────────────────
 
@@ -369,18 +381,57 @@ class ExecutionEngine:
                     user_ctx, position, position_state, action_spec, execution_hints
                 )
             elif order_type == "close_partial_and_trail":
-                # TP_PARTIAL with trailing: close partial, then set new SL
-                exit_pct = self._resolve_exit_pct(action_spec, execution_hints, position_state)
+                # TP_PARTIAL with structure-aware sizing
+                tp_size_result = None
+                if _tp_sizer and self._structure_context_fn:
+                    try:
+                        # Get fresh structure context for sizing
+                        struct_ctx = await self._get_structure_context(symbol, position_state)
+                        momentum_data = self._extract_momentum(position_state)
+                        tp_size_result = _tp_sizer.calculate_exit_pct(
+                            structure_context=struct_ctx,
+                            momentum_data=momentum_data,
+                            position_state=position_state,
+                            tp_index=position_state.get("tps_hit_count", 0)
+                        )
+                        exit_pct = tp_size_result.exit_pct
+                        logger.info(f"[EXEC] Structure-sized TP: {exit_pct:.0%} | {tp_size_result.reasoning}")
+                    except Exception as e:
+                        logger.warning(f"[EXEC] TP sizer failed, falling back: {e}")
+                        exit_pct = self._resolve_exit_pct(action_spec, execution_hints, position_state)
+                else:
+                    exit_pct = self._resolve_exit_pct(action_spec, execution_hints, position_state)
+
                 result = await self._execute_close(
                     user_ctx, position, position_state, action_spec, execution_hints, exit_pct
                 )
-                # If partial close succeeded, update trailing stop
+
+                # If partial close succeeded, trail the stop on the remainder
                 if result.success:
+                    # Use structure-derived trail stop if available
+                    trail_price = None
+                    if tp_size_result and tp_size_result.trail_stop_price:
+                        trail_price = tp_size_result.trail_stop_price
+                        execution_hints = {**execution_hints, "stop_price": trail_price}
+
                     trail_result = await self._execute_stop_update(
                         user_ctx, position, position_state, action_spec, execution_hints
                     )
                     if trail_result.success:
-                        logger.info(f"[EXEC] ✓ Trailed SL after partial close on {symbol}")
+                        logger.info(f"[EXEC] ✓ Trailed SL to ${trail_price or 'dynamic'} after "
+                                    f"{exit_pct:.0%} partial close on {symbol}")
+
+                    # Store sizing metadata on the result for notifications
+                    if tp_size_result:
+                        result.metadata = {
+                            "tp_sizing": {
+                                "exit_pct": tp_size_result.exit_pct,
+                                "adjustments": tp_size_result.adjustments,
+                                "reasoning": tp_size_result.reasoning,
+                                "trail_stop": tp_size_result.trail_stop_price,
+                                "confidence": tp_size_result.confidence,
+                            }
+                        }
             else:
                 result = self._fail(action_type, symbol, f"Unknown order type: {order_type}",
                                     confidence, urgency, source)
@@ -405,6 +456,25 @@ class ExecutionEngine:
 
         # Audit log
         await self.audit.log(result, position_state)
+
+        # Broadcast execution event for dashboard notifications
+        if result.success and action_type != "HOLD":
+            await self._broadcast_event({
+                "type": "execution",
+                "action": action_type,
+                "symbol": symbol,
+                "exit_pct": getattr(result, 'exit_pct', None),
+                "price": result.executed_price,
+                "order_id": result.order_id,
+                "confidence": confidence,
+                "urgency": urgency,
+                "reason": reason,
+                "source": source,
+                "exchange": result.exchange,
+                "metadata": getattr(result, 'metadata', None),
+                "timestamp": result.timestamp,
+            })
+
         return result
 
     # ─── Order Execution Methods ──────────────────────────────────────
@@ -626,6 +696,55 @@ class ExecutionEngine:
 
         # ── 4. Hardcoded fallback ──
         return action_spec.get("default_exit_pct", 0.33)
+
+    def set_structure_context_fn(self, fn: Callable):
+        """Inject the structure service lookup function from terminal_api."""
+        self._structure_context_fn = fn
+        logger.info("[EXEC] Structure context function registered for TP sizing")
+
+    async def _get_structure_context(self, symbol: str, position_state: dict = None) -> dict:
+        """Get structural context for a symbol (VPVR, S/R grades, etc.).
+
+        The injected function receives (symbol, current_price, direction) and handles
+        fetcher creation internally.
+        """
+        if not self._structure_context_fn:
+            return {}
+        try:
+            pos = position_state or {}
+            current_price = float(pos.get("current_price", 0))
+            direction = pos.get("direction", "LONG").lower()
+            ctx = await self._structure_context_fn(symbol, current_price, direction)
+            if ctx and hasattr(ctx, '__dict__'):
+                return ctx.__dict__
+            elif isinstance(ctx, dict):
+                return ctx
+        except Exception as e:
+            logger.warning(f"[EXEC] Structure context fetch failed for {symbol}: {e}")
+        return {}
+
+    def _extract_momentum(self, position_state: dict) -> dict:
+        """Extract momentum data from position state or live data."""
+        return {
+            "rsi": position_state.get("rsi", position_state.get("momentum_rsi", 50)),
+            "cvd_trend": position_state.get("cvd_trend", "neutral"),
+            "oi_change_pct": position_state.get("oi_change_pct", 0),
+        }
+
+    def add_event_listener(self, listener: Callable):
+        """Register a callback for execution events (SSE notifications)."""
+        self._event_listeners.append(listener)
+
+    async def _broadcast_event(self, event: dict):
+        """Broadcast execution event to all listeners."""
+        for listener in self._event_listeners:
+            try:
+                if asyncio.iscoroutinefunction(listener):
+                    await listener(event)
+                else:
+                    listener(event)
+            except Exception as e:
+                logger.warning(f"[EXEC] Event listener error: {e}")
 
     def _parse_stop_from_hints(self, hints: dict, position_state: dict) -> float:
         """
