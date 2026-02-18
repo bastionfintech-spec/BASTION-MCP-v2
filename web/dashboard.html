@@ -1,6 +1,10 @@
+<!DOCTYPE html>
 <html lang="en" class="bg-[#050505] antialiased"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="BASTION Lite — AI-powered crypto risk intelligence terminal">
+    <meta name="theme-color" content="#050505">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='80'>🛡️</text></svg>">
     <title>BASTION LITE // TERMINAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -85,9 +89,25 @@
 
       /* Shield action badges */
       .action-hold { background: rgba(34,197,94,0.1); color: #22c55e; border-color: rgba(34,197,94,0.2); }
-      .action-reduce { background: rgba(234,179,8,0.1); color: #eab308; border-color: rgba(234,179,8,0.2); }
-      .action-exit { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.2); }
+      .action-reduce, .action-reduce_size { background: rgba(234,179,8,0.1); color: #eab308; border-color: rgba(234,179,8,0.2); }
+      .action-exit, .action-exit_full, .action-exit_100_percent_immediately { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.2); }
+      .action-tp, .action-tp_partial, .action-tp_full { background: rgba(34,197,94,0.1); color: #22c55e; border-color: rgba(34,197,94,0.2); }
+      .action-move_stop_to_breakeven, .action-trail_stop, .action-adjust_stop { background: rgba(59,130,246,0.1); color: #3b82f6; border-color: rgba(59,130,246,0.2); }
       .action-scale_in { background: rgba(59,130,246,0.1); color: #3b82f6; border-color: rgba(59,130,246,0.2); }
+
+      /* Shield analysis panel on position card */
+      .shield-analysis {
+        margin-top: 8px; padding: 8px 10px; border-radius: 6px;
+        border: 1px solid rgba(220,38,38,0.15); background: rgba(220,38,38,0.04);
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .shield-analysis .sa-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+      .shield-analysis .sa-action-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid; text-transform: uppercase; letter-spacing: 0.05em; }
+      .shield-analysis .sa-confidence { font-size: 9px; color: #71717a; }
+      .shield-analysis .sa-reason { font-size: 10px; color: #a1a1aa; line-height: 1.5; margin-bottom: 4px; }
+      .shield-analysis .sa-sources { font-size: 8px; color: #52525b; display: flex; align-items: center; gap: 4px; }
+      @keyframes shieldFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+      .shield-analysis { animation: shieldFadeIn 0.3s ease-out forwards; }
 
       /* Chart loading */
       .chart-loading-bar { position: absolute; top: 0; left: 0; height: 2px; width: 100%; z-index: 20; overflow: hidden; }
@@ -100,6 +120,13 @@
       /* Safe area */
       .safe-pb { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
 
+      /* Print styles */
+      @media print {
+        .splash-screen, .scanline, .bg-grid, #fab-btn, #fab-menu, #toast-container,
+        #chat-panel, [id="mobile-nav"] { display: none !important; }
+        body { background: white !important; color: black !important; }
+      }
+
       /* Mobile scroll fixes */
       @media (max-width: 767px) {
         body { -webkit-overflow-scrolling: touch; touch-action: pan-y; }
@@ -111,9 +138,59 @@
       /* Intel card hover */
       .intel-card { transition: all 0.15s ease; }
       .intel-card:hover { background: rgba(24,24,27,0.3); }
+
+      /* Loading splash */
+      .splash-screen {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #050505;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+      .splash-screen.fade-out { opacity: 0; visibility: hidden; }
+      @keyframes shieldBoot { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+      .splash-icon { animation: shieldBoot 0.6s ease-out forwards; }
+      @keyframes loadingBar { 0% { width: 0%; } 100% { width: 100%; } }
+      .splash-bar { height: 2px; background: #dc2626; animation: loadingBar 1.5s ease-out forwards; border-radius: 1px; }
+
+      /* Smooth tab transitions */
+      [id^="view-"] { transition: opacity 0.15s ease; }
+      [id^="view-"].hidden { opacity: 0; }
+
+      /* Position card divider refinement */
+      .pos-card:last-child { border-bottom: none; }
+
+      /* Better focus styles */
+      input:focus-visible, button:focus-visible { outline: 1px solid rgba(220,38,38,0.4); outline-offset: 2px; }
+
+      /* Hover lift for position cards */
+      .pos-card:hover { transform: translateX(2px); }
+
+      /* Price tick flash */
+      @keyframes priceFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+      .price-flash-up { background: rgba(34,197,94,0.15); animation: priceFlash 0.5s ease-out forwards; }
+      .price-flash-down { background: rgba(239,68,68,0.15); animation: priceFlash 0.5s ease-out forwards; }
+
+      /* Intel card zebra stripe (subtle) */
+      .intel-card:nth-child(even) { background: rgba(9,9,11,0.3); }
     </style>
   </head>
   <body class="bg-[#050505] text-zinc-400 min-h-screen md:h-screen flex flex-col overflow-y-auto md:overflow-hidden selection:bg-red-600/30 selection:text-red-100 relative">
+    <!-- Loading Splash -->
+    <div id="splash" class="splash-screen">
+      <div class="splash-icon flex items-center gap-3 mb-6">
+        <iconify-icon icon="solar:shield-bold" class="text-red-600 text-4xl"></iconify-icon>
+        <div>
+          <div class="text-xl font-mono font-bold text-white tracking-tight">BASTION</div>
+          <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-[0.3em]">LITE TERMINAL</div>
+        </div>
+      </div>
+      <div class="w-48 bg-zinc-900 rounded-full overflow-hidden">
+        <div class="splash-bar"></div>
+      </div>
+      <div class="mt-4 text-[9px] font-mono text-zinc-700 tracking-widest uppercase">Initializing neural engine...</div>
+    </div>
+
     <div class="absolute inset-0 pointer-events-none opacity-[0.02] bg-grid z-0"></div>
     <div class="absolute inset-0 pointer-events-none opacity-[0.06] scanline z-50 mix-blend-overlay"></div>
 
@@ -124,6 +201,7 @@
           <iconify-icon icon="solar:shield-bold" class="text-red-600 text-lg group-hover:scale-110 transition-transform"></iconify-icon>
           <span class="text-sm md:text-base font-mono font-bold tracking-tight text-white group-hover:text-red-500 transition-colors">BASTION</span>
           <span class="text-[7px] md:text-[8px] font-mono bg-red-950/40 text-red-500 px-1 md:px-1.5 py-0.5 rounded border border-red-900/30 tracking-widest">LITE</span>
+          <span class="text-[7px] font-mono text-zinc-800 hidden md:inline ml-0.5">v6</span>
         </a>
       </div>
       <!-- Ticker — visible on ALL screens -->
@@ -155,10 +233,21 @@
     </header>
 
     <!-- Mobile Nav -->
-    <div id="mobile-nav" class="hidden md:hidden absolute top-12 left-0 right-0 z-50 bg-[#080808]/95 backdrop-blur-md border-b border-zinc-800 p-4 space-y-3">
-      <a href="/lite" class="block text-xs font-mono text-white">Dashboard</a>
-      <a href="/frontend" class="block text-xs font-mono text-zinc-500 hover:text-white flex items-center gap-2"><iconify-icon icon="solar:crown-bold" class="text-amber-500/60"></iconify-icon>Pro Terminal</a>
-      <a href="/account" class="block text-xs font-mono text-zinc-500 hover:text-white">Account</a>
+    <div id="mobile-nav" class="hidden md:hidden absolute top-12 left-0 right-0 z-50 bg-[#080808]/98 backdrop-blur-lg border-b border-zinc-800 px-4 py-3 space-y-1">
+      <a href="/lite" class="flex items-center gap-3 px-3 py-2.5 rounded-md bg-red-950/10 border border-red-900/20 text-xs font-mono text-white">
+        <iconify-icon icon="solar:shield-bold" class="text-red-600 text-sm"></iconify-icon>Dashboard
+        <span class="ml-auto text-[8px] text-red-500/60 font-bold">ACTIVE</span>
+      </a>
+      <a href="/frontend" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+        <iconify-icon icon="solar:crown-bold" class="text-amber-500/60 text-sm"></iconify-icon>Pro Terminal
+        <span class="ml-auto text-[8px] text-amber-700 border border-amber-900/20 px-1.5 py-0.5 rounded">PRO</span>
+      </a>
+      <a href="/research" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+        <iconify-icon icon="solar:document-text-linear" class="text-sm"></iconify-icon>Research
+      </a>
+      <a href="/account" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+        <iconify-icon icon="solar:user-circle-linear" class="text-sm"></iconify-icon>Account
+      </a>
     </div>
 
     <!-- Market Pulse Bar -->
@@ -234,8 +323,12 @@
               <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span></span>LIVE
             </span>
           </div>
-          <div id="chart-watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
-            <span class="text-[80px] md:text-[120px] font-mono font-black text-zinc-800/[0.04] select-none tracking-tighter">BTC</span>
+          <div id="chart-watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0 flex flex-col items-center">
+            <span class="text-[80px] md:text-[120px] font-mono font-black text-zinc-800/[0.04] select-none tracking-tighter leading-none">BTC</span>
+          </div>
+          <!-- Chart attribution (polished) -->
+          <div class="absolute bottom-2 right-3 pointer-events-none z-10">
+            <span class="text-[7px] font-mono text-zinc-800">Powered by TradingView</span>
           </div>
         </div>
 
@@ -253,9 +346,17 @@
                     <iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon>
                   </div>
                   <div class="flex flex-col gap-1">
-                    <div class="text-[10px] font-mono text-zinc-600">BASTION &bull; System</div>
-                    <div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg text-xs leading-relaxed text-zinc-400">
-                      <p>Neural engine online. Ask me anything — market structure, risk analysis, key levels, trade setups.</p>
+                    <div class="text-[10px] font-mono text-zinc-600">BASTION &bull; Neural Engine</div>
+                    <div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg text-xs leading-relaxed text-zinc-400 space-y-2">
+                      <p class="text-zinc-300 font-medium">Neural engine online.</p>
+                      <p>Ask me about market structure, risk analysis, key levels, whale activity, or trade setups. I analyze 560+ data streams in real-time.</p>
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 rounded border border-zinc-800/30">VPVR</span>
+                        <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 rounded border border-zinc-800/30">OI</span>
+                        <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 rounded border border-zinc-800/30">Funding</span>
+                        <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 rounded border border-zinc-800/30">On-chain</span>
+                        <span class="text-[8px] font-mono text-zinc-600 bg-zinc-900/50 px-1.5 py-0.5 rounded border border-zinc-800/30">MCF</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -263,10 +364,10 @@
             </div>
             <div class="p-3 bg-[#070707] border-t border-zinc-800/40 relative safe-pb">
               <div class="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar" id="quick-chips">
-                <button class="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/60 rounded-md hover:border-red-600/40 hover:bg-red-950/20 text-[9px] font-mono text-zinc-500 hover:text-zinc-300 whitespace-nowrap transition-all" onclick="window.fillPrompt('What is the current market outlook?')">Market Outlook</button>
-                <button class="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/60 rounded-md hover:border-red-600/40 hover:bg-red-950/20 text-[9px] font-mono text-zinc-500 hover:text-zinc-300 whitespace-nowrap transition-all" onclick="window.fillPrompt('Run a risk assessment on my positions')">Risk Assessment</button>
-                <button class="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/60 rounded-md hover:border-red-600/40 hover:bg-red-950/20 text-[9px] font-mono text-zinc-500 hover:text-zinc-300 whitespace-nowrap transition-all" onclick="window.fillPrompt('What are the key support and resistance levels?')">Key Levels</button>
-                <button class="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/60 rounded-md hover:border-red-600/40 hover:bg-red-950/20 text-[9px] font-mono text-zinc-500 hover:text-zinc-300 whitespace-nowrap transition-all" onclick="window.fillPrompt('Analyze whale activity for this asset')">Whale Activity</button>
+                <button class="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/60 rounded-md hover:border-red-600/40 hover:bg-red-950/20 text-[9px] font-mono text-zinc-500 hover:text-zinc-300 whitespace-nowrap transition-all active:scale-95" onclick="window.fillPrompt('What is the current market outlook for ' + currentSymbol + '?')">📊 Market Outlook</button>
+                <button class="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/60 rounded-md hover:border-red-600/40 hover:bg-red-950/20 text-[9px] font-mono text-zinc-500 hover:text-zinc-300 whitespace-nowrap transition-all active:scale-95" onclick="window.fillPrompt('What are the key support and resistance levels for ' + currentSymbol + '?')">📍 Key Levels</button>
+                <button class="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/60 rounded-md hover:border-red-600/40 hover:bg-red-950/20 text-[9px] font-mono text-zinc-500 hover:text-zinc-300 whitespace-nowrap transition-all active:scale-95" onclick="window.fillPrompt('Analyze whale and smart money activity for ' + currentSymbol + '')">🐋 Whale Activity</button>
+                <button class="px-2.5 py-1 bg-zinc-900/60 border border-zinc-800/60 rounded-md hover:border-red-600/40 hover:bg-red-950/20 text-[9px] font-mono text-zinc-500 hover:text-zinc-300 whitespace-nowrap transition-all active:scale-95" onclick="window.fillPrompt('Give me a trade setup for ' + currentSymbol + ' with entry, stop loss, and take profit levels')">🎯 Trade Setup</button>
               </div>
               <div class="relative">
                 <input type="text" id="chat-input" placeholder="Ask BASTION anything..." class="w-full bg-[#050505] border border-zinc-800/60 text-xs font-mono text-white pl-3 pr-10 py-2.5 rounded-md focus:outline-none focus:border-red-600/40 focus:ring-1 focus:ring-red-900/40 transition-all placeholder:text-zinc-600" onfocus="ui.toggleChat(true)" onkeydown="if(event.key==='Enter')api.sendChat()">
@@ -294,16 +395,22 @@
       <!-- RIGHT: Positions + Intel + Reports -->
       <div class="md:col-span-2 flex flex-col bg-[#050505] md:h-full md:overflow-hidden relative">
         <!-- Upgrade CTA -->
-        <a href="/frontend" class="shrink-0 block border-b border-zinc-800/40 bg-gradient-to-r from-red-950/20 via-[#070707] to-purple-950/10 px-4 py-2 group hover:from-red-950/30 hover:to-purple-950/20 transition-all cursor-pointer">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <iconify-icon icon="solar:crown-bold" class="text-amber-500/70 text-sm group-hover:scale-110 transition-transform"></iconify-icon>
+        <a href="/frontend" class="shrink-0 block border-b border-zinc-800/40 bg-gradient-to-r from-amber-950/10 via-[#070707] to-red-950/10 px-4 py-2 group hover:from-amber-950/20 hover:to-red-950/20 transition-all cursor-pointer overflow-hidden relative">
+          <div class="absolute inset-0 bg-gradient-to-r from-amber-600/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div class="flex items-center justify-between relative">
+            <div class="flex items-center gap-2.5">
+              <div class="w-6 h-6 rounded bg-amber-950/30 border border-amber-900/20 flex items-center justify-center group-hover:border-amber-800/40 transition-colors">
+                <iconify-icon icon="solar:crown-bold" class="text-amber-500/70 text-xs group-hover:scale-110 transition-transform"></iconify-icon>
+              </div>
               <div>
-                <span class="text-[10px] font-mono font-bold text-zinc-400 group-hover:text-white transition-colors">UNLOCK PRO</span>
-                <span class="text-[8px] font-mono text-zinc-600 ml-2 hidden sm:inline">Advanced charts &bull; Custom alerts &bull; Full API</span>
+                <span class="text-[10px] font-mono font-bold text-zinc-400 group-hover:text-white transition-colors">PRO TERMINAL</span>
+                <span class="text-[8px] font-mono text-zinc-600 ml-2 hidden sm:inline">Full TradingView &bull; Trade manager &bull; Research desk</span>
               </div>
             </div>
-            <iconify-icon icon="solar:arrow-right-linear" class="text-zinc-700 group-hover:text-red-500 group-hover:translate-x-0.5 transition-all text-sm"></iconify-icon>
+            <div class="flex items-center gap-2">
+              <span class="text-[8px] font-mono text-amber-700 border border-amber-900/20 px-1.5 py-0.5 rounded hidden sm:inline">UPGRADE</span>
+              <iconify-icon icon="solar:arrow-right-linear" class="text-zinc-700 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all text-sm"></iconify-icon>
+            </div>
           </div>
         </a>
 
@@ -537,9 +644,14 @@
                   </button>
                 </div>
                 <div id="signal-list">
-                  <div class="p-4 text-center flex flex-col items-center gap-2">
-                    <iconify-icon icon="solar:radar-2-linear" class="text-zinc-700 text-xl"></iconify-icon>
-                    <span class="text-[10px] font-mono text-zinc-600">Run the AI scanner to detect trade signals</span>
+                  <div class="p-5 text-center flex flex-col items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-lg bg-zinc-900/40 border border-zinc-800/30 flex items-center justify-center">
+                      <iconify-icon icon="solar:radar-2-linear" class="text-zinc-700 text-xl"></iconify-icon>
+                    </div>
+                    <div>
+                      <span class="text-[10px] font-mono text-zinc-500 block">No active signals</span>
+                      <span class="text-[9px] font-mono text-zinc-700 mt-0.5 block">Hit SCAN NOW to run AI signal detection</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -566,20 +678,29 @@
       </div>
     </main>
 
+    <!-- Keyboard Shortcuts Hint (desktop only) -->
+    <div class="hidden md:flex fixed bottom-2 left-3 z-40 items-center gap-3 text-[8px] font-mono text-zinc-800 pointer-events-none select-none">
+      <span><kbd class="px-1 py-0.5 bg-zinc-900/50 border border-zinc-800/30 rounded text-zinc-700">1</kbd><kbd class="px-1 py-0.5 bg-zinc-900/50 border border-zinc-800/30 rounded text-zinc-700 ml-0.5">2</kbd><kbd class="px-1 py-0.5 bg-zinc-900/50 border border-zinc-800/30 rounded text-zinc-700 ml-0.5">3</kbd> Tabs</span>
+      <span><kbd class="px-1 py-0.5 bg-zinc-900/50 border border-zinc-800/30 rounded text-zinc-700">/</kbd> Chat</span>
+      <span><kbd class="px-1 py-0.5 bg-zinc-900/50 border border-zinc-800/30 rounded text-zinc-700">S</kbd> Shield</span>
+    </div>
+
     <!-- Toast -->
     <div id="toast-container" class="fixed top-14 right-4 z-[70] flex flex-col gap-2 max-w-[340px] pointer-events-none"></div>
 
     <!-- Report Modal -->
     <div id="report-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center">
-      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="document.getElementById('report-modal').classList.add('hidden')"></div>
-      <div class="relative w-full h-full md:w-[600px] md:h-[80vh] bg-[#080808] border border-zinc-800/60 md:rounded-lg shadow-2xl flex flex-col overflow-hidden">
-        <div class="h-12 border-b border-zinc-800/60 flex items-center justify-between px-5 bg-[#080808]">
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="document.getElementById('report-modal').classList.add('hidden')"></div>
+      <div class="relative w-full h-full md:w-[640px] md:h-[85vh] bg-[#080808] border border-zinc-800/60 md:rounded-xl shadow-2xl shadow-black/50 flex flex-col overflow-hidden">
+        <div class="h-12 border-b border-zinc-800/60 flex items-center justify-between px-5 bg-[#080808] shrink-0">
           <div class="flex items-center gap-3">
-            <iconify-icon icon="solar:documents-bold" class="text-purple-500"></iconify-icon>
+            <div class="w-6 h-6 rounded bg-purple-950/40 border border-purple-900/20 flex items-center justify-center">
+              <iconify-icon icon="solar:documents-bold" class="text-purple-500 text-xs"></iconify-icon>
+            </div>
             <span id="modal-title-bar" class="text-xs font-mono font-bold text-white uppercase tracking-widest">MCF / REPORT</span>
           </div>
-          <button onclick="document.getElementById('report-modal').classList.add('hidden')" class="text-zinc-500 hover:text-white transition-colors">
-            <iconify-icon icon="solar:close-circle-linear" class="text-xl"></iconify-icon>
+          <button onclick="document.getElementById('report-modal').classList.add('hidden')" class="w-7 h-7 rounded-md flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800/50 transition-all">
+            <iconify-icon icon="solar:close-circle-linear" class="text-lg"></iconify-icon>
           </button>
         </div>
         <div id="modal-body" class="flex-1 overflow-y-auto bastion-scrollbar p-6 bg-[#050505]">
@@ -598,11 +719,52 @@
       let priceInterval = null, positionsInterval = null, shieldInterval = null, liveTickInterval = null;
       let shieldActive = localStorage.getItem('bastion_shield_lite') === 'true';
       let cachedPositions = [];
+      let shieldResults = {};  // Cache: symbol → { evaluation, data_sources, timestamp }
       let chartAbortController = null;
       let isChartLoading = false;
       let lastCandleData = null; // For live updates
       let fabOpen = false;
       let apiAlive = true;
+
+      // ── SESSION ─────────────────────────────────────────────
+      function getSessionId() {
+        let sid = localStorage.getItem('bastion_session_id');
+        if (!sid) { sid = 'guest_' + Math.random().toString(36).substring(2, 15); localStorage.setItem('bastion_session_id', sid); }
+        return sid;
+      }
+      const sessionId = getSessionId();
+
+      // ── AUTO-RECONNECT EXCHANGES ──────────────────────────
+      // On page load, reconnect any saved exchange credentials from localStorage
+      // (connections are in-memory on the backend and lost on restart/reload)
+      async function autoReconnectExchanges() {
+        const CREDS_KEY = 'bastion_exchange_credentials';
+        const saved = JSON.parse(localStorage.getItem(CREDS_KEY) || '{}');
+        const exchanges = Object.keys(saved);
+        if (exchanges.length === 0) return;
+        console.log(`[DASHBOARD] Auto-reconnecting ${exchanges.length} exchange(s)...`);
+        for (const exchange of exchanges) {
+          const creds = saved[exchange];
+          try {
+            const res = await fetch('/api/exchange/connect', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                exchange: exchange,
+                api_key: creds.api_key,
+                api_secret: creds.api_secret,
+                passphrase: creds.passphrase || null,
+                read_only: creds.read_only,
+                session_id: sessionId
+              })
+            });
+            const data = await res.json();
+            console.log(`[DASHBOARD] ${exchange}: ${data.success ? 'connected' : 'failed'}`);
+          } catch (e) {
+            console.warn(`[DASHBOARD] Auto-reconnect ${exchange} failed:`, e);
+          }
+        }
+      }
 
       // ── API ────────────────────────────────────────────────
       const api = {
@@ -625,7 +787,7 @@
           } catch (e) { setConnected(false); return null; }
         },
         getPositions: async () => {
-          try { const res = await fetch('/api/positions/all'); if (!res.ok) throw new Error(); return await res.json(); }
+          try { const res = await fetch(`/api/positions/all?session_id=${sessionId}`); if (!res.ok) throw new Error(); return await res.json(); }
           catch (e) { return { positions: [] }; }
         },
         sendChat: async () => {
@@ -646,7 +808,7 @@
             box.insertAdjacentHTML('beforeend', `<div class="flex gap-3 max-w-[90%] msg-new"><div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-500"><iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1"><div class="text-[10px] font-mono text-zinc-600">BASTION &bull; ${rt}</div><div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg text-xs leading-relaxed text-zinc-300 bastion-response">${renderMarkdown(data.response || data.error || 'No response.')}</div></div></div>`);
           } catch (e) {
             const el = document.getElementById(tid); if (el) el.remove();
-            box.insertAdjacentHTML('beforeend', `<div class="flex gap-3 max-w-[90%] msg-new"><div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-400"><iconify-icon icon="solar:danger-triangle-linear" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1"><div class="text-[10px] font-mono text-zinc-600">SYSTEM &bull; Error</div><div class="bg-red-950/10 border border-red-900/20 p-3 rounded-tr-lg rounded-b-lg text-xs text-red-400/80">Neural engine unavailable. Check connection.</div></div></div>`);
+            box.insertAdjacentHTML('beforeend', `<div class="flex gap-3 max-w-[90%] msg-new"><div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-400"><iconify-icon icon="solar:danger-triangle-linear" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1"><div class="text-[10px] font-mono text-zinc-600">SYSTEM &bull; Error</div><div class="bg-red-950/10 border border-red-900/20 p-3 rounded-tr-lg rounded-b-lg text-xs text-red-400/80 space-y-1"><p class="font-medium">Neural engine unavailable</p><p class="text-[10px] text-red-500/60">The AI model may be offline or loading. Check GPU cluster status.</p></div></div></div>`);
           }
           ui.scrollToBottom();
         },
@@ -681,9 +843,18 @@
         evaluatePosition: async (position) => {
           try {
             const sym = (position.symbol||'').replace(/-PERP$/i, '');
-            const res = await fetch('/api/risk/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ position: { symbol: sym, direction: (position.direction||'').toUpperCase(), entry_price: position.entry_price, current_price: position.current_price, position_size: position.size || 1, leverage: position.leverage || 1, stop_loss: position.stop || position.stop_loss || null, take_profits: (position.targets||[]).map(t=>t.price) } }) });
-            if (!res.ok) throw new Error(); return await res.json();
-          } catch (e) { return null; }
+            // Use live WebSocket price if position current_price is stale (equals entry)
+            let currentPrice = position.current_price || 0;
+            if (currentPrice === position.entry_price && lastWsPrice > 0) {
+              currentPrice = lastWsPrice;
+            }
+            console.log('[SHIELD] Evaluating', sym, 'dir:', position.direction, 'entry:', position.entry_price, 'current:', currentPrice);
+            const res = await fetch('/api/risk/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ position: { symbol: sym, direction: (position.direction||'').toUpperCase(), entry_price: position.entry_price, current_price: currentPrice, position_size: position.size || 1, leverage: position.leverage || 1, stop_loss: position.stop_loss || position.stop || null, take_profits: position.take_profit ? [position.take_profit] : ((position.targets||[]).map(t=>t.price)) } }) });
+            if (!res.ok) { console.error('[SHIELD] Evaluate response not OK:', res.status); throw new Error(); }
+            const data = await res.json();
+            console.log('[SHIELD] Evaluate result:', JSON.stringify(data.evaluation));
+            return data;
+          } catch (e) { console.error('[SHIELD] evaluatePosition error:', e); return null; }
         },
         getOIChanges: async () => {
           try { const res = await fetch('/api/oi-changes'); if (!res.ok) throw new Error(); return await res.json(); }
@@ -782,7 +953,8 @@
             status.textContent = 'AI Risk Engine — Inactive';
             status.className = 'text-[8px] text-zinc-600 font-mono';
             document.querySelectorAll('.pos-card').forEach(card => card.classList.remove('shield-card-active'));
-            document.querySelectorAll('.shield-badge').forEach(el => el.remove());
+            document.querySelectorAll('.shield-badge, .shield-analysis').forEach(el => el.remove());
+            shieldResults = {};  // Clear cached results
             if (shieldInterval) clearInterval(shieldInterval); shieldInterval = null;
           }
         },
@@ -805,6 +977,8 @@
         document.getElementById('ticker-symbol').textContent = sym + '-PERP';
         document.getElementById('chart-watermark').querySelector('span').textContent = sym;
         lastCandleData = null;
+        lastWsPrice = 0;
+        connectPriceWs(); // Reconnect WebSocket for new symbol
         await loadChart();
         updatePrice();
         loadLiquidations();
@@ -847,30 +1021,73 @@
         }
       }
 
-      // ── LIVE CANDLE UPDATE (every 500ms) ───────────────────
+      // ── LIVE PRICE via Binance WebSocket ────────────────────
+      let priceWs = null;
+      let lastWsPrice = 0;
+      let wsReconnectTimer = null;
+      let wsRetryDelay = 1000;
+      const binanceSymbolMap = { BTC: 'btcusdt', ETH: 'ethusdt', SOL: 'solusdt', XRP: 'xrpusdt', BNB: 'bnbusdt', AVAX: 'avaxusdt', LINK: 'linkusdt', ARB: 'arbusdt', DOGE: 'dogeusdt' };
+
+      function connectPriceWs() {
+        if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
+        if (priceWs) { try { priceWs.close(); } catch(e){} }
+        const pair = binanceSymbolMap[currentSymbol] || (currentSymbol.toLowerCase() + 'usdt');
+        const url = `wss://stream.binance.com:9443/ws/${pair}@aggTrade`;
+        priceWs = new WebSocket(url);
+        priceWs.onopen = () => { wsRetryDelay = 1000; }; // Reset backoff on success
+        priceWs.onmessage = (event) => {
+          const d = JSON.parse(event.data);
+          const price = parseFloat(d.p);
+          if (!price || price === lastWsPrice) return;
+          const prevPrice = lastWsPrice;
+          lastWsPrice = price;
+          const priceEl = document.getElementById('ticker-price');
+          priceEl.textContent = '$' + fmtPrice(price);
+          // Flash effect on price change
+          if (prevPrice > 0) {
+            const ticker = document.getElementById('header-ticker');
+            ticker.classList.remove('price-flash-up', 'price-flash-down');
+            void ticker.offsetWidth; // force reflow
+            ticker.classList.add(price > prevPrice ? 'price-flash-up' : 'price-flash-down');
+          }
+          if (lastCandleData && candleSeries && !isChartLoading) {
+            const updated = {
+              time: lastCandleData.time,
+              open: lastCandleData.open,
+              high: Math.max(lastCandleData.high, price),
+              low: Math.min(lastCandleData.low, price),
+              close: price
+            };
+            candleSeries.update(updated);
+            lastCandleData = updated;
+          }
+        };
+        priceWs.onclose = () => {
+          wsReconnectTimer = setTimeout(connectPriceWs, wsRetryDelay);
+          wsRetryDelay = Math.min(wsRetryDelay * 2, 30000); // Exponential backoff, max 30s
+        };
+        priceWs.onerror = () => { try { priceWs.close(); } catch(e){} };
+      }
+
+      // Fallback REST tick for 24h change (runs slower — every 5s)
       async function liveTickUpdate() {
-        if (!lastCandleData || isChartLoading) return;
+        if (isChartLoading) return;
         const data = await api.getPrice(currentSymbol);
-        if (!data || !data.price) return;
-        const price = Number(data.price);
-        // Update header ticker
-        document.getElementById('ticker-price').textContent = '$' + fmtPrice(price);
-        const el = document.getElementById('ticker-change');
+        if (!data) return;
         const ch = data.change_24h || 0;
         const up = ch >= 0;
+        const el = document.getElementById('ticker-change');
         el.className = `text-[9px] md:text-[10px] font-mono ${up ? 'text-green-500 bg-green-900/15' : 'text-red-500 bg-red-900/15'} px-1 md:px-1.5 py-0.5 rounded flex items-center gap-0.5`;
         el.innerHTML = `<iconify-icon icon="solar:arrow-right-${up?'up':'down'}-linear" class="text-[9px]"></iconify-icon>${Math.abs(ch).toFixed(1)}%`;
-        // Update last candle on chart in real time
-        if (lastCandleData && candleSeries) {
-          const updated = {
-            time: lastCandleData.time,
-            open: lastCandleData.open,
-            high: Math.max(lastCandleData.high, price),
-            low: Math.min(lastCandleData.low, price),
-            close: price
-          };
-          candleSeries.update(updated);
-          lastCandleData = updated;
+        // If WS is dead, fallback to REST price
+        if (!priceWs || priceWs.readyState !== WebSocket.OPEN) {
+          const price = Number(data.price);
+          document.getElementById('ticker-price').textContent = '$' + fmtPrice(price);
+          if (lastCandleData && candleSeries) {
+            const updated = { time: lastCandleData.time, open: lastCandleData.open, high: Math.max(lastCandleData.high, price), low: Math.min(lastCandleData.low, price), close: price };
+            candleSeries.update(updated);
+            lastCandleData = updated;
+          }
         }
       }
 
@@ -897,7 +1114,18 @@
         document.querySelectorAll('.pulse-positions-dup').forEach(el => el.textContent = positions.length);
 
         if (positions.length === 0) {
-          list.innerHTML = `<div class="p-8 text-center flex flex-col items-center gap-3"><div class="w-12 h-12 rounded-full bg-zinc-900/50 border border-zinc-800/40 flex items-center justify-center"><iconify-icon icon="solar:box-linear" class="text-zinc-700 text-2xl"></iconify-icon></div><div><p class="text-[11px] font-mono text-zinc-500 font-medium">No open positions</p><p class="text-[9px] font-mono text-zinc-700 mt-1">Connect an exchange to start tracking</p></div></div>`;
+          list.innerHTML = `<div class="p-8 text-center flex flex-col items-center gap-4">
+            <div class="w-14 h-14 rounded-xl bg-zinc-900/50 border border-zinc-800/40 flex items-center justify-center">
+              <iconify-icon icon="solar:shield-keyhole-linear" class="text-zinc-700 text-3xl"></iconify-icon>
+            </div>
+            <div>
+              <p class="text-[12px] font-mono text-zinc-400 font-semibold">No Open Positions</p>
+              <p class="text-[10px] font-mono text-zinc-600 mt-1.5 leading-relaxed max-w-[240px]">Connect your exchange via the <a href="/account" class="text-red-500 hover:text-red-400 underline underline-offset-2">Account</a> page to start monitoring with BASTION Shield.</p>
+            </div>
+            <a href="/account" class="flex items-center gap-2 px-4 py-2 bg-red-600/10 border border-red-600/30 rounded-md text-[10px] font-mono font-bold text-red-500 hover:bg-red-600/20 hover:border-red-600/50 transition-all">
+              <iconify-icon icon="solar:link-circle-bold" class="text-sm"></iconify-icon>Connect Exchange
+            </a>
+          </div>`;
           document.getElementById('total-exposure').textContent = '$0.00';
           document.getElementById('total-pnl').textContent = '$0.00';
           updateRiskScore(0, 0);
@@ -934,6 +1162,7 @@
               <span>Mark <span class="text-zinc-400">${fmt(current)}</span></span>
               <span>Size <span class="text-zinc-400">$${fmtPrice(sizeUsd)}</span></span>
             </div>
+            ${pos.stop_loss || pos.take_profit || pos.liquidation_price ? `<div class="flex justify-between items-center text-[9px] font-mono text-zinc-700 mt-1.5 pt-1.5 border-t border-zinc-800/30">${pos.stop_loss ? `<span>SL <span class="text-red-500/80">${fmt(pos.stop_loss)}</span></span>` : '<span class="text-zinc-800">SL —</span>'}${pos.take_profit ? `<span>TP <span class="text-green-500/80">${fmt(pos.take_profit)}</span></span>` : '<span class="text-zinc-800">TP —</span>'}${pos.liquidation_price ? `<span>Liq <span class="text-red-700/70">${fmt(pos.liquidation_price)}</span></span>` : ''}</div>` : ''}
           </div>`;
         });
         list.innerHTML = html;
@@ -948,6 +1177,9 @@
         const negPnlRatio = positions.filter(p => { const d = (p.direction||'').toUpperCase(); const pnl = d === 'LONG' ? (p.current_price - p.entry_price) : (p.entry_price - p.current_price); return pnl < 0; }).length / positions.length;
         const riskScore = Math.min(100, Math.round((avgLev / 50) * 30 + negPnlRatio * 40 + (maxLev / 125) * 30));
         updateRiskScore(riskScore, positions.length);
+
+        // Re-apply cached shield results after cards re-render
+        reapplyShieldResults();
       }
 
       function updateRiskScore(score, posCount) {
@@ -973,28 +1205,145 @@
       }
 
       // ── SHIELD ─────────────────────────────────────────────
+      function mapActionToCSS(action) {
+        const a = (action || 'HOLD').toUpperCase();
+        if (a === 'HOLD') return 'hold';
+        if (a.startsWith('EXIT') || a === 'EXIT_100_PERCENT_IMMEDIATELY') return 'exit';
+        if (a.startsWith('TP') || a === 'TP_PARTIAL' || a === 'TP_FULL') return 'tp';
+        if (a === 'REDUCE_SIZE') return 'reduce';
+        if (a === 'MOVE_STOP_TO_BREAKEVEN' || a === 'TRAIL_STOP' || a === 'ADJUST_STOP') return 'adjust';
+        return 'hold';
+      }
+
+      function actionDisplayName(action) {
+        const map = {
+          'HOLD': 'HOLD', 'EXIT_FULL': 'EXIT', 'EXIT_100_PERCENT_IMMEDIATELY': 'EXIT NOW',
+          'TP_PARTIAL': 'TAKE PROFIT', 'TP_FULL': 'TAKE PROFIT (FULL)',
+          'REDUCE_SIZE': 'REDUCE', 'MOVE_STOP_TO_BREAKEVEN': 'MOVE STOP → BE',
+          'TRAIL_STOP': 'TRAIL STOP', 'ADJUST_STOP': 'ADJUST STOP'
+        };
+        return map[(action||'').toUpperCase()] || action;
+      }
+
+      function actionIcon(cssClass) {
+        const icons = {
+          'hold': 'solar:shield-check-bold', 'exit': 'solar:danger-triangle-bold',
+          'tp': 'solar:wallet-money-bold', 'reduce': 'solar:chart-square-bold',
+          'adjust': 'solar:settings-bold'
+        };
+        return icons[cssClass] || 'solar:shield-check-bold';
+      }
+
+      function urgencyBorderColor(cssClass, urgency) {
+        const u = (urgency || '').toLowerCase();
+        if (u === 'critical' || u === 'high') return 'border-red-800/40';
+        if (cssClass === 'exit') return 'border-red-800/30';
+        if (cssClass === 'hold') return 'border-green-800/20';
+        if (cssClass === 'tp') return 'border-green-800/20';
+        return 'border-zinc-800/30';
+      }
+
+      // Render a cached shield result onto a position card
+      function renderShieldOnCard(symbol, cached) {
+        const card = document.querySelector(`[data-symbol="${symbol}"]`);
+        if (!card || !cached) return;
+        const old = card.querySelector('.shield-analysis'); if (old) old.remove();
+        const ev = cached.evaluation;
+        const action = (ev.action || 'HOLD').toUpperCase();
+        const urgency = (ev.urgency || 'low').toLowerCase();
+        const confidence = ev.confidence || ev.conviction || null;
+        const reason = ev.reason || ev.rationale || 'Monitoring position...';
+        const cssClass = mapActionToCSS(action);
+        const displayAction = actionDisplayName(action);
+        const icon = actionIcon(cssClass);
+        const borderColor = urgencyBorderColor(cssClass, urgency);
+        const isUrgent = urgency === 'high' || urgency === 'critical';
+        const srcCount = (cached.data_sources || []).length;
+        const scanTime = cached.scanTime || new Date().toLocaleTimeString('en-US', { hour12: false });
+
+        const confPct = confidence ? (parseFloat(confidence)*100).toFixed(0) : null;
+        const confColor = confPct >= 80 ? 'text-green-500' : confPct >= 60 ? 'text-amber-500' : 'text-zinc-500';
+
+        card.insertAdjacentHTML('beforeend', `
+          <div class="shield-analysis ${borderColor} ${isUrgent ? 'pulse-glow' : ''}">
+            <div class="sa-header">
+              <iconify-icon icon="${icon}" class="text-sm" style="color: ${cssClass === 'exit' ? '#ef4444' : cssClass === 'hold' ? '#22c55e' : cssClass === 'tp' ? '#22c55e' : '#3b82f6'}"></iconify-icon>
+              <span class="sa-action-badge action-${cssClass}">${displayAction}</span>
+              ${confPct ? `<span class="sa-confidence ${confColor}">${confPct}%</span>` : ''}
+              ${isUrgent ? '<span class="text-[8px] bg-red-900/30 text-red-400 px-1.5 py-0.5 rounded border border-red-900/30 font-bold tracking-wider animate-pulse">⚠ URGENT</span>' : ''}
+            </div>
+            <div class="sa-reason">${escapeHtml(reason)}</div>
+            <div class="sa-sources">
+              <iconify-icon icon="solar:shield-check-linear" class="text-[9px]"></iconify-icon>
+              ${srcCount} source${srcCount !== 1 ? 's' : ''} · v6 model · ${scanTime}
+            </div>
+          </div>
+        `);
+      }
+
+      // Re-apply all cached shield results (called after positions re-render)
+      function reapplyShieldResults() {
+        if (!shieldActive) return;
+        for (const [symbol, cached] of Object.entries(shieldResults)) {
+          renderShieldOnCard(symbol, cached);
+        }
+      }
+
       async function runShieldEvaluation() {
         if (!shieldActive || cachedPositions.length === 0) return;
         const status = document.getElementById('shield-status');
         status.textContent = 'SCANNING POSITIONS...';
         for (const pos of cachedPositions) {
-          const result = await api.evaluatePosition(pos);
-          if (result && result.evaluation) {
-            const ev = result.evaluation;
-            const card = document.querySelector(`[data-symbol="${pos.symbol}"]`);
-            if (card) {
-              const old = card.querySelector('.shield-badge'); if (old) old.remove();
-              const action = (ev.action || 'HOLD').toUpperCase();
-              const urgency = ev.urgency || 'low';
-              card.insertAdjacentHTML('beforeend', `<div class="shield-badge mt-2 flex items-center gap-2 text-[9px] font-mono px-2 py-1.5 rounded border action-${action.toLowerCase()} ${urgency === 'high' ? 'pulse-glow' : ''}"><iconify-icon icon="solar:shield-check-bold" class="text-xs"></iconify-icon><span class="font-bold tracking-wide">${action}</span><span class="text-zinc-500 truncate flex-1">${escapeHtml((ev.reason || '').substring(0, 80))}</span>${urgency === 'high' ? '<span class="text-[8px] bg-red-900/20 text-red-400 px-1 rounded border border-red-900/20">URGENT</span>' : ''}</div>`);
-              if (action === 'EXIT' || urgency === 'high') {
+          try {
+            const result = await api.evaluatePosition(pos);
+            if (result && result.evaluation) {
+              const scanTime = new Date().toLocaleTimeString('en-US', { hour12: false });
+              // Cache the result so it persists across position re-renders
+              shieldResults[pos.symbol] = {
+                evaluation: result.evaluation,
+                data_sources: result.data_sources || [],
+                scanTime: scanTime
+              };
+              renderShieldOnCard(pos.symbol, shieldResults[pos.symbol]);
+
+              const ev = result.evaluation;
+              const cssClass = mapActionToCSS((ev.action || 'HOLD').toUpperCase());
+              const isUrgent = (ev.urgency || '').toLowerCase() === 'high' || (ev.urgency || '').toLowerCase() === 'critical';
+              if (cssClass === 'exit' || isUrgent) {
                 const sym = (pos.symbol || '').replace(/-PERP$/i, '');
-                showToast(`${sym}: ${action} — ${(ev.reason || 'Review position').substring(0, 50)}`, 'shield', 8000);
+                const displayAction = actionDisplayName((ev.action || 'HOLD').toUpperCase());
+                const reason = ev.reason || ev.rationale || 'Review position';
+                showToast(`⚠ ${sym}: ${displayAction} — ${reason.substring(0, 60)}`, 'shield', 8000);
+              }
+            } else {
+              console.warn('[SHIELD] No evaluation result for', pos.symbol, result);
+              // Show fallback when model is offline but data pipeline worked
+              if (result && result.data_sources && result.data_sources.length > 0) {
+                const card = document.querySelector(`[data-symbol="${pos.symbol}"]`);
+                if (card && !card.querySelector('.shield-analysis')) {
+                  card.insertAdjacentHTML('beforeend', `
+                    <div class="shield-analysis border-amber-800/30">
+                      <div class="sa-header">
+                        <iconify-icon icon="solar:shield-warning-bold" class="text-sm text-amber-500"></iconify-icon>
+                        <span class="sa-action-badge bg-amber-900/15 text-amber-500 border-amber-800/30">MODEL OFFLINE</span>
+                      </div>
+                      <div class="sa-reason">AI model unreachable — ${result.data_sources.length} data sources collected. Start vLLM on GPU cluster to enable evaluations.</div>
+                      <div class="sa-sources">
+                        <iconify-icon icon="solar:database-linear" class="text-[9px]"></iconify-icon>
+                        ${result.data_sources.length} sources ready · awaiting model
+                      </div>
+                    </div>
+                  `);
+                }
               }
             }
+          } catch (err) {
+            console.error('[SHIELD] Evaluation error for', pos.symbol, err);
           }
         }
-        status.textContent = 'ACTIVE — Last scan: ' + new Date().toLocaleTimeString('en-US', { hour12: false });
+        const scannedCount = cachedPositions.length;
+        const resultCount = Object.keys(shieldResults).length;
+        status.textContent = `ACTIVE — ${resultCount}/${scannedCount} scanned · ${new Date().toLocaleTimeString('en-US', { hour12: false })}`;
       }
 
       // ── AUTONOMOUS ENGINE ────────────────────────────────────
@@ -1010,7 +1359,7 @@
           // Start engine
           btn.textContent = '...';
           try {
-            const res = await fetch('/api/engine/start', { method: 'POST' });
+            const res = await fetch(`/api/engine/start?session_id=${sessionId}`, { method: 'POST' });
             const data = await res.json();
             if (data.success) {
               engineRunning = true;
@@ -1169,7 +1518,7 @@
         if (!engineArmed) {
           btn.textContent = '...';
           try {
-            const res = await fetch('/api/engine/arm', {
+            const res = await fetch(`/api/engine/arm?session_id=${sessionId}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -1190,19 +1539,61 @@
               document.getElementById('exec-stats').classList.remove('hidden');
               showToast('⚡ Engine ARMED — live execution enabled on ' + (data.write_exchanges || []).join(', '), 'shield', 6000);
               pollExecutionStatus();
+            } else if (data.read_only_exchanges && data.read_only_exchanges.length > 0) {
+              // Exchanges are in read-only mode — auto-upgrade to write access
+              btn.textContent = 'Upgrading...';
+              showToast('Upgrading exchange to trade-enabled mode...', 'info', 3000);
+              const CREDS_KEY = 'bastion_exchange_credentials';
+              const saved = JSON.parse(localStorage.getItem(CREDS_KEY) || '{}');
+              let upgraded = false;
+              for (const exName of data.read_only_exchanges) {
+                const creds = saved[exName];
+                if (creds) {
+                  try {
+                    // Reconnect with read_only = false
+                    const upRes = await fetch('/api/exchange/connect', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        exchange: exName, api_key: creds.api_key,
+                        api_secret: creds.api_secret, passphrase: creds.passphrase || null,
+                        read_only: false, session_id: sessionId
+                      })
+                    });
+                    const upData = await upRes.json();
+                    if (upData.success) {
+                      // Update localStorage too
+                      creds.read_only = false;
+                      saved[exName] = creds;
+                      localStorage.setItem(CREDS_KEY, JSON.stringify(saved));
+                      upgraded = true;
+                    }
+                  } catch (ue) { console.warn('[ARM] Upgrade failed:', ue); }
+                }
+              }
+              if (upgraded) {
+                // Retry arming after upgrade
+                showToast('Exchange upgraded — retrying arm...', 'info', 2000);
+                setTimeout(() => armEngine(), 500);
+                return;
+              } else {
+                btn.textContent = 'Arm';
+                showToast('Could not upgrade exchange. Go to Account page to reconnect with trade-enabled API keys.', 'warning', 6000);
+              }
             } else {
               btn.textContent = 'Arm';
               showToast(data.error || 'Failed to arm engine', 'warning', 5000);
             }
           } catch (e) {
             btn.textContent = 'Arm';
-            showToast('Failed to arm engine', 'error', 3000);
+            showToast('Failed to arm engine — check console', 'error', 3000);
+            console.error('[ARM] Error:', e);
           }
         } else {
           // Disarm
           btn.textContent = '...';
           try {
-            await fetch('/api/engine/disarm', { method: 'POST' });
+            await fetch(`/api/engine/disarm?session_id=${sessionId}`, { method: 'POST' });
             engineArmed = false;
             btn.textContent = 'Arm';
             btn.className = 'px-2 py-0.5 text-[8px] font-mono font-bold uppercase rounded border border-zinc-700 text-zinc-500 hover:text-emerald-400 hover:border-emerald-600/40 transition-all';
@@ -1217,7 +1608,7 @@
       }
 
       async function killSwitch() {
-        if (!confirm('⚠️ EMERGENCY STOP\\n\\nThis will immediately halt ALL trade execution.\\nPositions will NOT be closed — only new orders are blocked.\\n\\nActivate kill switch?')) return;
+        if (!confirm('⚠️ EMERGENCY STOP\n\nThis will immediately halt ALL trade execution.\nPositions will NOT be closed — only new orders are blocked.\n\nActivate kill switch?')) return;
         try {
           await fetch('/api/engine/kill-switch', {
             method: 'POST',
@@ -1452,7 +1843,18 @@
         const ld = document.getElementById('reports-loading'); if (ld) ld.remove();
         const reports = data.reports || [];
         if (reports.length === 0) {
-          list.innerHTML = '<div class="p-8 text-center flex flex-col items-center gap-3"><div class="w-12 h-12 rounded-full bg-zinc-900/50 border border-zinc-800/40 flex items-center justify-center"><iconify-icon icon="solar:document-linear" class="text-zinc-700 text-2xl"></iconify-icon></div><div><p class="text-[11px] font-mono text-zinc-500 font-medium">No reports yet</p><p class="text-[9px] font-mono text-zinc-700 mt-1">Hit GENERATE to create your first</p></div></div>';
+          list.innerHTML = `<div class="p-8 text-center flex flex-col items-center gap-4">
+            <div class="w-14 h-14 rounded-xl bg-purple-950/30 border border-purple-900/20 flex items-center justify-center">
+              <iconify-icon icon="solar:documents-minimalistic-linear" class="text-purple-700 text-3xl"></iconify-icon>
+            </div>
+            <div>
+              <p class="text-[12px] font-mono text-zinc-400 font-semibold">No Reports Yet</p>
+              <p class="text-[10px] font-mono text-zinc-600 mt-1.5 leading-relaxed max-w-[220px]">Generate an AI-powered MCF analysis report for any asset.</p>
+            </div>
+            <button onclick="api.generateReport()" class="flex items-center gap-2 px-4 py-2 bg-purple-900/15 border border-purple-900/30 rounded-md text-[10px] font-mono font-bold text-purple-400 hover:bg-purple-900/30 hover:border-purple-900/50 transition-all">
+              <iconify-icon icon="solar:magic-stick-3-linear" class="text-sm"></iconify-icon>Generate First Report
+            </button>
+          </div>`;
           return;
         }
         let html = '';
@@ -1597,6 +1999,9 @@
             }
           });
 
+          // Auto-reconnect exchanges from localStorage (in case backend restarted)
+          await autoReconnectExchanges();
+
           // Load all data
           await loadChart();
           updatePrice();
@@ -1615,7 +2020,8 @@
           checkEngineOnLoad();
 
           // Intervals
-          liveTickInterval = setInterval(liveTickUpdate, 500); // Live candle every 500ms
+          connectPriceWs(); // Binance WebSocket for instant price updates
+          liveTickInterval = setInterval(liveTickUpdate, 5000); // REST fallback every 5s (for 24h change)
           positionsInterval = setInterval(loadPositions, 30000);
           setInterval(loadMarketPulse, 60000);
           setInterval(loadOIChanges, 120000);
@@ -1633,19 +2039,42 @@
             }
           });
 
-          // Escape key closes modal/chat
+          // Keyboard shortcuts
           document.addEventListener('keydown', (e) => {
+            // Escape = close modals/chat
             if (e.key === 'Escape') {
               document.getElementById('report-modal').classList.add('hidden');
               ui.toggleChat(false);
               if (fabOpen) ui.toggleFab();
+              return;
+            }
+            // Don't intercept if typing in input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            // 1/2/3 = switch tabs
+            if (e.key === '1') { ui.switchTab('positions'); e.preventDefault(); }
+            if (e.key === '2') { ui.switchTab('intel'); e.preventDefault(); }
+            if (e.key === '3') { ui.switchTab('reports'); e.preventDefault(); }
+            // / = focus chat
+            if (e.key === '/') { ui.toggleChat(true); e.preventDefault(); }
+            // S = toggle shield
+            if (e.key === 's' || e.key === 'S') {
+              const toggle = document.getElementById('shield-toggle');
+              toggle.checked = !toggle.checked;
+              ui.toggleShield(toggle.checked);
+              e.preventDefault();
             }
           });
 
-          setTimeout(() => showToast('BASTION Lite online — neural engine ready', 'shield', 4000), 1000);
+          // Dismiss splash screen
+          const splash = document.getElementById('splash');
+          if (splash) { splash.classList.add('fade-out'); setTimeout(() => splash.remove(), 600); }
+
+          setTimeout(() => showToast('BASTION Lite online — neural engine ready', 'shield', 4000), 1200);
         } catch (e) {
           console.error('[BASTION] Init error:', e);
           document.title = 'ERROR: ' + e.message;
+          const splash = document.getElementById('splash');
+          if (splash) { splash.classList.add('fade-out'); setTimeout(() => splash.remove(), 600); }
         }
       }
 

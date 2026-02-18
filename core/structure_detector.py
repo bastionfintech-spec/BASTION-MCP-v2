@@ -239,23 +239,44 @@ class StructureDetector:
     
     def __init__(
         self,
-        # Swing detection
-        swing_lookback: int = 5,       # Bars each side for fractal
+        # Asymmetric pivot detection (from Pine Script)
+        # Pine: ta.pivothigh(high, 20, 15) = 20 bars left, 15 bars right
+        # Pine: ta.pivotlow(low, 15, 10) = 15 bars left, 10 bars right
+        pivot_high_left: int = 20,
+        pivot_high_right: int = 15,
+        pivot_low_left: int = 15,
+        pivot_low_right: int = 10,
+        max_pivot_history: int = 5,    # Keep only 5 most recent (Pine default)
         min_swing_strength: float = 0.3,
-        
+
+        # Legacy parameter (mapped to asymmetric if used)
+        swing_lookback: Optional[int] = None,
+
         # Trendline validation
         min_touches: int = 2,          # Minimum for valid line
         touch_tolerance_pct: float = 0.003,  # 0.3% = "touch"
         slice_tolerance_pct: float = 0.001,  # 0.1% = "slice through"
-        
+
         # Horizontal levels
         level_cluster_pct: float = 0.005,  # 0.5% to cluster touches
         min_level_touches: int = 2,
-        
+
         # Staleness
         max_bars_fresh: int = 50,      # Bars before structure gets stale
     ):
-        self.swing_lookback = swing_lookback
+        # Support legacy symmetric lookback
+        if swing_lookback is not None:
+            self.pivot_high_left = swing_lookback
+            self.pivot_high_right = swing_lookback
+            self.pivot_low_left = swing_lookback
+            self.pivot_low_right = swing_lookback
+        else:
+            self.pivot_high_left = pivot_high_left
+            self.pivot_high_right = pivot_high_right
+            self.pivot_low_left = pivot_low_left
+            self.pivot_low_right = pivot_low_right
+
+        self.max_pivot_history = max_pivot_history
         self.min_swing_strength = min_swing_strength
         self.min_touches = min_touches
         self.touch_tolerance_pct = touch_tolerance_pct
@@ -344,73 +365,103 @@ class StructureDetector:
         current_bar: int,
     ) -> List[SwingPoint]:
         """
-        Detect fractal swing points.
-        
+        Detect fractal swing points with asymmetric lookback.
+
+        Pine Script parameters:
+            ta.pivothigh(high, 20, 15) — 20 bars left, 15 bars right
+            ta.pivotlow(low, 15, 10)   — 15 bars left, 10 bars right
+
         A swing high is confirmed when:
-        - It's higher than N bars to the left AND
-        - It's higher than N bars to the right
-        
-        This is different from "N-bar high" which just looks left.
+        - It's higher than left_bars bars to the left AND
+        - It's higher than right_bars bars to the right
+
+        Only keeps the most recent max_pivot_history swings of each type.
         """
         swings = []
-        lookback = self.swing_lookback
-        
+
+        # Use asymmetric lookback per swing type
+        if swing_type == SwingType.HIGH:
+            left_bars = self.pivot_high_left
+            right_bars = self.pivot_high_right
+        else:
+            left_bars = self.pivot_low_left
+            right_bars = self.pivot_low_right
+
         # Need enough bars on both sides
-        for i in range(lookback, current_bar - lookback + 1):
+        for i in range(left_bars, current_bar - right_bars + 1):
             if swing_type == SwingType.HIGH:
                 price = high[i]
-                
-                # Check left side
-                left_valid = all(high[i] > high[i-j] for j in range(1, lookback + 1))
-                
-                # Check right side
-                right_valid = all(high[i] >= high[i+j] for j in range(1, lookback + 1))
-                
+
+                # Check left side (must be strictly higher than all left_bars)
+                left_valid = all(high[i] > high[i-j] for j in range(1, left_bars + 1))
+
+                # Check right side (must be >= all right_bars)
+                right_end = min(i + right_bars + 1, len(high))
+                right_valid = all(high[i] >= high[i+j] for j in range(1, right_end - i))
+
                 if left_valid and right_valid:
                     # Calculate strength based on how much higher than surrounding
                     surrounding = np.concatenate([
-                        high[i-lookback:i],
-                        high[i+1:i+lookback+1]
+                        high[max(0, i-left_bars):i],
+                        high[i+1:right_end]
                     ])
-                    strength = (price - np.mean(surrounding)) / np.std(surrounding + 1e-10)
-                    strength = min(1.0, max(0.0, strength / 3))  # Normalize to 0-1
-                    
+                    if len(surrounding) > 0:
+                        std = np.std(surrounding)
+                        if std < 1e-10:
+                            std = 1e-10
+                        strength = (price - np.mean(surrounding)) / std
+                        strength = min(1.0, max(0.0, strength / 3))
+                    else:
+                        strength = 0.5
+
                     if strength >= self.min_swing_strength:
                         swings.append(SwingPoint(
                             index=i,
                             price=price,
                             swing_type=swing_type,
-                            left_bars=lookback,
-                            right_bars=lookback,
+                            left_bars=left_bars,
+                            right_bars=right_bars,
                             strength=strength,
                             bars_since_formation=current_bar - i,
                         ))
-            
+
             else:  # SwingType.LOW
                 price = low[i]
-                
-                left_valid = all(low[i] < low[i-j] for j in range(1, lookback + 1))
-                right_valid = all(low[i] <= low[i+j] for j in range(1, lookback + 1))
-                
+
+                left_valid = all(low[i] < low[i-j] for j in range(1, left_bars + 1))
+
+                right_end = min(i + right_bars + 1, len(low))
+                right_valid = all(low[i] <= low[i+j] for j in range(1, right_end - i))
+
                 if left_valid and right_valid:
                     surrounding = np.concatenate([
-                        low[i-lookback:i],
-                        low[i+1:i+lookback+1]
+                        low[max(0, i-left_bars):i],
+                        low[i+1:right_end]
                     ])
-                    strength = (np.mean(surrounding) - price) / np.std(surrounding + 1e-10)
-                    strength = min(1.0, max(0.0, strength / 3))
-                    
+                    if len(surrounding) > 0:
+                        std = np.std(surrounding)
+                        if std < 1e-10:
+                            std = 1e-10
+                        strength = (np.mean(surrounding) - price) / std
+                        strength = min(1.0, max(0.0, strength / 3))
+                    else:
+                        strength = 0.5
+
                     if strength >= self.min_swing_strength:
                         swings.append(SwingPoint(
                             index=i,
                             price=price,
                             swing_type=swing_type,
-                            left_bars=lookback,
-                            right_bars=lookback,
+                            left_bars=left_bars,
+                            right_bars=right_bars,
                             strength=strength,
                             bars_since_formation=current_bar - i,
                         ))
-        
+
+        # Keep only the most recent N pivots (matching Pine Script behavior)
+        if len(swings) > self.max_pivot_history:
+            swings = swings[-self.max_pivot_history:]
+
         return swings
     
     def _construct_trendlines(

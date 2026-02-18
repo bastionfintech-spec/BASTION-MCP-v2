@@ -403,6 +403,47 @@ class BitunixClient(BaseExchangeClient):
             logger.error(f"[BITUNIX] get_positions error: {e}")
         
         logger.info(f"[BITUNIX] Total positions found: {len(positions)}")
+
+        # ── Fetch TP/SL orders and attach to positions ──
+        if positions:
+            try:
+                async with httpx.AsyncClient() as client:
+                    params = {"limit": 100}
+                    query_string = self._sort_params(params)
+                    headers = self._get_headers(query_params=query_string)
+                    res = await client.get(
+                        f"{self.base_url}/api/v1/futures/tpsl/get_pending_orders",
+                        params=params, headers=headers, timeout=10.0
+                    )
+                    if res.status_code == 200:
+                        tpsl_data = res.json()
+                        if tpsl_data.get("code") == 0:
+                            tpsl_orders = tpsl_data.get("data", [])
+                            logger.info(f"[BITUNIX] Found {len(tpsl_orders)} pending TP/SL orders")
+                            # Build lookup: positionId → {sl, tp}
+                            tpsl_map = {}
+                            for order in tpsl_orders:
+                                pid = order.get("positionId", "")
+                                sl = float(order.get("slPrice", 0) or 0)
+                                tp = float(order.get("tpPrice", 0) or 0)
+                                if pid not in tpsl_map:
+                                    tpsl_map[pid] = {"sl": 0, "tp": 0}
+                                if sl > 0:
+                                    tpsl_map[pid]["sl"] = sl
+                                if tp > 0:
+                                    tpsl_map[pid]["tp"] = tp
+                            # Attach to matching positions
+                            for pos in positions:
+                                if pos.id in tpsl_map:
+                                    if tpsl_map[pos.id]["sl"] > 0:
+                                        pos.stop_loss = tpsl_map[pos.id]["sl"]
+                                        logger.info(f"[BITUNIX] {pos.symbol} SL: ${pos.stop_loss}")
+                                    if tpsl_map[pos.id]["tp"] > 0:
+                                        pos.take_profit = tpsl_map[pos.id]["tp"]
+                                        logger.info(f"[BITUNIX] {pos.symbol} TP: ${pos.take_profit}")
+            except Exception as e:
+                logger.warning(f"[BITUNIX] TP/SL fetch failed (non-critical): {e}")
+
         return positions
     
     
@@ -455,6 +496,165 @@ class BitunixClient(BaseExchangeClient):
             logger.error(f"Bitunix get_balance error: {e}")
         
         return ExchangeBalance(0, 0, 0, 0)
+
+    # ─── Order Execution ────────────────────────────────────────────────
+
+    async def _bitunix_post_order(self, endpoint: str, body: dict) -> OrderResult:
+        """Send a signed POST to Bitunix trade endpoints."""
+        if self.credentials.read_only:
+            return OrderResult(success=False, error="Bitunix: read-only mode — order execution disabled")
+        try:
+            async with httpx.AsyncClient() as client:
+                payload = json.dumps(body, separators=(',', ':'))
+                headers = self._get_headers(body=payload)
+                res = await client.post(
+                    f"{self.base_url}{endpoint}",
+                    content=payload,
+                    headers=headers,
+                    timeout=15.0
+                )
+                data = res.json()
+                if data.get("code") == 0:
+                    result_data = data.get("data", {})
+                    return OrderResult(
+                        success=True,
+                        order_id=result_data.get("orderId", ""),
+                        exchange="bitunix",
+                        symbol=body.get("symbol", ""),
+                        side=body.get("side", ""),
+                        order_type=body.get("orderType", ""),
+                        quantity=float(body.get("qty", 0)),
+                        raw_response=data,
+                        timestamp=datetime.now().isoformat()
+                    )
+                else:
+                    err = data.get("msg", "Unknown error")
+                    logger.error(f"[BITUNIX] Order failed: {err} | Body: {body}")
+                    return OrderResult(success=False, error=f"Bitunix: {err}", raw_response=data)
+        except Exception as e:
+            logger.error(f"[BITUNIX] Order exception: {e}")
+            return OrderResult(success=False, error=f"Bitunix exception: {str(e)}")
+
+    async def close_position(self, symbol: str, direction: str, quantity: float,
+                             reduce_only: bool = True) -> OrderResult:
+        """Close position on Bitunix with a market order."""
+        # To close a LONG, we SELL. To close a SHORT, we BUY.
+        close_side = "SELL" if direction.lower() == "long" else "BUY"
+        body = {
+            "symbol": symbol,
+            "side": close_side,
+            "qty": str(quantity),
+            "orderType": "MARKET",
+            "tradeSide": "CLOSE",
+            "reduceOnly": True
+        }
+        logger.info(f"[BITUNIX] CLOSE {direction.upper()} {symbol} qty={quantity} side={close_side}")
+        return await self._bitunix_post_order("/api/v1/futures/trade/place_order", body)
+
+    async def set_stop_loss(self, symbol: str, direction: str, stop_price: float,
+                            quantity: Optional[float] = None) -> OrderResult:
+        """Set/update SL on Bitunix using position TP/SL endpoint."""
+        if self.credentials.read_only:
+            return OrderResult(success=False, error="Bitunix: read-only mode")
+        try:
+            # Find the position ID first
+            positions = await self.get_positions()
+            target_pos = None
+            for pos in positions:
+                if pos.symbol == symbol and pos.direction.lower() == direction.lower():
+                    target_pos = pos
+                    break
+            if not target_pos:
+                return OrderResult(success=False, error=f"Bitunix: no {direction} position found for {symbol}")
+
+            body = {
+                "symbol": symbol,
+                "positionId": target_pos.id,
+                "slPrice": str(stop_price),
+                "slStopType": "LAST_PRICE",
+                "slOrderType": "MARKET"
+            }
+            if quantity:
+                body["slQty"] = str(quantity)
+                endpoint = "/api/v1/futures/tpsl/place_order"
+            else:
+                # Full position SL
+                endpoint = "/api/v1/futures/tpsl/position/place_order"
+
+            async with httpx.AsyncClient() as client:
+                payload = json.dumps(body, separators=(',', ':'))
+                headers = self._get_headers(body=payload)
+                res = await client.post(
+                    f"{self.base_url}{endpoint}",
+                    content=payload,
+                    headers=headers,
+                    timeout=15.0
+                )
+                data = res.json()
+                if data.get("code") == 0:
+                    logger.info(f"[BITUNIX] SL set {symbol} @ {stop_price}")
+                    return OrderResult(success=True, exchange="bitunix", symbol=symbol,
+                                       order_type="STOP_LOSS", price=stop_price,
+                                       raw_response=data, timestamp=datetime.now().isoformat())
+                else:
+                    err = data.get("msg", "Unknown")
+                    return OrderResult(success=False, error=f"Bitunix SL: {err}", raw_response=data)
+        except Exception as e:
+            return OrderResult(success=False, error=f"Bitunix SL exception: {str(e)}")
+
+    async def set_take_profit(self, symbol: str, direction: str, tp_price: float,
+                              quantity: Optional[float] = None) -> OrderResult:
+        """Set/update TP on Bitunix using position TP/SL endpoint."""
+        if self.credentials.read_only:
+            return OrderResult(success=False, error="Bitunix: read-only mode")
+        try:
+            positions = await self.get_positions()
+            target_pos = None
+            for pos in positions:
+                if pos.symbol == symbol and pos.direction.lower() == direction.lower():
+                    target_pos = pos
+                    break
+            if not target_pos:
+                return OrderResult(success=False, error=f"Bitunix: no {direction} position found for {symbol}")
+
+            body = {
+                "symbol": symbol,
+                "positionId": target_pos.id,
+                "tpPrice": str(tp_price),
+                "tpStopType": "LAST_PRICE",
+                "tpOrderType": "MARKET"
+            }
+            if quantity:
+                body["tpQty"] = str(quantity)
+                endpoint = "/api/v1/futures/tpsl/place_order"
+            else:
+                endpoint = "/api/v1/futures/tpsl/position/place_order"
+
+            async with httpx.AsyncClient() as client:
+                payload = json.dumps(body, separators=(',', ':'))
+                headers = self._get_headers(body=payload)
+                res = await client.post(
+                    f"{self.base_url}{endpoint}",
+                    content=payload,
+                    headers=headers,
+                    timeout=15.0
+                )
+                data = res.json()
+                if data.get("code") == 0:
+                    logger.info(f"[BITUNIX] TP set {symbol} @ {tp_price}")
+                    return OrderResult(success=True, exchange="bitunix", symbol=symbol,
+                                       order_type="TAKE_PROFIT", price=tp_price,
+                                       raw_response=data, timestamp=datetime.now().isoformat())
+                else:
+                    err = data.get("msg", "Unknown")
+                    return OrderResult(success=False, error=f"Bitunix TP: {err}", raw_response=data)
+        except Exception as e:
+            return OrderResult(success=False, error=f"Bitunix TP exception: {str(e)}")
+
+    async def cancel_all_orders(self, symbol: str) -> OrderResult:
+        """Cancel all open orders for a symbol on Bitunix."""
+        body = {"symbol": symbol}
+        return await self._bitunix_post_order("/api/v1/futures/trade/cancel_all_orders", body)
 
 
 class BybitClient(BaseExchangeClient):

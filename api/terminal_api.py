@@ -116,6 +116,20 @@ except ImportError:
         execution_engine = None
         logger.warning("Execution Engine not available")
 
+# MCF Structure Service (VPVR + Pivots + Auto-Support for structure-based exits)
+try:
+    from core.structure_service import StructureService
+    structure_service = StructureService()
+    logger.info("Structure Service loaded (MCF structure-based exits)")
+except ImportError:
+    try:
+        from structure_service import StructureService
+        structure_service = StructureService()
+        logger.info("Structure Service loaded (direct)")
+    except ImportError:
+        structure_service = None
+        logger.warning("Structure Service not available — structure-based exits disabled")
+
 # Global clients
 helsinki: HelsinkiClient = None
 query_processor: QueryProcessor = None
@@ -1053,6 +1067,8 @@ async def get_all_positions(token: Optional[str] = None, session_id: Optional[st
                         "pnl_pct": p.pnl_pct,
                         "leverage": p.leverage,
                         "liquidation_price": p.liquidation_price,
+                        "stop_loss": p.stop_loss,
+                        "take_profit": p.take_profit,
                         "exchange": p.exchange,
                         "updated_at": p.updated_at
                     }
@@ -1065,13 +1081,13 @@ async def get_all_positions(token: Optional[str] = None, session_id: Optional[st
     except Exception as e:
         logger.warning(f"Could not fetch positions: {e}")
     
-    # Fallback to mock
+    # No exchange connected — return empty (no mock data)
     return {
         "success": True,
-        "positions": MOCK_POSITIONS,
+        "positions": [],
         "exchanges": list(exchanges.keys()),
         "timestamp": datetime.now().isoformat(),
-        "source": "demo"
+        "source": "none"
     }
 
 
@@ -1482,21 +1498,8 @@ async def load_user_exchanges(data: dict):
         except Exception as e:
             logger.error(f"[EXCHANGE] Failed to load {exchange_name}: {e}")
     
-    # Return exchange info for client to save to localStorage
-    exchange_info = {}
-    for name, data in user_exchanges[scope_id].items():
-        # Get the full credentials for localStorage sync (they need it for auto-reconnect)
-        keys = await user_service.get_exchange_keys(user.id, name)
-        if keys:
-            exchange_info[name] = {
-                "api_key": keys["api_key"],
-                "api_secret": keys["api_secret"],
-                "passphrase": keys.get("passphrase"),
-                "read_only": True,
-                "from_cloud": True
-            }
-    
-    return {"success": True, "loaded": loaded, "exchanges": list(user_exchanges[scope_id].keys()), "credentials": exchange_info}
+    # Return exchange names only — NEVER send secrets to frontend
+    return {"success": True, "loaded": loaded, "exchanges": list(user_exchanges[scope_id].keys())}
 
 
 @app.delete("/api/auth/exchange-keys/{exchange}")
@@ -1637,9 +1640,17 @@ async def disable_2fa(data: dict):
     return {"success": True}
 
 
+def _check_admin_key(admin_key: str) -> bool:
+    """Validate admin key for debug/admin endpoints."""
+    expected = os.getenv("ADMIN_KEY", "")
+    return bool(expected and admin_key == expected)
+
+
 @app.get("/api/debug/exchanges")
-async def debug_exchanges():
-    """Debug endpoint to check exchange contexts."""
+async def debug_exchanges(admin_key: str = ""):
+    """Debug endpoint to check exchange contexts (admin only)."""
+    if not _check_admin_key(admin_key):
+        raise HTTPException(status_code=403, detail="Admin key required")
     return {
         "user_exchanges_scopes": list(user_exchanges.keys()),
         "user_contexts_scopes": list(user_contexts.keys()),
@@ -1654,52 +1665,44 @@ async def debug_exchanges():
 
 
 @app.get("/api/auth/debug")
-async def auth_debug():
-    """Debug endpoint to check auth system status."""
+async def auth_debug(admin_key: str = ""):
+    """Debug endpoint to check auth system status (admin only)."""
+    if not _check_admin_key(admin_key):
+        raise HTTPException(status_code=403, detail="Admin key required")
     status = {
         "user_service_loaded": user_service is not None,
         "database_connected": False,
-        "users_table": "bastion_users",
-        "can_query": False,
         "user_count": 0,
-        "users": [],
         "error": None
     }
-    
+
     if user_service:
         status["database_connected"] = user_service.is_db_available
-        
         if user_service.is_db_available:
             try:
-                # Try to get users
                 result = user_service.client.table("bastion_users").select("id, email, display_name, created_at").execute()
                 status["can_query"] = True
                 status["user_count"] = len(result.data or [])
-                status["users"] = result.data or []
+                # Return only count, not full user data
             except Exception as e:
                 status["error"] = str(e)
         else:
-            # In-memory users
             in_memory_count = len([k for k in user_service._memory_users.keys() if not k.startswith("email:")])
             status["user_count"] = in_memory_count
             status["storage"] = "in-memory"
-        
-        # Always show in-memory state for debugging
-        in_memory_users = [k for k in user_service._memory_users.keys() if not k.startswith("email:")]
-        status["in_memory_users"] = in_memory_users
-        status["in_memory_count"] = len(in_memory_users)
-    
+
     return status
 
 
 @app.get("/api/auth/test-db")
-async def test_database_insert():
-    """Test if database inserts work."""
+async def test_database_insert(admin_key: str = ""):
+    """Test if database inserts work (admin only)."""
+    if not _check_admin_key(admin_key):
+        raise HTTPException(status_code=403, detail="Admin key required")
     if not user_service or not user_service.is_db_available:
         return {"success": False, "error": "Database not available"}
-    
+
     try:
-        # Try to insert a test row with minimal fields
         test_id = f"test_{secrets.token_urlsafe(8)}"
         data = {
             'id': test_id,
@@ -1708,32 +1711,22 @@ async def test_database_insert():
             'display_name': 'TestUser',
             'created_at': datetime.utcnow().isoformat()
         }
-        
-        result = user_service.client.table("bastion_users").insert(data).execute()
-        
-        # Delete the test row
+        user_service.client.table("bastion_users").insert(data).execute()
         user_service.client.table("bastion_users").delete().eq("id", test_id).execute()
-        
-        return {
-            "success": True,
-            "message": "Database insert works!",
-            "test_result": result.data
-        }
+        return {"success": True, "message": "Database insert works!"}
     except Exception as e:
-        import traceback
-        return {
-            "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
+        return {"success": False, "error": str(e)}
 
 
 @app.delete("/api/auth/user/{email}")
-async def delete_user_by_email(email: str):
-    """Delete a user by email (for testing/admin)."""
+async def delete_user_by_email(email: str, admin_key: str = ""):
+    """Delete a user by email (admin only)."""
+    expected_key = os.getenv("ADMIN_KEY", "")
+    if not expected_key or admin_key != expected_key:
+        raise HTTPException(status_code=403, detail="Forbidden — admin key required")
     if not user_service:
         raise HTTPException(status_code=503, detail="User service unavailable")
-    
+
     email = email.lower().strip()
     
     if user_service.is_db_available:
@@ -3154,57 +3147,17 @@ async def get_positions():
         except Exception as e:
             logger.warning(f"[POSITIONS] Failed to get real positions: {e}")
     
-    # FALLBACK: Mock positions with live prices
-    logger.info("[POSITIONS] No exchange connected, returning mock data")
-    
-    live_prices = {}
-    try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            res = await client.get("https://api.kraken.com/0/public/Ticker?pair=XXBTZUSD")
-            data = res.json()
-            if data.get("result"):
-                for key, ticker in data["result"].items():
-                    live_prices["BTC"] = float(ticker["c"][0])
-            
-            res = await client.get("https://api.kraken.com/0/public/Ticker?pair=XETHZUSD")
-            data = res.json()
-            if data.get("result"):
-                for key, ticker in data["result"].items():
-                    live_prices["ETH"] = float(ticker["c"][0])
-            
-            res = await client.get("https://api.kraken.com/0/public/Ticker?pair=SOLUSD")
-            data = res.json()
-            if data.get("result"):
-                for key, ticker in data["result"].items():
-                    live_prices["SOL"] = float(ticker["c"][0])
-    except Exception as e:
-        logger.warning(f"Failed to fetch live prices: {e}")
-    
-    positions = copy.deepcopy(MOCK_POSITIONS)
-    total_pnl_pct = 0
-    
-    for pos in positions:
-        pos["source"] = "demo"
-        symbol = pos["symbol"].replace("-PERP", "")
-        if symbol in live_prices:
-            pos["current_price"] = live_prices[symbol]
-            entry = pos["entry_price"]
-            current = pos["current_price"]
-            if pos["direction"] == "long":
-                pnl_pct = ((current - entry) / entry) * 100
-            else:
-                pnl_pct = ((entry - current) / entry) * 100
-            pos["pnl_pct"] = round(pnl_pct, 2)
-            total_pnl_pct += pos["pnl_pct"]
-    
+    # No exchange connected — return empty (no mock data)
+    logger.info("[POSITIONS] No exchange connected, returning empty")
+
     return {
-        "positions": positions,
+        "positions": [],
         "summary": {
-            "total_positions": len(positions),
-            "total_pnl_pct": round(total_pnl_pct, 2),
-            "total_exposure_usd": 70245,
-            "risk_pct": 1.8,
-            "source": "demo"
+            "total_positions": 0,
+            "total_pnl_pct": 0,
+            "total_exposure_usd": 0,
+            "risk_pct": 0,
+            "source": "none"
         }
     }
 
@@ -4413,14 +4366,15 @@ async def neural_chat(request: Dict[str, Any]):
     # Extract context from query
     context = query_processor.extract_context(query)
     
-    # Get user positions for AI context
+    # Get user positions for AI context (use per-user scope, not global singleton)
     position_context = ""
     user_positions = []
     if include_positions:
         try:
-            positions = await user_context.get_all_positions()
+            scope_id, ctx, _exch = await get_user_scope(request.get("token"), request.get("session_id"))
+            positions = await ctx.get_all_positions()
             if positions:
-                position_context = user_context.get_position_context_for_ai(positions)
+                position_context = ctx.get_position_context_for_ai(positions)
                 user_positions = [
                     {
                         "symbol": p.symbol,
@@ -4638,16 +4592,16 @@ async def risk_evaluate(request: Dict[str, Any]):
 
     symbol = position.get("symbol", "BTC").upper()
     direction = position.get("direction", "LONG").upper()
-    entry = position.get("entry_price", 0)
-    current = position.get("current_price", 0)
-    stop_loss = position.get("stop_loss", 0)
-    take_profits = position.get("take_profits", [])
+    entry = float(position.get("entry_price", 0) or 0)
+    current = float(position.get("current_price", 0) or 0)
+    stop_loss = float(position.get("stop_loss", 0) or 0)
+    take_profits = position.get("take_profits") or []
     guarding_line = position.get("guarding_line")
     trailing_stop = position.get("trailing_stop")
-    r_multiple = position.get("r_multiple", 0)
-    size = position.get("position_size", 0)
-    leverage = position.get("leverage", 1)
-    duration_hours = position.get("duration_hours", 0)
+    r_multiple = float(position.get("r_multiple", 0) or 0)
+    size = float(position.get("position_size", 0) or 0)
+    leverage = float(position.get("leverage", 1) or 1)
+    duration_hours = float(position.get("duration_hours", 0) or 0)
 
     # ── Fetch live market data from ALL sources ──
     data_sources = []
@@ -4678,14 +4632,44 @@ async def risk_evaluate(request: Dict[str, Any]):
         if whale_alert:
             fetch_tasks.append(("whale_txs", whale_alert.get_transactions(min_value=1000000)))
 
+        # MCF Structure Analysis: VPVR + Pivots + Auto-Support (cached, ~1ms on hit)
+        # Runs in parallel with all other data fetches via asyncio.gather
+        async def _fetch_structure():
+            try:
+                from data.fetcher import LiveDataFetcher
+                _fetcher = LiveDataFetcher(timeout=10)
+                ctx = await structure_service.get_structural_context(
+                    symbol=symbol,
+                    current_price=current,
+                    direction=direction.lower() if direction else "long",
+                    fetcher=_fetcher,
+                )
+                await _fetcher.close()
+                return ctx
+            except Exception as e:
+                logger.warning(f"[RISK] Structure analysis failed (non-fatal): {e}")
+                return None
+
+        if structure_service:
+            fetch_tasks.append(("structure", _fetch_structure()))
+
         # Execute all fetches in parallel
         task_names = [t[0] for t in fetch_tasks]
         task_coros = [t[1] for t in fetch_tasks]
         results = await asyncio.gather(*task_coros, return_exceptions=True)
 
+        structure_context = None
         for name, result in zip(task_names, results):
             if isinstance(result, Exception):
                 logger.warning(f"[RISK] Failed to fetch {name}: {result}")
+                continue
+
+            # Handle structure result separately (it's a StructuralContext object)
+            if name == "structure":
+                if result is not None:
+                    structure_context = result
+                    data_sources.append("MCF_STRUCTURE")
+                    logger.info(f"[RISK] ✓ structure: {result.analysis_time_ms:.0f}ms")
                 continue
 
             try:
@@ -4843,6 +4827,13 @@ async def risk_evaluate(request: Dict[str, Any]):
 
     live_context = "\n".join(context_lines) if context_lines else "LIVE DATA UNAVAILABLE"
 
+    # ── Inject MCF Structure Analysis (VPVR + Pivots + Auto-Support) ──
+    if structure_context:
+        structure_text = structure_service.format_for_prompt(structure_context)
+        live_context += f"\n\n{structure_text}"
+        logger.info(f"[RISK] Structure analysis injected ({structure_context.analysis_time_ms:.0f}ms, "
+                     f"zone={structure_context.vpvr_zone}, bias={structure_context.mtf_bias})")
+
     logger.info(f"[RISK] Data pipeline: {len(data_sources)} sources active: {data_sources}")
     logger.info(f"[RISK] Context lines built: {len(context_lines)}")
     if not context_lines:
@@ -4858,7 +4849,7 @@ async def risk_evaluate(request: Dict[str, Any]):
 - Entry: ${entry:,.2f}
 - Current Price: ${current:,.2f}
 - P&L: {r_multiple:+.1f}R
-- Stop Loss: ${stop_loss:,.2f}"""
+- Stop Loss: {"$" + f"{stop_loss:,.2f}" if stop_loss else "NONE (no stop set — HIGH RISK)"}"""
 
     if guarding_line:
         position_state += f"\n- Guarding Line: ${guarding_line:,.2f}"
@@ -4879,13 +4870,20 @@ async def risk_evaluate(request: Dict[str, Any]):
 
 MCF EXIT HIERARCHY (check in this EXACT order — first trigger wins):
 1) HARD STOP — Maximum loss threshold. NON-NEGOTIABLE. Exit 100% immediately. No exceptions.
-2) SAFETY NET BREAK — Long-term structural support/resistance violated. Exit 100% immediately.
-3) GUARDING LINE BREAK — Dynamic trailing structure broken. Exit 50-75% of position.
-4) TAKE PROFIT TARGETS — T1: Exit 30-50%. T2: Exit 30-40% of remaining. T3: Let runners ride.
-5) TRAILING STOP — ATR-based dynamic stop adjustment. Exit remaining position if hit.
-6) TIME EXIT — Max holding period exceeded with no progress. Exit 50% gradually.
+2) STRUCTURAL BREAK — Price CLOSES below nearest Grade 3+ support (LONG) or above nearest Grade 3+ resistance (SHORT) on the 1h timeframe. Exit 100%. Grade 4 or pressure point with confluence 7+ is an even stronger exit signal.
+3) GUARDING LINE BREAK — Price breaks a Grade 2 trendline but holds at the next support level. Exit 50-75%. If next support also breaks, exit 100%.
+4) TAKE PROFIT — Price reaches a Grade 3+ resistance (LONG) or enters an HVN zone. T1: exit 30-50%. In an LVN, let momentum carry to next HVN before taking profit.
+5) VPVR-INFORMED TRAIL — Trail stop to just below nearest HVN support (LONG) or above nearest HVN resistance (SHORT). Do NOT use arbitrary ATR distances.
+6) TIME EXIT — Max holding period exceeded with no progress toward structural targets. Exit 50%.
 
-CORE PHILOSOPHY: Exit on STRUCTURE BREAKS, not arbitrary price targets. Let winners run when structure holds. Scale out intelligently — decide HOW MUCH to exit based on structure strength, R-multiple, and market context.
+STRUCTURE RULES:
+- "Structure intact" = price is above nearest Grade 2+ support (LONG) or below nearest Grade 2+ resistance (SHORT)
+- "Structure broken" = price CLOSED through a graded level (not just wicked through it)
+- LVN = fast movement expected. Tighten monitoring frequency but do NOT panic exit.
+- HVN = price stalls here. Take profit targets should cluster at HVN zones.
+- Confluence matters: auto-support priority 7+ AND trendline grade 3+ = highly significant level.
+
+CORE PHILOSOPHY: Exit on STRUCTURE BREAKS, not arbitrary distances. Let winners run when structure holds. Scale out intelligently based on structural grade, confluence score, R-multiple, and volume profile context.
 
 CRITICAL REASONING RULES:
 - Every recommendation MUST explain the specific data that drives the decision
@@ -5236,97 +5234,98 @@ Confidence: <b>{confidence}%</b>
 # =============================================================================
 
 @app.post("/api/actions/emergency-exit")
-async def emergency_exit():
-    """Emergency exit all positions."""
-    logger.warning("🚨 EMERGENCY EXIT triggered!")
-    
-    # Try to close positions on connected exchanges
+async def emergency_exit(token: Optional[str] = None, session_id: Optional[str] = None):
+    """Emergency exit all positions — actually closes them on the exchange."""
+    logger.warning("EMERGENCY EXIT triggered!")
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+
     closed_count = 0
     errors = []
-    
-    for exchange_name, client in user_context.connections.items():
+
+    for exchange_name, client in ctx.connections.items():
         try:
-            # Get positions and close them
             positions = await client.get_positions()
             for pos in positions:
                 try:
-                    # In production, this would call the exchange's close position API
-                    logger.info(f"Closing {pos.symbol} on {exchange_name}")
-                    closed_count += 1
+                    result = await client.close_position(
+                        symbol=pos.symbol, direction=pos.direction,
+                        quantity=pos.size, reduce_only=True
+                    )
+                    if result.success:
+                        closed_count += 1
+                        logger.info(f"[EMERGENCY] Closed {pos.symbol} {pos.direction} on {exchange_name}")
+                    else:
+                        errors.append(f"{exchange_name}/{pos.symbol}: {result.error}")
+                        logger.error(f"[EMERGENCY] Failed to close {pos.symbol}: {result.error}")
                 except Exception as e:
                     errors.append(f"{exchange_name}/{pos.symbol}: {str(e)}")
         except Exception as e:
             errors.append(f"{exchange_name}: {str(e)}")
-    
+
     return {
         "success": True,
-        "message": f"Emergency exit initiated - {closed_count} positions queued for closure",
+        "message": f"Emergency exit — {closed_count} positions closed",
         "positions_closed": closed_count,
         "errors": errors if errors else None
     }
 
 
 @app.post("/api/actions/flatten-winners")
-async def flatten_winners():
-    """Close all profitable positions."""
-    logger.info("🏆 FLATTEN WINNERS triggered!")
-    
+async def flatten_winners(token: Optional[str] = None, session_id: Optional[str] = None):
+    """Close all profitable positions — actually executes closes."""
+    logger.info("FLATTEN WINNERS triggered!")
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+
     closed_count = 0
     total_profit = 0.0
-    
-    for exchange_name, client in user_context.connections.items():
+    errors = []
+
+    for exchange_name, client in ctx.connections.items():
         try:
             positions = await client.get_positions()
             for pos in positions:
                 if pos.pnl and pos.pnl > 0:
-                    logger.info(f"Flattening profitable {pos.symbol} (+${pos.pnl:.2f}) on {exchange_name}")
-                    closed_count += 1
-                    total_profit += pos.pnl
+                    try:
+                        result = await client.close_position(
+                            symbol=pos.symbol, direction=pos.direction,
+                            quantity=pos.size, reduce_only=True
+                        )
+                        if result.success:
+                            closed_count += 1
+                            total_profit += pos.pnl
+                            logger.info(f"[FLATTEN] Closed {pos.symbol} +${pos.pnl:.2f} on {exchange_name}")
+                        else:
+                            errors.append(f"{exchange_name}/{pos.symbol}: {result.error}")
+                    except Exception as e:
+                        errors.append(f"{exchange_name}/{pos.symbol}: {str(e)}")
         except Exception as e:
             logger.warning(f"Error getting positions from {exchange_name}: {e}")
-    
+
     return {
         "success": True,
         "message": f"Flattened {closed_count} winning positions (+${total_profit:.2f} total profit)",
         "positions_closed": closed_count,
-        "total_profit": total_profit
+        "total_profit": total_profit,
+        "errors": errors if errors else None
     }
 
 
 @app.post("/api/actions/move-to-breakeven")
 async def move_to_breakeven(request: Dict[str, Any]):
-    """Move stops to breakeven."""
-    position_id = request.get("position_id")
-    
-    if position_id:
-        return {"success": True, "message": f"Position {position_id} stop moved to breakeven"}
-    
-    return {"success": True, "message": "All profitable positions moved to breakeven"}
+    """Move stops to breakeven — not yet implemented."""
+    return {"success": False, "error": "Not yet implemented — use the exchange interface to move stops manually"}
 
 
 @app.post("/api/actions/add-shot")
 async def add_shot(request: Dict[str, Any]):
-    """Add a shot to an existing position."""
-    position_id = request.get("position_id")
-    size = request.get("size", 0.1)
-    
-    return {
-        "success": True,
-        "message": f"Shot added to {position_id}",
-        "new_size": size
-    }
+    """Add a shot to an existing position — DISABLED for safety."""
+    return {"success": False, "error": "BASTION cannot open new positions — this action is disabled for safety"}
 
 
 @app.post("/api/actions/partial-close")
 async def partial_close(request: Dict[str, Any]):
-    """Close a percentage of a position."""
-    position_id = request.get("position_id")
-    percentage = request.get("percentage", 50)
-    
-    return {
-        "success": True,
-        "message": f"Closed {percentage}% of {position_id}"
-    }
+    """Close a percentage of a position — not yet implemented."""
+    return {"success": False, "error": "Not yet implemented — use emergency-exit or flatten-winners instead"}
 
 
 # =============================================================================
@@ -5339,21 +5338,48 @@ async def engine_start(token: Optional[str] = None, session_id: Optional[str] = 
     if not risk_engine:
         raise HTTPException(status_code=503, detail="Risk Engine not available")
 
-    # If user context available, wire it up for execution
+    # If user context available, wire it up for execution AND position sync
     try:
         scope_id, ctx, exchanges = await get_user_scope(token, session_id)
-        if ctx and execution_engine:
-            execution_engine.register_user_context(scope_id, ctx)
+        if ctx:
+            if execution_engine:
+                execution_engine.register_user_context(scope_id, ctx)
             risk_engine._scope_id = scope_id
+
+            # Re-inject _get_positions_fn to use the USER-SCOPED context
+            # (the startup-injected one uses the global user_context which has no connections)
+            async def _get_positions_for_engine_scoped(user_ctx=ctx):
+                try:
+                    all_pos = await user_ctx.get_all_positions()
+                    return [
+                        {
+                            "id": p.id, "symbol": p.symbol, "direction": p.direction,
+                            "entry_price": p.entry_price, "current_price": p.current_price,
+                            "size": p.size, "size_usd": p.size_usd, "leverage": p.leverage,
+                            "stop_loss": getattr(p, 'stop_loss', 0),
+                            "take_profit": getattr(p, 'take_profit', 0),
+                            "liquidation_price": getattr(p, 'liquidation_price', 0),
+                            "exchange": p.exchange, "updated_at": p.updated_at,
+                        }
+                        for p in all_pos
+                    ] if all_pos else []
+                except Exception as e:
+                    logger.warning(f"[ENGINE] Position fetch failed: {e}")
+                    return []
+
+            risk_engine._get_positions_fn = _get_positions_for_engine_scoped
+            logger.info(f"[ENGINE] Position sync wired to user scope: {scope_id}")
+
             # Register all current positions for routing
             try:
                 all_pos = await ctx.get_all_positions()
                 for p in all_pos:
                     execution_engine.register_position(p.id, p)
+                logger.info(f"[ENGINE] Registered {len(all_pos)} positions for execution routing")
             except Exception:
                 pass
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"[ENGINE] User scope setup failed: {e}")
 
     result = await risk_engine.start()
     return result
@@ -5495,7 +5521,10 @@ async def engine_arm(request: Dict[str, Any], token: Optional[str] = None, sessi
     if not risk_engine or not execution_engine:
         raise HTTPException(status_code=503, detail="Engine not available")
 
-    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    # Also check body for session_id/token (frontend may send either way)
+    body_token = request.get("token") if isinstance(request, dict) else None
+    body_session = request.get("session_id") if isinstance(request, dict) else None
+    scope_id, ctx, exchanges = await get_user_scope(token or body_token, session_id or body_session)
 
     if not ctx or not ctx.connections:
         raise HTTPException(status_code=400, detail="No exchange connections. Connect an exchange first.")
@@ -5522,6 +5551,27 @@ async def engine_arm(request: Dict[str, Any], token: Optional[str] = None, sessi
     # Inject execution engine into risk engine
     risk_engine._execution_engine = execution_engine
     risk_engine._scope_id = scope_id
+
+    # Ensure position sync uses user-scoped context
+    async def _get_positions_for_arm(user_ctx=ctx):
+        try:
+            all_pos = await user_ctx.get_all_positions()
+            return [
+                {
+                    "id": p.id, "symbol": p.symbol, "direction": p.direction,
+                    "entry_price": p.entry_price, "current_price": p.current_price,
+                    "size": p.size, "size_usd": p.size_usd, "leverage": p.leverage,
+                    "stop_loss": getattr(p, 'stop_loss', 0),
+                    "take_profit": getattr(p, 'take_profit', 0),
+                    "liquidation_price": getattr(p, 'liquidation_price', 0),
+                    "exchange": p.exchange, "updated_at": p.updated_at,
+                }
+                for p in all_pos
+            ] if all_pos else []
+        except Exception as e:
+            logger.warning(f"[ARM] Position fetch failed: {e}")
+            return []
+    risk_engine._get_positions_fn = _get_positions_for_arm
 
     # Configure execution safety
     auto_exec = request.get("auto_execute", True)
@@ -5585,13 +5635,18 @@ async def engine_arm(request: Dict[str, Any], token: Optional[str] = None, sessi
 
 
 @app.post("/api/engine/disarm")
-async def engine_disarm():
+async def engine_disarm(token: Optional[str] = None, session_id: Optional[str] = None):
     """
     Disarm the execution engine — switch back to advisory-only mode.
-    Positions continue to be monitored, but no orders will be placed.
+    Requires authentication to prevent unauthorized disarm.
     """
     if not risk_engine:
         raise HTTPException(status_code=503, detail="Engine not available")
+
+    # Verify the user has a valid session
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    if not scope_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
 
     risk_engine.config.auto_execute = False
 
@@ -5600,8 +5655,8 @@ async def engine_disarm():
     for state in all_positions:
         state.auto_execute = False
 
-    risk_engine.audit.log("ENGINE_DISARMED", "SYSTEM", {})
-    logger.info("[ENGINE] Execution DISARMED — advisory mode only")
+    risk_engine.audit.log("ENGINE_DISARMED", "SYSTEM", {"scope_id": scope_id})
+    logger.info(f"[ENGINE] Execution DISARMED by {scope_id} — advisory mode only")
 
     return {"success": True, "armed": False, "mode": "advisory"}
 
@@ -5610,7 +5665,7 @@ async def engine_disarm():
 async def engine_kill_switch(request: Dict[str, Any]):
     """
     Emergency kill switch — immediately halt ALL execution.
-    Pass {"activate": true} to halt, {"activate": false} to resume.
+    Activation requires no auth (safety first). Deactivation requires auth.
     """
     if not execution_engine:
         raise HTTPException(status_code=503, detail="Execution Engine not available")
@@ -5620,9 +5675,17 @@ async def engine_kill_switch(request: Dict[str, Any]):
         execution_engine.activate_kill_switch()
         if risk_engine:
             risk_engine.config.auto_execute = False
+        logger.warning("[ENGINE] KILL SWITCH ACTIVATED — all execution halted")
         return {"success": True, "kill_switch": True, "message": "ALL EXECUTION HALTED"}
     else:
+        # Deactivation requires auth — preventing unauthorized resume of execution
+        token = request.get("token")
+        session_id = request.get("session_id")
+        scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+        if not scope_id:
+            raise HTTPException(status_code=401, detail="Authentication required to deactivate kill switch")
         execution_engine.deactivate_kill_switch()
+        logger.warning(f"[ENGINE] Kill switch DEACTIVATED by {scope_id}")
         return {"success": True, "kill_switch": False, "message": "Kill switch deactivated"}
 
 
@@ -5668,7 +5731,26 @@ async def engine_configure_safety(request: Dict[str, Any]):
     if not execution_engine:
         raise HTTPException(status_code=503, detail="Execution Engine not available")
 
+    # Auth required — safety config changes affect real money
+    token = request.pop("token", None)
+    session_id = request.pop("session_id", None)
+    scope_id, ctx, exchanges = await get_user_scope(token, session_id)
+    if not scope_id:
+        raise HTTPException(status_code=401, detail="Authentication required to modify safety config")
+
+    # Prevent kill_switch manipulation through this endpoint
+    request.pop("kill_switch", None)
+
+    # Validate value ranges
+    if "min_confidence" in request:
+        request["min_confidence"] = max(0.1, min(1.0, float(request["min_confidence"])))
+    if "max_executions_per_hour" in request:
+        request["max_executions_per_hour"] = max(1, min(100, int(request["max_executions_per_hour"])))
+    if "daily_loss_limit_usd" in request:
+        request["daily_loss_limit_usd"] = max(0, float(request["daily_loss_limit_usd"]))
+
     execution_engine.configure(**request)
+    logger.info(f"[ENGINE] Safety config updated by {scope_id}: {request}")
     return {"success": True, "safety": execution_engine.status()}
 
 

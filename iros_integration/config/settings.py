@@ -2,6 +2,9 @@
 BASTION AI - Configuration Settings
 ====================================
 Centralized configuration for all IROS/Bastion infrastructure
+
+IMPORTANT: All API keys must be set via environment variables (.env file).
+           Never hardcode API keys in source code.
 """
 
 import os
@@ -22,10 +25,8 @@ class HelsinkiConfig:
 @dataclass
 class ModelConfig:
     """GPU Cluster (Vast.ai vLLM) Configuration"""
-    # NOTE: Update base_url when Cloudflare tunnel URL changes
     base_url: str = os.getenv("BASTION_MODEL_URL", "")
-    # Pre-configured API key for vLLM authentication
-    api_key: str = os.getenv("BASTION_MODEL_API_KEY", "5c37b5e8e6c2480813aa0cfd4de5c903544b7a000bff729e1c99d9b4538eb34d")
+    api_key: str = os.getenv("BASTION_MODEL_API_KEY", "")
     timeout: int = int(os.getenv("BASTION_MODEL_TIMEOUT", "120000"))
     model_name: str = os.getenv("BASTION_MODEL_NAME", "bastion-32b")
     max_tokens: int = 1200
@@ -33,20 +34,18 @@ class ModelConfig:
     top_p: float = 0.9
 
 
-@dataclass 
+@dataclass
 class CoinglassConfig:
-    """Coinglass Premium API Configuration - $299/mo"""
-    # Pre-configured with your paid API key
-    api_key: str = os.getenv("COINGLASS_API_KEY", "03e5a43afaa4489384cb935b9b2ea16b")
+    """Coinglass Premium API Configuration"""
+    api_key: str = os.getenv("COINGLASS_API_KEY", "")
     base_url: str = "https://open-api-v3.coinglass.com/api"
     timeout: int = 10000
 
 
 @dataclass
 class WhaleAlertConfig:
-    """Whale Alert Premium API Configuration - $29.95/mo"""
-    # Pre-configured with your paid API key
-    api_key: str = os.getenv("WHALE_ALERT_API_KEY", "OsCbgowziN4kMRnC6WhgokKXW3bfVKcQ")
+    """Whale Alert Premium API Configuration"""
+    api_key: str = os.getenv("WHALE_ALERT_API_KEY", "")
     rest_url: str = "https://api.whale-alert.io/v1"
     ws_url: str = "wss://ws.whale-alert.io"
     min_value: int = 1000000  # $1M minimum transaction
@@ -59,7 +58,7 @@ class BastionConfig:
     model: ModelConfig
     coinglass: CoinglassConfig
     whale_alert: WhaleAlertConfig
-    
+
     # Server settings
     port: int = int(os.getenv("PORT", "3001"))
     env: str = os.getenv("NODE_ENV", "development")
@@ -82,9 +81,11 @@ if not settings.helsinki.base_url:
 if not settings.model.base_url:
     print("[WARNING] BASTION_MODEL_URL not set. AI model will be unavailable.")
 
-if not settings.model.api_key:
-    print("[WARNING] BASTION_MODEL_API_KEY not set. Model requests may fail.")
+if not settings.coinglass.api_key:
+    print("[WARNING] COINGLASS_API_KEY not set. Market data will be limited.")
+
+if not settings.whale_alert.api_key:
+    print("[WARNING] WHALE_ALERT_API_KEY not set. Whale alerts will be unavailable.")
 
 if settings.test_mode:
     print("[TEST] TEST MODE ENABLED")
-

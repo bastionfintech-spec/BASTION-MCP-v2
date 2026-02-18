@@ -438,14 +438,17 @@ class RiskEngine:
     async def _sync_positions(self):
         """Fetch positions from exchange and sync with state store."""
         if not self._get_positions_fn:
+            logger.warning("[ENGINE] No _get_positions_fn set — cannot sync positions")
             return
 
         try:
-            result = self._get_positions_fn
             if asyncio.iscoroutinefunction(self._get_positions_fn):
                 result = await self._get_positions_fn()
             elif callable(self._get_positions_fn):
                 result = self._get_positions_fn()
+            else:
+                logger.warning("[ENGINE] _get_positions_fn is not callable")
+                return
 
             if result and isinstance(result, dict):
                 positions = result.get("positions", [])
@@ -454,12 +457,16 @@ class RiskEngine:
             else:
                 positions = []
 
+            logger.info(f"[ENGINE] Position sync: got {len(positions)} positions")
+
             if positions:
                 await self.store.sync_from_exchange(positions)
-                logger.debug(f"[ENGINE] Synced {len(positions)} positions")
+                logger.info(f"[ENGINE] Synced {len(positions)} positions into store (store now has {len(self.store.positions)})")
+            else:
+                logger.info(f"[ENGINE] No positions returned from exchange (store has {len(self.store.positions)})")
 
         except Exception as e:
-            logger.error(f"[ENGINE] Position sync failed: {e}")
+            logger.error(f"[ENGINE] Position sync failed: {e}", exc_info=True)
 
     # ─── Evaluation Scheduling ─────────────────────────────────────────
 

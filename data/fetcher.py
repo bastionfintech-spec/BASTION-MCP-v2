@@ -23,6 +23,9 @@ HELSINKI_QUANT = "http://77.42.29.188:5002"
 # Binance direct (fallback)
 BINANCE_API = "https://api.binance.com"
 
+# Bybit direct (second fallback — works in regions where Binance is blocked)
+BYBIT_API = "https://api.bybit.com"
+
 
 class LiveDataFetcher:
     """
@@ -80,16 +83,41 @@ class LiveDataFetcher:
         try:
             url = f"{BINANCE_API}/api/v3/klines"
             params = {"symbol": symbol, "interval": interval, "limit": limit}
-            
+
             async with session.get(url, params=params) as resp:
                 if resp.status == 200:
                     data = await resp.json()
                     return self._parse_klines(data)
         except Exception as e:
-            logger.error(f"Binance also failed: {e}")
-            raise
-        
-        raise RuntimeError(f"Could not fetch OHLCV for {symbol}")
+            logger.warning(f"Binance also failed, trying Bybit: {e}")
+
+        # Second fallback: Bybit (works in regions where Binance is blocked)
+        try:
+            # Map interval to Bybit format (same names except "1h" -> "60", etc.)
+            bybit_interval_map = {
+                "1m": "1", "3m": "3", "5m": "5", "15m": "15", "30m": "30",
+                "1h": "60", "2h": "120", "4h": "240", "6h": "360", "12h": "720",
+                "1d": "D", "1w": "W", "1M": "M",
+            }
+            bybit_interval = bybit_interval_map.get(interval, interval)
+
+            url = f"{BYBIT_API}/v5/market/kline"
+            params = {
+                "category": "linear",
+                "symbol": symbol,
+                "interval": bybit_interval,
+                "limit": limit,
+            }
+
+            async with session.get(url, params=params) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    if data.get("retCode") == 0 and data.get("result", {}).get("list"):
+                        return self._parse_bybit_klines(data["result"]["list"])
+        except Exception as e:
+            logger.error(f"Bybit also failed: {e}")
+
+        raise RuntimeError(f"Could not fetch OHLCV for {symbol} from any source")
     
     async def get_multi_timeframe(
         self,
@@ -207,7 +235,32 @@ class LiveDataFetcher:
         
         df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
         df.set_index('timestamp', inplace=True)
-        
+
+        return df
+
+    def _parse_bybit_klines(self, data: List) -> pd.DataFrame:
+        """Parse Bybit klines format to DataFrame.
+
+        Bybit returns: [[startTime, open, high, low, close, volume, turnover], ...]
+        Note: Bybit returns newest first, so we reverse.
+        """
+        if not data:
+            return pd.DataFrame()
+
+        # Reverse to get oldest-first (matches Binance behavior)
+        data = list(reversed(data))
+
+        df = pd.DataFrame(data, columns=[
+            'timestamp', 'open', 'high', 'low', 'close', 'volume', 'turnover'
+        ])
+
+        df['timestamp'] = pd.to_datetime(df['timestamp'].astype(int), unit='ms')
+        for col in ['open', 'high', 'low', 'close', 'volume']:
+            df[col] = df[col].astype(float)
+
+        df = df[['timestamp', 'open', 'high', 'low', 'close', 'volume']]
+        df.set_index('timestamp', inplace=True)
+
         return df
 
 

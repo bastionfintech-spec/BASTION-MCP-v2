@@ -94,31 +94,38 @@ class ValueArea:
 @dataclass
 class VPVRAnalysis:
     """Complete Volume Profile analysis."""
-    
+
     # Profile data
     price_bins: np.ndarray = field(default_factory=lambda: np.array([]))
     volume_at_price: np.ndarray = field(default_factory=lambda: np.array([]))
-    
+
+    # Buy/sell volume split (Pine Script MCF VPVR style)
+    buy_volume_at_price: np.ndarray = field(default_factory=lambda: np.array([]))
+    sell_volume_at_price: np.ndarray = field(default_factory=lambda: np.array([]))
+
     # Detected nodes
     nodes: List[VolumeNode] = field(default_factory=list)
     hvn_nodes: List[VolumeNode] = field(default_factory=list)
     lvn_nodes: List[VolumeNode] = field(default_factory=list)
     poc: Optional[VolumeNode] = None
-    
+
     # Value Area
     value_area: Optional[ValueArea] = None
-    
+
     # Current context
     current_price: float = 0.0
-    
+
     # Volume score (0-10)
     volume_score: float = 5.0
-    
+
     # Path analysis
     lvn_ahead: bool = False       # Valley ahead (good for entry)
     hvn_ahead: bool = False       # Mountain ahead (target zone)
     distance_to_next_hvn: float = 0.0
     distance_to_next_lvn: float = 0.0
+
+    # Buy/sell dominance context
+    buy_sell_dominant: str = "balanced"  # "buy_dominant", "sell_dominant", "balanced"
     
     def get_summary(self) -> Dict:
         return {
@@ -155,7 +162,7 @@ class VPVRAnalyzer:
     def __init__(
         self,
         # Profile settings
-        num_bins: int = 50,           # Number of price bins
+        num_bins: int = 250,          # Number of price bins (Pine Script MCF VPVR uses 250)
         lookback_bars: int = 200,     # Bars for profile calculation
         
         # Node detection
@@ -209,10 +216,12 @@ class VPVRAnalyzer:
         close = data['close'].values
         volume = data['volume'].values if 'volume' in data.columns else np.ones(len(data))
         
-        # Step 1: Build volume profile
-        analysis.price_bins, analysis.volume_at_price = self._build_profile(
-            high, low, close, volume
-        )
+        # Step 1: Build volume profile (with buy/sell split)
+        profile = self._build_profile(high, low, close, volume)
+        analysis.price_bins = profile[0]
+        analysis.volume_at_price = profile[1]
+        analysis.buy_volume_at_price = profile[2]
+        analysis.sell_volume_at_price = profile[3]
         
         # Step 2: Detect nodes
         analysis.nodes = self._detect_nodes(
@@ -234,10 +243,16 @@ class VPVRAnalyzer:
         
         # Step 4: Analyze path ahead
         self._analyze_path(analysis, direction)
-        
-        # Step 5: Calculate volume score
+
+        # Step 5: Determine buy/sell dominance near current price
+        analysis.buy_sell_dominant = self._get_buy_sell_dominance(
+            analysis.price_bins, analysis.buy_volume_at_price,
+            analysis.sell_volume_at_price, analysis.current_price
+        )
+
+        # Step 6: Calculate volume score
         analysis.volume_score = self._calculate_volume_score(analysis, direction)
-        
+
         return analysis
     
     def _build_profile(
@@ -246,64 +261,124 @@ class VPVRAnalyzer:
         low: np.ndarray,
         close: np.ndarray,
         volume: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Build volume profile by distributing volume across price bins.
-        
+
         For each candle, distribute its volume proportionally across
         the price range it covered (high to low).
+
+        Buy/sell split uses Pine Script MCF VPVR formula:
+            buy_volume = volume * (close - low) / (high - low)
+            sell_volume = volume * (high - close) / (high - low)
+
+        Returns:
+            (price_bins, volume_at_price, buy_volume_at_price, sell_volume_at_price)
         """
         # Define price range
         price_min = np.min(low)
         price_max = np.max(high)
         price_range = price_max - price_min
-        
+
         if price_range == 0:
-            return np.array([price_min]), np.array([np.sum(volume)])
-        
+            total = np.array([np.sum(volume)])
+            return np.array([price_min]), total, total.copy(), np.zeros(1)
+
         # Create bins
         bin_size = price_range / self.num_bins
         price_bins = np.linspace(price_min, price_max, self.num_bins)
         volume_at_price = np.zeros(self.num_bins)
-        
+        buy_volume_at_price = np.zeros(self.num_bins)
+        sell_volume_at_price = np.zeros(self.num_bins)
+
         # Apply recency weighting if enabled
         if self.recency_weight:
             weights = np.array([
-                self.recency_decay ** (len(volume) - 1 - i) 
+                self.recency_decay ** (len(volume) - 1 - i)
                 for i in range(len(volume))
             ])
             weighted_volume = volume * weights
         else:
             weighted_volume = volume
-        
+
         # Distribute volume to bins
         for i in range(len(high)):
             candle_low = low[i]
             candle_high = high[i]
             candle_vol = weighted_volume[i]
             candle_range = candle_high - candle_low
-            
+
             if candle_range == 0:
-                # Doji - all volume at close
+                # Doji - all volume at close, counted as buy
                 bin_idx = int((close[i] - price_min) / bin_size)
                 bin_idx = min(bin_idx, self.num_bins - 1)
                 volume_at_price[bin_idx] += candle_vol
+                buy_volume_at_price[bin_idx] += candle_vol
             else:
-                # Distribute volume proportionally
+                # Pine Script buy/sell split:
+                # buy_vol = volume * (close - low) / (high - low)
+                # sell_vol = volume * (high - close) / (high - low)
+                buy_ratio = (close[i] - candle_low) / candle_range
+                sell_ratio = (candle_high - close[i]) / candle_range
+                candle_buy_vol = candle_vol * buy_ratio
+                candle_sell_vol = candle_vol * sell_ratio
+
+                # Distribute volume proportionally across bins
                 for bin_idx in range(self.num_bins):
                     bin_low = price_min + bin_idx * bin_size
                     bin_high = bin_low + bin_size
-                    
+
                     # Calculate overlap
                     overlap_low = max(candle_low, bin_low)
                     overlap_high = min(candle_high, bin_high)
-                    
+
                     if overlap_high > overlap_low:
                         overlap = overlap_high - overlap_low
                         pct_of_candle = overlap / candle_range
                         volume_at_price[bin_idx] += candle_vol * pct_of_candle
-        
-        return price_bins, volume_at_price
+                        buy_volume_at_price[bin_idx] += candle_buy_vol * pct_of_candle
+                        sell_volume_at_price[bin_idx] += candle_sell_vol * pct_of_candle
+
+        return price_bins, volume_at_price, buy_volume_at_price, sell_volume_at_price
+
+    def _get_buy_sell_dominance(
+        self,
+        price_bins: np.ndarray,
+        buy_volume: np.ndarray,
+        sell_volume: np.ndarray,
+        current_price: float,
+        window_pct: float = 0.02,  # Look at bins within 2% of current price
+    ) -> str:
+        """
+        Determine buy/sell dominance near current price.
+
+        Returns "buy_dominant", "sell_dominant", or "balanced".
+        """
+        if len(price_bins) == 0 or len(buy_volume) == 0:
+            return "balanced"
+
+        # Find bins near current price
+        tolerance = current_price * window_pct
+        mask = np.abs(price_bins - current_price) <= tolerance
+
+        if not np.any(mask):
+            return "balanced"
+
+        total_buy = np.sum(buy_volume[mask])
+        total_sell = np.sum(sell_volume[mask])
+        total = total_buy + total_sell
+
+        if total == 0:
+            return "balanced"
+
+        buy_pct = total_buy / total
+
+        if buy_pct > 0.60:
+            return "buy_dominant"
+        elif buy_pct < 0.40:
+            return "sell_dominant"
+        else:
+            return "balanced"
     
     def _detect_nodes(
         self,

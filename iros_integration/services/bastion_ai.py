@@ -403,25 +403,10 @@ LIVE DATA:
         except httpx.TimeoutException:
             raise Exception("Model inference timed out")
         except Exception as e:
-            # Return fallback response with market data
+            # Return generic error — never expose internal infrastructure details
+            logger.error(f"[BASTION-AI] Model query failed: {e} | URL: {self.model_url}")
             return {
-                "response": f"""⚠️ **BASTION MODEL TEMPORARILY UNAVAILABLE**
-
-The Bastion 32B model at {self.model_url} is not reachable.
-
-**Error:** {str(e)}
-
-**However, here's your live market data:**
-
-{system_prompt.split("LIVE DATA:")[-1] if "LIVE DATA:" in system_prompt else "Market data available in context."}
-
----
-**To fix this:**
-1. Check if your Vast.ai instance is running
-2. Verify the Cloudflare tunnel URL hasn't changed
-3. Ensure the API key is correct
-
-Once the model is back online, you'll get full institutional analysis.""",
+                "response": "**BASTION AI temporarily unavailable.** The model is not reachable. Please try again in a moment.",
                 "tokens_used": 0,
             }
     

@@ -18,14 +18,22 @@ from .vpvr_analyzer import VPVRAnalyzer, VPVRAnalysis, VolumeNode, ValueArea
 from .mtf_structure import MTFStructureAnalyzer, MTFAlignment
 from .orderflow_detector import OrderFlowDetector, OrderFlowAnalysis, FlowDirection
 
+# MCF Structure-Based Exits (Auto-Support + Structure Service)
+from .auto_support import AutoSupportDetector, AutoSupportAnalysis, AutoLevel
+from .structure_service import StructureService, StructuralContext
+
 # Multi-shot entry system (separate feature)
 from .adaptive_budget import AdaptiveRiskBudget, TradeBudget, Shot, ShotStatus
 
 # Session Management (live position tracking)
-from .session import (
-    SessionManager, SessionState, SessionEntry, SessionUpdate,
-    SessionStatus, ExitReason, TradePhase, PartialExit
-)
+try:
+    from .session import (
+        SessionManager, SessionState, SessionEntry, SessionUpdate,
+        SessionStatus, ExitReason, TradePhase, PartialExit
+    )
+except (ImportError, AttributeError):
+    SessionManager = SessionState = SessionEntry = SessionUpdate = None
+    SessionStatus = ExitReason = TradePhase = PartialExit = None
 
 __all__ = [
     # Main Engine
@@ -48,6 +56,13 @@ __all__ = [
     "OrderFlowDetector",
     "OrderFlowAnalysis",
     "FlowDirection",
+    # Auto-Support
+    "AutoSupportDetector",
+    "AutoSupportAnalysis",
+    "AutoLevel",
+    # Structure Service
+    "StructureService",
+    "StructuralContext",
     # Multi-Shot
     "AdaptiveRiskBudget",
     "TradeBudget",
