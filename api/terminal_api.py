@@ -312,6 +312,13 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"[ENGINE] Dependency injection failed: {e}")
 
+    # Load persisted stats from Supabase BEFORE any requests can fire
+    try:
+        await load_bastion_stats()
+        logger.info("[STATS] Bastion stats loaded at startup")
+    except Exception as e:
+        logger.warning(f"[STATS] Stats load at startup failed (will retry on first access): {e}")
+
     logger.info("BASTION Terminal API LIVE")
     yield
 
@@ -3937,6 +3944,7 @@ async def pre_trade_calculator(data: dict):
 # =============================================================================
 
 # In-memory stats (also synced to database)
+# IMPORTANT: _stats_loaded gates ALL writes — no save until DB values are loaded
 bastion_stats = {
     "total_positions_analyzed": 0,
     "total_portfolio_managed_usd": 0,
@@ -3944,14 +3952,23 @@ bastion_stats = {
     "total_exchanges_connected": 0,
     "last_updated": None
 }
+_stats_loaded = False  # Guard: prevent writing zeros over real DB values
+
 
 async def load_bastion_stats():
-    """Load Bastion stats from database on startup."""
-    global bastion_stats
-    
+    """
+    Load Bastion stats from database. MUST complete before any increment.
+
+    BUG FIX: Previously this was lazy-loaded on first GET /api/bastion/stats.
+    But increment operations could fire BEFORE that (exchange connect, position sync)
+    and would save {0,0,0,0} to Supabase, nuking the real values.
+
+    Now called at startup in lifespan() and gated by _stats_loaded flag.
+    """
+    global bastion_stats, _stats_loaded
+
     if user_service and user_service.is_db_available:
         try:
-            # Try to load from a dedicated stats row or aggregate
             result = user_service.client.table("bastion_stats").select("*").execute()
             if result.data and len(result.data) > 0:
                 data = result.data[0]
@@ -3960,17 +3977,32 @@ async def load_bastion_stats():
                 bastion_stats["total_users"] = data.get("total_users", 0)
                 bastion_stats["total_exchanges_connected"] = data.get("total_exchanges_connected", 0)
                 bastion_stats["last_updated"] = data.get("updated_at")
-                logger.info(f"[STATS] Loaded from DB: {bastion_stats}")
+                _stats_loaded = True
+                logger.info(f"[STATS] ✓ Loaded from DB: positions={bastion_stats['total_positions_analyzed']}, "
+                            f"portfolio=${bastion_stats['total_portfolio_managed_usd']:,.2f}, "
+                            f"users={bastion_stats['total_users']}, exchanges={bastion_stats['total_exchanges_connected']}")
+                return
+            else:
+                logger.warning("[STATS] No rows in bastion_stats table — will create on first increment")
         except Exception as e:
             logger.warning(f"[STATS] Could not load from DB (table may not exist): {e}")
-            # Set some baseline stats
-            bastion_stats["total_positions_analyzed"] = 1247
-            bastion_stats["total_portfolio_managed_usd"] = 2_847_500
-            bastion_stats["total_users"] = 89
-            bastion_stats["total_exchanges_connected"] = 124
+
+    # Fallback: mark as loaded with current in-memory values (prevents zero-write)
+    # If DB had no data, we start fresh. If DB failed, we won't overwrite it.
+    _stats_loaded = True
+    logger.info("[STATS] Stats initialized (no DB data found or DB unavailable)")
+
 
 async def save_bastion_stats():
-    """Save Bastion stats to database."""
+    """
+    Save Bastion stats to database.
+    SAFETY: Refuses to write if stats haven't been loaded from DB first.
+    This prevents the deploy-reset bug where in-memory zeros overwrite real values.
+    """
+    if not _stats_loaded:
+        logger.warning("[STATS] BLOCKED save — stats not loaded from DB yet (preventing zero-overwrite)")
+        return
+
     if user_service and user_service.is_db_available:
         try:
             user_service.client.table("bastion_stats").upsert({
@@ -3981,14 +4013,23 @@ async def save_bastion_stats():
                 "total_exchanges_connected": bastion_stats["total_exchanges_connected"],
                 "updated_at": datetime.now().isoformat()
             }).execute()
-            logger.info(f"[STATS] Saved to DB")
         except Exception as e:
             logger.warning(f"[STATS] Could not save to DB: {e}")
 
+
+async def _ensure_stats_loaded():
+    """Ensure stats are loaded before any increment. Called by all increment functions."""
+    global _stats_loaded
+    if not _stats_loaded:
+        await load_bastion_stats()
+
+
 async def increment_positions_analyzed(count: int = 1):
     """Increment total positions analyzed."""
+    await _ensure_stats_loaded()
     bastion_stats["total_positions_analyzed"] += count
     await save_bastion_stats()
+
 
 async def increment_portfolio_managed(amount_usd: float):
     """
@@ -3996,19 +4037,24 @@ async def increment_portfolio_managed(amount_usd: float):
     Every connection adds to the total, even if same user reconnects.
     This tracks total capital that has touched Bastion over time.
     """
+    await _ensure_stats_loaded()
     if amount_usd > 0:
         old_total = bastion_stats["total_portfolio_managed_usd"]
         bastion_stats["total_portfolio_managed_usd"] += amount_usd
         logger.info(f"[STATS] Portfolio managed: ${old_total:,.2f} + ${amount_usd:,.2f} = ${bastion_stats['total_portfolio_managed_usd']:,.2f}")
         await save_bastion_stats()
 
+
 async def increment_exchanges_connected():
     """Increment total exchange connections."""
+    await _ensure_stats_loaded()
     bastion_stats["total_exchanges_connected"] += 1
     await save_bastion_stats()
 
+
 async def increment_users():
     """Increment total users."""
+    await _ensure_stats_loaded()
     bastion_stats["total_users"] += 1
     await save_bastion_stats()
 
@@ -4019,10 +4065,8 @@ async def get_bastion_stats():
     Get global Bastion statistics for front page.
     Shows total positions managed, portfolio value, users, etc.
     """
-    # Load fresh from DB if needed
-    if not bastion_stats["last_updated"]:
-        await load_bastion_stats()
-    
+    await _ensure_stats_loaded()
+
     return {
         "success": True,
         "stats": {
