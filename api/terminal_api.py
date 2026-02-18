@@ -3695,71 +3695,62 @@ async def get_fear_greed():
 
 @app.get("/api/usdt-dominance")
 async def get_usdt_dominance():
-    """Get USDT dominance data from Coinglass - key indicator for risk-on/risk-off."""
-    init_clients()
-    import httpx
-    
+    """
+    Get USDT dominance data — key indicator for risk-on/risk-off.
+    Uses CoinGecko global data (free, reliable) since Coinglass v2 stablecoin endpoint was deprecated.
+    """
     try:
-        # Try Coinglass API for stablecoin market cap
-        cg_key = os.getenv("COINGLASS_API_KEY", "")
-        if cg_key and coinglass:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                headers = {"coinglassSecret": cg_key}
-                
-                # Get stablecoin market cap data
-                res = await client.get(
-                    "https://open-api.coinglass.com/public/v2/indicator/stablecoin_market_cap",
-                    headers=headers
-                )
-                data = res.json()
-                
-                if data.get("success") and data.get("data"):
-                    stables = data["data"]
-                    
-                    # Find USDT
-                    usdt_data = next((s for s in stables if s.get("symbol") == "USDT"), None)
-                    total_cap = sum(s.get("marketCap", 0) for s in stables)
-                    usdt_cap = usdt_data.get("marketCap", 0) if usdt_data else 0
-                    usdt_dominance = (usdt_cap / total_cap * 100) if total_cap > 0 else 65
-                    
-                    # 24h change
-                    usdt_change = usdt_data.get("change24h", 0) if usdt_data else 0
-                    
-                    # Signal interpretation
-                    if usdt_dominance > 70:
-                        signal = "RISK OFF"
-                        interpretation = "High USDT dominance - capital rotating to safety"
-                    elif usdt_dominance < 60:
-                        signal = "RISK ON"
-                        interpretation = "Low USDT dominance - capital flowing into crypto"
-                    else:
-                        signal = "NEUTRAL"
-                        interpretation = "USDT dominance in normal range"
-                    
-                    return {
-                        "success": True,
-                        "usdt_dominance": round(usdt_dominance, 2),
-                        "usdt_market_cap": round(usdt_cap / 1e9, 2),  # Billions
-                        "total_stablecoin_cap": round(total_cap / 1e9, 2),
-                        "change_24h": round(usdt_change, 2),
-                        "signal": signal,
-                        "interpretation": interpretation
-                    }
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            # CoinGecko global endpoint includes market cap percentages
+            global_res = await client.get("https://api.coingecko.com/api/v3/global")
+            gd = global_res.json().get("data", {})
+
+            total_crypto_mc = gd.get("total_market_cap", {}).get("usd", 0)
+            dominance_pct = gd.get("market_cap_percentage", {})
+            usdt_dom = dominance_pct.get("usdt", 0)
+
+            # Get USDT-specific market cap for more detail
+            usdt_res = await client.get(
+                "https://api.coingecko.com/api/v3/simple/price"
+                "?ids=tether&vs_currencies=usd&include_market_cap=true&include_24hr_change=true"
+            )
+            usdt_data = usdt_res.json().get("tether", {})
+            usdt_cap = usdt_data.get("usd_market_cap", 0)
+            usdt_change_24h = usdt_data.get("usd_24h_change", 0)
+
+            # Signal interpretation (USDT % of total crypto market cap)
+            # Normal range: 5-10%. High = money fleeing to stables = risk off
+            if usdt_dom > 10:
+                signal = "RISK OFF"
+                interpretation = "High USDT dominance — capital rotating to safety"
+            elif usdt_dom < 5:
+                signal = "RISK ON"
+                interpretation = "Low USDT dominance — capital flowing into crypto"
+            else:
+                signal = "NEUTRAL"
+                interpretation = "USDT dominance in normal range"
+
+            return {
+                "success": True,
+                "usdt_dominance": round(usdt_dom, 2),
+                "dominance": round(usdt_dom, 2),  # Alias for frontend compatibility
+                "usdt_market_cap": round(usdt_cap / 1e9, 2),
+                "total_crypto_market_cap": round(total_crypto_mc / 1e12, 3),
+                "btc_dominance": round(dominance_pct.get("btc", 0), 1),
+                "eth_dominance": round(dominance_pct.get("eth", 0), 1),
+                "change_24h": round(usdt_change_24h, 2) if usdt_change_24h else 0,
+                "signal": signal,
+                "interpretation": interpretation,
+                "source": "coingecko"
+            }
     except Exception as e:
         logger.error(f"USDT dominance error: {e}")
-    
-    # Fallback with realistic data
-    import random
-    dom = 65 + random.uniform(-3, 3)
+
     return {
-        "success": True,
-        "usdt_dominance": round(dom, 2),
-        "usdt_market_cap": 83.5 + random.uniform(-2, 2),
-        "total_stablecoin_cap": 128.4 + random.uniform(-3, 3),
-        "change_24h": round(random.uniform(-0.5, 0.5), 2),
-        "signal": "NEUTRAL",
-        "interpretation": "USDT dominance in normal range",
-        "source": "estimated"
+        "success": False,
+        "usdt_dominance": 0,
+        "dominance": 0,
+        "error": "Data temporarily unavailable"
     }
 
 

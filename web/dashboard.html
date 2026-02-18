@@ -801,7 +801,7 @@
           box.insertAdjacentHTML('beforeend', `<div id="${tid}" class="flex gap-3 max-w-[90%] msg-new"><div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-500"><iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1"><div class="text-[10px] font-mono text-zinc-600">BASTION &bull; analyzing...</div><div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg flex items-center gap-1.5"><span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span><span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span><span class="typing-dot w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span></div></div></div>`);
           ui.scrollToBottom();
           try {
-            const res = await fetch('/api/neural/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: val, symbol: currentSymbol, include_positions: true }) });
+            const res = await fetch('/api/neural/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: val, symbol: currentSymbol, include_positions: true, session_id: sessionId, user_id: sessionId }) });
             const data = await res.json();
             const el = document.getElementById(tid); if (el) el.remove();
             const rt = new Date().toLocaleTimeString('en-US', { hour12: false });
@@ -1900,6 +1900,32 @@
         return '<p>' + h + '</p>';
       }
 
+      // ── CHAT HISTORY PERSISTENCE ─────────────────────────
+      async function loadChatHistory() {
+        try {
+          const res = await fetch(`/api/neural/chat/history?session_id=${sessionId}&limit=50`);
+          const data = await res.json();
+          if (!data.success || !data.messages || data.messages.length === 0) return;
+          const box = document.getElementById('chat-messages');
+          if (!box) return;
+          // Clear any default welcome message
+          const existing = box.querySelectorAll('.msg-new');
+          // Render historical messages
+          for (const msg of data.messages) {
+            const t = new Date(msg.created_at).toLocaleTimeString('en-US', { hour12: false });
+            if (msg.role === 'user') {
+              box.insertAdjacentHTML('beforeend', `<div class="flex gap-3 max-w-[80%] ml-auto flex-row-reverse msg-new"><div class="w-7 h-7 rounded-md bg-zinc-800 border border-zinc-700/60 flex items-center justify-center shrink-0 text-white"><iconify-icon icon="solar:user-circle-bold" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1 items-end"><div class="text-[10px] font-mono text-zinc-600">YOU &bull; ${t}</div><div class="bg-red-950/20 border border-red-900/20 p-3 rounded-tl-lg rounded-b-lg text-xs leading-relaxed text-zinc-200">${escapeHtml(msg.content)}</div></div></div>`);
+            } else if (msg.role === 'assistant') {
+              box.insertAdjacentHTML('beforeend', `<div class="flex gap-3 max-w-[90%] msg-new"><div class="w-7 h-7 rounded-md bg-red-950/40 border border-red-900/30 flex items-center justify-center shrink-0 text-red-500"><iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon></div><div class="flex flex-col gap-1"><div class="text-[10px] font-mono text-zinc-600">BASTION &bull; ${t}</div><div class="bg-[#0A0A0A] border border-zinc-800/60 p-3 rounded-tr-lg rounded-b-lg text-xs leading-relaxed text-zinc-300 bastion-response">${renderMarkdown(msg.content)}</div></div></div>`);
+            }
+          }
+          ui.scrollToBottom();
+          console.log(`[CHAT] Loaded ${data.messages.length} messages from history`);
+        } catch (e) {
+          console.log('[CHAT] No history available:', e.message);
+        }
+      }
+
       // ── MARKET PULSE ───────────────────────────────────────
       async function loadMarketPulse() {
         try {
@@ -2012,6 +2038,7 @@
           loadWhales();
           loadFundingTable();
           loadLiquidations();
+          loadChatHistory();
 
           // Restore shield
           if (shieldActive) { document.getElementById('shield-toggle').checked = true; ui.toggleShield(true); }
