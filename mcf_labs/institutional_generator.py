@@ -273,8 +273,15 @@ class InstitutionalReportGenerator:
         funding = self._extract_funding(data.get("funding"), symbol)
         package["funding"] = funding
 
-        # Long/Short ratio
+        # Long/Short ratio — dedicated endpoint is dead on v3, fallback to coins-markets ls4h
         ls_ratio = self._extract_ls_ratio(data.get("ls_ratio"))
+        if ls_ratio == 1.0 and data.get("coins_markets"):
+            # Get from coins-markets ls4h
+            cm = data["coins_markets"]
+            if hasattr(cm, 'data') and cm.data and isinstance(cm.data, list):
+                coin = next((c for c in cm.data if c.get("symbol", "").upper() == symbol.upper()), None)
+                if coin:
+                    ls_ratio = float(coin.get("ls4h", 1.0) or 1.0)
         package["ls_ratio"] = ls_ratio
 
         # Max pain
@@ -285,8 +292,17 @@ class InstitutionalReportGenerator:
         whale_analysis = self._extract_whale_analysis(data.get("whale_positions"), symbol)
         package["whale_analysis"] = whale_analysis
 
-        # Taker flow
+        # Taker flow — dedicated endpoint dead on v3, fallback to coins-markets volumes
         taker = self._extract_taker_flow(data.get("taker"))
+        if taker.get("buy", 0) == 0 and taker.get("sell", 0) == 0 and data.get("coins_markets"):
+            cm = data["coins_markets"]
+            if hasattr(cm, 'data') and cm.data and isinstance(cm.data, list):
+                coin = next((c for c in cm.data if c.get("symbol", "").upper() == symbol.upper()), None)
+                if coin:
+                    taker = {
+                        "buy": float(coin.get("longVolUsd4h", 0) or 0),
+                        "sell": float(coin.get("shortVolUsd4h", 0) or 0),
+                    }
         package["taker_flow"] = taker
 
         # Liquidation zones
@@ -1102,7 +1118,10 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         coins = data.data if isinstance(data.data, list) else []
         for coin in coins:
             if coin.get("symbol", "").upper() == symbol.upper():
-                return coin.get("price", 0)
+                try:
+                    return float(coin.get("price", 0) or 0)
+                except (ValueError, TypeError):
+                    return 0
         return 0
 
     def _extract_oi(self, data, symbol: str) -> Dict:
@@ -1112,9 +1131,9 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         for coin in coins:
             if coin.get("symbol", "").upper() == symbol.upper():
                 return {
-                    "value": coin.get("openInterest", 0),
-                    "change_24h": coin.get("oiChg24h", 0) or 0,
-                    "change_percent_24h": coin.get("oiChgPercent24h", 0) or coin.get("oiChg24hPercent", 0) or 0,
+                    "value": float(coin.get("openInterest", 0) or 0),
+                    "change_24h": float(coin.get("oiChange24h", 0) or coin.get("oiChg24h", 0) or 0),
+                    "change_percent_24h": float(coin.get("oiChangePercent24h", 0) or coin.get("oiChgPercent24h", 0) or 0),
                 }
         return {"value": 0, "change_24h": 0, "change_percent_24h": 0}
 
@@ -1142,17 +1161,27 @@ Be specific with numbers. Write like a hedge fund analyst. Reference the data I 
         return result
 
     def _extract_ls_ratio(self, data) -> float:
+        """Extract L/S ratio. Note: v3 /futures/globalLongShortAccountRatio is DEAD.
+        Falls back to 1.0 — the report uses coins-markets ls4h via _build_quant_package."""
         if data and hasattr(data, 'success') and data.success and data.data:
-            if isinstance(data.data, list) and len(data.data) > 0:
-                return data.data[-1].get("longShortRatio", 1.0)
+            try:
+                if isinstance(data.data, list) and len(data.data) > 0:
+                    return float(data.data[-1].get("longShortRatio", 1.0))
+            except (ValueError, TypeError):
+                pass
         return 1.0
 
     def _extract_max_pain(self, data) -> float:
         if data and hasattr(data, 'success') and data.success and data.data:
-            if isinstance(data.data, list) and len(data.data) > 0:
-                return data.data[0].get("maxPain", 0)
-            elif isinstance(data.data, dict):
-                return data.data.get("maxPain", 0)
+            try:
+                if isinstance(data.data, list) and len(data.data) > 0:
+                    val = data.data[0].get("maxPain", 0)
+                    return float(val) if val else 0
+                elif isinstance(data.data, dict):
+                    val = data.data.get("maxPain", 0)
+                    return float(val) if val else 0
+            except (ValueError, TypeError):
+                return 0
         return 0
 
     def _extract_whale_analysis(self, data, symbol: str) -> Dict:
