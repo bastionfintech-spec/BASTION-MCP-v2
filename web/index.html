@@ -168,18 +168,18 @@
                 An AI agent that watches your positions 24/7 and tells you exactly when to exit, hold, or take profit.
               </p>
 
-              <div class="flex flex-col gap-3 mb-8 sys-reveal sys-rise sys-delay-300">
+              <div class="hidden md:flex flex-col gap-3 mb-8 sys-reveal sys-rise sys-delay-300">
                 <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Never get liquidated while you sleep again</span></div>
                 <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Know what whales are doing before the price moves</span></div>
                 <div class="flex items-center gap-3"><span class="w-1.5 h-1.5 bg-red-600"></span><span class="text-xs font-mono text-zinc-300 uppercase tracking-wide">Ask it anything — it talks like a friend, not a chart</span></div>
               </div>
 
-              <div class="flex flex-col sm:flex-row gap-4 mb-6 sys-reveal sys-rise sys-delay-400">
+              <div class="flex flex-col sm:flex-row gap-4 mt-2 md:mt-0 mb-6 sys-reveal sys-rise sys-delay-400">
                 <a href="/lite" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] font-semibold">Talk to Bastion<iconify-icon icon="solar:arrow-right-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon></a>
                 <a href="#how-it-works" class="group bg-transparent border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-xs font-mono uppercase tracking-widest px-8 py-4 transition-all flex items-center justify-center gap-3 font-medium">See How It Works<iconify-icon icon="solar:arrow-down-linear" width="16"></iconify-icon></a>
               </div>
 
-              <div class="flex items-center gap-3 mt-2 sys-reveal sys-rise sys-delay-500">
+              <div class="hidden md:flex items-center gap-3 mt-2 sys-reveal sys-rise sys-delay-500">
                 <div class="flex items-center gap-2 bg-zinc-900/40 border border-zinc-800/60 rounded px-3 py-1.5">
                   <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-50"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span></span>
                   <span class="text-[10px] font-mono text-zinc-400"><span class="text-white font-bold" id="stat-positions">—</span> positions analyzed</span>
@@ -194,8 +194,8 @@
                 </div>
               </div>
 
-              <!-- Mobile Hero Card — visible only on mobile -->
-              <div class="lg:hidden mt-8 sys-reveal sys-rise sys-delay-500">
+              <!-- Mobile Hero Card — hidden (desktop has 3-card stack instead) -->
+              <div class="hidden sys-reveal sys-rise sys-delay-500">
                 <div class="bg-[#080808] border border-zinc-800 border-l-2 border-l-red-600 overflow-hidden">
                   <div class="p-3 flex items-center justify-between bg-zinc-900/40 border-b border-zinc-800">
                     <div class="flex items-center gap-2">
