@@ -334,6 +334,80 @@ class HybridStorage(ReportStorage):
 
         return fs_ok
 
+    def list_reports(
+        self,
+        report_type: Optional[ReportType] = None,
+        limit: int = 20,
+        offset: int = 0,
+        since: Optional[datetime] = None,
+        bias: Optional[str] = None,
+    ) -> List[Report]:
+        """List reports — filesystem first, fall back to Supabase if empty"""
+        reports = super().list_reports(
+            report_type=report_type, limit=limit, offset=offset,
+            since=since, bias=bias
+        )
+
+        # If filesystem returned nothing, try Supabase
+        if not reports and self.supabase_available:
+            try:
+                reports = self._supabase.list_reports(
+                    report_type=report_type, limit=limit, offset=offset
+                )
+                logger.info(f"[HybridStorage] Supabase fallback returned {len(reports)} reports")
+            except Exception as e:
+                logger.warning(f"[HybridStorage] Supabase list_reports failed: {e}")
+
+        return reports
+
+    def get_latest_by_type(self) -> Dict[str, Report]:
+        """Get latest report per type — filesystem first, fall back to Supabase"""
+        latest = super().get_latest_by_type()
+
+        # Check if any types are missing — fill from Supabase
+        if self.supabase_available:
+            missing = [k for k, v in latest.items() if v is None]
+            if missing:
+                try:
+                    sb_latest = self._supabase.get_latest_by_type()
+                    for key in missing:
+                        if sb_latest.get(key):
+                            latest[key] = sb_latest[key]
+                            logger.info(f"[HybridStorage] Supabase filled latest for {key}")
+                except Exception as e:
+                    logger.warning(f"[HybridStorage] Supabase get_latest_by_type failed: {e}")
+
+        return latest
+
+    def get_reports_for_research_terminal(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get reports for Research Terminal UI — filesystem first, Supabase fallback"""
+        results = super().get_reports_for_research_terminal(limit=limit)
+
+        if not results and self.supabase_available:
+            try:
+                results = self._supabase.get_reports_for_research_terminal(limit=limit)
+                logger.info(f"[HybridStorage] Supabase fallback returned {len(results)} research reports")
+            except Exception as e:
+                logger.warning(f"[HybridStorage] Supabase get_reports_for_research_terminal failed: {e}")
+
+        return results
+
+    def count_reports(
+        self,
+        report_type: Optional[ReportType] = None,
+        since: Optional[datetime] = None,
+    ) -> int:
+        """Count reports — filesystem first, Supabase fallback"""
+        count = super().count_reports(report_type=report_type, since=since)
+
+        if count == 0 and self.supabase_available:
+            try:
+                count = self._supabase.count_reports(report_type=report_type)
+            except Exception:
+                pass
+
+        return count
+
 
 # Global instances
 _storage: Optional[ReportStorage] = None

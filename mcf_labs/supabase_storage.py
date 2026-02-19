@@ -201,30 +201,31 @@ class SupabaseStorage:
             logger.error(f"[Supabase] Failed to get research terminal reports: {e}")
             return []
     
-    def get_latest_by_type(self) -> Dict[str, Optional[Dict]]:
-        """Get most recent report of each type"""
+    def get_latest_by_type(self) -> Dict[str, Optional[Report]]:
+        """Get most recent report of each type as Report objects"""
         if not self.is_available:
             return {}
-        
+
         latest = {}
         for report_type in ReportType:
             try:
                 result = self.client.table(self.table_name)\
-                    .select("id, type, title, summary, bias, confidence, generated_at")\
+                    .select("full_content")\
                     .eq("type", report_type.value)\
                     .order("generated_at", desc=True)\
                     .limit(1)\
                     .execute()
-                
+
                 if result.data:
-                    latest[report_type.value] = result.data[0]
+                    data = json.loads(result.data[0]["full_content"])
+                    latest[report_type.value] = Report.from_dict(data)
                 else:
                     latest[report_type.value] = None
-                    
+
             except Exception as e:
                 logger.error(f"[Supabase] Failed to get latest {report_type.value}: {e}")
                 latest[report_type.value] = None
-        
+
         return latest
     
     def count_reports(self, report_type: Optional[ReportType] = None) -> int:

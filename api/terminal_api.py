@@ -8271,25 +8271,10 @@ async def run_monte_carlo(data: dict = None):
 
 
 @app.get("/api/mcf-reports")
-async def get_mcf_reports():
-    """Get latest MCF Labs institutional reports."""
-    # Placeholder - would connect to real report system
-    return {
-        "success": True,
-        "latest": {
-            "title": "BTC Accumulation Phase Confirmed: Smart Money Loading",
-            "summary": "On-chain metrics show significant whale accumulation over past 72h. Exchange reserves at 3-year lows. Funding remains neutral suggesting room for upside.",
-            "sentiment": "BULLISH",
-            "confidence": "HIGH",
-            "timestamp": "2 min ago"
-        },
-        "feed": [
-            {"title": "ETH/BTC Ratio Analysis: Altcoin Season Incoming?", "sentiment": "NEUTRAL", "time": "1h"},
-            {"title": "Derivatives Deep Dive: OI Surge Signals Volatility", "sentiment": "CAUTION", "time": "3h"},
-            {"title": "Macro Weekly: Fed Pivot Implications for Crypto", "sentiment": "BULLISH", "time": "6h"},
-            {"title": "Liquidation Map Analysis: Key Levels to Watch", "sentiment": "RISK ALERT", "time": "12h"}
-        ]
-    }
+async def get_mcf_reports_legacy():
+    """Legacy endpoint — redirects to /api/mcf/reports for real report data."""
+    from starlette.responses import RedirectResponse
+    return RedirectResponse(url="/api/mcf/reports?limit=20", status_code=307)
 
 
 # =============================================================================
