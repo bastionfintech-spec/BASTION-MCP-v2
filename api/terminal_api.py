@@ -565,6 +565,46 @@ async def serve_monitor():
     return HTMLResponse("<h1>Monitor page not found</h1>")
 
 
+# ═══ World Monitor API Proxy (CORS bypass) ═══
+# The World Monitor API only allows Origin: worldmonitor.app
+# so we proxy requests server-side to avoid browser CORS blocks.
+_wm_client = None
+
+def _get_wm_client():
+    global _wm_client
+    if _wm_client is None:
+        _wm_client = httpx.AsyncClient(
+            base_url="https://finance.worldmonitor.app",
+            timeout=20.0,
+            headers={"User-Agent": "BASTION-Monitor/1.0"}
+        )
+    return _wm_client
+
+@app.get("/wm-proxy/{path:path}")
+async def proxy_world_monitor(path: str, request: Request):
+    """Proxy requests to finance.worldmonitor.app to bypass CORS."""
+    client = _get_wm_client()
+    query = str(request.query_params)
+    target = f"/{path}"
+    if query:
+        target += f"?{query}"
+    try:
+        resp = await client.get(target)
+        content_type = resp.headers.get("content-type", "application/json")
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=content_type,
+        )
+    except Exception as e:
+        logger.error(f"Monitor proxy error: {e}")
+        return Response(
+            content=json.dumps({"error": str(e)}),
+            status_code=502,
+            media_type="application/json",
+        )
+
+
 @app.get("/account", response_class=HTMLResponse)
 async def serve_account():
     """Serve the Account Center page."""
