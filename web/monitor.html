@@ -1383,8 +1383,12 @@ async function loadTicker() {
     </span><span class="text-[#333]">|</span>`;
   }
 
-  const tickerHTML = items.map(renderTickerItem).join('');
-  strip.innerHTML = tickerHTML + tickerHTML; // Duplicate for seamless loop
+  const singleHTML = items.map(renderTickerItem).join('');
+  // Each item is ~140px wide. Repeat items so one "set" is wider than viewport
+  const setsNeeded = Math.max(2, Math.ceil(window.innerWidth / (items.length * 140)) + 1);
+  const oneHalf = singleHTML.repeat(setsNeeded);
+  // Two identical halves — animation translates -50% for seamless loop
+  strip.innerHTML = oneHalf + oneHalf;
 }
 
 // ═══ MAPLIBRE GLOBE (full-width top section) ═══
