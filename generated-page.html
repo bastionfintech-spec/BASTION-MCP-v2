@@ -295,7 +295,7 @@
       .splash-bar { height: 2px; background: #dc2626; animation: loadingBar 1.5s ease-out forwards; border-radius: 1px; }
     </style>
   </head>
-  <body class="text-zinc-400 min-h-screen flex flex-col selection:bg-crimson-600 selection:text-white bg-[#050505] overflow-x-auto font-sans">
+  <body class="text-zinc-400 h-screen flex flex-col selection:bg-crimson-600 selection:text-white bg-[#050505] overflow-x-auto overflow-y-hidden font-sans">
     <!-- Loading Splash -->
     <div id="splash" class="splash-screen">
       <div class="splash-icon flex items-center gap-3 mb-6">
@@ -323,7 +323,7 @@
 
     <!-- Header -->
 
-    <main class="flex-1 flex flex-col min-h-screen font-sans z-10 relative overflow-x-auto" style="min-width: 2200px;">
+    <main class="flex-1 flex flex-col h-screen font-sans z-10 relative overflow-x-auto overflow-y-hidden" style="min-width: 2200px;">
       <!-- TERMINAL CONTAINER - FULL SCREEN ULTRAWIDE -->
       <div class="w-full h-full bg-[#0A0A0A] border-t border-zinc-800 relative overflow-x-auto flex-1 flex flex-col" style="min-width: 1800px;">
         <!-- Scanline overlay specific to terminal -->
@@ -4583,6 +4583,85 @@ Esc    - Close Dialogs
       }
       
       // =================================================================
+      // MCF LABS REPORTS (live from research API)
+      // =================================================================
+      async function fetchMCFReports() {
+        try {
+          const res = await fetch(`${API_BASE}/api/mcf/reports?limit=10`);
+          const data = await res.json();
+          if (data.success && data.reports && data.reports.length > 0) {
+            renderMCFReports(data.reports);
+            console.log('[MCF] Loaded', data.reports.length, 'reports');
+          }
+        } catch (e) {
+          console.error('[MCF] Fetch error:', e);
+        }
+      }
+
+      function renderMCFReports(reports) {
+        const latest = reports[0];
+
+        // Render latest report
+        const titleEl = document.querySelector('[data-mcf="latest-title"]');
+        if (titleEl) titleEl.textContent = latest.title || 'No title';
+
+        const summaryEl = document.querySelector('[data-mcf="latest-summary"]');
+        if (summaryEl) summaryEl.textContent = latest.summary || '';
+
+        // Update latest report badges
+        const badgeContainer = titleEl?.closest('.p-3')?.querySelector('.flex.gap-2');
+        if (badgeContainer) {
+          const biasColor = latest.bias === 'BULLISH' ? 'green' : latest.bias === 'BEARISH' ? 'red' : 'amber';
+          const confLabel = latest.confidence || 'MEDIUM';
+          badgeContainer.innerHTML = `
+            <span class="text-[7px] bg-${biasColor}-900/50 text-${biasColor}-400 px-1.5 py-0.5 rounded border border-${biasColor}-800/50">${latest.bias || 'NEUTRAL'}</span>
+            <span class="text-[7px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded">${confLabel} CONFIDENCE</span>
+          `;
+        }
+
+        // Update latest report time
+        const timeEl = titleEl?.closest('.p-3')?.querySelector('.text-zinc-500');
+        if (timeEl && latest.generated_at) {
+          const ago = timeAgoShort(latest.generated_at);
+          timeEl.textContent = ago;
+        }
+
+        // Render report feed (skip first — it's the "latest")
+        const feedEl = document.querySelector('[data-mcf="feed"]');
+        if (feedEl) {
+          feedEl.innerHTML = reports.slice(1, 8).map(r => {
+            const biasColor = r.bias === 'BULLISH' ? 'green' : r.bias === 'BEARISH' ? 'red' : 'amber';
+            const biasLabel = r.bias || 'NEUTRAL';
+            const ago = timeAgoShort(r.generated_at);
+            return `<div class="p-2 hover:bg-zinc-900/50 cursor-pointer transition-colors" onclick="window.open('/research','_blank')">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-[9px] text-white font-bold leading-tight flex-1">${escapeHtml(r.title || '')}</span>
+                <span class="text-[7px] text-zinc-600 ml-2 shrink-0">${ago}</span>
+              </div>
+              <div class="flex gap-1">
+                <span class="text-[6px] bg-${biasColor}-900/50 text-${biasColor}-400 px-1 py-0.5 rounded">${biasLabel}</span>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      function timeAgoShort(dateStr) {
+        if (!dateStr) return '';
+        const diff = Date.now() - new Date(dateStr).getTime();
+        if (diff < 60000) return 'just now';
+        if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
+        return Math.floor(diff / 86400000) + 'd';
+      }
+
+      function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      // =================================================================
       // LIVE NEWS FEED
       // =================================================================
       async function fetchLiveNews() {
@@ -5194,6 +5273,8 @@ Esc    - Close Dialogs
         fetchSession();
         fetchMacro();
         fetchKelly();
+        // MCF Labs reports (live from research API)
+        fetchMCFReports();
         // Monte Carlo now requires position selection - no auto-run
 
         // === PRICE === Every 500ms (LIVE trading - ultra fast)
@@ -5275,6 +5356,9 @@ Esc    - Close Dialogs
         
         // === LIVE NEWS === Every 60 seconds (breaking news)
         setInterval(fetchLiveNews, 60000);
+
+        // === MCF REPORTS === Every 2 minutes (research reports)
+        setInterval(fetchMCFReports, 120000);
 
         // Update timestamp every second
         setInterval(() => {
