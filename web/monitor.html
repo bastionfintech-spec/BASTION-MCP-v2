@@ -505,7 +505,29 @@
         </div>
       </div>
 
-      <!-- Globe is now full-width at top, outside the grid -->
+      <!-- Panel: Live News Streams -->
+      <div id="panel-livenews" class="monitor-panel priority" data-panel="live-news-streams" style="order:19; grid-row: span 2;">
+        <div class="panel-header">
+          <span class="panel-title"><iconify-icon icon="solar:tv-bold" class="text-[#ff4444] text-xs"></iconify-icon> Live News</span>
+          <span class="status-live pulse-glow">LIVE</span>
+        </div>
+        <div class="panel-body p-0" id="livenews-body" style="padding:0;">
+          <div class="flex flex-wrap gap-1 p-2 border-b border-[#2a2a2a]" id="livenews-tabs"></div>
+          <div id="livenews-player" style="width:100%; aspect-ratio:16/9; background:#000;"></div>
+        </div>
+      </div>
+
+      <!-- Panel: Live Webcams -->
+      <div id="panel-webcams" class="monitor-panel" data-panel="webcams" style="order:20; grid-row: span 2;">
+        <div class="panel-header">
+          <span class="panel-title"><iconify-icon icon="solar:videocamera-bold" class="text-[#888] text-xs"></iconify-icon> Live Webcams</span>
+          <span class="status-live">LIVE</span>
+        </div>
+        <div class="panel-body p-0" id="webcams-body" style="padding:0;">
+          <div class="flex flex-wrap gap-1 p-2 border-b border-[#2a2a2a]" id="webcams-tabs"></div>
+          <div id="webcams-player" style="width:100%; aspect-ratio:16/9; background:#000;"></div>
+        </div>
+      </div>
 
     </div>
   </main>
@@ -542,7 +564,8 @@ const DEFAULT_PANELS = {
   'macro-signals': true, 'economic': true, 'etf-flows': true, 'stablecoins': true,
   'live-news': true, 'polymarket': true, 'forex': true, 'bonds': true,
   'centralbanks': true, 'crypto-news': true, 'commodities-news': true,
-  'ipo': true, 'economic-news': true, 'markets-news': true, 'map': true
+  'ipo': true, 'economic-news': true, 'markets-news': true, 'map': true,
+  'live-news-streams': true, 'webcams': true
 };
 
 let panelState = { ...DEFAULT_PANELS };
@@ -683,7 +706,8 @@ function renderSettingsList() {
     'etf-flows': 'BTC ETF Tracker', 'stablecoins': 'Stablecoins', 'live-news': 'Market Headlines',
     'polymarket': 'Predictions', 'forex': 'Forex & Currencies', 'bonds': 'Fixed Income',
     'centralbanks': 'Central Bank Watch', 'crypto-news': 'Crypto News', 'commodities-news': 'Commodities News',
-    'ipo': 'IPOs, Earnings & M&A', 'economic-news': 'Economic News', 'markets-news': 'Markets News', 'map': 'Global Markets Map'
+    'ipo': 'IPOs, Earnings & M&A', 'economic-news': 'Economic News', 'markets-news': 'Markets News', 'map': 'Global Markets Map',
+    'live-news-streams': 'Live News Streams', 'webcams': 'Live Webcams'
   };
   const container = document.getElementById('settings-list');
   container.innerHTML = Object.entries(panelNames).map(([key, name]) => `
@@ -707,27 +731,44 @@ async function fetchJSON(url, timeoutMs = 15000) {
   } finally { clearTimeout(timer); }
 }
 
-// Helper: fetch RSS feeds and parse
+// Helper: fetch RSS feeds and parse XML
 async function fetchRSS(feeds) {
   const results = [];
   const promises = feeds.map(async feed => {
     try {
       const url = `${API}${feed.url}`;
-      const data = await fetchJSON(url);
-      if (data && data.items) {
-        data.items.slice(0, 6).forEach(item => {
-          results.push({
-            source: feed.name,
-            title: item.title || '',
-            link: item.link || '#',
-            pubDate: item.pubDate || item.isoDate || '',
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 20000);
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!res.ok) return;
+      const text = await res.text();
+      // Try JSON first (some proxies return parsed JSON)
+      try {
+        const json = JSON.parse(text);
+        if (json && json.items) {
+          json.items.slice(0, 6).forEach(item => {
+            results.push({ source: feed.name, title: item.title || '', link: item.link || '#', pubDate: item.pubDate || item.isoDate || '' });
           });
-        });
-      }
+          return;
+        }
+      } catch(e) { /* Not JSON, parse as XML */ }
+      // Parse XML RSS/Atom
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/xml');
+      // RSS format
+      let items = doc.querySelectorAll('item');
+      if (items.length === 0) items = doc.querySelectorAll('entry'); // Atom format
+      items.forEach((item, i) => {
+        if (i >= 6) return;
+        const title = item.querySelector('title')?.textContent || '';
+        const link = item.querySelector('link')?.textContent || item.querySelector('link')?.getAttribute('href') || '#';
+        const pubDate = item.querySelector('pubDate')?.textContent || item.querySelector('published')?.textContent || item.querySelector('updated')?.textContent || '';
+        if (title) results.push({ source: feed.name, title, link, pubDate });
+      });
     } catch(e) { /* skip failed feed */ }
   });
   await Promise.allSettled(promises);
-  // Sort by date desc
   results.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
   return results.slice(0, 30);
 }
@@ -806,20 +847,22 @@ async function loadMarkets() {
       { symbol: '^IXIC', name: 'NASDAQ', display: 'NDX' },
       { symbol: '^VIX', name: 'VIX', display: 'VIX' },
     ];
-    const stocks = ['AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA'];
+    const stocks = [
+      { symbol: 'AAPL', name: 'Apple' }, { symbol: 'MSFT', name: 'Microsoft' },
+      { symbol: 'NVDA', name: 'NVIDIA' }, { symbol: 'GOOGL', name: 'Alphabet' },
+      { symbol: 'AMZN', name: 'Amazon' }, { symbol: 'META', name: 'Meta' },
+      { symbol: 'TSLA', name: 'Tesla' },
+    ];
 
-    // Fetch all indices
+    // Fetch all indices via Yahoo Finance
     const indexResults = await Promise.allSettled(
       indices.map(idx => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(idx.symbol)}`))
     );
 
-    // Fetch stocks via finnhub
-    let stockData = [];
-    try {
-      const stockRes = await fetchJSON(`${API}/api/finnhub?symbols=${stocks.join(',')}`);
-      if (stockRes && Array.isArray(stockRes)) stockData = stockRes;
-      else if (stockRes && stockRes.data) stockData = stockRes.data;
-    } catch(e) {}
+    // Fetch stocks via Yahoo Finance (Finnhub rate-limits)
+    const stockResults = await Promise.allSettled(
+      stocks.map(s => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(s.symbol)}`))
+    );
 
     let html = '';
 
@@ -846,23 +889,27 @@ async function loadMarkets() {
     });
 
     // Divider
-    if (html && stockData.length) html += '<div class="border-t border-[#2a2a2a] my-1"></div>';
+    if (html && stockResults.length) html += '<div class="border-t border-[#2a2a2a] my-1"></div>';
 
     // Render stocks
-    stockData.forEach(s => {
-      const price = s.regularMarketPrice ?? s.price ?? s.c ?? null;
-      const change = s.regularMarketChangePercent ?? s.changePercent ?? s.dp ?? null;
-      const spk = s.sparkline || [];
-      html += `<div class="market-row">
-        <div class="flex items-center gap-2">
-          <span class="text-[11px] font-mono font-semibold text-[#e8e8e8]">${escapeHtml(s.symbol || s.ticker || '')}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          ${sparkline(spk, change)}
-          <span class="text-[11px] font-mono text-[#ccc]">${formatPrice(price)}</span>
-          <span class="text-[10px] font-mono ${changeClass(change)} min-w-[52px] text-right">${formatChange(change)}</span>
-        </div>
-      </div>`;
+    stocks.forEach((s, i) => {
+      const res = stockResults[i];
+      if (res.status === 'fulfilled' && res.value) {
+        const d = res.value;
+        const price = d.regularMarketPrice ?? d.price ?? null;
+        const change = d.regularMarketChangePercent ?? d.changePercent ?? null;
+        const spk = d.sparkline || [];
+        html += `<div class="market-row">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-semibold text-[#e8e8e8]">${escapeHtml(s.symbol)}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            ${sparkline(spk, change)}
+            <span class="text-[11px] text-[#ccc]">${formatPrice(price)}</span>
+            <span class="text-[10px] ${changeClass(change)} min-w-[52px] text-right">${formatChange(change)}</span>
+          </div>
+        </div>`;
+      }
     });
 
     el.innerHTML = html || '<div class="text-center text-[#888] text-xs py-4">No market data</div>';
@@ -1362,13 +1409,13 @@ async function loadGlobe() {
     // Add markers
     exchanges.forEach(ex => {
       const size = ex.tier === 'mega' ? 10 : ex.tier === 'major' ? 7 : 5;
-      const color = ex.tier === 'mega' ? '#dc2626' : ex.tier === 'major' ? '#f97316' : '#eab308';
+      const color = ex.tier === 'mega' ? '#ff4444' : ex.tier === 'major' ? '#ff8800' : '#ffaa00';
       const markerEl = document.createElement('div');
       markerEl.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${color};border:1px solid rgba(255,255,255,0.3);cursor:pointer;transition:transform 0.2s;`;
       markerEl.title = ex.name;
       markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
       markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
-      new maplibregl.Marker({ element: markerEl }).setLngLat([ex.lon, ex.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#0a0a0a;padding:4px 8px;border:1px solid #27272a;border-radius:2px;"><strong>${ex.name}</strong><br><span style="color:#a1a1aa;font-size:9px;">Stock Exchange</span></div>`)).addTo(mapInstance);
+      new maplibregl.Marker({ element: markerEl }).setLngLat([ex.lon, ex.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #2a2a2a;border-radius:2px;"><strong>${ex.name}</strong><br><span style="color:#888;font-size:9px;">Stock Exchange</span></div>`)).addTo(mapInstance);
     });
 
     centralBanks.forEach(cb => {
@@ -1377,7 +1424,7 @@ async function loadGlobe() {
       markerEl.title = cb.name;
       markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
       markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
-      new maplibregl.Marker({ element: markerEl }).setLngLat([cb.lon, cb.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#0a0a0a;padding:4px 8px;border:1px solid #27272a;border-radius:2px;"><strong>${cb.name}</strong><br><span style="color:#a1a1aa;font-size:9px;">Central Bank</span></div>`)).addTo(mapInstance);
+      new maplibregl.Marker({ element: markerEl }).setLngLat([cb.lon, cb.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #2a2a2a;border-radius:2px;"><strong>${cb.name}</strong><br><span style="color:#888;font-size:9px;">Central Bank</span></div>`)).addTo(mapInstance);
     });
 
     financialCenters.forEach(fc => {
@@ -1386,8 +1433,183 @@ async function loadGlobe() {
       markerEl.title = fc.name;
       markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
       markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
-      new maplibregl.Marker({ element: markerEl }).setLngLat([fc.lon, fc.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#0a0a0a;padding:4px 8px;border:1px solid #27272a;border-radius:2px;"><strong>${fc.name}</strong><br><span style="color:#a1a1aa;font-size:9px;">Financial Center</span></div>`)).addTo(mapInstance);
+      new maplibregl.Marker({ element: markerEl }).setLngLat([fc.lon, fc.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #2a2a2a;"><strong>${fc.name}</strong><br><span style="color:#888;font-size:9px;">Financial Center</span></div>`)).addTo(mapInstance);
     });
+
+    // ─── Undersea Cables (GeoJSON lines) ───
+    const cables = [
+      { name:'MAREA', pts:[[-73,39],[-30,42],[-9,37]], cap:'200T' },
+      { name:'Grace Hopper', pts:[[-74,40],[-30,44],[-6,53],[-9,37]], cap:'340T' },
+      { name:'Havfrue', pts:[[-74,40.5],[-30,55],[5,58],[12,56]], cap:'108T' },
+      { name:'FASTER', pts:[[-122,37],[-155,22],[139,35]], cap:'60T' },
+      { name:'Southern Cross', pts:[[151,-34],[-175,-40],[-122,34]], cap:'72T' },
+      { name:'Curie', pts:[[-122.4,37.8],[-90,10],[-77,-12]], cap:'72T' },
+      { name:'SEA-ME-WE 6', pts:[[103.8,1.3],[80,6],[55,24],[43,12],[32.5,30],[12.5,42],[-9,38]], cap:'100T' },
+      { name:'FLAG', pts:[[0,51],[-6,36],[32.5,30],[55,24],[73,15],[103.8,1.3],[139.7,35.7]], cap:'10T' },
+      { name:'2Africa', pts:[[0,51],[-9,38],[-17,15],[4,6],[18,-34],[55,-20],[55,24],[32.5,30]], cap:'180T' },
+      { name:'WACS', pts:[[18,-34],[12,-6],[4,6],[-17,15],[-6,36],[0,51]], cap:'14.5T' },
+      { name:'EASSy', pts:[[18,-34],[32,-26],[40,-15],[44,-12],[50,-20],[55,24]], cap:'10T' },
+      { name:'SAm-1', pts:[[-43,-23],[-55,-35],[-70,-33],[-77,-12]], cap:'2T' },
+      { name:'EllaLink', pts:[[-9,38],[-25,20],[-35,-5]], cap:'72T' },
+      { name:'APG', pts:[[139.7,35.7],[121.5,25],[114,22.3],[103.8,1.3]], cap:'54T' },
+      { name:'Indigo', pts:[[103.8,1.3],[115,-8],[151,-34]], cap:'36T' },
+      { name:'SJC', pts:[[103.8,1.3],[114,22.3],[139.7,35.7],[-122,34]], cap:'28T' },
+      { name:'FARICE', pts:[[-22,64],[-7,62],[-6,53]], cap:'5T' },
+      { name:'Falcon', pts:[[55,24],[56,25],[51.5,26],[48,29]], cap:'5T' },
+    ];
+    const cableGeoJSON = { type:'FeatureCollection', features: cables.map(c => ({
+      type:'Feature', properties:{ name:c.name, cap:c.cap },
+      geometry:{ type:'LineString', coordinates:c.pts }
+    }))};
+    mapInstance.addSource('cables', { type:'geojson', data:cableGeoJSON });
+    mapInstance.addLayer({ id:'cables-line', type:'line', source:'cables',
+      paint:{ 'line-color':'#3b82f6', 'line-width':1.5, 'line-opacity':0.5, 'line-dasharray':[4,2] }
+    });
+
+    // ─── Oil & Gas Pipelines ───
+    const pipelines = [
+      { name:'Keystone', pts:[[-104.05,50.95],[-97,41.2],[-95,29.8]], type:'oil' },
+      { name:'Colonial', pts:[[-87.5,30.4],[-84.4,33.75],[-77,38.9],[-74,40.7]], type:'oil' },
+      { name:'Druzhba', pts:[[68,60],[50,54],[37,52],[24,52],[14,50]], type:'oil' },
+      { name:'BTC', pts:[[50,40],[44,41],[36,37]], type:'oil' },
+      { name:'East-West', pts:[[50,26],[42,24],[39,24]], type:'oil' },
+      { name:'ESPO', pts:[[115,48],[125,44],[131.9,43]], type:'oil' },
+      { name:'Trans Mountain', pts:[[-114.1,51],[-121,49.3],[-123,49.3]], type:'oil' },
+      { name:'TurkStream', pts:[[41.6,44.6],[31,42],[29,41]], type:'gas' },
+      { name:'Yamal-Europe', pts:[[73,61],[60,55],[40,52],[24,52],[14,52]], type:'gas' },
+      { name:'TAP', pts:[[20,40],[17,41],[14,42]], type:'gas' },
+      { name:'TANAP', pts:[[43,40],[36,39],[29,41]], type:'gas' },
+      { name:'Langeled', pts:[[2,61],[1,58],[1,53]], type:'gas' },
+      { name:'Dolphin', pts:[[52,25],[54,24],[55,25]], type:'gas' },
+      { name:'Power of Siberia', pts:[[115,48],[128,50],[135,48]], type:'gas' },
+      { name:'TransMed', pts:[[3,37],[10,37],[10,42]], type:'gas' },
+    ];
+    const pipeGeoJSON = { type:'FeatureCollection', features: pipelines.map(p => ({
+      type:'Feature', properties:{ name:p.name, type:p.type },
+      geometry:{ type:'LineString', coordinates:p.pts }
+    }))};
+    mapInstance.addSource('pipelines', { type:'geojson', data:pipeGeoJSON });
+    mapInstance.addLayer({ id:'pipes-oil', type:'line', source:'pipelines',
+      filter:['==',['get','type'],'oil'],
+      paint:{ 'line-color':'#ff8800', 'line-width':1.5, 'line-opacity':0.4 }
+    });
+    mapInstance.addLayer({ id:'pipes-gas', type:'line', source:'pipelines',
+      filter:['==',['get','type'],'gas'],
+      paint:{ 'line-color':'#ffaa00', 'line-width':1.2, 'line-opacity':0.35 }
+    });
+
+    // ─── Strategic Waterways ───
+    const waterways = [
+      { name:'TAIWAN STRAIT', lat:24.0, lon:119.5 }, { name:'MALACCA STRAIT', lat:2.5, lon:101.5 },
+      { name:'STRAIT OF HORMUZ', lat:26.5, lon:56.5 }, { name:'BOSPHORUS', lat:41.1, lon:29.0 },
+      { name:'SUEZ CANAL', lat:30.5, lon:32.3 }, { name:'PANAMA CANAL', lat:9.1, lon:-79.7 },
+      { name:'GIBRALTAR', lat:35.9, lon:-5.6 }, { name:'BAB EL-MANDEB', lat:12.5, lon:43.3 },
+      { name:'DARDANELLES', lat:40.2, lon:26.4 },
+    ];
+    waterways.forEach(w => {
+      const el = document.createElement('div');
+      el.style.cssText = 'width:10px;height:10px;border-radius:50%;background:rgba(59,130,246,0.6);border:2px solid #3b82f6;cursor:pointer;transition:transform 0.2s;';
+      el.title = w.name;
+      el.onmouseenter = () => el.style.transform = 'scale(1.5)';
+      el.onmouseleave = () => el.style.transform = 'scale(1)';
+      new maplibregl.Marker({ element:el }).setLngLat([w.lon,w.lat]).setPopup(
+        new maplibregl.Popup({ offset:10, closeButton:false }).setHTML(
+          `<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #3b82f6;"><strong>${w.name}</strong><br><span style="color:#3b82f6;font-size:9px;">Strategic Waterway</span></div>`
+        )
+      ).addTo(mapInstance);
+    });
+
+    // Cable hover popup
+    mapInstance.on('mouseenter', 'cables-line', (e) => {
+      mapInstance.getCanvas().style.cursor = 'pointer';
+      const props = e.features[0].properties;
+      new maplibregl.Popup({ closeButton:false, closeOnClick:true, offset:8 })
+        .setLngLat(e.lngLat)
+        .setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #3b82f6;"><strong>${props.name}</strong><br><span style="color:#3b82f6;font-size:9px;">Undersea Cable · ${props.cap}bps</span></div>`)
+        .addTo(mapInstance);
+    });
+    mapInstance.on('mouseleave', 'cables-line', () => { mapInstance.getCanvas().style.cursor = ''; });
+  });
+}
+
+// ═══ LIVE NEWS STREAMS ═══
+const NEWS_CHANNELS = [
+  { id:'bloomberg', name:'Bloomberg', fallback:'iEpJwprxDdk' },
+  { id:'sky', name:'SkyNews', fallback:'YDvsBbKfLPA' },
+  { id:'cnbc', name:'CNBC', fallback:'9NyxcX3rhQs' },
+  { id:'dw', name:'DW News', fallback:'LuKwFajn37U' },
+  { id:'france24', name:'France24', fallback:'Ap-UM1O9RBU' },
+  { id:'euronews', name:'Euronews', fallback:'pykpO5kQJ98' },
+  { id:'aljazeera', name:'AlJazeera', fallback:'gCNeDWCI0vo' },
+  { id:'alarabiya', name:'AlArabiya', fallback:'n7eQejkXbnM' },
+];
+let activeNewsChannel = 'bloomberg';
+
+function initLiveNews() {
+  const tabs = document.getElementById('livenews-tabs');
+  if (!tabs) return;
+  tabs.innerHTML = NEWS_CHANNELS.map(ch => `
+    <button onclick="switchNewsChannel('${ch.id}')" id="news-tab-${ch.id}"
+      class="text-[9px] px-2 py-1 border transition-colors ${ch.id === activeNewsChannel ? 'border-[#44ff88] text-[#44ff88] bg-[#44ff88]/5' : 'border-[#2a2a2a] text-[#888] hover:text-white hover:border-[#444]'}"
+    >${ch.name}</button>
+  `).join('');
+  switchNewsChannel(activeNewsChannel);
+}
+
+function switchNewsChannel(id) {
+  activeNewsChannel = id;
+  const ch = NEWS_CHANNELS.find(c => c.id === id);
+  if (!ch) return;
+  const player = document.getElementById('livenews-player');
+  if (player) {
+    player.innerHTML = `<iframe src="https://www.youtube.com/embed/${ch.fallback}?autoplay=1&mute=1&rel=0" style="width:100%;height:100%;border:0;" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
+  }
+  // Update tabs
+  document.querySelectorAll('[id^="news-tab-"]').forEach(btn => {
+    const isActive = btn.id === `news-tab-${id}`;
+    btn.className = `text-[9px] px-2 py-1 border transition-colors ${isActive ? 'border-[#44ff88] text-[#44ff88] bg-[#44ff88]/5' : 'border-[#2a2a2a] text-[#888] hover:text-white hover:border-[#444]'}`;
+  });
+}
+
+// ═══ LIVE WEBCAMS ═══
+const WEBCAMS = [
+  { id:'jerusalem', name:'Jerusalem', fallback:'UyduhBUpO7Q', region:'MIDEAST' },
+  { id:'tehran', name:'Tehran', fallback:'-zGuR1qVKrU', region:'MIDEAST' },
+  { id:'kyiv', name:'Kyiv', fallback:'-Q7FuPINDjA', region:'EUROPE' },
+  { id:'odessa', name:'Odessa', fallback:'e2gC37ILQmk', region:'EUROPE' },
+  { id:'london', name:'London', fallback:'Lxqcg1qt0XU', region:'EUROPE' },
+  { id:'paris', name:'Paris', fallback:'OzYp4NRZlwQ', region:'EUROPE' },
+  { id:'dc', name:'Washington DC', fallback:'1wV9lLe14aU', region:'AMERICAS' },
+  { id:'nyc', name:'New York', fallback:'4qyZLflp-sI', region:'AMERICAS' },
+  { id:'taipei', name:'Taipei', fallback:'z_fY1pj1VBw', region:'ASIA' },
+  { id:'tokyo', name:'Tokyo', fallback:'4pu9sF5Qssw', region:'ASIA' },
+  { id:'shanghai', name:'Shanghai', fallback:'76EwqI5XZIc', region:'ASIA' },
+  { id:'seoul', name:'Seoul', fallback:'-JhoMGoAfFc', region:'ASIA' },
+];
+let activeWebcam = 'jerusalem';
+
+function initWebcams() {
+  const tabs = document.getElementById('webcams-tabs');
+  if (!tabs) return;
+  tabs.innerHTML = WEBCAMS.map(w => `
+    <button onclick="switchWebcam('${w.id}')" id="cam-tab-${w.id}"
+      class="text-[9px] px-2 py-1 border transition-colors ${w.id === activeWebcam ? 'border-[#44ff88] text-[#44ff88] bg-[#44ff88]/5' : 'border-[#2a2a2a] text-[#888] hover:text-white hover:border-[#444]'}"
+    >${w.name}</button>
+  `).join('');
+  switchWebcam(activeWebcam);
+}
+
+function switchWebcam(id) {
+  activeWebcam = id;
+  const w = WEBCAMS.find(c => c.id === id);
+  if (!w) return;
+  const player = document.getElementById('webcams-player');
+  if (player) {
+    player.innerHTML = `<iframe src="https://www.youtube.com/embed/${w.fallback}?autoplay=1&mute=1&rel=0" style="width:100%;height:100%;border:0;" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
+  }
+  document.querySelectorAll('[id^="cam-tab-"]').forEach(btn => {
+    const isActive = btn.id === `cam-tab-${id}`;
+    btn.className = `text-[9px] px-2 py-1 border transition-colors ${isActive ? 'border-[#44ff88] text-[#44ff88] bg-[#44ff88]/5' : 'border-[#2a2a2a] text-[#888] hover:text-white hover:border-[#444]'}`;
   });
 }
 
@@ -1448,6 +1670,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load globe immediately (top section, visible first)
   loadGlobe();
+
+  // Init live news and webcam panels
+  initLiveNews();
+  initWebcams();
 
   // Load all panels
   await loadAllPanels();
