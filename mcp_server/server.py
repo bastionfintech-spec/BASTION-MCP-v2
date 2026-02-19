@@ -100,7 +100,7 @@ async def bastion_evaluate_risk(
 ) -> str:
     """Evaluate a crypto futures position using BASTION's AI risk intelligence engine.
 
-    This is the core tool — sends a position to the fine-tuned 32B model which analyzes
+    This is the core tool — sends a position to the fine-tuned 72B model which analyzes
     560+ real-time signals (liquidations, whale flows, funding rates, order flow, VPVR,
     market structure) and returns a specific action with reasoning.
 
@@ -173,7 +173,7 @@ async def bastion_chat(
 ) -> str:
     """Ask BASTION's neural AI anything about crypto markets, trading, or risk.
 
-    Powered by the same fine-tuned 32B model used for risk intelligence.
+    Powered by the same fine-tuned 72B model used for risk intelligence.
     Context-aware — knows current market conditions, whale activity, and structure.
 
     Args:
@@ -453,9 +453,8 @@ async def get_model_info() -> str:
     """BASTION AI model details — version, accuracy, training methodology."""
     return json.dumps({
         "version": config.MODEL_VERSION,
-        "base_model": config.MODEL_BASE,
-        "method": "QLoRA (4-bit NF4 quantized base + LoRA rank=32, alpha=64)",
-        "training_examples": config.MODEL_TRAINING_EXAMPLES,
+        "model": config.MODEL_BASE,
+        "parameters": "72 billion",
         "accuracy": {
             "combined": config.MODEL_ACCURACY,
             "btc": "71.7%",
@@ -466,15 +465,14 @@ async def get_model_info() -> str:
             "HOLD", "TP_PARTIAL", "EXIT_FULL", "EXIT_100%",
             "REDUCE_SIZE", "TRAIL_STOP", "MOVE_STOP_TO_BREAKEVEN"
         ],
-        "data_signals_per_evaluation": "560+",
+        "signals_per_evaluation": "560+",
         "data_sources": [
-            "Helsinki VM (33 quant endpoints)",
-            "Coinglass Premium (liquidations, OI, funding, whale positions)",
-            "Whale Alert (on-chain whale tracking, 11 blockchains)",
-            "MCF Structure Service (VPVR, pivots, auto-support, trendlines)"
+            "Quantitative derivatives analytics (33 endpoints)",
+            "Liquidations, open interest, funding, whale positions",
+            "On-chain whale tracking (11 blockchains)",
+            "Market structure service (VPVR, pivots, auto-support, trendlines)"
         ],
         "infrastructure": config.MODEL_GPU,
-        "inference_engine": "vLLM with tensor parallelism=4",
     }, indent=2)
 
 

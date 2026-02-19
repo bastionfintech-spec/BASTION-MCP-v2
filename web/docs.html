@@ -138,6 +138,9 @@
     <span class="text-zinc-700 mx-1">|</span>
     <span class="text-zinc-600">PROMPTS:</span>
     <span class="text-red-500">3</span>
+    <span class="text-zinc-700 mx-1">|</span>
+    <span class="text-zinc-600">REST API:</span>
+    <span class="text-red-500">140+</span>
   </div>
 </div>
 
@@ -178,6 +181,13 @@
       <a href="#resource-symbols" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">bastion://symbols</a>
       <a href="#resource-model" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">bastion://model-info</a>
 
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">REST API</div>
+      <a href="#rest-api" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Overview</a>
+      <a href="#api-market-data" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Market Data</a>
+      <a href="#api-risk-trading" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Risk &amp; Trading</a>
+      <a href="#api-intelligence" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Intelligence</a>
+      <a href="#api-account" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Account &amp; Engine</a>
+
       <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">REFERENCE</div>
       <a href="#architecture" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Architecture</a>
       <a href="#api-keys" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">API Keys</a>
@@ -195,7 +205,7 @@
         <h1 class="text-xl lg:text-2xl font-bold text-white mb-4 tracking-tight">CONNECT YOUR CLAUDE AGENT TO<br><span class="text-red-500">AUTONOMOUS RISK INTELLIGENCE.</span></h1>
         <div class="inst-section mb-6">
           <p class="text-zinc-400 text-[12px] leading-relaxed">
-            BASTION MCP gives any Claude agent access to a fine-tuned 32B parameter AI model that analyzes 560+ real-time market signals &mdash; liquidations, whale flows, funding rates, order flow, VPVR, market structure &mdash; and returns specific trading actions with institutional-grade reasoning.
+            BASTION MCP gives any Claude agent access to a fine-tuned 72 billion parameter AI model that analyzes 560+ real-time market signals &mdash; liquidations, whale flows, funding rates, order flow, VPVR, market structure &mdash; and returns specific trading actions with institutional-grade reasoning.
           </p>
         </div>
         <!-- Stats row -->
@@ -382,7 +392,7 @@ async with sse_client(
           <span class="text-[12px] font-mono text-white font-medium">bastion_evaluate_risk</span>
         </div>
         <div class="p-4">
-          <p class="text-zinc-500 text-[11px] leading-relaxed mb-4">Evaluate a crypto futures position using BASTION's AI risk intelligence engine. Sends a position to the fine-tuned 32B model which analyzes 560+ real-time signals and returns a specific action with reasoning.</p>
+          <p class="text-zinc-500 text-[11px] leading-relaxed mb-4">Evaluate a crypto futures position using BASTION's AI risk intelligence engine. Sends a position to the fine-tuned 72B model which analyzes 560+ real-time signals and returns a specific action with reasoning.</p>
           <div class="text-[8px] font-mono uppercase tracking-widest text-zinc-600 mb-2">PARAMETERS</div>
           <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
             <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Trading pair (BTC, ETH, SOL)</span></div>
@@ -542,8 +552,8 @@ async with sse_client(
             <p class="text-zinc-500 text-[11px] mb-3">System status: model version, GPU health, API latency, services.</p>
             <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">{
   "model_version": "v6",
-  "model_base": "Qwen 32B",
-  "gpu_cluster": "4x RTX 5090 (128GB VRAM)",
+  "model": "BASTION 72B",
+  "gpu_cluster": "4x NVIDIA H200 (564GB VRAM)",
   "api_status": "operational"
 }</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
           </div>
@@ -557,16 +567,123 @@ async with sse_client(
         <div id="resource-model" class="border border-zinc-800 bg-[#080808]">
           <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white">bastion://model-info</span></div>
           <div class="p-4">
-            <p class="text-zinc-500 text-[11px] mb-3">Model details: version, QLoRA methodology, accuracy breakdowns, supported actions, data sources.</p>
+            <p class="text-zinc-500 text-[11px] mb-3">Model details: version, accuracy breakdowns, supported actions, data sources.</p>
             <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">{
   "version": "v6",
-  "method": "QLoRA (4-bit NF4 + LoRA rank=32, alpha=64)",
-  "training_examples": 328,
+  "model": "BASTION 72B",
+  "parameters": "72 billion",
   "accuracy": { "combined": "75.4%", "btc": "71.7%", "eth": "72.7%", "sol": "81.8%" },
-  "infrastructure": "4x RTX 5090 (128GB VRAM), vLLM TP=4"
+  "infrastructure": "4x NVIDIA H200 (564GB VRAM)"
 }</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
           </div>
         </div>
+      </section>
+
+      <!-- ═══════ REST API ═══════ -->
+      <section id="rest-api" class="mb-12">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// REST API</div>
+        <h2 class="text-sm font-bold text-white mb-1 font-mono uppercase tracking-wider">REST API ENDPOINTS</h2>
+        <p class="text-zinc-600 text-[10px] font-mono mb-4">Direct HTTP access to all BASTION services. Base URL: <span class="text-zinc-400">https://bastionfi.tech</span></p>
+        <div class="inst-section mb-6">
+          <p class="text-zinc-500 text-[11px] leading-relaxed">These endpoints power the PULSE dashboard and are available for direct integration. All endpoints return JSON. Authentication required for account-specific operations.</p>
+        </div>
+      </section>
+
+      <!-- REST: Market Data -->
+      <section id="api-market-data" class="mb-10">
+        <h3 class="text-[11px] font-bold text-white mb-3 font-mono uppercase tracking-wider flex items-center gap-2">
+          <span class="text-red-500">&#9632;</span>MARKET DATA
+        </h3>
+        <div class="border border-zinc-800 bg-[#080808] text-[11px] font-mono">
+          <div class="flex px-3 py-2 border-b border-zinc-800 text-[9px] uppercase tracking-widest text-zinc-600">
+            <span class="w-16 shrink-0">Method</span><span class="w-64 shrink-0">Endpoint</span><span class="flex-1">Description</span>
+          </div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/price/{symbol}</span><span class="text-zinc-500 flex-1">Live price + 24h change</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/market/{symbol}</span><span class="text-zinc-500 flex-1">Aggregated market data (CVD, OI, funding, vol)</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/klines/{symbol}</span><span class="text-zinc-500 flex-1">Candlestick / OHLCV data</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/funding</span><span class="text-zinc-500 flex-1">Cross-exchange funding rates</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/oi/{symbol}</span><span class="text-zinc-500 flex-1">Open interest</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/oi-changes</span><span class="text-zinc-500 flex-1">OI changes across exchanges</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/cvd/{symbol}</span><span class="text-zinc-500 flex-1">Cumulative Volume Delta</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/volatility/{symbol}</span><span class="text-zinc-500 flex-1">Volatility metrics + regime</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/fear-greed</span><span class="text-zinc-500 flex-1">Fear &amp; Greed Index</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/heatmap/{symbol}</span><span class="text-zinc-500 flex-1">Liquidation heatmap data</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/taker-ratio/{symbol}</span><span class="text-zinc-500 flex-1">Taker buy/sell ratio</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/mm-magnet/{symbol}</span><span class="text-zinc-500 flex-1">Market maker magnet levels</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/orderflow/{symbol}</span><span class="text-zinc-500 flex-1">Order flow analysis</span></div>
+        </div>
+      </section>
+
+      <!-- REST: Liquidations & Whales -->
+      <section id="api-intelligence" class="mb-10">
+        <h3 class="text-[11px] font-bold text-white mb-3 font-mono uppercase tracking-wider flex items-center gap-2">
+          <span class="text-red-500">&#9632;</span>INTELLIGENCE &amp; ON-CHAIN
+        </h3>
+        <div class="border border-zinc-800 bg-[#080808] text-[11px] font-mono">
+          <div class="flex px-3 py-2 border-b border-zinc-800 text-[9px] uppercase tracking-widest text-zinc-600">
+            <span class="w-16 shrink-0">Method</span><span class="w-64 shrink-0">Endpoint</span><span class="flex-1">Description</span>
+          </div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/liquidations/{symbol}</span><span class="text-zinc-500 flex-1">Liquidation events + clusters</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/liq-exchange/{symbol}</span><span class="text-zinc-500 flex-1">Liquidations by exchange</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/whales</span><span class="text-zinc-500 flex-1">Whale transactions (11 chains)</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/whales/flows/{symbol}</span><span class="text-zinc-500 flex-1">Whale flows for symbol</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/top-traders/{symbol}</span><span class="text-zinc-500 flex-1">Top trader positions</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/exchange-flow/{symbol}</span><span class="text-zinc-500 flex-1">Exchange inflow/outflow</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/onchain</span><span class="text-zinc-500 flex-1">On-chain metrics</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/news</span><span class="text-zinc-500 flex-1">Aggregated crypto news</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/macro-signals</span><span class="text-zinc-500 flex-1">Macro market signals</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/etf-flows</span><span class="text-zinc-500 flex-1">BTC/ETH ETF flow data</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/fred-data?series_id=...</span><span class="text-zinc-500 flex-1">FRED economic data</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/polymarket</span><span class="text-zinc-500 flex-1">Prediction market data</span></div>
+        </div>
+      </section>
+
+      <!-- REST: Risk & Trading -->
+      <section id="api-risk-trading" class="mb-10">
+        <h3 class="text-[11px] font-bold text-white mb-3 font-mono uppercase tracking-wider flex items-center gap-2">
+          <span class="text-red-500">&#9632;</span>RISK &amp; TRADING
+        </h3>
+        <div class="border border-zinc-800 bg-[#080808] text-[11px] font-mono">
+          <div class="flex px-3 py-2 border-b border-zinc-800 text-[9px] uppercase tracking-widest text-zinc-600">
+            <span class="w-16 shrink-0">Method</span><span class="w-64 shrink-0">Endpoint</span><span class="flex-1">Description</span>
+          </div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/risk/evaluate</span><span class="text-zinc-500 flex-1">AI risk evaluation (72B model)</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/risk/evaluate-all</span><span class="text-zinc-500 flex-1">Evaluate all open positions</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/neural/chat</span><span class="text-zinc-500 flex-1">Neural chat — ask anything</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/pre-trade-calculator</span><span class="text-zinc-500 flex-1">Monte Carlo position sizing</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/signals/scan</span><span class="text-zinc-500 flex-1">Scan for trading signals</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/mcf/generate/{type}</span><span class="text-zinc-500 flex-1">Generate MCF research report</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/mcf/reports</span><span class="text-zinc-500 flex-1">List research reports</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/mcf/reports/{id}</span><span class="text-zinc-500 flex-1">Get specific report</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/kelly</span><span class="text-zinc-500 flex-1">Kelly Criterion calculator</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/monte-carlo</span><span class="text-zinc-500 flex-1">Monte Carlo simulation</span></div>
+        </div>
+      </section>
+
+      <!-- REST: Account & Engine -->
+      <section id="api-account" class="mb-10">
+        <h3 class="text-[11px] font-bold text-white mb-3 font-mono uppercase tracking-wider flex items-center gap-2">
+          <span class="text-red-500">&#9632;</span>ACCOUNT &amp; TRADING ENGINE
+        </h3>
+        <div class="border border-zinc-800 bg-[#080808] text-[11px] font-mono">
+          <div class="flex px-3 py-2 border-b border-zinc-800 text-[9px] uppercase tracking-widest text-zinc-600">
+            <span class="w-16 shrink-0">Method</span><span class="w-64 shrink-0">Endpoint</span><span class="flex-1">Description</span>
+          </div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/exchange/connect</span><span class="text-zinc-500 flex-1">Connect exchange API keys</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/exchange/list</span><span class="text-zinc-500 flex-1">List connected exchanges</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/positions/all</span><span class="text-zinc-500 flex-1">All open positions</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/balance/total</span><span class="text-zinc-500 flex-1">Total portfolio balance</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/engine/start</span><span class="text-zinc-500 flex-1">Start autonomous trading engine</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/engine/stop</span><span class="text-zinc-500 flex-1">Stop trading engine</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/engine/status</span><span class="text-zinc-500 flex-1">Engine status + armed state</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/engine/arm</span><span class="text-zinc-500 flex-1">Arm engine for execution</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/engine/kill-switch</span><span class="text-zinc-500 flex-1">Emergency kill switch</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/actions/emergency-exit</span><span class="text-zinc-500 flex-1">Emergency exit position</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-yellow-500">POST</span><span class="w-64 shrink-0 text-zinc-300">/api/actions/partial-close</span><span class="text-zinc-500 flex-1">Partial close position</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/settings</span><span class="text-zinc-500 flex-1">Get all user settings</span></div>
+          <div class="param-row flex px-3 py-2"><span class="w-16 shrink-0 text-green-500">GET</span><span class="w-64 shrink-0 text-zinc-300">/api/alerts</span><span class="text-zinc-500 flex-1">Get alerts + notifications</span></div>
+        </div>
+        <p class="text-zinc-700 text-[10px] font-mono mt-3">Full API reference: <span class="text-zinc-500">bastionfi.tech/api/swagger</span> — interactive Swagger UI with all 140+ endpoints.</p>
       </section>
 
       <!-- ═══════ ARCHITECTURE ═══════ -->
@@ -581,15 +698,15 @@ async with sse_client(
 BASTION MCP Server ── bastionfi.tech/mcp
     |
     v
-BASTION Backend ──── FastAPI on Railway Pro
+BASTION API Gateway ── 560+ real-time endpoints
     |
-    |── Helsinki VM ......... 33 quant endpoints
-    |── Coinglass Premium ... liquidations, OI, funding
-    |── Whale Alert ......... on-chain tracking (11 chains)
-    |── Live Price Feeds .... Binance, Bybit, Helsinki
+    |── Derivatives Analytics ... OI, funding, liquidations, CVD
+    |── On-Chain Intelligence ... whale tracking (11 blockchains)
+    |── Market Structure ........ VPVR, pivots, auto-support
+    |── Live Price Feeds ........ multi-exchange aggregation
     |
     v
-<span class="text-red-500">Bastion 32B Model</span> ── Vast.ai 4x RTX 5090, vLLM TP=4
+<span class="text-red-500">BASTION 72B Model</span> ── 4x NVIDIA H200 (564GB VRAM)
     |
     v
 Structured Response ──> back to Claude</pre>

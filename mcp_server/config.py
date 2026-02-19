@@ -25,16 +25,16 @@ MCP_SERVER_NAME = "bastion-risk-intelligence"
 MCP_SERVER_VERSION = "1.0.0"
 MCP_SERVER_DESCRIPTION = (
     "BASTION Risk Intelligence MCP Server — "
-    "Autonomous crypto risk analysis powered by a fine-tuned 32B parameter AI model. "
+    "Autonomous crypto risk analysis powered by a fine-tuned 72 billion parameter AI model. "
     "Evaluate positions, analyze market structure, track whales, and generate institutional research."
 )
 
 # ── Model Info ──────────────────────────────────────────────────
 MODEL_VERSION = "v6"
-MODEL_BASE = "Qwen 32B"
+MODEL_BASE = "BASTION 72B"
 MODEL_ACCURACY = "75.4%"
 MODEL_TRAINING_EXAMPLES = 328
-MODEL_GPU = "4x RTX 5090 (128GB VRAM)"
+MODEL_GPU = "4x NVIDIA H200 (564GB VRAM)"
 
 # ── Supported Symbols ───────────────────────────────────────────
 SUPPORTED_SYMBOLS = [
