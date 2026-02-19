@@ -279,8 +279,38 @@
     <style id="all-fonts-style-font-cormorant">
       .font-cormorant { font-family: 'Cormorant Garamond', serif !important; }
     </style>
+    <style>
+      /* Loading splash */
+      .splash-screen {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #050505;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+      .splash-screen.fade-out { opacity: 0; visibility: hidden; }
+      @keyframes shieldBoot { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+      .splash-icon { animation: shieldBoot 0.6s ease-out forwards; }
+      @keyframes loadingBar { 0% { width: 0%; } 100% { width: 100%; } }
+      .splash-bar { height: 2px; background: #dc2626; animation: loadingBar 1.5s ease-out forwards; border-radius: 1px; }
+    </style>
   </head>
   <body class="text-zinc-400 min-h-screen flex flex-col selection:bg-crimson-600 selection:text-white bg-[#050505] overflow-x-auto font-sans">
+    <!-- Loading Splash -->
+    <div id="splash" class="splash-screen">
+      <div class="splash-icon flex items-center gap-3 mb-6">
+        <iconify-icon icon="solar:shield-bold" class="text-red-600 text-4xl"></iconify-icon>
+        <div>
+          <div class="text-xl font-mono font-bold text-white tracking-tight">BASTION</div>
+          <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-[0.3em]">TERMINAL</div>
+        </div>
+      </div>
+      <div class="w-48 bg-zinc-900 rounded-full overflow-hidden">
+        <div class="splash-bar"></div>
+      </div>
+      <div class="mt-4 text-[9px] font-mono text-zinc-700 tracking-widest uppercase">Deploying tactical interface...</div>
+    </div>
+
     <!-- 1. The CRIMSON ENERGY BEAM (Top Center) -->
     <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-to-b from-crimson-600/25 via-crimson-900/10 to-transparent blur-[100px] rounded-full pointer-events-none z-0 mix-blend-screen opacity-80"></div>
     <div class="fixed top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-crimson-500/20 blur-[80px] rounded-full pointer-events-none z-0 mix-blend-screen"></div>
@@ -2176,6 +2206,14 @@
     </main>
 
     <script>
+      // Dismiss splash
+      document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(() => {
+          const splash = document.getElementById('splash');
+          if (splash) { splash.classList.add('fade-out'); setTimeout(() => splash.remove(), 600); }
+        }, 1600);
+      });
+
       // Animation observers
       document.addEventListener("DOMContentLoaded", () => {
         const observer = new IntersectionObserver((entries) => {

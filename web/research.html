@@ -42,9 +42,38 @@
       .rating-badge-buy { background: rgba(22,163,74,0.15); border-color: rgba(22,163,74,0.4); color: #4ade80; }
       .rating-badge-sell { background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.4); color: #f87171; }
       .rating-badge-hold { background: rgba(113,113,122,0.15); border-color: rgba(113,113,122,0.4); color: #a1a1aa; }
+
+      /* Loading splash */
+      .splash-screen {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #050505;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+      .splash-screen.fade-out { opacity: 0; visibility: hidden; }
+      @keyframes shieldBoot { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+      .splash-icon { animation: shieldBoot 0.6s ease-out forwards; }
+      @keyframes loadingBar { 0% { width: 0%; } 100% { width: 100%; } }
+      .splash-bar { height: 2px; background: #dc2626; animation: loadingBar 1.5s ease-out forwards; border-radius: 1px; }
     </style>
   </head>
   <body class="text-zinc-400 h-screen flex flex-col selection:bg-red-500/30 selection:text-red-200 bg-[#050505] overflow-hidden">
+    <!-- Loading Splash -->
+    <div id="splash" class="splash-screen">
+      <div class="splash-icon flex items-center gap-3 mb-6">
+        <iconify-icon icon="solar:shield-bold" class="text-red-600 text-4xl"></iconify-icon>
+        <div>
+          <div class="text-xl font-mono font-bold text-white tracking-tight">BASTION</div>
+          <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-[0.3em]">RESEARCH</div>
+        </div>
+      </div>
+      <div class="w-48 bg-zinc-900 rounded-full overflow-hidden">
+        <div class="splash-bar"></div>
+      </div>
+      <div class="mt-4 text-[9px] font-mono text-zinc-700 tracking-widest uppercase">Loading intelligence reports...</div>
+    </div>
+
     <!-- Header -->
     <header class="relative z-50 h-16 border-b border-zinc-800 bg-[#050505] flex items-center justify-between shrink-0">
       <div class="flex items-center h-full pl-6 pr-8 border-r border-zinc-800 bg-[#050505]">
@@ -314,6 +343,12 @@
     // =========================================================================
 
     document.addEventListener('DOMContentLoaded', async () => {
+      // Dismiss splash
+      setTimeout(() => {
+        const splash = document.getElementById('splash');
+        if (splash) { splash.classList.add('fade-out'); setTimeout(() => splash.remove(), 600); }
+      }, 1600);
+
       await loadReports();
       await loadMCFStatus();
       setupKeyboardShortcuts();
