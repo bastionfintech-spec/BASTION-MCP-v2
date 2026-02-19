@@ -182,11 +182,15 @@
               <div class="flex items-center gap-3 mt-2 sys-reveal sys-rise sys-delay-500">
                 <div class="flex items-center gap-2 bg-zinc-900/40 border border-zinc-800/60 rounded px-3 py-1.5">
                   <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-50"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span></span>
-                  <span class="text-[10px] font-mono text-zinc-400"><span class="text-white font-bold">2,400+</span> active in beta</span>
+                  <span class="text-[10px] font-mono text-zinc-400"><span class="text-white font-bold" id="stat-positions">—</span> positions analyzed</span>
                 </div>
                 <div class="flex items-center gap-2 bg-zinc-900/40 border border-zinc-800/60 rounded px-3 py-1.5">
-                  <iconify-icon icon="solar:lock-keyhole-bold" class="text-zinc-600 text-xs"></iconify-icon>
-                  <span class="text-[10px] font-mono text-zinc-500">No credit card</span>
+                  <iconify-icon icon="solar:shield-bold" class="text-red-600 text-xs"></iconify-icon>
+                  <span class="text-[10px] font-mono text-zinc-400"><span class="text-white font-bold" id="stat-portfolio">—</span> margin protected</span>
+                </div>
+                <div class="flex items-center gap-2 bg-zinc-900/40 border border-zinc-800/60 rounded px-3 py-1.5">
+                  <iconify-icon icon="solar:users-group-rounded-linear" class="text-zinc-600 text-xs"></iconify-icon>
+                  <span class="text-[10px] font-mono text-zinc-400"><span class="text-white font-bold" id="stat-users">—</span> traders</span>
                 </div>
               </div>
 
@@ -807,6 +811,38 @@
         }
         setTimeout(type, 1000);
       })();
+    </script>
+
+    <!-- Live Stats Counter -->
+    <script>
+    (function(){
+      function countUp(el, target, prefix, suffix, duration) {
+        if (!el || !target) return;
+        const start = 0;
+        const startTime = performance.now();
+        function tick(now) {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const current = Math.floor(start + (target - start) * eased);
+          el.textContent = (prefix || '') + current.toLocaleString('en-US') + (suffix || '');
+          if (progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      fetch(window.location.origin + '/api/bastion/stats')
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) return;
+          const s = data.stats;
+          countUp(document.getElementById('stat-positions'), s.total_positions_analyzed, '', '', 1800);
+          const portfolioK = Math.round(s.total_portfolio_managed_usd / 1000);
+          countUp(document.getElementById('stat-portfolio'), portfolioK, '$', 'K+', 2000);
+          countUp(document.getElementById('stat-users'), s.total_users, '', '', 1400);
+        })
+        .catch(() => {});
+    })();
     </script>
 
     <!-- Hero Cards Content Cycling — 3 independent card cycles -->
