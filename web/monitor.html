@@ -353,8 +353,8 @@
   </section>
 
   <!-- ═══ MAIN PANEL GRID ═══ -->
-  <main class="flex-1 overflow-y-auto relative z-10" style="padding:4px;">
-    <div id="panel-grid" class="panel-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); grid-auto-rows:minmax(180px, 320px); gap:4px;">
+  <main class="flex-1 relative z-10" style="padding:4px; background:#0a0a0a;">
+    <div id="panel-grid" class="panel-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); grid-auto-rows:minmax(180px, 320px); gap:4px; min-height:100%;">
 
       <!-- Panel: Live Markets -->
       <div id="panel-markets" class="monitor-panel priority" data-panel="markets" style="order:5">
@@ -870,8 +870,8 @@ const FEEDS = {
 };
 
 // ─── Render helpers for RSS news panels ───
-function renderNewsList(items) {
-  if (!items || items.length === 0) return '<div class="text-center text-[#888] text-xs py-4">No headlines available</div>';
+function renderNewsList(items, noDataMsg) {
+  if (!items || items.length === 0) return `<div class="text-center text-[#888] text-xs py-4">${noDataMsg || 'No headlines in this time range'}</div>`;
   return items.map(item => `
     <div class="news-item">
       <div class="flex items-center gap-2 mb-1">
@@ -1245,7 +1245,8 @@ async function loadHeadlines() {
   const el = document.getElementById('headlines-body');
   try {
     const items = await fetchRSS(FEEDS.markets);
-    el.innerHTML = renderNewsList(items);
+    _newsCache['headlines'] = { items, bodyId: 'headlines-body' };
+    el.innerHTML = renderNewsList(filterByTimeRange(items));
   } catch(e) {
     el.innerHTML = '<div class="text-center text-[#ff4444] opacity-60 text-xs py-4">Headlines unavailable</div>';
   }
@@ -1283,7 +1284,8 @@ async function loadRSSPanel(feedKey, bodyId) {
   if (!el) return;
   try {
     const items = await fetchRSS(FEEDS[feedKey]);
-    el.innerHTML = renderNewsList(items);
+    _newsCache[feedKey] = { items, bodyId };
+    el.innerHTML = renderNewsList(filterByTimeRange(items));
   } catch(e) {
     el.innerHTML = '<div class="text-center text-[#ff4444] opacity-60 text-xs py-4">Feed unavailable</div>';
   }
@@ -1647,12 +1649,45 @@ function toggleLayer(key) {
   if (btn) btn.classList.toggle('active', layerState[key]);
 }
 
-// Time range (filters news freshness — visual indicator)
+// Time range (filters news freshness)
 let currentTimeRange = '24h';
+const _newsCache = {}; // { panelKey: [items...] }
+
+function getTimeRangeMs(range) {
+  switch(range) {
+    case '1h': return 3600000;
+    case '6h': return 3600000 * 6;
+    case '24h': return 86400000;
+    case '48h': return 86400000 * 2;
+    case '7d': return 86400000 * 7;
+    case 'all': return Infinity;
+    default: return 86400000;
+  }
+}
+
+function filterByTimeRange(items) {
+  if (currentTimeRange === 'all' || !items) return items;
+  const cutoff = Date.now() - getTimeRangeMs(currentTimeRange);
+  return items.filter(item => {
+    if (!item.pubDate) return true; // keep items with no date
+    const d = new Date(item.pubDate).getTime();
+    return isNaN(d) || d >= cutoff;
+  });
+}
+
 function setTimeRange(range) {
   currentTimeRange = range;
   document.querySelectorAll('.time-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.range === range);
+  });
+  // Re-render all cached news panels with new filter
+  Object.keys(_newsCache).forEach(key => {
+    const { items, bodyId } = _newsCache[key];
+    const el = document.getElementById(bodyId);
+    if (el && items) {
+      const filtered = filterByTimeRange(items);
+      el.innerHTML = renderNewsList(filtered);
+    }
   });
 }
 
