@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#050505] antialiased">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="BASTION Finance Monitor — Real-time global markets intelligence">
+  <meta name="theme-color" content="#050505">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='80'>🛡️</text></svg>">
+  <title>BASTION // FINANCE MONITOR</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            crimson: { 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d', 950: '#450a0a' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* ─── Scrollbar ─── */
+    .bastion-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+    .bastion-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .bastion-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+    .bastion-scrollbar::-webkit-scrollbar-thumb:hover { background: #dc2626; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ─── Grid / Scanline ─── */
+    .bg-grid { background-size: 40px 40px; background-image: linear-gradient(to right, rgba(39,39,42,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(39,39,42,0.4) 1px, transparent 1px); }
+    .scanline { background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15)); background-size: 100% 4px; pointer-events: none; }
+
+    /* ─── Marquee Ticker ─── */
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .animate-marquee { animation: marquee 45s linear infinite; }
+    .animate-marquee:hover { animation-play-state: paused; }
+
+    /* ─── Animations ─── */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp 0.4s ease-out forwards; }
+    @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 8px rgba(220,38,38,0.2); } 50% { box-shadow: 0 0 16px rgba(220,38,38,0.5); } }
+    .pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+    @keyframes shieldSweep { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+    /* ─── Splash ─── */
+    .splash-screen { position: fixed; inset: 0; z-index: 9999; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s ease; }
+    .splash-screen.fade-out { opacity: 0; visibility: hidden; }
+    @keyframes shieldBoot { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    .splash-icon { animation: shieldBoot 0.6s ease-out forwards; }
+    @keyframes loadingBar { 0% { width: 0%; } 100% { width: 100%; } }
+    .splash-bar { height: 2px; background: #dc2626; animation: loadingBar 1.8s ease-out forwards; border-radius: 1px; }
+
+    /* ─── Panel Cards ─── */
+    .monitor-panel {
+      background: #0a0a0a; border: 1px solid #27272a; border-radius: 2px;
+      display: flex; flex-direction: column; overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+    .monitor-panel:hover { border-color: #3f3f46; }
+    .monitor-panel.priority { border-left: 2px solid #dc2626; }
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-bottom: 1px solid #18181b;
+      background: rgba(9,9,11,0.8);
+    }
+    .panel-title {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em;
+      color: #a1a1aa;
+    }
+    .panel-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 8px;
+      padding: 1px 6px; border-radius: 2px; border: 1px solid;
+    }
+    .panel-body {
+      flex: 1; overflow-y: auto; padding: 8px; min-height: 120px;
+      scrollbar-width: thin; scrollbar-color: #27272a transparent;
+    }
+    .panel-body::-webkit-scrollbar { width: 3px; }
+    .panel-body::-webkit-scrollbar-track { background: transparent; }
+    .panel-body::-webkit-scrollbar-thumb { background: #27272a; border-radius: 2px; }
+
+    /* ─── Market Items ─── */
+    .market-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5px 6px; border-radius: 2px; transition: background 0.15s;
+    }
+    .market-row:hover { background: rgba(24,24,27,0.5); }
+    .market-row + .market-row { border-top: 1px solid rgba(39,39,42,0.3); }
+
+    /* ─── Sparkline SVG ─── */
+    .mini-sparkline { vertical-align: middle; margin-right: 6px; }
+
+    /* ─── Heatmap ─── */
+    .heatmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 4px; }
+    .heatmap-cell {
+      padding: 8px 6px; border-radius: 2px; text-align: center;
+      font-family: 'JetBrains Mono', monospace; transition: transform 0.15s;
+    }
+    .heatmap-cell:hover { transform: scale(1.04); }
+    .hm-strong-up { background: rgba(22,163,74,0.25); border: 1px solid rgba(22,163,74,0.3); }
+    .hm-up { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.2); }
+    .hm-slight-up { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.12); }
+    .hm-neutral { background: rgba(113,113,122,0.1); border: 1px solid rgba(113,113,122,0.15); }
+    .hm-slight-down { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.12); }
+    .hm-down { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.2); }
+    .hm-strong-down { background: rgba(220,38,38,0.25); border: 1px solid rgba(220,38,38,0.3); }
+
+    /* ─── Macro Signals / Radar ─── */
+    .signal-card {
+      background: rgba(9,9,11,0.6); border: 1px solid #1a1a1e; border-radius: 3px;
+      padding: 8px 10px; transition: border-color 0.2s;
+    }
+    .signal-card:hover { border-color: #3f3f46; }
+    .signal-badge { font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badge-bullish { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .badge-bearish { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-neutral { background: rgba(113,113,122,0.15); color: #a1a1aa; }
+    .verdict-buy { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); border: 1px solid rgba(34,197,94,0.25); }
+    .verdict-cash { background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04)); border: 1px solid rgba(239,68,68,0.25); }
+
+    /* ─── ETF Flows ─── */
+    .etf-table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+    .etf-table th { text-align: left; padding: 4px 6px; font-size: 9px; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #1a1a1e; }
+    .etf-table td { padding: 4px 6px; border-bottom: 1px solid rgba(24,24,27,0.4); }
+    .flow-inflow { color: #4ade80; }
+    .flow-outflow { color: #f87171; }
+    .flow-neutral { color: #a1a1aa; }
+
+    /* ─── Stablecoins ─── */
+    .peg-on { color: #4ade80; }
+    .peg-slight { color: #fbbf24; }
+    .peg-off { color: #f87171; }
+    .health-good { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+    .health-caution { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); }
+    .health-warning { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+
+    /* ─── RSS / News Items ─── */
+    .news-item {
+      padding: 6px 8px; border-radius: 2px; transition: background 0.15s;
+      border-bottom: 1px solid rgba(24,24,27,0.3);
+    }
+    .news-item:hover { background: rgba(24,24,27,0.4); }
+    .news-item:last-child { border-bottom: none; }
+    .news-source { font-size: 8px; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .news-title { font-size: 11px; color: #d4d4d8; line-height: 1.4; }
+    .news-title a { color: #d4d4d8; text-decoration: none; transition: color 0.15s; }
+    .news-title a:hover { color: #f87171; }
+    .news-time { font-size: 9px; color: #3f3f46; font-family: 'JetBrains Mono', monospace; }
+
+    /* ─── Economic Data ─── */
+    .econ-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(24,24,27,0.3); align-items: center; }
+    .econ-row:last-child { border-bottom: none; }
+
+    /* ─── Polymarket Predictions ─── */
+    .prediction-row { padding: 6px 8px; border-bottom: 1px solid rgba(24,24,27,0.3); }
+    .prediction-row:last-child { border-bottom: none; }
+    .prediction-bar { height: 4px; border-radius: 2px; background: #18181b; overflow: hidden; }
+    .prediction-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
+
+    /* ─── Globe / Map ─── */
+    #globe-container { width: 100%; height: 100%; min-height: 300px; border-radius: 2px; }
+    .map-marker { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: transform 0.2s; }
+    .map-marker:hover { transform: scale(1.6); }
+
+    /* ─── Settings Modal ─── */
+    .settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .settings-overlay.active { display: flex; }
+    .settings-modal { background: #0a0a0a; border: 1px solid #27272a; border-radius: 4px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+
+    /* ─── Loading Skeleton ─── */
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    .skeleton { background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 2px; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 767px) {
+      .panel-grid { grid-template-columns: 1fr !important; }
+      .heatmap-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* ─── Panel Toggle Checkbox ─── */
+    .panel-toggle input[type="checkbox"] { accent-color: #dc2626; }
+  </style>
+</head>
+<body class="bg-[#050505] text-zinc-400 min-h-screen flex flex-col selection:bg-red-600/30 selection:text-red-100 relative overflow-x-hidden">
+
+  <!-- Loading Splash -->
+  <div id="splash" class="splash-screen">
+    <div class="splash-icon flex items-center gap-3 mb-6">
+      <iconify-icon icon="solar:shield-bold" class="text-red-600 text-4xl"></iconify-icon>
+      <div>
+        <div class="text-xl font-mono font-bold text-white tracking-tight">BASTION</div>
+        <div class="text-[8px] font-mono text-zinc-600 uppercase tracking-[0.3em]">FINANCE MONITOR</div>
+      </div>
+    </div>
+    <div class="w-48 bg-zinc-900 rounded-full overflow-hidden"><div class="splash-bar"></div></div>
+    <div class="mt-4 text-[9px] font-mono text-zinc-700 tracking-widest uppercase">Connecting to global markets...</div>
+  </div>
+
+  <!-- Background Overlays -->
+  <div class="absolute inset-0 pointer-events-none opacity-[0.02] bg-grid z-0"></div>
+  <div class="absolute inset-0 pointer-events-none opacity-[0.04] scanline z-0 mix-blend-overlay"></div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="h-14 border-b border-zinc-800/80 bg-[#050505]/95 backdrop-blur-md flex items-center justify-between shrink-0 px-3 md:px-6 relative z-40">
+    <div class="flex items-center gap-2 md:gap-3">
+      <a href="/" class="flex items-center gap-1.5 md:gap-2 group cursor-pointer no-underline">
+        <iconify-icon icon="solar:shield-bold" class="text-red-600 text-lg group-hover:scale-110 transition-transform"></iconify-icon>
+        <span class="text-sm md:text-base font-mono font-bold tracking-tight text-white group-hover:text-red-500 transition-colors">BASTION</span>
+      </a>
+      <span class="text-[7px] md:text-[8px] font-mono bg-zinc-900 text-zinc-500 px-1.5 py-0.5 rounded border border-zinc-800 tracking-widest">MONITOR</span>
+      <!-- LIVE indicator -->
+      <div class="hidden md:flex items-center ml-2 px-2 py-1 border border-zinc-800 bg-zinc-900/30 rounded-sm gap-1.5">
+        <span class="relative flex h-1.5 w-1.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+        </span>
+        <span class="text-[8px] font-mono text-zinc-500 uppercase tracking-widest">LIVE</span>
+      </div>
+    </div>
+    <!-- Nav -->
+    <nav class="hidden lg:flex items-center h-full">
+      <div class="flex h-full items-center border-x border-zinc-800/50">
+        <a href="/terminal" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50">Terminal</a>
+        <a href="/research" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50">Research</a>
+        <a href="/monitor" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-white bg-zinc-900/50 border-r border-zinc-800/50 relative">
+          Monitor
+          <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600"></div>
+        </a>
+        <a href="/lite" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50">Dashboard</a>
+        <a href="/account" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-colors">Account</a>
+      </div>
+    </nav>
+    <!-- Right actions -->
+    <div class="flex items-center gap-2 md:gap-3">
+      <button onclick="toggleSettings()" class="p-1.5 rounded hover:bg-zinc-800/60 transition-colors" title="Panel Settings">
+        <iconify-icon icon="solar:settings-linear" class="text-zinc-500 hover:text-zinc-300 text-base"></iconify-icon>
+      </button>
+      <button onclick="refreshAll()" class="p-1.5 rounded hover:bg-zinc-800/60 transition-colors" title="Refresh All">
+        <iconify-icon icon="solar:refresh-linear" class="text-zinc-500 hover:text-zinc-300 text-base"></iconify-icon>
+      </button>
+      <span id="lastUpdate" class="hidden md:inline text-[8px] font-mono text-zinc-700"></span>
+      <button class="lg:hidden text-zinc-400 hover:text-white p-1" onclick="document.getElementById('mobile-nav').classList.toggle('hidden')">
+        <iconify-icon icon="solar:hamburger-menu-linear" width="20"></iconify-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Nav -->
+  <div id="mobile-nav" class="hidden lg:hidden absolute top-14 left-0 right-0 z-50 bg-[#080808]/98 backdrop-blur-lg border-b border-zinc-800 px-4 py-3 space-y-1">
+    <a href="/terminal" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+      <iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon>Terminal
+    </a>
+    <a href="/research" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+      <iconify-icon icon="solar:document-text-linear" class="text-sm"></iconify-icon>Research
+    </a>
+    <a href="/monitor" class="flex items-center gap-3 px-3 py-2.5 rounded-md bg-red-950/10 border border-red-900/20 text-xs font-mono text-white">
+      <iconify-icon icon="solar:chart-2-bold" class="text-red-600 text-sm"></iconify-icon>Monitor
+      <span class="ml-auto text-[8px] text-red-500/60 font-bold">ACTIVE</span>
+    </a>
+    <a href="/lite" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+      <iconify-icon icon="solar:chart-bold" class="text-sm"></iconify-icon>Dashboard
+    </a>
+    <a href="/account" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+      <iconify-icon icon="solar:user-circle-linear" class="text-sm"></iconify-icon>Account
+    </a>
+  </div>
+
+  <!-- ═══ MARKET PULSE TICKER ═══ -->
+  <div class="h-8 border-b border-zinc-800/60 bg-[#080808] flex items-center overflow-hidden shrink-0 relative z-10">
+    <div id="ticker-strip" class="flex items-center whitespace-nowrap animate-marquee">
+      <!-- Duplicated for seamless loop — populated by JS -->
+    </div>
+  </div>
+
+  <!-- ═══ MAIN PANEL GRID ═══ -->
+  <main class="flex-1 overflow-y-auto bastion-scrollbar relative z-10 p-3">
+    <div id="panel-grid" class="panel-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 auto-rows-min">
+
+      <!-- Panel: Live Markets -->
+      <div id="panel-markets" class="monitor-panel priority" data-panel="markets" style="order:1">
+        <div class="panel-header">
+          <span class="panel-title">Live Markets</span>
+          <span class="panel-badge text-green-500 border-green-800 bg-green-900/20">LIVE</span>
+        </div>
+        <div class="panel-body" id="markets-body">
+          <div class="space-y-2"><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-4/5"></div><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-3/5"></div><div class="skeleton h-5 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Crypto -->
+      <div id="panel-crypto" class="monitor-panel priority" data-panel="crypto" style="order:2">
+        <div class="panel-header">
+          <span class="panel-title">Crypto & Digital Assets</span>
+          <span class="panel-badge text-amber-500 border-amber-800 bg-amber-900/20">24/7</span>
+        </div>
+        <div class="panel-body" id="crypto-body">
+          <div class="space-y-2"><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-4/5"></div><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-3/5"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Sector Heatmap -->
+      <div id="panel-heatmap" class="monitor-panel priority" data-panel="heatmap" style="order:3">
+        <div class="panel-header">
+          <span class="panel-title">Sector Heatmap</span>
+          <span class="panel-badge text-zinc-500 border-zinc-700 bg-zinc-800/30">S&P</span>
+        </div>
+        <div class="panel-body" id="heatmap-body">
+          <div class="heatmap-grid"><div class="skeleton h-14 w-full"></div><div class="skeleton h-14 w-full"></div><div class="skeleton h-14 w-full"></div><div class="skeleton h-14 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Commodities -->
+      <div id="panel-commodities" class="monitor-panel" data-panel="commodities" style="order:4">
+        <div class="panel-header">
+          <span class="panel-title">Commodities & Futures</span>
+          <span class="panel-badge text-yellow-500 border-yellow-800 bg-yellow-900/20">COMEX</span>
+        </div>
+        <div class="panel-body" id="commodities-body">
+          <div class="space-y-2"><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-4/5"></div><div class="skeleton h-5 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Market Radar (Macro Signals) -->
+      <div id="panel-radar" class="monitor-panel priority" data-panel="macro-signals" style="order:5">
+        <div class="panel-header">
+          <span class="panel-title">Market Radar</span>
+          <span class="panel-badge text-red-500 border-red-800 bg-red-900/20">7-SIG</span>
+        </div>
+        <div class="panel-body" id="radar-body">
+          <div class="space-y-2"><div class="skeleton h-12 w-full"></div><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Economic Data (FRED) -->
+      <div id="panel-economic" class="monitor-panel" data-panel="economic" style="order:6">
+        <div class="panel-header">
+          <span class="panel-title">Economic Data</span>
+          <span class="panel-badge text-blue-500 border-blue-800 bg-blue-900/20">FRED</span>
+        </div>
+        <div class="panel-body" id="economic-body">
+          <div class="space-y-2"><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-4/5"></div><div class="skeleton h-5 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: BTC ETF Tracker -->
+      <div id="panel-etf" class="monitor-panel" data-panel="etf-flows" style="order:7">
+        <div class="panel-header">
+          <span class="panel-title">BTC ETF Tracker</span>
+          <span class="panel-badge text-orange-500 border-orange-800 bg-orange-900/20">FLOW</span>
+        </div>
+        <div class="panel-body" id="etf-body">
+          <div class="space-y-2"><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-4/5"></div><div class="skeleton h-5 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Stablecoins -->
+      <div id="panel-stablecoins" class="monitor-panel" data-panel="stablecoins" style="order:8">
+        <div class="panel-header">
+          <span class="panel-title">Stablecoins</span>
+          <span class="panel-badge text-cyan-500 border-cyan-800 bg-cyan-900/20">PEG</span>
+        </div>
+        <div class="panel-body" id="stablecoins-body">
+          <div class="space-y-2"><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-4/5"></div><div class="skeleton h-5 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Market Headlines -->
+      <div id="panel-headlines" class="monitor-panel priority" data-panel="live-news" style="order:9">
+        <div class="panel-header">
+          <span class="panel-title">Market Headlines</span>
+          <span class="panel-badge text-red-500 border-red-800 bg-red-900/20">RSS</span>
+        </div>
+        <div class="panel-body" id="headlines-body" style="max-height:400px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Predictions (Polymarket) -->
+      <div id="panel-predictions" class="monitor-panel" data-panel="polymarket" style="order:10">
+        <div class="panel-header">
+          <span class="panel-title">Predictions</span>
+          <span class="panel-badge text-purple-500 border-purple-800 bg-purple-900/20">POLY</span>
+        </div>
+        <div class="panel-body" id="predictions-body" style="max-height:400px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Forex News -->
+      <div id="panel-forex" class="monitor-panel" data-panel="forex" style="order:11">
+        <div class="panel-header">
+          <span class="panel-title">Forex & Currencies</span>
+          <span class="panel-badge text-emerald-500 border-emerald-800 bg-emerald-900/20">FX</span>
+        </div>
+        <div class="panel-body" id="forex-body" style="max-height:360px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Bonds / Fixed Income -->
+      <div id="panel-bonds" class="monitor-panel" data-panel="bonds" style="order:12">
+        <div class="panel-header">
+          <span class="panel-title">Fixed Income</span>
+          <span class="panel-badge text-sky-500 border-sky-800 bg-sky-900/20">BONDS</span>
+        </div>
+        <div class="panel-body" id="bonds-body" style="max-height:360px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Central Bank Watch -->
+      <div id="panel-centralbanks" class="monitor-panel" data-panel="centralbanks" style="order:13">
+        <div class="panel-header">
+          <span class="panel-title">Central Bank Watch</span>
+          <span class="panel-badge text-indigo-500 border-indigo-800 bg-indigo-900/20">CB</span>
+        </div>
+        <div class="panel-body" id="centralbanks-body" style="max-height:360px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Crypto News -->
+      <div id="panel-cryptonews" class="monitor-panel" data-panel="crypto-news" style="order:14">
+        <div class="panel-header">
+          <span class="panel-title">Crypto News</span>
+          <span class="panel-badge text-amber-500 border-amber-800 bg-amber-900/20">WEB3</span>
+        </div>
+        <div class="panel-body" id="cryptonews-body" style="max-height:360px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Commodities News -->
+      <div id="panel-comnews" class="monitor-panel" data-panel="commodities-news" style="order:15">
+        <div class="panel-header">
+          <span class="panel-title">Commodities News</span>
+          <span class="panel-badge text-yellow-500 border-yellow-800 bg-yellow-900/20">OIL</span>
+        </div>
+        <div class="panel-body" id="comnews-body" style="max-height:360px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: IPO / Earnings / M&A -->
+      <div id="panel-ipo" class="monitor-panel" data-panel="ipo" style="order:16">
+        <div class="panel-header">
+          <span class="panel-title">IPOs, Earnings & M&A</span>
+          <span class="panel-badge text-pink-500 border-pink-800 bg-pink-900/20">DEAL</span>
+        </div>
+        <div class="panel-body" id="ipo-body" style="max-height:360px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Economic News -->
+      <div id="panel-econnews" class="monitor-panel" data-panel="economic-news" style="order:17">
+        <div class="panel-header">
+          <span class="panel-title">Economic News</span>
+          <span class="panel-badge text-teal-500 border-teal-800 bg-teal-900/20">ECON</span>
+        </div>
+        <div class="panel-body" id="econnews-body" style="max-height:360px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Markets News -->
+      <div id="panel-marketnews" class="monitor-panel" data-panel="markets-news" style="order:18">
+        <div class="panel-header">
+          <span class="panel-title">Markets News</span>
+          <span class="panel-badge text-zinc-400 border-zinc-700 bg-zinc-800/30">NEWS</span>
+        </div>
+        <div class="panel-body" id="marketnews-body" style="max-height:360px">
+          <div class="space-y-2"><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div></div>
+        </div>
+      </div>
+
+      <!-- Panel: Finance Globe (MapLibre) -->
+      <div id="panel-globe" class="monitor-panel priority md:col-span-2" data-panel="map" style="order:19">
+        <div class="panel-header">
+          <span class="panel-title">Global Markets Map</span>
+          <span class="panel-badge text-red-500 border-red-800 bg-red-900/20">GEO</span>
+        </div>
+        <div class="panel-body p-0" id="globe-body" style="height:420px; padding:0;">
+          <div id="globe-container"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ═══ SETTINGS MODAL ═══ -->
+  <div id="settings-overlay" class="settings-overlay" onclick="if(event.target===this)toggleSettings()">
+    <div class="settings-modal">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <span class="text-xs font-mono uppercase tracking-widest text-white">Panel Settings</span>
+        <button onclick="toggleSettings()" class="text-zinc-500 hover:text-white"><iconify-icon icon="solar:close-circle-linear"></iconify-icon></button>
+      </div>
+      <div id="settings-list" class="p-4 space-y-2">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT — All data fetching, rendering, and state management
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+// ─── Constants ───
+const API = 'https://finance.worldmonitor.app';
+const REFRESH_MS = 180000; // 3 min
+const TICKER_REFRESH_MS = 60000; // 1 min
+
+// ─── Panel visibility (persisted to localStorage) ───
+const DEFAULT_PANELS = {
+  'markets': true, 'crypto': true, 'heatmap': true, 'commodities': true,
+  'macro-signals': true, 'economic': true, 'etf-flows': true, 'stablecoins': true,
+  'live-news': true, 'polymarket': true, 'forex': true, 'bonds': true,
+  'centralbanks': true, 'crypto-news': true, 'commodities-news': true,
+  'ipo': true, 'economic-news': true, 'markets-news': true, 'map': true
+};
+
+let panelState = { ...DEFAULT_PANELS };
+try {
+  const saved = localStorage.getItem('bastion_monitor_panels');
+  if (saved) panelState = { ...DEFAULT_PANELS, ...JSON.parse(saved) };
+} catch(e) {}
+
+function savePanelState() {
+  try { localStorage.setItem('bastion_monitor_panels', JSON.stringify(panelState)); } catch(e) {}
+}
+
+// ─── Utility Functions ───
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatPrice(price) {
+  if (price == null) return '--';
+  if (Math.abs(price) >= 10000) return price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  if (Math.abs(price) >= 100) return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (Math.abs(price) >= 1) return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return price.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+}
+
+function formatChange(change) {
+  if (change == null) return '--';
+  const sign = change >= 0 ? '+' : '';
+  return `${sign}${change.toFixed(2)}%`;
+}
+
+function formatVolume(v) {
+  if (v == null) return '--';
+  if (Math.abs(v) >= 1e12) return `$${(v/1e12).toFixed(1)}T`;
+  if (Math.abs(v) >= 1e9) return `$${(v/1e9).toFixed(1)}B`;
+  if (Math.abs(v) >= 1e6) return `$${(v/1e6).toFixed(1)}M`;
+  if (Math.abs(v) >= 1e3) return `$${(v/1e3).toFixed(0)}K`;
+  return '$' + v.toLocaleString();
+}
+
+function formatLargeNum(v) {
+  if (v >= 1e12) return `$${(v/1e12).toFixed(1)}T`;
+  if (v >= 1e9) return `$${(v/1e9).toFixed(1)}B`;
+  if (v >= 1e6) return `$${(v/1e6).toFixed(0)}M`;
+  return '$' + v.toLocaleString();
+}
+
+function changeClass(val) {
+  if (val == null) return 'text-zinc-500';
+  return val >= 0 ? 'text-green-500' : 'text-red-500';
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = Date.now();
+  const diff = now - d.getTime();
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+  return `${Math.floor(diff/86400000)}d ago`;
+}
+
+// ─── SVG Sparkline Generator ───
+function sparkline(data, change, w = 50, h = 16) {
+  if (!data || data.length < 2) return '';
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const color = change != null && change >= 0 ? '#4ade80' : '#f87171';
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 2) - 1;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="mini-sparkline"><polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+// ─── Donut Gauge SVG (for Fear & Greed) ───
+function donutGauge(value, size = 48) {
+  if (value == null) return '<span class="text-zinc-600 text-xs font-mono">N/A</span>';
+  const v = Math.max(0, Math.min(100, value));
+  const r = (size - 6) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (v / 100) * circ;
+  let color = '#f44336';
+  if (v >= 75) color = '#4caf50';
+  else if (v >= 50) color = '#ff9800';
+  else if (v >= 25) color = '#ff5722';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="5" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round" transform="rotate(-90 ${size/2} ${size/2})"/><text x="${size/2}" y="${size/2 + 4}" text-anchor="middle" fill="${color}" font-size="12" font-weight="bold" font-family="JetBrains Mono,monospace">${v}</text></svg>`;
+}
+
+function getHeatmapClass(change) {
+  if (change == null) return 'hm-neutral';
+  if (change >= 2) return 'hm-strong-up';
+  if (change >= 0.5) return 'hm-up';
+  if (change >= 0) return 'hm-slight-up';
+  if (change >= -0.5) return 'hm-slight-down';
+  if (change >= -2) return 'hm-down';
+  return 'hm-strong-down';
+}
+
+function statusBadgeClass(status) {
+  const s = (status || '').toUpperCase();
+  if (['BULLISH','RISK-ON','GROWING','PROFITABLE','ALIGNED','NORMAL','EXTREME GREED','GREED'].includes(s)) return 'badge-bullish';
+  if (['BEARISH','DEFENSIVE','DECLINING','SQUEEZE','PASSIVE GAP','EXTREME FEAR','FEAR'].includes(s)) return 'badge-bearish';
+  return 'badge-neutral';
+}
+
+function formatNum(v, suffix = '%') {
+  if (v == null) return 'N/A';
+  const sign = v > 0 ? '+' : '';
+  return `${sign}${v.toFixed(1)}${suffix}`;
+}
+
+// ─── Panel Visibility ───
+function applyPanelVisibility() {
+  document.querySelectorAll('.monitor-panel').forEach(el => {
+    const key = el.dataset.panel;
+    if (key) el.style.display = panelState[key] ? '' : 'none';
+  });
+}
+
+function toggleSettings() {
+  const overlay = document.getElementById('settings-overlay');
+  overlay.classList.toggle('active');
+  if (overlay.classList.contains('active')) renderSettingsList();
+}
+
+function renderSettingsList() {
+  const panelNames = {
+    'markets': 'Live Markets', 'crypto': 'Crypto & Digital Assets', 'heatmap': 'Sector Heatmap',
+    'commodities': 'Commodities & Futures', 'macro-signals': 'Market Radar', 'economic': 'Economic Data',
+    'etf-flows': 'BTC ETF Tracker', 'stablecoins': 'Stablecoins', 'live-news': 'Market Headlines',
+    'polymarket': 'Predictions', 'forex': 'Forex & Currencies', 'bonds': 'Fixed Income',
+    'centralbanks': 'Central Bank Watch', 'crypto-news': 'Crypto News', 'commodities-news': 'Commodities News',
+    'ipo': 'IPOs, Earnings & M&A', 'economic-news': 'Economic News', 'markets-news': 'Markets News', 'map': 'Global Markets Map'
+  };
+  const container = document.getElementById('settings-list');
+  container.innerHTML = Object.entries(panelNames).map(([key, name]) => `
+    <label class="panel-toggle flex items-center gap-3 px-3 py-2 rounded hover:bg-zinc-900/50 cursor-pointer">
+      <input type="checkbox" ${panelState[key] ? 'checked' : ''} onchange="panelState['${key}']=this.checked;savePanelState();applyPanelVisibility()">
+      <span class="text-[11px] font-mono text-zinc-300">${escapeHtml(name)}</span>
+    </label>
+  `).join('');
+}
+
+// ═══ DATA FETCHING ═══
+
+// Helper: fetch with timeout
+async function fetchJSON(url, timeoutMs = 15000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally { clearTimeout(timer); }
+}
+
+// Helper: fetch RSS feeds and parse
+async function fetchRSS(feeds) {
+  const results = [];
+  const promises = feeds.map(async feed => {
+    try {
+      const url = `${API}${feed.url}`;
+      const data = await fetchJSON(url);
+      if (data && data.items) {
+        data.items.slice(0, 6).forEach(item => {
+          results.push({
+            source: feed.name,
+            title: item.title || '',
+            link: item.link || '#',
+            pubDate: item.pubDate || item.isoDate || '',
+          });
+        });
+      }
+    } catch(e) { /* skip failed feed */ }
+  });
+  await Promise.allSettled(promises);
+  // Sort by date desc
+  results.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+  return results.slice(0, 30);
+}
+
+// ─── RSS Feed Definitions ───
+const FEEDS = {
+  markets: [
+    { name: 'CNBC', url: '/api/rss-proxy?url=' + encodeURIComponent('https://www.cnbc.com/id/100003114/device/rss/rss.html') },
+    { name: 'MarketWatch', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=site:marketwatch.com+markets+when:1d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Yahoo Finance', url: '/api/rss-proxy?url=' + encodeURIComponent('https://finance.yahoo.com/rss/topstories') },
+    { name: 'Seeking Alpha', url: '/api/rss-proxy?url=' + encodeURIComponent('https://seekingalpha.com/market_currents.xml') },
+    { name: 'Reuters', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=site:reuters.com+markets+stocks+when:1d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Bloomberg', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=site:bloomberg.com+markets+when:1d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+  forex: [
+    { name: 'Forex News', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=("forex"+OR+"currency"+OR+"FX+market")+trading+when:1d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Dollar Watch', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=("dollar+index"+OR+DXY+OR+"US+dollar"+OR+"euro+dollar")+when:2d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+  bonds: [
+    { name: 'Bond Market', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=("bond+market"+OR+"treasury+yields"+OR+"bond+yields")+when:2d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Treasury', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=("US+Treasury"+OR+"Treasury+auction"+OR+"10-year+yield")+when:2d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+  centralbanks: [
+    { name: 'Fed', url: '/api/rss-proxy?url=' + encodeURIComponent('https://www.federalreserve.gov/feeds/press_all.xml') },
+    { name: 'ECB Watch', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=("European+Central+Bank"+OR+ECB)+monetary+policy+when:3d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Global CB', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=("rate+hike"+OR+"rate+cut"+OR+"interest+rate+decision")+central+bank+when:3d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+  crypto: [
+    { name: 'CoinDesk', url: '/api/rss-proxy?url=' + encodeURIComponent('https://www.coindesk.com/arc/outboundfeeds/rss/') },
+    { name: 'Cointelegraph', url: '/api/rss-proxy?url=' + encodeURIComponent('https://cointelegraph.com/rss') },
+    { name: 'Crypto', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=(bitcoin+OR+ethereum+OR+crypto)+when:1d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+  commodities: [
+    { name: 'Oil & Gas', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=(oil+price+OR+OPEC+OR+"crude+oil"+OR+WTI+OR+Brent)+when:1d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Gold', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=(gold+price+OR+silver+price+OR+copper+OR+"precious+metals")+when:2d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+  ipo: [
+    { name: 'IPO', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=(IPO+OR+"initial+public+offering"+OR+SPAC)+when:3d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Earnings', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=("earnings+report"+OR+"quarterly+earnings"+OR+"revenue+beat")+when:2d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'M&A', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=("merger"+OR+"acquisition"+OR+"takeover+bid")+billion+when:3d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+  economic: [
+    { name: 'Economic', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=(CPI+OR+inflation+OR+GDP+OR+"jobs+report"+OR+PMI)+when:2d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Trade', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=(tariff+OR+"trade+war"+OR+"trade+deficit")+when:2d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+  marketsNews: [
+    { name: 'Investing.com', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=site:investing.com+markets+when:1d&hl=en-US&gl=US&ceid=US:en') },
+    { name: 'Nikkei', url: '/api/rss-proxy?url=' + encodeURIComponent('https://news.google.com/rss/search?q=site:asia.nikkei.com+markets+when:3d&hl=en-US&gl=US&ceid=US:en') },
+  ],
+};
+
+// ─── Render helpers for RSS news panels ───
+function renderNewsList(items) {
+  if (!items || items.length === 0) return '<div class="text-center text-zinc-600 text-xs font-mono py-4">No headlines available</div>';
+  return items.map(item => `
+    <div class="news-item">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="news-source">${escapeHtml(item.source)}</span>
+        <span class="news-time">${timeAgo(item.pubDate)}</span>
+      </div>
+      <div class="news-title"><a href="${escapeHtml(item.link)}" target="_blank" rel="noopener">${escapeHtml(item.title)}</a></div>
+    </div>
+  `).join('');
+}
+
+// ═══ PANEL RENDERERS ═══
+
+// ─── 1. Live Markets ───
+async function loadMarkets() {
+  const el = document.getElementById('markets-body');
+  try {
+    // Fetch indices
+    const indices = [
+      { symbol: '^GSPC', name: 'S&P 500', display: 'SPX' },
+      { symbol: '^DJI', name: 'Dow Jones', display: 'DOW' },
+      { symbol: '^IXIC', name: 'NASDAQ', display: 'NDX' },
+      { symbol: '^VIX', name: 'VIX', display: 'VIX' },
+    ];
+    const stocks = ['AAPL','MSFT','NVDA','GOOGL','AMZN','META','TSLA'];
+
+    // Fetch all indices
+    const indexResults = await Promise.allSettled(
+      indices.map(idx => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(idx.symbol)}`))
+    );
+
+    // Fetch stocks via finnhub
+    let stockData = [];
+    try {
+      const stockRes = await fetchJSON(`${API}/api/finnhub?symbols=${stocks.join(',')}`);
+      if (stockRes && Array.isArray(stockRes)) stockData = stockRes;
+      else if (stockRes && stockRes.data) stockData = stockRes.data;
+    } catch(e) {}
+
+    let html = '';
+
+    // Render indices
+    indices.forEach((idx, i) => {
+      const res = indexResults[i];
+      if (res.status === 'fulfilled' && res.value) {
+        const d = res.value;
+        const price = d.regularMarketPrice ?? d.price ?? null;
+        const change = d.regularMarketChangePercent ?? d.changePercent ?? d.change ?? null;
+        const spk = d.sparkline || [];
+        html += `<div class="market-row">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-mono font-bold text-white">${escapeHtml(idx.display)}</span>
+            <span class="text-[9px] text-zinc-600">${escapeHtml(idx.name)}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            ${sparkline(spk, change)}
+            <span class="text-[11px] font-mono text-zinc-300">${formatPrice(price)}</span>
+            <span class="text-[10px] font-mono ${changeClass(change)} min-w-[52px] text-right">${formatChange(change)}</span>
+          </div>
+        </div>`;
+      }
+    });
+
+    // Divider
+    if (html && stockData.length) html += '<div class="border-t border-zinc-800/50 my-1"></div>';
+
+    // Render stocks
+    stockData.forEach(s => {
+      const price = s.regularMarketPrice ?? s.price ?? s.c ?? null;
+      const change = s.regularMarketChangePercent ?? s.changePercent ?? s.dp ?? null;
+      const spk = s.sparkline || [];
+      html += `<div class="market-row">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-mono font-semibold text-zinc-200">${escapeHtml(s.symbol || s.ticker || '')}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          ${sparkline(spk, change)}
+          <span class="text-[11px] font-mono text-zinc-300">${formatPrice(price)}</span>
+          <span class="text-[10px] font-mono ${changeClass(change)} min-w-[52px] text-right">${formatChange(change)}</span>
+        </div>
+      </div>`;
+    });
+
+    el.innerHTML = html || '<div class="text-center text-zinc-600 text-xs py-4">No market data</div>';
+  } catch(e) {
+    el.innerHTML = `<div class="text-center text-red-500/60 text-xs font-mono py-4">Failed to load market data</div>`;
+  }
+}
+
+// ─── 2. Crypto ───
+async function loadCrypto() {
+  const el = document.getElementById('crypto-body');
+  try {
+    const data = await fetchJSON(`${API}/api/coingecko?endpoint=markets&ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currency=usd&sparkline=true`);
+    if (!data || !Array.isArray(data) || data.length === 0) throw new Error('No data');
+    el.innerHTML = data.map(coin => {
+      const spk = coin.sparkline_in_7d?.price || [];
+      const change = coin.price_change_percentage_24h;
+      return `<div class="market-row">
+        <div class="flex items-center gap-2">
+          <img src="${escapeHtml(coin.image)}" alt="" width="16" height="16" class="rounded-full" onerror="this.style.display='none'">
+          <span class="text-[11px] font-mono font-bold text-white">${escapeHtml(coin.name)}</span>
+          <span class="text-[9px] text-zinc-600 uppercase">${escapeHtml(coin.symbol)}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          ${sparkline(spk.slice(-30), change)}
+          <span class="text-[11px] font-mono text-zinc-300">$${coin.current_price?.toLocaleString() || '--'}</span>
+          <span class="text-[10px] font-mono ${changeClass(change)} min-w-[52px] text-right">${formatChange(change)}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Failed to load crypto data</div>';
+  }
+}
+
+// ─── 3. Sector Heatmap ───
+async function loadHeatmap() {
+  const el = document.getElementById('heatmap-body');
+  const sectors = [
+    { symbol: 'XLK', name: 'Tech' }, { symbol: 'XLF', name: 'Finance' },
+    { symbol: 'XLE', name: 'Energy' }, { symbol: 'XLV', name: 'Health' },
+    { symbol: 'XLY', name: 'Cons Disc' }, { symbol: 'XLI', name: 'Industrial' },
+    { symbol: 'XLP', name: 'Cons Stpl' }, { symbol: 'XLU', name: 'Utilities' },
+    { symbol: 'XLB', name: 'Materials' }, { symbol: 'XLRE', name: 'Real Est' },
+    { symbol: 'XLC', name: 'Comms' },
+  ];
+  try {
+    const results = await Promise.allSettled(
+      sectors.map(s => fetchJSON(`${API}/api/yahoo-finance?symbol=${s.symbol}`))
+    );
+    let html = '<div class="heatmap-grid">';
+    sectors.forEach((s, i) => {
+      const res = results[i];
+      let change = null;
+      if (res.status === 'fulfilled' && res.value) {
+        change = res.value.regularMarketChangePercent ?? res.value.changePercent ?? null;
+      }
+      html += `<div class="heatmap-cell ${getHeatmapClass(change)}">
+        <div class="text-[9px] font-mono font-semibold text-zinc-200">${escapeHtml(s.name)}</div>
+        <div class="text-[10px] font-mono font-bold ${changeClass(change)}">${formatChange(change)}</div>
+        <div class="text-[7px] font-mono text-zinc-600 mt-0.5">${escapeHtml(s.symbol)}</div>
+      </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Failed to load sector data</div>';
+  }
+}
+
+// ─── 4. Commodities ───
+async function loadCommodities() {
+  const el = document.getElementById('commodities-body');
+  const items = [
+    { symbol: 'GC=F', name: 'Gold', display: 'GOLD' },
+    { symbol: 'CL=F', name: 'Crude Oil', display: 'WTI' },
+    { symbol: 'NG=F', name: 'Natural Gas', display: 'NATGAS' },
+    { symbol: 'SI=F', name: 'Silver', display: 'SILVER' },
+    { symbol: 'HG=F', name: 'Copper', display: 'COPPER' },
+  ];
+  try {
+    const results = await Promise.allSettled(
+      items.map(c => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(c.symbol)}`))
+    );
+    let html = '';
+    items.forEach((c, i) => {
+      const res = results[i];
+      if (res.status === 'fulfilled' && res.value) {
+        const d = res.value;
+        const price = d.regularMarketPrice ?? d.price ?? null;
+        const change = d.regularMarketChangePercent ?? d.changePercent ?? null;
+        const spk = d.sparkline || [];
+        html += `<div class="market-row">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-mono font-bold text-amber-400">${escapeHtml(c.display)}</span>
+            <span class="text-[9px] text-zinc-600">${escapeHtml(c.name)}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            ${sparkline(spk, change, 60, 18)}
+            <span class="text-[11px] font-mono text-zinc-300">${formatPrice(price)}</span>
+            <span class="text-[10px] font-mono ${changeClass(change)} min-w-[52px] text-right">${formatChange(change)}</span>
+          </div>
+        </div>`;
+      }
+    });
+    el.innerHTML = html || '<div class="text-center text-zinc-600 text-xs py-4">No commodity data</div>';
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Failed to load commodities</div>';
+  }
+}
+
+// ─── 5. Market Radar (Macro Signals) ───
+async function loadRadar() {
+  const el = document.getElementById('radar-body');
+  try {
+    const data = await fetchJSON(`${API}/api/macro-signals`);
+    if (!data || data.unavailable) throw new Error('Unavailable');
+    const s = data.signals;
+    const verdictClass = data.verdict === 'BUY' ? 'verdict-buy' : data.verdict === 'CASH' ? 'verdict-cash' : 'bg-zinc-900/30 border border-zinc-800';
+
+    function signalCard(name, status, value, detail, link) {
+      const bc = statusBadgeClass(status);
+      return `<div class="signal-card">
+        <div class="flex items-center justify-between mb-1">
+          ${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener" class="text-[10px] font-mono text-zinc-300 hover:text-red-400 transition-colors">${escapeHtml(name)}</a>` : `<span class="text-[10px] font-mono text-zinc-300">${escapeHtml(name)}</span>`}
+          <span class="signal-badge ${bc}">${escapeHtml(status)}</span>
+        </div>
+        ${value ? `<div class="text-[11px] font-mono text-zinc-400">${value}</div>` : ''}
+        ${detail ? `<div class="text-[8px] font-mono text-zinc-600 mt-0.5">${escapeHtml(detail)}</div>` : ''}
+      </div>`;
+    }
+
+    let html = `
+      <div class="${verdictClass} rounded-sm p-3 mb-3 text-center">
+        <div class="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Overall Verdict</div>
+        <div class="text-xl font-mono font-bold ${data.verdict === 'BUY' ? 'text-green-400' : 'text-red-400'}">${escapeHtml(data.verdict)}</div>
+        <div class="text-[10px] font-mono text-zinc-500 mt-1">${data.bullishCount}/${data.totalCount} bullish signals</div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        ${signalCard('Liquidity', s.liquidity.status, formatNum(s.liquidity.value), 'JPY 30d ROC', 'https://www.tradingview.com/symbols/JPYUSD/')}
+        ${signalCard('Flow', s.flowStructure.status, `BTC ${formatNum(s.flowStructure.btcReturn5)} / QQQ ${formatNum(s.flowStructure.qqqReturn5)}`, '5d returns', null)}
+        ${signalCard('Regime', s.macroRegime.status, `QQQ ${formatNum(s.macroRegime.qqqRoc20)} / XLP ${formatNum(s.macroRegime.xlpRoc20)}`, '20d ROC', 'https://www.tradingview.com/symbols/QQQ/')}
+        ${signalCard('BTC Trend', s.technicalTrend.status, `$${s.technicalTrend.btcPrice?.toLocaleString() ?? 'N/A'}`, `SMA50: $${s.technicalTrend.sma50?.toLocaleString() ?? '-'} | Mayer: ${s.technicalTrend.mayerMultiple ?? '-'}`, 'https://www.tradingview.com/symbols/BTCUSD/')}
+        ${signalCard('Hash Rate', s.hashRate.status, formatNum(s.hashRate.change30d), '30d change', 'https://mempool.space/mining')}
+        ${signalCard('Mining', s.miningCost.status, '', 'Hashprice model', null)}
+      </div>
+      <div class="signal-card mt-2">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-[10px] font-mono text-zinc-300">Fear & Greed</span>
+          <span class="signal-badge ${statusBadgeClass(s.fearGreed.status)}">${escapeHtml(s.fearGreed.status)}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          ${donutGauge(s.fearGreed.value)}
+          <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener" class="text-[8px] font-mono text-zinc-600 hover:text-zinc-400">alternative.me</a>
+        </div>
+      </div>
+    `;
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Market radar unavailable</div>';
+  }
+}
+
+// ─── 6. Economic Data (FRED) ───
+async function loadEconomic() {
+  const el = document.getElementById('economic-body');
+  const series = [
+    { id: 'CPIAUCSL', name: 'CPI (Inflation)', unit: '' },
+    { id: 'GDP', name: 'GDP', unit: 'B' },
+    { id: 'UNRATE', name: 'Unemployment', unit: '%' },
+    { id: 'M2SL', name: 'M2 Money Supply', unit: 'B' },
+    { id: 'FEDFUNDS', name: 'Fed Funds Rate', unit: '%' },
+    { id: 'T10Y2Y', name: '10Y-2Y Spread', unit: '' },
+  ];
+  try {
+    const results = await Promise.allSettled(
+      series.map(s => fetchJSON(`${API}/api/fred-data?series_id=${s.id}`))
+    );
+    let html = '';
+    series.forEach((s, i) => {
+      const res = results[i];
+      if (res.status === 'fulfilled' && res.value) {
+        const d = res.value;
+        const val = d.value ?? d.latestValue ?? '--';
+        const date = d.date || d.latestDate || '';
+        html += `<div class="econ-row">
+          <div>
+            <div class="text-[10px] font-mono text-zinc-300">${escapeHtml(s.name)}</div>
+            <div class="text-[8px] font-mono text-zinc-700">${escapeHtml(s.id)}</div>
+          </div>
+          <div class="text-[12px] font-mono font-bold text-white">${val}${s.unit}</div>
+          <div class="text-[8px] font-mono text-zinc-600">${date ? new Date(date).toLocaleDateString() : ''}</div>
+        </div>`;
+      }
+    });
+    el.innerHTML = html || '<div class="text-center text-zinc-600 text-xs py-4">No economic data</div>';
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Failed to load FRED data</div>';
+  }
+}
+
+// ─── 7. BTC ETF Tracker ───
+async function loadETF() {
+  const el = document.getElementById('etf-body');
+  try {
+    const data = await fetchJSON(`${API}/api/etf-flows`);
+    if (!data || data.unavailable || !data.etfs?.length) throw new Error('Unavailable');
+    const s = data.summary;
+    const dirClass = s.netDirection?.includes('INFLOW') ? 'text-green-400' : s.netDirection?.includes('OUTFLOW') ? 'text-red-400' : 'text-zinc-400';
+
+    let html = `
+      <div class="flex items-center justify-between p-2 mb-2 rounded-sm bg-zinc-900/40 border border-zinc-800/50">
+        <div class="text-center">
+          <div class="text-[8px] font-mono text-zinc-600 uppercase">Net</div>
+          <div class="text-[11px] font-mono font-bold ${dirClass}">${escapeHtml(s.netDirection || '--')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-[8px] font-mono text-zinc-600 uppercase">Est. Flow</div>
+          <div class="text-[11px] font-mono text-zinc-300">${formatVolume(Math.abs(s.totalEstFlow || 0))}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-[8px] font-mono text-zinc-600 uppercase">ETFs</div>
+          <div class="text-[11px] font-mono text-zinc-300">${s.inflowCount || 0}↑ ${s.outflowCount || 0}↓</div>
+        </div>
+      </div>
+      <table class="etf-table">
+        <thead><tr><th>Ticker</th><th>Issuer</th><th>Flow</th><th>Vol</th><th>Chg</th></tr></thead>
+        <tbody>
+    `;
+    data.etfs.forEach(etf => {
+      const fc = etf.direction === 'inflow' ? 'flow-inflow' : etf.direction === 'outflow' ? 'flow-outflow' : 'flow-neutral';
+      html += `<tr>
+        <td class="text-zinc-200 font-semibold">${escapeHtml(etf.ticker)}</td>
+        <td class="text-zinc-500 text-[9px]">${escapeHtml(etf.issuer)}</td>
+        <td class="${fc}">${etf.direction === 'inflow' ? '+' : etf.direction === 'outflow' ? '-' : ''}${formatVolume(Math.abs(etf.estFlow || 0))}</td>
+        <td class="text-zinc-500">${formatVolume(etf.volume || 0)}</td>
+        <td class="${etf.priceChange >= 0 ? 'text-green-500' : 'text-red-500'}">${etf.priceChange > 0 ? '+' : ''}${(etf.priceChange||0).toFixed(2)}%</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">ETF data unavailable</div>';
+  }
+}
+
+// ─── 8. Stablecoins ───
+async function loadStablecoins() {
+  const el = document.getElementById('stablecoins-body');
+  try {
+    const data = await fetchJSON(`${API}/api/stablecoin-markets`);
+    if (!data || data.unavailable || !data.stablecoins?.length) throw new Error('Unavailable');
+    const s = data.summary;
+    const hc = s.healthStatus === 'HEALTHY' ? 'health-good' : s.healthStatus === 'CAUTION' ? 'health-caution' : 'health-warning';
+
+    let html = `
+      <div class="${hc} rounded-sm p-2 mb-2 flex items-center justify-between">
+        <span class="text-[10px] font-mono font-bold ${s.healthStatus === 'HEALTHY' ? 'text-green-400' : 'text-yellow-400'}">${escapeHtml(s.healthStatus)}</span>
+        <span class="text-[9px] font-mono text-zinc-500">MCap: ${formatLargeNum(s.totalMarketCap)} | Vol: ${formatLargeNum(s.totalVolume24h)}</span>
+      </div>
+    `;
+    data.stablecoins.forEach(c => {
+      const pc = c.pegStatus === 'ON PEG' ? 'peg-on' : c.pegStatus === 'SLIGHT DEPEG' ? 'peg-slight' : 'peg-off';
+      html += `<div class="market-row">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-mono font-bold text-zinc-200">${escapeHtml(c.symbol)}</span>
+          <span class="text-[9px] text-zinc-600">${escapeHtml(c.name)}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-[11px] font-mono text-zinc-300">$${c.price?.toFixed(4) || '--'}</span>
+          <span class="text-[9px] font-mono ${pc}">${escapeHtml(c.pegStatus)}</span>
+          <span class="text-[8px] font-mono text-zinc-600">${formatLargeNum(c.marketCap)}</span>
+        </div>
+      </div>`;
+    });
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Stablecoin data unavailable</div>';
+  }
+}
+
+// ─── 9. Market Headlines (RSS) ───
+async function loadHeadlines() {
+  const el = document.getElementById('headlines-body');
+  try {
+    const items = await fetchRSS(FEEDS.markets);
+    el.innerHTML = renderNewsList(items);
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Headlines unavailable</div>';
+  }
+}
+
+// ─── 10. Predictions (Polymarket) ───
+async function loadPredictions() {
+  const el = document.getElementById('predictions-body');
+  try {
+    const data = await fetchJSON(`${API}/api/polymarket?closed=false&order=volume&ascending=false&limit=15`);
+    if (!data || !Array.isArray(data) || data.length === 0) throw new Error('No data');
+    el.innerHTML = data.map(market => {
+      const prob = market.outcomePrices ? JSON.parse(market.outcomePrices)[0] : (market.bestBid || 0.5);
+      const probPct = (parseFloat(prob) * 100).toFixed(0);
+      const vol = market.volume ? formatVolume(parseFloat(market.volume)) : '--';
+      return `<div class="prediction-row">
+        <div class="text-[11px] text-zinc-300 leading-tight mb-1">${escapeHtml(market.question || market.title || '')}</div>
+        <div class="flex items-center gap-2 mb-1">
+          <div class="prediction-bar flex-1">
+            <div class="prediction-fill bg-red-600" style="width:${probPct}%"></div>
+          </div>
+          <span class="text-[11px] font-mono font-bold text-white min-w-[36px] text-right">${probPct}%</span>
+        </div>
+        <div class="text-[8px] font-mono text-zinc-600">Vol: ${vol}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Predictions unavailable</div>';
+  }
+}
+
+// ─── 11-17. RSS News Panels ───
+async function loadRSSPanel(feedKey, bodyId) {
+  const el = document.getElementById(bodyId);
+  if (!el) return;
+  try {
+    const items = await fetchRSS(FEEDS[feedKey]);
+    el.innerHTML = renderNewsList(items);
+  } catch(e) {
+    el.innerHTML = '<div class="text-center text-red-500/60 text-xs font-mono py-4">Feed unavailable</div>';
+  }
+}
+
+// ─── Market Pulse Ticker ───
+async function loadTicker() {
+  const strip = document.getElementById('ticker-strip');
+  const tickerItems = [
+    { symbol: '^GSPC', display: 'SPX' }, { symbol: '^DJI', display: 'DOW' },
+    { symbol: '^IXIC', display: 'NDX' }, { symbol: '^VIX', display: 'VIX' },
+  ];
+  const cryptoTicker = [
+    { id: 'bitcoin', display: 'BTC' }, { id: 'ethereum', display: 'ETH' },
+  ];
+  const commodTicker = [
+    { symbol: 'GC=F', display: 'GOLD' }, { symbol: 'CL=F', display: 'OIL' },
+  ];
+
+  let items = [];
+
+  // Fetch indices
+  const idxResults = await Promise.allSettled(
+    tickerItems.map(t => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(t.symbol)}`))
+  );
+  tickerItems.forEach((t, i) => {
+    const r = idxResults[i];
+    if (r.status === 'fulfilled' && r.value) {
+      items.push({ display: t.display, price: r.value.regularMarketPrice ?? r.value.price, change: r.value.regularMarketChangePercent ?? r.value.changePercent });
+    }
+  });
+
+  // Fetch crypto
+  try {
+    const cData = await fetchJSON(`${API}/api/coingecko?endpoint=markets&ids=bitcoin,ethereum&vs_currency=usd`);
+    if (Array.isArray(cData)) {
+      cData.forEach((c, i) => {
+        items.push({ display: cryptoTicker[i]?.display || c.symbol?.toUpperCase(), price: c.current_price, change: c.price_change_percentage_24h });
+      });
+    }
+  } catch(e) {}
+
+  // Fetch commodities
+  const comResults = await Promise.allSettled(
+    commodTicker.map(c => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(c.symbol)}`))
+  );
+  commodTicker.forEach((c, i) => {
+    const r = comResults[i];
+    if (r.status === 'fulfilled' && r.value) {
+      items.push({ display: c.display, price: r.value.regularMarketPrice ?? r.value.price, change: r.value.regularMarketChangePercent ?? r.value.changePercent });
+    }
+  });
+
+  if (items.length === 0) return;
+
+  function renderTickerItem(item) {
+    const cc = item.change != null && item.change >= 0 ? 'text-green-500' : 'text-red-500';
+    const arrow = item.change != null && item.change >= 0 ? '▲' : '▼';
+    return `<span class="inline-flex items-center gap-1.5 px-4">
+      <span class="text-[10px] font-mono font-bold text-zinc-300">${escapeHtml(item.display)}</span>
+      <span class="text-[10px] font-mono text-zinc-400">${formatPrice(item.price)}</span>
+      <span class="text-[9px] font-mono ${cc}">${arrow} ${formatChange(item.change)}</span>
+    </span><span class="text-zinc-800 text-[8px]">│</span>`;
+  }
+
+  const tickerHTML = items.map(renderTickerItem).join('');
+  strip.innerHTML = tickerHTML + tickerHTML; // Duplicate for seamless loop
+}
+
+// ═══ MAPLIBRE GLOBE ═══
+let mapInstance = null;
+async function loadGlobe() {
+  const container = document.getElementById('globe-container');
+  if (!container) return;
+
+  // Load MapLibre CSS & JS dynamically
+  if (!window.maplibregl) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
+    document.head.appendChild(link);
+
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+
+  mapInstance = new maplibregl.Map({
+    container: 'globe-container',
+    style: { version: 8, sources: { 'carto-dark': { type: 'raster', tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'], tileSize: 256, attribution: '© CARTO © OSM' } }, layers: [{ id: 'carto', type: 'raster', source: 'carto-dark' }] },
+    center: [10, 30], zoom: 1.8, minZoom: 1, maxZoom: 8,
+    attributionControl: false,
+  });
+
+  mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+  mapInstance.on('load', () => {
+    // Stock Exchanges
+    const exchanges = [
+      { name: 'NYSE', lat: 40.7069, lon: -74.0113, tier: 'mega' },
+      { name: 'NASDAQ', lat: 40.7568, lon: -73.986, tier: 'mega' },
+      { name: 'SSE', lat: 31.2333, lon: 121.4865, tier: 'mega' },
+      { name: 'Euronext', lat: 52.3465, lon: 4.879, tier: 'mega' },
+      { name: 'JPX', lat: 35.6803, lon: 139.7717, tier: 'mega' },
+      { name: 'HKEX', lat: 22.2832, lon: 114.1569, tier: 'major' },
+      { name: 'LSE', lat: 51.5155, lon: -0.0922, tier: 'major' },
+      { name: 'NSE', lat: 19.0557, lon: 72.8525, tier: 'major' },
+      { name: 'TSX', lat: 43.6489, lon: -79.3818, tier: 'major' },
+      { name: 'KRX', lat: 37.523, lon: 126.9258, tier: 'major' },
+      { name: 'ASX', lat: -33.8672, lon: 151.2067, tier: 'major' },
+      { name: 'Xetra', lat: 50.111, lon: 8.6804, tier: 'major' },
+      { name: 'B3', lat: -23.5486, lon: -46.6341, tier: 'regional' },
+      { name: 'JSE', lat: -26.1088, lon: 28.0318, tier: 'regional' },
+      { name: 'SGX', lat: 1.2794, lon: 103.8498, tier: 'regional' },
+      { name: 'Tadawul', lat: 24.7103, lon: 46.677, tier: 'regional' },
+      { name: 'IDX', lat: -6.2293, lon: 106.813, tier: 'regional' },
+      { name: 'BMV', lat: 19.4345, lon: -99.1424, tier: 'regional' },
+      { name: 'MOEX', lat: 55.7539, lon: 37.6084, tier: 'regional' },
+      { name: 'TASE', lat: 32.0669, lon: 34.7856, tier: 'regional' },
+    ];
+
+    const centralBanks = [
+      { name: 'Fed', lat: 38.8928, lon: -77.0455 },
+      { name: 'ECB', lat: 50.1096, lon: 8.7033 },
+      { name: 'BoJ', lat: 35.6867, lon: 139.7635 },
+      { name: 'BoE', lat: 51.5142, lon: -0.0882 },
+      { name: 'PBoC', lat: 39.9064, lon: 116.4038 },
+      { name: 'SNB', lat: 46.9482, lon: 7.4476 },
+      { name: 'RBA', lat: -33.8627, lon: 151.2111 },
+      { name: 'BoC', lat: 45.423, lon: -75.701 },
+      { name: 'RBI', lat: 18.9323, lon: 72.8338 },
+      { name: 'SAMA', lat: 24.6938, lon: 46.685 },
+      { name: 'BIS', lat: 47.5585, lon: 7.5866 },
+    ];
+
+    const financialCenters = [
+      { name: 'New York', lat: 40.758, lon: -74.0001 },
+      { name: 'London', lat: 51.5128, lon: -0.0908 },
+      { name: 'Singapore', lat: 1.2833, lon: 103.85 },
+      { name: 'Hong Kong', lat: 22.283, lon: 114.153 },
+      { name: 'Tokyo', lat: 35.6762, lon: 139.6503 },
+      { name: 'Shanghai', lat: 31.2304, lon: 121.4737 },
+      { name: 'Chicago', lat: 41.8825, lon: -87.6328 },
+      { name: 'Zurich', lat: 47.3686, lon: 8.5391 },
+      { name: 'Dubai', lat: 25.2134, lon: 55.2825 },
+      { name: 'Sydney', lat: -33.8688, lon: 151.2093 },
+      { name: 'Mumbai', lat: 19.076, lon: 72.8777 },
+      { name: 'Toronto', lat: 43.6532, lon: -79.3832 },
+    ];
+
+    // Add markers
+    exchanges.forEach(ex => {
+      const size = ex.tier === 'mega' ? 10 : ex.tier === 'major' ? 7 : 5;
+      const color = ex.tier === 'mega' ? '#dc2626' : ex.tier === 'major' ? '#f97316' : '#eab308';
+      const markerEl = document.createElement('div');
+      markerEl.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${color};border:1px solid rgba(255,255,255,0.3);cursor:pointer;transition:transform 0.2s;`;
+      markerEl.title = ex.name;
+      markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
+      markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
+      new maplibregl.Marker({ element: markerEl }).setLngLat([ex.lon, ex.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#0a0a0a;padding:4px 8px;border:1px solid #27272a;border-radius:2px;"><strong>${ex.name}</strong><br><span style="color:#a1a1aa;font-size:9px;">Stock Exchange</span></div>`)).addTo(mapInstance);
+    });
+
+    centralBanks.forEach(cb => {
+      const markerEl = document.createElement('div');
+      markerEl.style.cssText = 'width:8px;height:8px;border-radius:2px;background:#3b82f6;border:1px solid rgba(255,255,255,0.3);cursor:pointer;transition:transform 0.2s;';
+      markerEl.title = cb.name;
+      markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
+      markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
+      new maplibregl.Marker({ element: markerEl }).setLngLat([cb.lon, cb.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#0a0a0a;padding:4px 8px;border:1px solid #27272a;border-radius:2px;"><strong>${cb.name}</strong><br><span style="color:#a1a1aa;font-size:9px;">Central Bank</span></div>`)).addTo(mapInstance);
+    });
+
+    financialCenters.forEach(fc => {
+      const markerEl = document.createElement('div');
+      markerEl.style.cssText = 'width:6px;height:6px;border-radius:50%;background:#a855f7;border:1px solid rgba(255,255,255,0.2);cursor:pointer;transition:transform 0.2s;';
+      markerEl.title = fc.name;
+      markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
+      markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
+      new maplibregl.Marker({ element: markerEl }).setLngLat([fc.lon, fc.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#0a0a0a;padding:4px 8px;border:1px solid #27272a;border-radius:2px;"><strong>${fc.name}</strong><br><span style="color:#a1a1aa;font-size:9px;">Financial Center</span></div>`)).addTo(mapInstance);
+    });
+  });
+}
+
+// ═══ ORCHESTRATOR ═══
+function updateTimestamp() {
+  const el = document.getElementById('lastUpdate');
+  if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+async function loadAllPanels() {
+  updateTimestamp();
+  // Fire all fetches in parallel
+  const tasks = [
+    loadMarkets(),
+    loadCrypto(),
+    loadHeatmap(),
+    loadCommodities(),
+    loadRadar(),
+    loadEconomic(),
+    loadETF(),
+    loadStablecoins(),
+    loadHeadlines(),
+    loadPredictions(),
+    loadRSSPanel('forex', 'forex-body'),
+    loadRSSPanel('bonds', 'bonds-body'),
+    loadRSSPanel('centralbanks', 'centralbanks-body'),
+    loadRSSPanel('crypto', 'cryptonews-body'),
+    loadRSSPanel('commodities', 'comnews-body'),
+    loadRSSPanel('ipo', 'ipo-body'),
+    loadRSSPanel('economic', 'econnews-body'),
+    loadRSSPanel('marketsNews', 'marketnews-body'),
+  ];
+  await Promise.allSettled(tasks);
+}
+
+function refreshAll() {
+  // Re-skeleton all panels briefly
+  document.querySelectorAll('.panel-body').forEach(el => {
+    if (!el.id.includes('globe')) {
+      el.innerHTML = '<div class="space-y-2"><div class="skeleton h-5 w-full"></div><div class="skeleton h-5 w-4/5"></div><div class="skeleton h-5 w-full"></div></div>';
+    }
+  });
+  loadAllPanels();
+}
+
+// ─── Init ───
+document.addEventListener('DOMContentLoaded', async () => {
+  applyPanelVisibility();
+
+  // Dismiss splash
+  setTimeout(() => {
+    const splash = document.getElementById('splash');
+    if (splash) { splash.classList.add('fade-out'); setTimeout(() => splash.remove(), 600); }
+  }, 1800);
+
+  // Load ticker first (fast)
+  loadTicker();
+
+  // Load all panels
+  await loadAllPanels();
+
+  // Load globe (deferred)
+  setTimeout(() => loadGlobe(), 500);
+
+  // Auto-refresh
+  setInterval(() => loadAllPanels(), REFRESH_MS);
+  setInterval(() => loadTicker(), TICKER_REFRESH_MS);
+});
+</script>
+</body>
+</html>

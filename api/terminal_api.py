@@ -562,6 +562,15 @@ async def serve_research():
     return HTMLResponse("<h1>Research page not found</h1>")
 
 
+@app.get("/monitor", response_class=HTMLResponse)
+async def serve_monitor():
+    """Serve the Finance Monitor page."""
+    monitor_path = bastion_path / "web" / "monitor.html"
+    if monitor_path.exists():
+        return FileResponse(monitor_path)
+    return HTMLResponse("<h1>Monitor page not found</h1>")
+
+
 @app.get("/account", response_class=HTMLResponse)
 async def serve_account():
     """Serve the Account Center page."""
