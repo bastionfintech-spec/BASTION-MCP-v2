@@ -22,8 +22,9 @@
   <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
-    * { box-sizing: border-box; }
-    body { font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; font-size: 12px; line-height: 1.5; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: #0a0a0a; min-height: 100%; }
+    body { font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; font-size: 12px; line-height: 1.5; background: #0a0a0a; min-height: 100vh; }
     .font-mono { font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', monospace; }
     .font-sans { font-family: 'Inter', sans-serif; }
 
@@ -212,7 +213,7 @@
     .status-cached { font-size: 9px; padding: 1px 6px; border: 1px solid rgba(255,170,0,0.3); color: #ffaa00; border-radius: 2px; background: rgba(255,170,0,0.08); }
   </style>
 </head>
-<body class="bg-[#0a0a0a] text-[#ccc] min-h-screen flex flex-col selection:bg-[#44ff88]/20 selection:text-white relative overflow-x-hidden">
+<body class="bg-[#0a0a0a] text-[#ccc] min-h-screen flex flex-col selection:bg-[#44ff88]/20 selection:text-white relative overflow-x-hidden" style="background:#0a0a0a;">
 
   <!-- Loading Splash -->
   <div id="splash" class="splash-screen">
@@ -555,7 +556,7 @@
       </div>
 
       <!-- Panel: Live News Streams -->
-      <div id="panel-livenews" class="monitor-panel priority" data-panel="live-news-streams" style="order:2; grid-row: span 2;">
+      <div id="panel-livenews" class="monitor-panel priority" data-panel="live-news-streams" style="order:2;">
         <div class="panel-header">
           <span class="panel-title"><iconify-icon icon="solar:tv-bold" class="text-[#ff4444] text-xs"></iconify-icon> Live News</span>
           <span class="status-live pulse-glow">LIVE</span>
@@ -567,7 +568,7 @@
       </div>
 
       <!-- Panel: Live Webcams -->
-      <div id="panel-webcams" class="monitor-panel" data-panel="webcams" style="order:3; grid-row: span 2;">
+      <div id="panel-webcams" class="monitor-panel" data-panel="webcams" style="order:3;">
         <div class="panel-header">
           <span class="panel-title"><iconify-icon icon="solar:videocamera-bold" class="text-[#888] text-xs"></iconify-icon> Live Webcams</span>
           <span class="status-live">LIVE</span>
@@ -780,6 +781,31 @@ async function fetchJSON(url, timeoutMs = 15000) {
   } finally { clearTimeout(timer); }
 }
 
+// Helper: fetch Yahoo Finance and unwrap chart envelope
+async function fetchYahoo(symbol) {
+  const raw = await fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(symbol)}`);
+  const result = raw?.chart?.result?.[0];
+  if (!result?.meta) return null;
+  const meta = result.meta;
+  const price = meta.regularMarketPrice;
+  const prevClose = meta.chartPreviousClose || meta.previousClose || price;
+  const changePercent = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+  const closes = result.indicators?.quote?.[0]?.close;
+  const sparklineData = closes ? closes.filter(v => v != null) : [];
+  return {
+    price,
+    regularMarketPrice: price,
+    changePercent,
+    regularMarketChangePercent: changePercent,
+    sparkline: sparklineData,
+    high: meta.regularMarketDayHigh,
+    low: meta.regularMarketDayLow,
+    volume: meta.regularMarketVolume,
+    name: meta.longName || meta.shortName || symbol,
+    symbol: meta.symbol || symbol,
+  };
+}
+
 // Helper: fetch RSS feeds and parse XML
 async function fetchRSS(feeds) {
   const results = [];
@@ -905,12 +931,12 @@ async function loadMarkets() {
 
     // Fetch all indices via Yahoo Finance
     const indexResults = await Promise.allSettled(
-      indices.map(idx => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(idx.symbol)}`))
+      indices.map(idx => fetchYahoo(idx.symbol))
     );
 
-    // Fetch stocks via Yahoo Finance (Finnhub rate-limits)
+    // Fetch stocks via Yahoo Finance
     const stockResults = await Promise.allSettled(
-      stocks.map(s => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(s.symbol)}`))
+      stocks.map(s => fetchYahoo(s.symbol))
     );
 
     let html = '';
@@ -1007,14 +1033,14 @@ async function loadHeatmap() {
   ];
   try {
     const results = await Promise.allSettled(
-      sectors.map(s => fetchJSON(`${API}/api/yahoo-finance?symbol=${s.symbol}`))
+      sectors.map(s => fetchYahoo(s.symbol))
     );
     let html = '<div class="heatmap-grid">';
     sectors.forEach((s, i) => {
       const res = results[i];
       let change = null;
       if (res.status === 'fulfilled' && res.value) {
-        change = res.value.regularMarketChangePercent ?? res.value.changePercent ?? null;
+        change = res.value.changePercent ?? null;
       }
       html += `<div class="heatmap-cell ${getHeatmapClass(change)}">
         <div class="text-[9px] font-mono font-semibold text-[#e8e8e8]">${escapeHtml(s.name)}</div>
@@ -1041,15 +1067,15 @@ async function loadCommodities() {
   ];
   try {
     const results = await Promise.allSettled(
-      items.map(c => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(c.symbol)}`))
+      items.map(c => fetchYahoo(c.symbol))
     );
     let html = '';
     items.forEach((c, i) => {
       const res = results[i];
       if (res.status === 'fulfilled' && res.value) {
         const d = res.value;
-        const price = d.regularMarketPrice ?? d.price ?? null;
-        const change = d.regularMarketChangePercent ?? d.changePercent ?? null;
+        const price = d.price ?? null;
+        const change = d.changePercent ?? null;
         const spk = d.sparkline || [];
         html += `<div class="market-row">
           <div class="flex items-center gap-2">
@@ -1142,8 +1168,21 @@ async function loadEconomic() {
       const res = results[i];
       if (res.status === 'fulfilled' && res.value) {
         const d = res.value;
-        const val = d.value ?? d.latestValue ?? '--';
-        const date = d.date || d.latestDate || '';
+        // FRED returns { observations: [...] } — get latest non-"." value
+        let val = '--', date = '';
+        if (d.observations && Array.isArray(d.observations)) {
+          // observations are in reverse chronological order or need sorting
+          const obs = d.observations.filter(o => o.value && o.value !== '.');
+          if (obs.length > 0) {
+            // Sort by date descending to get latest
+            obs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            val = parseFloat(obs[0].value).toLocaleString(undefined, {maximumFractionDigits: 2});
+            date = obs[0].date;
+          }
+        } else {
+          val = d.value ?? d.latestValue ?? '--';
+          date = d.date || d.latestDate || '';
+        }
         html += `<div class="econ-row">
           <div>
             <div class="text-[10px] font-mono text-[#ccc]">${escapeHtml(s.name)}</div>
@@ -1309,12 +1348,12 @@ async function loadTicker() {
 
   // Fetch indices
   const idxResults = await Promise.allSettled(
-    tickerItems.map(t => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(t.symbol)}`))
+    tickerItems.map(t => fetchYahoo(t.symbol))
   );
   tickerItems.forEach((t, i) => {
     const r = idxResults[i];
     if (r.status === 'fulfilled' && r.value) {
-      items.push({ display: t.display, price: r.value.regularMarketPrice ?? r.value.price, change: r.value.regularMarketChangePercent ?? r.value.changePercent });
+      items.push({ display: t.display, price: r.value.price, change: r.value.changePercent });
     }
   });
 
@@ -1330,12 +1369,12 @@ async function loadTicker() {
 
   // Fetch commodities
   const comResults = await Promise.allSettled(
-    commodTicker.map(c => fetchJSON(`${API}/api/yahoo-finance?symbol=${encodeURIComponent(c.symbol)}`))
+    commodTicker.map(c => fetchYahoo(c.symbol))
   );
   commodTicker.forEach((c, i) => {
     const r = comResults[i];
     if (r.status === 'fulfilled' && r.value) {
-      items.push({ display: c.display, price: r.value.regularMarketPrice ?? r.value.price, change: r.value.regularMarketChangePercent ?? r.value.changePercent });
+      items.push({ display: c.display, price: r.value.price, change: r.value.changePercent });
     }
   });
 
