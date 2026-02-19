@@ -478,6 +478,50 @@ if web_dir.exists():
 else:
     logger.warning(f"Web directory not found at {web_dir}")
 
+# ── Mount BASTION MCP Server (SSE transport) ──────────────────────
+# Exposes BASTION Risk Intelligence as MCP tools for Claude agents.
+# Clients connect at /mcp/sse  (Server-Sent Events)
+# Messages POST to /mcp/messages/
+try:
+    from mcp_server.server import mcp as mcp_server_instance
+    _mcp_sse = mcp_server_instance.sse_app()
+
+    # Wrap the SSE app to fix the sub-path prefix issue:
+    # When mounted under /mcp, the SSE handshake sends back
+    # "/messages/?session_id=..." but the client needs "/mcp/messages/..."
+    from starlette.types import ASGIApp, Receive, Scope, Send
+
+    class _MCPSubpathFix:
+        """ASGI middleware that rewrites the SSE endpoint URI to include /mcp prefix."""
+        def __init__(self, app: ASGIApp, prefix: str = "/mcp"):
+            self.app = app
+            self.prefix = prefix
+
+        async def __call__(self, scope: Scope, receive: Receive, send: Send):
+            if scope["type"] == "http" and scope["path"] == "/sse":
+                # Patch send to rewrite the endpoint URI in the SSE event
+                original_send = send
+                async def patched_send(message):
+                    if message.get("type") == "http.response.body":
+                        body = message.get("body", b"")
+                        if b"endpoint" in body and b"/messages/" in body:
+                            body = body.replace(
+                                b"/messages/",
+                                f"{self.prefix}/messages/".encode()
+                            )
+                            message = {**message, "body": body}
+                    await original_send(message)
+                await self.app(scope, receive, patched_send)
+            else:
+                await self.app(scope, receive, send)
+
+    app.mount("/mcp", _MCPSubpathFix(_mcp_sse), name="mcp_server")
+    logger.info("[MCP] BASTION MCP Server mounted at /mcp (SSE at /mcp/sse)")
+except ImportError as e:
+    logger.warning(f"[MCP] MCP Server not available (missing dependency): {e}")
+except Exception as e:
+    logger.error(f"[MCP] Failed to mount MCP Server: {e}")
+
 
 # =============================================================================
 # STATUS & HEALTH CHECK
@@ -621,6 +665,18 @@ async def serve_lite():
     if lite_path.exists():
         return FileResponse(lite_path)
     return HTMLResponse("<h1>Dashboard not found</h1>")
+
+
+@app.get("/docs", response_class=HTMLResponse)
+async def serve_docs():
+    """Serve the BASTION MCP documentation site."""
+    docs_path = bastion_path / "web" / "docs.html"
+    if docs_path.exists():
+        return FileResponse(docs_path)
+    return HTMLResponse(
+        "<h1 style='color:#fff;background:#050505;font-family:monospace;padding:2em;'>"
+        "BASTION MCP Docs — Coming Soon</h1>"
+    )
 
 
 @app.get("/settings.js")
