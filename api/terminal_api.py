@@ -438,11 +438,12 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.tailwindcss.com; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.tailwindcss.com https://code.iconify.design; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com; "
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
             "img-src 'self' data: blob: https:; "
-            "connect-src 'self' https://bastionfi.tech https://*.supabase.co wss: ws:; "
+            "connect-src 'self' https://bastionfi.tech https://*.supabase.co https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com https://finance.worldmonitor.app https://*.basemaps.cartocdn.com wss: ws:; "
+            "worker-src blob:; "
             "frame-ancestors 'none'"
         )
         

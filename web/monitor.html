@@ -59,25 +59,33 @@
 
     /* ─── Panel Cards ─── */
     .monitor-panel {
-      background: #0a0a0a; border: 1px solid #27272a; border-radius: 2px;
+      background: #0A0A0A; border: 1px solid rgba(39,39,42,0.5); border-radius: 8px;
       display: flex; flex-direction: column; overflow: hidden;
-      transition: border-color 0.2s ease;
+      transition: all 0.2s ease; position: relative;
     }
-    .monitor-panel:hover { border-color: #3f3f46; }
-    .monitor-panel.priority { border-left: 2px solid #dc2626; }
+    .monitor-panel:hover { border-color: rgba(63,63,70,0.6); background: #0B0B0B; }
+    .monitor-panel.priority {
+      border-left: 2px solid #dc2626;
+      box-shadow: inset 3px 0 12px rgba(220,38,38,0.06);
+    }
+    .monitor-panel.priority::after {
+      content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 40px;
+      background: linear-gradient(90deg, rgba(220,38,38,0.04), transparent);
+      pointer-events: none;
+    }
     .panel-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 12px; border-bottom: 1px solid #18181b;
-      background: rgba(9,9,11,0.8);
+      padding: 8px 12px; border-bottom: 1px solid rgba(24,24,27,0.5);
+      background: #080808;
     }
     .panel-title {
       font-family: 'JetBrains Mono', monospace; font-size: 10px;
       font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em;
-      color: #a1a1aa;
+      color: #a1a1aa; display: flex; align-items: center; gap: 6px;
     }
     .panel-badge {
       font-family: 'JetBrains Mono', monospace; font-size: 8px;
-      padding: 1px 6px; border-radius: 2px; border: 1px solid;
+      padding: 1px 6px; border-radius: 3px; border: 1px solid;
     }
     .panel-body {
       flex: 1; overflow-y: auto; padding: 8px; min-height: 120px;
@@ -90,9 +98,9 @@
     /* ─── Market Items ─── */
     .market-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 5px 6px; border-radius: 2px; transition: background 0.15s;
+      padding: 5px 6px; border-radius: 4px; transition: all 0.15s;
     }
-    .market-row:hover { background: rgba(24,24,27,0.5); }
+    .market-row:hover { background: rgba(24,24,27,0.5); transform: translateX(1px); }
     .market-row + .market-row { border-top: 1px solid rgba(39,39,42,0.3); }
 
     /* ─── Sparkline SVG ─── */
@@ -101,10 +109,10 @@
     /* ─── Heatmap ─── */
     .heatmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 4px; }
     .heatmap-cell {
-      padding: 8px 6px; border-radius: 2px; text-align: center;
-      font-family: 'JetBrains Mono', monospace; transition: transform 0.15s;
+      padding: 8px 6px; border-radius: 6px; text-align: center;
+      font-family: 'JetBrains Mono', monospace; transition: all 0.15s;
     }
-    .heatmap-cell:hover { transform: scale(1.04); }
+    .heatmap-cell:hover { transform: scale(1.04); box-shadow: 0 0 12px rgba(255,255,255,0.04); }
     .hm-strong-up { background: rgba(22,163,74,0.25); border: 1px solid rgba(22,163,74,0.3); }
     .hm-up { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.2); }
     .hm-slight-up { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.12); }
@@ -115,21 +123,22 @@
 
     /* ─── Macro Signals / Radar ─── */
     .signal-card {
-      background: rgba(9,9,11,0.6); border: 1px solid #1a1a1e; border-radius: 3px;
-      padding: 8px 10px; transition: border-color 0.2s;
+      background: rgba(9,9,11,0.6); border: 1px solid rgba(24,24,27,0.6); border-radius: 6px;
+      padding: 8px 10px; transition: all 0.2s;
     }
-    .signal-card:hover { border-color: #3f3f46; }
+    .signal-card:hover { border-color: #3f3f46; background: rgba(15,15,18,0.8); }
     .signal-badge { font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
     .badge-bullish { background: rgba(34,197,94,0.15); color: #4ade80; }
     .badge-bearish { background: rgba(239,68,68,0.15); color: #f87171; }
     .badge-neutral { background: rgba(113,113,122,0.15); color: #a1a1aa; }
-    .verdict-buy { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); border: 1px solid rgba(34,197,94,0.25); }
-    .verdict-cash { background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04)); border: 1px solid rgba(239,68,68,0.25); }
+    .verdict-buy { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); border: 1px solid rgba(34,197,94,0.25); border-radius: 6px; }
+    .verdict-cash { background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04)); border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; }
 
     /* ─── ETF Flows ─── */
     .etf-table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
-    .etf-table th { text-align: left; padding: 4px 6px; font-size: 9px; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #1a1a1e; }
-    .etf-table td { padding: 4px 6px; border-bottom: 1px solid rgba(24,24,27,0.4); }
+    .etf-table th { text-align: left; padding: 4px 6px; font-size: 9px; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(24,24,27,0.5); background: rgba(8,8,8,0.5); }
+    .etf-table td { padding: 4px 6px; border-bottom: 1px solid rgba(24,24,27,0.3); }
+    .etf-table tr:hover td { background: rgba(24,24,27,0.3); }
     .flow-inflow { color: #4ade80; }
     .flow-outflow { color: #f87171; }
     .flow-neutral { color: #a1a1aa; }
@@ -144,10 +153,10 @@
 
     /* ─── RSS / News Items ─── */
     .news-item {
-      padding: 6px 8px; border-radius: 2px; transition: background 0.15s;
+      padding: 6px 8px; border-radius: 4px; transition: all 0.15s;
       border-bottom: 1px solid rgba(24,24,27,0.3);
     }
-    .news-item:hover { background: rgba(24,24,27,0.4); }
+    .news-item:hover { background: rgba(24,24,27,0.4); transform: translateX(2px); }
     .news-item:last-child { border-bottom: none; }
     .news-source { font-size: 8px; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em; }
     .news-title { font-size: 11px; color: #d4d4d8; line-height: 1.4; }
@@ -160,20 +169,23 @@
     .econ-row:last-child { border-bottom: none; }
 
     /* ─── Polymarket Predictions ─── */
-    .prediction-row { padding: 6px 8px; border-bottom: 1px solid rgba(24,24,27,0.3); }
+    .prediction-row { padding: 6px 8px; border-bottom: 1px solid rgba(24,24,27,0.3); border-radius: 4px; transition: all 0.15s; }
+    .prediction-row:hover { background: rgba(24,24,27,0.3); }
     .prediction-row:last-child { border-bottom: none; }
-    .prediction-bar { height: 4px; border-radius: 2px; background: #18181b; overflow: hidden; }
-    .prediction-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
+    .prediction-bar { height: 4px; border-radius: 4px; background: #18181b; overflow: hidden; }
+    .prediction-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; background: linear-gradient(90deg, #dc2626, #ef4444); }
 
     /* ─── Globe / Map ─── */
-    #globe-container { width: 100%; height: 100%; min-height: 300px; border-radius: 2px; }
+    #globe-container { width: 100%; height: 100%; min-height: 300px; border-radius: 6px; }
     .map-marker { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: transform 0.2s; }
     .map-marker:hover { transform: scale(1.6); }
+    .maplibregl-popup-content { background: #0a0a0a !important; border: 1px solid #27272a !important; border-radius: 6px !important; padding: 0 !important; box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important; }
+    .maplibregl-popup-tip { border-top-color: #0a0a0a !important; }
 
     /* ─── Settings Modal ─── */
-    .settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
     .settings-overlay.active { display: flex; }
-    .settings-modal { background: #0a0a0a; border: 1px solid #27272a; border-radius: 4px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+    .settings-modal { background: #0a0a0a; border: 1px solid rgba(39,39,42,0.5); border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 40px rgba(220,38,38,0.05); }
 
     /* ─── Loading Skeleton ─── */
     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
@@ -209,34 +221,31 @@
   <div class="absolute inset-0 pointer-events-none opacity-[0.04] scanline z-0 mix-blend-overlay"></div>
 
   <!-- ═══ HEADER ═══ -->
-  <header class="h-14 border-b border-zinc-800/80 bg-[#050505]/95 backdrop-blur-md flex items-center justify-between shrink-0 px-3 md:px-6 relative z-40">
+  <header class="h-12 border-b border-zinc-800/80 bg-[#050505]/95 backdrop-blur-md flex items-center justify-between shrink-0 px-3 md:px-6 relative z-40">
     <div class="flex items-center gap-2 md:gap-3">
       <a href="/" class="flex items-center gap-1.5 md:gap-2 group cursor-pointer no-underline">
         <iconify-icon icon="solar:shield-bold" class="text-red-600 text-lg group-hover:scale-110 transition-transform"></iconify-icon>
         <span class="text-sm md:text-base font-mono font-bold tracking-tight text-white group-hover:text-red-500 transition-colors">BASTION</span>
       </a>
-      <span class="text-[7px] md:text-[8px] font-mono bg-zinc-900 text-zinc-500 px-1.5 py-0.5 rounded border border-zinc-800 tracking-widest">MONITOR</span>
+      <span class="text-[7px] md:text-[8px] font-mono bg-red-950/40 text-red-500 px-1 md:px-1.5 py-0.5 rounded border border-red-900/30 tracking-widest">MONITOR</span>
       <!-- LIVE indicator -->
-      <div class="hidden md:flex items-center ml-2 px-2 py-1 border border-zinc-800 bg-zinc-900/30 rounded-sm gap-1.5">
+      <div class="hidden md:flex items-center ml-1 px-2 py-1 border border-zinc-800/60 bg-zinc-900/20 rounded-full backdrop-blur-sm gap-1.5">
         <span class="relative flex h-1.5 w-1.5">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-40"></span>
           <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
         </span>
-        <span class="text-[8px] font-mono text-zinc-500 uppercase tracking-widest">LIVE</span>
+        <span class="text-[8px] font-mono text-zinc-600 uppercase tracking-widest">LIVE</span>
       </div>
     </div>
     <!-- Nav -->
-    <nav class="hidden lg:flex items-center h-full">
-      <div class="flex h-full items-center border-x border-zinc-800/50">
-        <a href="/terminal" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50">Terminal</a>
-        <a href="/research" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50">Research</a>
-        <a href="/monitor" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-white bg-zinc-900/50 border-r border-zinc-800/50 relative">
-          Monitor
-          <div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600"></div>
-        </a>
-        <a href="/lite" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50">Dashboard</a>
-        <a href="/account" class="flex items-center px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-zinc-900/50 transition-colors">Account</a>
-      </div>
+    <nav class="hidden md:flex items-center gap-5 text-[10px] font-mono uppercase tracking-widest">
+      <a href="/frontend" class="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
+        <iconify-icon icon="solar:crown-bold" class="text-amber-500/60 text-[9px]"></iconify-icon>Pro
+      </a>
+      <a href="/lite" class="text-zinc-500 hover:text-zinc-300 transition-colors">Dashboard</a>
+      <a href="/monitor" class="text-white relative after:content-[''] after:absolute after:-bottom-[14px] after:left-0 after:w-full after:h-0.5 after:bg-red-600">Monitor</a>
+      <a href="/research" class="text-zinc-500 hover:text-zinc-300 transition-colors">Research</a>
+      <a href="/account" class="text-zinc-500 hover:text-zinc-300 transition-colors">Account</a>
     </nav>
     <!-- Right actions -->
     <div class="flex items-center gap-2 md:gap-3">
@@ -247,26 +256,27 @@
         <iconify-icon icon="solar:refresh-linear" class="text-zinc-500 hover:text-zinc-300 text-base"></iconify-icon>
       </button>
       <span id="lastUpdate" class="hidden md:inline text-[8px] font-mono text-zinc-700"></span>
-      <button class="lg:hidden text-zinc-400 hover:text-white p-1" onclick="document.getElementById('mobile-nav').classList.toggle('hidden')">
+      <button class="md:hidden text-zinc-400 hover:text-white p-1" onclick="document.getElementById('mobile-nav').classList.toggle('hidden')">
         <iconify-icon icon="solar:hamburger-menu-linear" width="20"></iconify-icon>
       </button>
     </div>
   </header>
 
   <!-- Mobile Nav -->
-  <div id="mobile-nav" class="hidden lg:hidden absolute top-14 left-0 right-0 z-50 bg-[#080808]/98 backdrop-blur-lg border-b border-zinc-800 px-4 py-3 space-y-1">
-    <a href="/terminal" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
-      <iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon>Terminal
+  <div id="mobile-nav" class="hidden md:hidden absolute top-12 left-0 right-0 z-50 bg-[#080808]/98 backdrop-blur-lg border-b border-zinc-800 px-4 py-3 space-y-1">
+    <a href="/frontend" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+      <iconify-icon icon="solar:crown-bold" class="text-amber-500/60 text-sm"></iconify-icon>Pro Terminal
+      <span class="ml-auto text-[8px] text-amber-700 border border-amber-900/20 px-1.5 py-0.5 rounded">PRO</span>
     </a>
-    <a href="/research" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
-      <iconify-icon icon="solar:document-text-linear" class="text-sm"></iconify-icon>Research
+    <a href="/lite" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+      <iconify-icon icon="solar:shield-bold" class="text-sm"></iconify-icon>Dashboard
     </a>
     <a href="/monitor" class="flex items-center gap-3 px-3 py-2.5 rounded-md bg-red-950/10 border border-red-900/20 text-xs font-mono text-white">
       <iconify-icon icon="solar:chart-2-bold" class="text-red-600 text-sm"></iconify-icon>Monitor
       <span class="ml-auto text-[8px] text-red-500/60 font-bold">ACTIVE</span>
     </a>
-    <a href="/lite" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
-      <iconify-icon icon="solar:chart-bold" class="text-sm"></iconify-icon>Dashboard
+    <a href="/research" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
+      <iconify-icon icon="solar:document-text-linear" class="text-sm"></iconify-icon>Research
     </a>
     <a href="/account" class="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-zinc-800/50 text-xs font-mono text-zinc-500 hover:text-white transition-all">
       <iconify-icon icon="solar:user-circle-linear" class="text-sm"></iconify-icon>Account
@@ -274,9 +284,15 @@
   </div>
 
   <!-- ═══ MARKET PULSE TICKER ═══ -->
-  <div class="h-8 border-b border-zinc-800/60 bg-[#080808] flex items-center overflow-hidden shrink-0 relative z-10">
-    <div id="ticker-strip" class="flex items-center whitespace-nowrap animate-marquee">
-      <!-- Duplicated for seamless loop — populated by JS -->
+  <div class="h-7 border-b border-zinc-800/40 bg-[#060606] flex items-center shrink-0 relative z-30 overflow-hidden">
+    <div class="flex items-center gap-1 px-2 shrink-0 border-r border-zinc-800/40">
+      <iconify-icon icon="solar:pulse-2-bold" class="text-red-600 text-[10px]"></iconify-icon>
+      <span class="text-[7px] font-mono font-bold text-zinc-600 uppercase tracking-[0.2em]">PULSE</span>
+    </div>
+    <div class="flex-1 overflow-hidden relative">
+      <div id="ticker-strip" class="flex items-center gap-6 px-4 whitespace-nowrap animate-marquee">
+        <!-- Populated by JS -->
+      </div>
     </div>
   </div>
 
@@ -287,7 +303,7 @@
       <!-- Panel: Live Markets -->
       <div id="panel-markets" class="monitor-panel priority" data-panel="markets" style="order:1">
         <div class="panel-header">
-          <span class="panel-title">Live Markets</span>
+          <span class="panel-title"><iconify-icon icon="solar:chart-bold" class="text-red-500 text-xs"></iconify-icon> Live Markets</span>
           <span class="panel-badge text-green-500 border-green-800 bg-green-900/20">LIVE</span>
         </div>
         <div class="panel-body" id="markets-body">
@@ -298,7 +314,7 @@
       <!-- Panel: Crypto -->
       <div id="panel-crypto" class="monitor-panel priority" data-panel="crypto" style="order:2">
         <div class="panel-header">
-          <span class="panel-title">Crypto & Digital Assets</span>
+          <span class="panel-title"><iconify-icon icon="solar:bitcoin-circle-bold" class="text-amber-500 text-xs"></iconify-icon> Crypto & Digital Assets</span>
           <span class="panel-badge text-amber-500 border-amber-800 bg-amber-900/20">24/7</span>
         </div>
         <div class="panel-body" id="crypto-body">
@@ -309,7 +325,7 @@
       <!-- Panel: Sector Heatmap -->
       <div id="panel-heatmap" class="monitor-panel priority" data-panel="heatmap" style="order:3">
         <div class="panel-header">
-          <span class="panel-title">Sector Heatmap</span>
+          <span class="panel-title"><iconify-icon icon="solar:graph-up-bold" class="text-zinc-500 text-xs"></iconify-icon> Sector Heatmap</span>
           <span class="panel-badge text-zinc-500 border-zinc-700 bg-zinc-800/30">S&P</span>
         </div>
         <div class="panel-body" id="heatmap-body">
@@ -320,7 +336,7 @@
       <!-- Panel: Commodities -->
       <div id="panel-commodities" class="monitor-panel" data-panel="commodities" style="order:4">
         <div class="panel-header">
-          <span class="panel-title">Commodities & Futures</span>
+          <span class="panel-title"><iconify-icon icon="solar:fire-bold" class="text-yellow-500 text-xs"></iconify-icon> Commodities & Futures</span>
           <span class="panel-badge text-yellow-500 border-yellow-800 bg-yellow-900/20">COMEX</span>
         </div>
         <div class="panel-body" id="commodities-body">
@@ -331,7 +347,7 @@
       <!-- Panel: Market Radar (Macro Signals) -->
       <div id="panel-radar" class="monitor-panel priority" data-panel="macro-signals" style="order:5">
         <div class="panel-header">
-          <span class="panel-title">Market Radar</span>
+          <span class="panel-title"><iconify-icon icon="solar:radar-2-bold" class="text-red-500 text-xs"></iconify-icon> Market Radar</span>
           <span class="panel-badge text-red-500 border-red-800 bg-red-900/20">7-SIG</span>
         </div>
         <div class="panel-body" id="radar-body">
@@ -342,7 +358,7 @@
       <!-- Panel: Economic Data (FRED) -->
       <div id="panel-economic" class="monitor-panel" data-panel="economic" style="order:6">
         <div class="panel-header">
-          <span class="panel-title">Economic Data</span>
+          <span class="panel-title"><iconify-icon icon="solar:buildings-bold" class="text-blue-500 text-xs"></iconify-icon> Economic Data</span>
           <span class="panel-badge text-blue-500 border-blue-800 bg-blue-900/20">FRED</span>
         </div>
         <div class="panel-body" id="economic-body">
@@ -353,7 +369,7 @@
       <!-- Panel: BTC ETF Tracker -->
       <div id="panel-etf" class="monitor-panel" data-panel="etf-flows" style="order:7">
         <div class="panel-header">
-          <span class="panel-title">BTC ETF Tracker</span>
+          <span class="panel-title"><iconify-icon icon="solar:wallet-bold" class="text-orange-500 text-xs"></iconify-icon> BTC ETF Tracker</span>
           <span class="panel-badge text-orange-500 border-orange-800 bg-orange-900/20">FLOW</span>
         </div>
         <div class="panel-body" id="etf-body">
@@ -364,7 +380,7 @@
       <!-- Panel: Stablecoins -->
       <div id="panel-stablecoins" class="monitor-panel" data-panel="stablecoins" style="order:8">
         <div class="panel-header">
-          <span class="panel-title">Stablecoins</span>
+          <span class="panel-title"><iconify-icon icon="solar:shield-check-bold" class="text-cyan-500 text-xs"></iconify-icon> Stablecoins</span>
           <span class="panel-badge text-cyan-500 border-cyan-800 bg-cyan-900/20">PEG</span>
         </div>
         <div class="panel-body" id="stablecoins-body">
@@ -375,7 +391,7 @@
       <!-- Panel: Market Headlines -->
       <div id="panel-headlines" class="monitor-panel priority" data-panel="live-news" style="order:9">
         <div class="panel-header">
-          <span class="panel-title">Market Headlines</span>
+          <span class="panel-title"><iconify-icon icon="solar:document-text-bold" class="text-red-500 text-xs"></iconify-icon> Market Headlines</span>
           <span class="panel-badge text-red-500 border-red-800 bg-red-900/20">RSS</span>
         </div>
         <div class="panel-body" id="headlines-body" style="max-height:400px">
@@ -386,7 +402,7 @@
       <!-- Panel: Predictions (Polymarket) -->
       <div id="panel-predictions" class="monitor-panel" data-panel="polymarket" style="order:10">
         <div class="panel-header">
-          <span class="panel-title">Predictions</span>
+          <span class="panel-title"><iconify-icon icon="solar:target-bold" class="text-purple-500 text-xs"></iconify-icon> Predictions</span>
           <span class="panel-badge text-purple-500 border-purple-800 bg-purple-900/20">POLY</span>
         </div>
         <div class="panel-body" id="predictions-body" style="max-height:400px">
@@ -397,7 +413,7 @@
       <!-- Panel: Forex News -->
       <div id="panel-forex" class="monitor-panel" data-panel="forex" style="order:11">
         <div class="panel-header">
-          <span class="panel-title">Forex & Currencies</span>
+          <span class="panel-title"><iconify-icon icon="solar:dollar-bold" class="text-emerald-500 text-xs"></iconify-icon> Forex & Currencies</span>
           <span class="panel-badge text-emerald-500 border-emerald-800 bg-emerald-900/20">FX</span>
         </div>
         <div class="panel-body" id="forex-body" style="max-height:360px">
@@ -408,7 +424,7 @@
       <!-- Panel: Bonds / Fixed Income -->
       <div id="panel-bonds" class="monitor-panel" data-panel="bonds" style="order:12">
         <div class="panel-header">
-          <span class="panel-title">Fixed Income</span>
+          <span class="panel-title"><iconify-icon icon="solar:safe-square-bold" class="text-sky-500 text-xs"></iconify-icon> Fixed Income</span>
           <span class="panel-badge text-sky-500 border-sky-800 bg-sky-900/20">BONDS</span>
         </div>
         <div class="panel-body" id="bonds-body" style="max-height:360px">
@@ -419,7 +435,7 @@
       <!-- Panel: Central Bank Watch -->
       <div id="panel-centralbanks" class="monitor-panel" data-panel="centralbanks" style="order:13">
         <div class="panel-header">
-          <span class="panel-title">Central Bank Watch</span>
+          <span class="panel-title"><iconify-icon icon="solar:buildings-2-bold" class="text-indigo-500 text-xs"></iconify-icon> Central Bank Watch</span>
           <span class="panel-badge text-indigo-500 border-indigo-800 bg-indigo-900/20">CB</span>
         </div>
         <div class="panel-body" id="centralbanks-body" style="max-height:360px">
@@ -430,7 +446,7 @@
       <!-- Panel: Crypto News -->
       <div id="panel-cryptonews" class="monitor-panel" data-panel="crypto-news" style="order:14">
         <div class="panel-header">
-          <span class="panel-title">Crypto News</span>
+          <span class="panel-title"><iconify-icon icon="solar:link-bold" class="text-amber-500 text-xs"></iconify-icon> Crypto News</span>
           <span class="panel-badge text-amber-500 border-amber-800 bg-amber-900/20">WEB3</span>
         </div>
         <div class="panel-body" id="cryptonews-body" style="max-height:360px">
@@ -441,7 +457,7 @@
       <!-- Panel: Commodities News -->
       <div id="panel-comnews" class="monitor-panel" data-panel="commodities-news" style="order:15">
         <div class="panel-header">
-          <span class="panel-title">Commodities News</span>
+          <span class="panel-title"><iconify-icon icon="solar:gas-station-bold" class="text-yellow-500 text-xs"></iconify-icon> Commodities News</span>
           <span class="panel-badge text-yellow-500 border-yellow-800 bg-yellow-900/20">OIL</span>
         </div>
         <div class="panel-body" id="comnews-body" style="max-height:360px">
@@ -452,7 +468,7 @@
       <!-- Panel: IPO / Earnings / M&A -->
       <div id="panel-ipo" class="monitor-panel" data-panel="ipo" style="order:16">
         <div class="panel-header">
-          <span class="panel-title">IPOs, Earnings & M&A</span>
+          <span class="panel-title"><iconify-icon icon="solar:hand-money-bold" class="text-pink-500 text-xs"></iconify-icon> IPOs, Earnings & M&A</span>
           <span class="panel-badge text-pink-500 border-pink-800 bg-pink-900/20">DEAL</span>
         </div>
         <div class="panel-body" id="ipo-body" style="max-height:360px">
@@ -463,7 +479,7 @@
       <!-- Panel: Economic News -->
       <div id="panel-econnews" class="monitor-panel" data-panel="economic-news" style="order:17">
         <div class="panel-header">
-          <span class="panel-title">Economic News</span>
+          <span class="panel-title"><iconify-icon icon="solar:chart-square-bold" class="text-teal-500 text-xs"></iconify-icon> Economic News</span>
           <span class="panel-badge text-teal-500 border-teal-800 bg-teal-900/20">ECON</span>
         </div>
         <div class="panel-body" id="econnews-body" style="max-height:360px">
@@ -474,7 +490,7 @@
       <!-- Panel: Markets News -->
       <div id="panel-marketnews" class="monitor-panel" data-panel="markets-news" style="order:18">
         <div class="panel-header">
-          <span class="panel-title">Markets News</span>
+          <span class="panel-title"><iconify-icon icon="solar:sort-from-top-to-bottom-bold" class="text-zinc-500 text-xs"></iconify-icon> Markets News</span>
           <span class="panel-badge text-zinc-400 border-zinc-700 bg-zinc-800/30">NEWS</span>
         </div>
         <div class="panel-body" id="marketnews-body" style="max-height:360px">
@@ -485,7 +501,7 @@
       <!-- Panel: Finance Globe (MapLibre) -->
       <div id="panel-globe" class="monitor-panel priority md:col-span-2" data-panel="map" style="order:19">
         <div class="panel-header">
-          <span class="panel-title">Global Markets Map</span>
+          <span class="panel-title"><iconify-icon icon="solar:earth-bold" class="text-red-500 text-xs"></iconify-icon> Global Markets Map</span>
           <span class="panel-badge text-red-500 border-red-800 bg-red-900/20">GEO</span>
         </div>
         <div class="panel-body p-0" id="globe-body" style="height:420px; padding:0;">
@@ -499,11 +515,14 @@
   <!-- ═══ SETTINGS MODAL ═══ -->
   <div id="settings-overlay" class="settings-overlay" onclick="if(event.target===this)toggleSettings()">
     <div class="settings-modal">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-        <span class="text-xs font-mono uppercase tracking-widest text-white">Panel Settings</span>
-        <button onclick="toggleSettings()" class="text-zinc-500 hover:text-white"><iconify-icon icon="solar:close-circle-linear"></iconify-icon></button>
+      <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50 bg-[#080808]" style="border-radius:12px 12px 0 0">
+        <div class="flex items-center gap-2">
+          <iconify-icon icon="solar:settings-bold" class="text-red-500 text-sm"></iconify-icon>
+          <span class="text-xs font-mono uppercase tracking-widest text-white">Panel Settings</span>
+        </div>
+        <button onclick="toggleSettings()" class="text-zinc-500 hover:text-white transition-colors"><iconify-icon icon="solar:close-circle-linear" class="text-lg"></iconify-icon></button>
       </div>
-      <div id="settings-list" class="p-4 space-y-2">
+      <div id="settings-list" class="p-4 space-y-1">
         <!-- Populated by JS -->
       </div>
     </div>
@@ -1148,7 +1167,7 @@ async function loadPredictions() {
         <div class="text-[11px] text-zinc-300 leading-tight mb-1">${escapeHtml(market.question || market.title || '')}</div>
         <div class="flex items-center gap-2 mb-1">
           <div class="prediction-bar flex-1">
-            <div class="prediction-fill bg-red-600" style="width:${probPct}%"></div>
+            <div class="prediction-fill" style="width:${probPct}%"></div>
           </div>
           <span class="text-[11px] font-mono font-bold text-white min-w-[36px] text-right">${probPct}%</span>
         </div>
@@ -1224,12 +1243,11 @@ async function loadTicker() {
 
   function renderTickerItem(item) {
     const cc = item.change != null && item.change >= 0 ? 'text-green-500' : 'text-red-500';
-    const arrow = item.change != null && item.change >= 0 ? '▲' : '▼';
-    return `<span class="inline-flex items-center gap-1.5 px-4">
-      <span class="text-[10px] font-mono font-bold text-zinc-300">${escapeHtml(item.display)}</span>
-      <span class="text-[10px] font-mono text-zinc-400">${formatPrice(item.price)}</span>
-      <span class="text-[9px] font-mono ${cc}">${arrow} ${formatChange(item.change)}</span>
-    </span><span class="text-zinc-800 text-[8px]">│</span>`;
+    return `<span class="flex items-center gap-2 text-[10px] font-mono">
+      <span class="text-zinc-600">${escapeHtml(item.display)}</span>
+      <span class="text-zinc-400 font-bold">${formatPrice(item.price)}</span>
+      <span class="${cc} text-[9px] bg-zinc-900/30 px-1 py-0.5 rounded">${formatChange(item.change)}</span>
+    </span><span class="text-zinc-800/50">|</span>`;
   }
 
   const tickerHTML = items.map(renderTickerItem).join('');
