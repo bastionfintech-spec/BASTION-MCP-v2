@@ -484,22 +484,11 @@ async def get_status():
     except Exception as e:
         logger.error(f"Init error: {e}")
     
-    try:
-        cfg_info = {
-            "coinglass_key_set": bool(getattr(config, 'coinglass', None) and config.coinglass.api_key),
-            "whale_key_set": bool(getattr(config, 'whale_alert', None) and config.whale_alert.api_key),
-            "helsinki_url": getattr(config.helsinki, 'base_url', 'not set') if hasattr(config, 'helsinki') else "not set"
-        }
-    except:
-        cfg_info = {"error": "config access failed"}
-    
     return {
         "status": "ok",
         "helsinki": helsinki is not None,
         "coinglass": coinglass is not None,
         "whale_alert": whale_alert is not None,
-        "bastion_path": str(bastion_path),
-        "config": cfg_info
     }
 
 
@@ -587,8 +576,10 @@ async def serve_settings_js():
 
 
 @app.get("/api/debug/bitunix")
-async def debug_bitunix():
-    """Debug endpoint to test Bitunix positions fetch."""
+async def debug_bitunix(admin_key: str = ""):
+    """Debug endpoint to test Bitunix positions fetch (admin only)."""
+    if not _check_admin_key(admin_key):
+        raise HTTPException(status_code=403, detail="Admin key required")
     if "bitunix" not in connected_exchanges:
         return {"error": "Bitunix not connected. Connect it first on the Account page."}
     
@@ -628,8 +619,10 @@ async def debug_bitunix():
 
 
 @app.get("/api/debug/bitunix/raw")
-async def debug_bitunix_raw():
-    """Debug endpoint to see raw Bitunix API response."""
+async def debug_bitunix_raw(admin_key: str = ""):
+    """Debug endpoint to see raw Bitunix API response (admin only)."""
+    if not _check_admin_key(admin_key):
+        raise HTTPException(status_code=403, detail="Admin key required")
     if "bitunix" not in user_context.connections:
         return {"error": "Bitunix not connected"}
     
