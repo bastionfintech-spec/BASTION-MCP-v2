@@ -211,6 +211,14 @@
     /* ─── Status badges (live/cached) ─── */
     .status-live { font-size: 9px; padding: 1px 6px; border: 1px solid rgba(68,255,136,0.3); color: #44ff88; border-radius: 2px; background: rgba(68,255,136,0.08); }
     .status-cached { font-size: 9px; padding: 1px 6px; border: 1px solid rgba(255,170,0,0.3); color: #ffaa00; border-radius: 2px; background: rgba(255,170,0,0.08); }
+
+    /* ─── Mobile: Compact map overlays ─── */
+    @media (max-width: 767px) {
+      #layer-toggles { bottom: 6px !important; left: 4px !important; max-width: 180px !important; gap: 2px !important; }
+      #layer-toggles .layer-btn { font-size: 7px !important; padding: 2px 4px !important; }
+      /* Legend bar: hide on mobile — too wide */
+      #map-legend { display: none !important; }
+    }
   </style>
 </head>
 <body class="bg-[#0a0a0a] text-[#ccc] min-h-screen flex flex-col selection:bg-[#44ff88]/20 selection:text-white relative overflow-x-hidden" style="background:#0a0a0a;">
@@ -336,7 +344,7 @@
     </div>
 
     <!-- Bottom-center: Legend -->
-    <div style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:20; display:flex; align-items:center; gap:12px; padding:4px 14px; background:rgba(20,20,20,0.85); border:1px solid #2a2a2a;">
+    <div id="map-legend" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:20; display:flex; align-items:center; gap:12px; padding:4px 14px; background:rgba(20,20,20,0.85); border:1px solid #2a2a2a;">
       <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff4444;display:inline-block;"></span><span class="text-[8px] text-[#888]">MEGA EXCHANGE</span></span>
       <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:#ff8800;display:inline-block;"></span><span class="text-[8px] text-[#888]">MAJOR</span></span>
       <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block;"></span><span class="text-[8px] text-[#888]">CENTRAL BANK</span></span>

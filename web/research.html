@@ -75,11 +75,11 @@
     </div>
 
     <!-- Header -->
-    <header class="relative z-50 h-16 border-b border-zinc-800 bg-[#050505] flex items-center justify-between shrink-0">
-      <div class="flex items-center h-full pl-6 pr-8 border-r border-zinc-800 bg-[#050505]">
-        <a href="/" class="flex items-center gap-3 group">
-          <iconify-icon icon="solar:shield-bold" class="text-red-600 text-2xl group-hover:scale-110 transition-transform"></iconify-icon>
-          <span class="text-xl tracking-tighter text-white font-mono group-hover:text-red-600 transition-colors font-semibold">BASTION</span>
+    <header class="relative z-50 h-14 md:h-16 border-b border-zinc-800 bg-[#050505] flex items-center justify-between shrink-0">
+      <div class="flex items-center h-full pl-4 md:pl-6 pr-4 md:pr-8 md:border-r border-zinc-800 bg-[#050505]">
+        <a href="/" class="flex items-center gap-2 md:gap-3 group">
+          <iconify-icon icon="solar:shield-bold" class="text-red-600 text-xl md:text-2xl group-hover:scale-110 transition-transform"></iconify-icon>
+          <span class="text-base md:text-xl tracking-tighter text-white font-mono group-hover:text-red-600 transition-colors font-semibold">BASTION</span>
         </a>
         <div class="hidden lg:flex items-center ml-6 px-3 py-1 border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm rounded-sm gap-2">
           <span class="text-[10px] font-mono text-zinc-600 leading-none">[</span>
@@ -102,6 +102,11 @@
           <span class="flex items-center text-[10px] uppercase text-zinc-600 tracking-widest font-mono h-full border-zinc-800/50 border-r pr-6 pl-6 cursor-not-allowed opacity-40 select-none" title="Coming Soon">GRAPHS <span class="ml-1 text-[7px] bg-zinc-800 text-zinc-500 px-1 rounded">SOON</span></span>
         </div>
       </nav>
+      <!-- Mobile nav links -->
+      <div class="flex md:hidden items-center gap-3 pr-4">
+        <a href="/terminal" class="text-[9px] font-mono uppercase tracking-wider text-zinc-500 hover:text-white">Terminal</a>
+        <a href="/monitor" class="text-[9px] font-mono uppercase tracking-wider text-zinc-500 hover:text-white">Monitor</a>
+      </div>
       <div class="hidden md:flex items-center h-full border-l border-zinc-800 bg-[#050505]">
         <button id="latestNoteBtn" class="hidden xl:flex gap-3 hover:border-zinc-600 hover:bg-zinc-900/50 group transition-all cursor-pointer bg-zinc-900/30 border-zinc-800/50 border rounded-sm mr-4 pt-1.5 pr-3 pb-1.5 pl-6 items-center">
           <div class="relative flex h-2 w-2">
@@ -125,11 +130,21 @@
     </header>
 
     <!-- Subheader Bar -->
-    <div class="h-[50px] border-b border-zinc-800 bg-[#050505] flex items-center px-6 gap-6 shrink-0 relative z-20">
-      <div class="flex items-center gap-2 w-1/4">
+    <div class="border-b border-zinc-800 bg-[#050505] flex flex-col md:flex-row md:items-center px-3 md:px-6 py-2 md:py-0 md:h-[50px] gap-2 md:gap-6 shrink-0 relative z-20">
+      <div class="flex items-center gap-2 md:w-1/4">
         <iconify-icon icon="solar:documents-linear" class="text-red-500"></iconify-icon>
-        <span class="text-xs font-mono font-semibold text-white tracking-wider uppercase">INSTITUTIONAL RESEARCH</span>
+        <span class="text-[10px] md:text-xs font-mono font-semibold text-white tracking-wider uppercase">RESEARCH</span>
         <span id="reportCountBadge" class="text-[9px] font-mono text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 rounded">0</span>
+        <!-- Mobile: toggle report list -->
+        <button onclick="toggleMobileReportList()" class="md:hidden ml-auto px-2 py-1 bg-zinc-900 border border-zinc-800 rounded text-[9px] font-mono text-zinc-400 hover:text-white">
+          <iconify-icon icon="solar:list-bold" class="text-sm"></iconify-icon> Reports
+        </button>
+        <!-- Mobile: generate button -->
+        <div class="relative md:hidden">
+          <button onclick="toggleGenerateDropdown()" class="px-2 py-1 bg-red-600/20 border border-red-600/50 text-red-400 text-[9px] font-mono uppercase flex items-center gap-1">
+            <iconify-icon icon="solar:bolt-linear" width="10"></iconify-icon> New
+          </button>
+        </div>
       </div>
       <div class="flex-1 max-w-2xl relative">
         <iconify-icon icon="solar:magnifer-linear" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"></iconify-icon>
@@ -138,7 +153,7 @@
           <span class="bg-zinc-900 border border-zinc-800 text-[9px] px-1 text-zinc-500 font-mono rounded">/</span>
         </div>
       </div>
-      <div class="flex items-center gap-2 ml-auto">
+      <div class="hidden md:flex items-center gap-2 ml-auto">
         <button onclick="filterByType(null)" class="filter-btn active-filter px-3 py-1 bg-zinc-900/50 border border-red-900/30 text-red-500 hover:bg-red-900/20 text-[10px] font-mono uppercase tracking-wide transition-colors">All</button>
         <button onclick="filterByType('institutional_research')" class="filter-btn px-3 py-1 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-wide transition-colors">Research</button>
         <button onclick="filterByType('market_structure')" class="filter-btn px-3 py-1 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-wide transition-colors">Market</button>
@@ -182,12 +197,22 @@
       </div>
     </div>
 
+    <!-- Mobile Filter Row (horizontal scroll) -->
+    <div class="flex md:hidden items-center gap-1.5 px-3 py-1.5 border-b border-zinc-800 bg-[#050505] overflow-x-auto no-scrollbar shrink-0 relative z-20">
+      <button onclick="filterByType(null)" class="filter-btn active-filter px-2 py-0.5 bg-zinc-900/50 border border-red-900/30 text-red-500 text-[9px] font-mono uppercase whitespace-nowrap">All</button>
+      <button onclick="filterByType('institutional_research')" class="filter-btn px-2 py-0.5 bg-zinc-900/50 border border-zinc-800 text-zinc-400 text-[9px] font-mono uppercase whitespace-nowrap">Research</button>
+      <button onclick="filterByType('market_structure')" class="filter-btn px-2 py-0.5 bg-zinc-900/50 border border-zinc-800 text-zinc-400 text-[9px] font-mono uppercase whitespace-nowrap">Market</button>
+      <button onclick="filterByType('whale_intelligence')" class="filter-btn px-2 py-0.5 bg-zinc-900/50 border border-zinc-800 text-zinc-400 text-[9px] font-mono uppercase whitespace-nowrap">Whale</button>
+      <button onclick="filterByType('options_flow')" class="filter-btn px-2 py-0.5 bg-zinc-900/50 border border-zinc-800 text-zinc-400 text-[9px] font-mono uppercase whitespace-nowrap">Options</button>
+      <button onclick="filterByType('cycle_position')" class="filter-btn px-2 py-0.5 bg-zinc-900/50 border border-zinc-800 text-zinc-400 text-[9px] font-mono uppercase whitespace-nowrap">Cycle</button>
+    </div>
+
     <!-- Main Layout Grid -->
-    <main class="flex-1 grid grid-cols-12 min-h-0 bg-[#050505] relative z-0">
+    <main class="flex-1 grid grid-cols-1 md:grid-cols-12 min-h-0 bg-[#050505] relative z-0 overflow-hidden">
       <div class="absolute inset-0 pointer-events-none opacity-[0.02] bg-grid z-0"></div>
 
-      <!-- LEFT COLUMN: Report List (25%) -->
-      <aside class="col-span-3 overflow-y-auto bastion-scrollbar flex flex-col bg-[#050505] z-10 border-zinc-800 border-r">
+      <!-- LEFT COLUMN: Report List (25%) — hidden on mobile, toggled via button -->
+      <aside id="mobileReportPanel" class="hidden md:flex md:col-span-3 overflow-y-auto bastion-scrollbar flex-col bg-[#050505] z-10 border-zinc-800 md:border-r">
         <div class="sticky top-0 bg-[#050505] z-20 px-4 py-3 border-b border-zinc-800 flex flex-col gap-3">
           <div class="flex justify-between items-center">
             <span class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Research Nav</span>
@@ -231,7 +256,7 @@
       </aside>
 
       <!-- CENTER COLUMN: Detail View (50%) -->
-      <section id="detailSection" class="col-span-6 border-r border-zinc-800 overflow-y-auto bastion-scrollbar bg-[#050505] flex flex-col z-10">
+      <section id="detailSection" class="col-span-1 md:col-span-6 md:border-r border-zinc-800 overflow-y-auto bastion-scrollbar bg-[#050505] flex flex-col z-10">
         <!-- Empty State -->
         <div id="emptyState" class="flex-1 flex items-center justify-center">
           <div class="text-center max-w-sm">
@@ -248,8 +273,8 @@
         <div id="reportDetail" class="hidden"></div>
       </section>
 
-      <!-- RIGHT COLUMN: Sidebar (25%) -->
-      <aside class="col-span-3 bastion-scrollbar overflow-y-auto flex flex-col bg-[#050505] z-10 border-zinc-800 border-l pt-6 pr-6 pb-6 pl-6">
+      <!-- RIGHT COLUMN: Sidebar (25%) — hidden on mobile -->
+      <aside class="hidden md:flex md:col-span-3 bastion-scrollbar overflow-y-auto flex-col bg-[#050505] z-10 border-zinc-800 md:border-l pt-6 pr-6 pb-6 pl-6">
         <div class="flex flex-col h-full bg-[#050505]">
           <div class="p-5 border-b-4 border-zinc-900 bg-[#080808]">
             <div class="flex justify-between items-center mb-4">
@@ -404,6 +429,14 @@
           currentReport = data.report;
           renderDetail(data.report);
           highlightActiveReport(reportId);
+          // On mobile: switch back to detail view
+          if (window.innerWidth < 768) {
+            const panel = document.getElementById('mobileReportPanel');
+            const detail = document.getElementById('detailSection');
+            panel.classList.remove('mobile-show');
+            panel.style.display = '';
+            detail.style.display = '';
+          }
         }
       } catch (e) {
         console.error('[Research] Detail load error:', e);
@@ -1386,6 +1419,28 @@
         </div>`;
       timeline.insertBefore(node, timeline.firstChild);
       while (timeline.children.length > 10) timeline.removeChild(timeline.lastChild);
+    }
+
+    // =========================================================================
+    // MOBILE HELPERS
+    // =========================================================================
+
+    function toggleMobileReportList() {
+      const panel = document.getElementById('mobileReportPanel');
+      const detail = document.getElementById('detailSection');
+      if (panel.classList.contains('hidden') && !panel.classList.contains('md:flex')) {
+        // Already has md:flex, just need to show on mobile
+      }
+      // Toggle mobile visibility
+      if (panel.classList.contains('mobile-show')) {
+        panel.classList.remove('mobile-show');
+        panel.style.display = '';
+        detail.style.display = '';
+      } else {
+        panel.classList.add('mobile-show');
+        panel.style.display = 'flex';
+        detail.style.display = 'none';
+      }
     }
 
     // =========================================================================
