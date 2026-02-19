@@ -193,6 +193,20 @@
     /* ─── Panel Toggle Checkbox ─── */
     .panel-toggle input[type="checkbox"] { accent-color: #44ff88; }
 
+    /* ─── Map Controls ─── */
+    .time-btn {
+      font-size: 9px; padding: 2px 6px; border: 1px solid #2a2a2a; color: #888;
+      background: rgba(20,20,20,0.8); cursor: pointer; transition: all 0.15s;
+    }
+    .time-btn:hover { border-color: #444; color: #ccc; }
+    .time-btn.active { background: #44ff88; color: #0a0a0a; border-color: #44ff88; font-weight: bold; }
+    .layer-btn {
+      font-size: 8px; padding: 2px 6px; border: 1px solid #2a2a2a; color: #555;
+      background: rgba(20,20,20,0.8); cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px;
+    }
+    .layer-btn:hover { border-color: #444; color: #ccc; }
+    .layer-btn.active { color: #44ff88; border-color: #44ff88; }
+
     /* ─── Status badges (live/cached) ─── */
     .status-live { font-size: 9px; padding: 1px 6px; border: 1px solid rgba(68,255,136,0.3); color: #44ff88; border-radius: 2px; background: rgba(68,255,136,0.08); }
     .status-cached { font-size: 9px; padding: 1px 6px; border: 1px solid rgba(255,170,0,0.3); color: #ffaa00; border-radius: 2px; background: rgba(255,170,0,0.08); }
@@ -294,18 +308,53 @@
   <!-- ═══ MAP SECTION (full width, top) ═══ -->
   <section id="map-section" class="relative z-10 shrink-0" style="height:50vh; min-height:300px; max-height:500px; border-bottom:1px solid #2a2a2a; background:#020a08;">
     <div id="globe-container" style="width:100%; height:100%;"></div>
-    <!-- Map overlay controls -->
-    <div style="position:absolute; top:8px; left:8px; display:flex; align-items:center; gap:8px; z-index:20;">
-      <span class="text-[11px] font-semibold text-white uppercase tracking-[1px]" style="background:#141414; border:1px solid #2a2a2a; padding:4px 10px;">
-        <iconify-icon icon="solar:earth-bold" class="text-[#44ff88] text-xs"></iconify-icon> GLOBAL MARKETS
-      </span>
-      <span class="status-live pulse-glow">GEO</span>
+
+    <!-- Top-left: Title + Time range -->
+    <div style="position:absolute; top:8px; left:8px; z-index:20; display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="text-[11px] font-semibold text-white uppercase tracking-[1px]" style="background:#141414; border:1px solid #2a2a2a; padding:4px 10px;">
+          <iconify-icon icon="solar:earth-bold" class="text-[#44ff88] text-xs"></iconify-icon> GLOBAL SITUATION
+        </span>
+        <span id="utc-clock" class="text-[10px] text-[#888]" style="background:rgba(20,20,20,0.8); border:1px solid #2a2a2a; padding:3px 8px;">--:--:-- UTC</span>
+        <span class="status-live pulse-glow">LIVE</span>
+      </div>
+      <!-- Time range selector -->
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span class="text-[8px] text-[#555] uppercase tracking-[1px]">TIME RANGE</span>
+        <button onclick="setTimeRange('1h')" class="time-btn active" data-range="1h">1H</button>
+        <button onclick="setTimeRange('6h')" class="time-btn" data-range="6h">6H</button>
+        <button onclick="setTimeRange('24h')" class="time-btn" data-range="24h">24H</button>
+        <button onclick="setTimeRange('48h')" class="time-btn" data-range="48h">48H</button>
+        <button onclick="setTimeRange('7d')" class="time-btn" data-range="7d">7D</button>
+        <button onclick="setTimeRange('all')" class="time-btn" data-range="all">ALL</button>
+      </div>
+    </div>
+
+    <!-- Bottom-left: Layer toggles -->
+    <div id="layer-toggles" style="position:absolute; bottom:32px; left:8px; z-index:20; display:flex; flex-wrap:wrap; gap:3px; max-width:320px;">
+      <button onclick="toggleLayer('exchanges')" class="layer-btn active" data-layer="exchanges">EXCHANGES</button>
+      <button onclick="toggleLayer('banks')" class="layer-btn active" data-layer="banks">CENTRAL BANKS</button>
+      <button onclick="toggleLayer('centers')" class="layer-btn active" data-layer="centers">FIN. CENTERS</button>
+      <button onclick="toggleLayer('cables')" class="layer-btn active" data-layer="cables">CABLES</button>
+      <button onclick="toggleLayer('pipelines')" class="layer-btn active" data-layer="pipelines">PIPELINES</button>
+      <button onclick="toggleLayer('waterways')" class="layer-btn active" data-layer="waterways">WATERWAYS</button>
+    </div>
+
+    <!-- Bottom-center: Legend -->
+    <div style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:20; display:flex; align-items:center; gap:12px; padding:4px 14px; background:rgba(20,20,20,0.85); border:1px solid #2a2a2a;">
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff4444;display:inline-block;"></span><span class="text-[8px] text-[#888]">MEGA EXCHANGE</span></span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:#ff8800;display:inline-block;"></span><span class="text-[8px] text-[#888]">MAJOR</span></span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;display:inline-block;"></span><span class="text-[8px] text-[#888]">CENTRAL BANK</span></span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:#a855f7;display:inline-block;"></span><span class="text-[8px] text-[#888]">FIN. CENTER</span></span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:14px;height:2px;border-top:2px dashed #3b82f6;display:inline-block;"></span><span class="text-[8px] text-[#888]">CABLE</span></span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:14px;height:2px;background:#ff8800;display:inline-block;"></span><span class="text-[8px] text-[#888]">PIPELINE</span></span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;border:2px solid #3b82f6;display:inline-block;"></span><span class="text-[8px] text-[#888]">WATERWAY</span></span>
     </div>
   </section>
 
   <!-- ═══ MAIN PANEL GRID ═══ -->
   <main class="flex-1 overflow-y-auto relative z-10" style="padding:4px;">
-    <div id="panel-grid" class="panel-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); grid-auto-rows:minmax(200px, 380px); gap:4px;">
+    <div id="panel-grid" class="panel-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); grid-auto-rows:minmax(180px, 320px); gap:4px;">
 
       <!-- Panel: Live Markets -->
       <div id="panel-markets" class="monitor-panel priority" data-panel="markets" style="order:1">
@@ -352,7 +401,7 @@
       </div>
 
       <!-- Panel: Market Radar (Macro Signals) -->
-      <div id="panel-radar" class="monitor-panel priority" data-panel="macro-signals" style="order:5; grid-row: span 2;">
+      <div id="panel-radar" class="monitor-panel priority" data-panel="macro-signals" style="order:5;">
         <div class="panel-header">
           <span class="panel-title"><iconify-icon icon="solar:radar-2-bold" class="text-[#ff4444] text-xs"></iconify-icon> Market Radar</span>
           <span class="status-live">LIVE</span>
@@ -374,7 +423,7 @@
       </div>
 
       <!-- Panel: BTC ETF Tracker -->
-      <div id="panel-etf" class="monitor-panel" data-panel="etf-flows" style="order:7; grid-row: span 2;">
+      <div id="panel-etf" class="monitor-panel" data-panel="etf-flows" style="order:7;">
         <div class="panel-header">
           <span class="panel-title"><iconify-icon icon="solar:wallet-bold" class="text-[#ff8800] text-xs"></iconify-icon> BTC ETF Tracker</span>
           <span class="status-live">LIVE</span>
@@ -396,7 +445,7 @@
       </div>
 
       <!-- Panel: Market Headlines -->
-      <div id="panel-headlines" class="monitor-panel priority" data-panel="live-news" style="order:9; grid-row: span 2;">
+      <div id="panel-headlines" class="monitor-panel priority" data-panel="live-news" style="order:9;">
         <div class="panel-header">
           <span class="panel-title"><iconify-icon icon="solar:document-text-bold" class="text-[#e8e8e8] text-xs"></iconify-icon> Market Headlines</span>
           <span class="status-live">LIVE</span>
@@ -407,7 +456,7 @@
       </div>
 
       <!-- Panel: Predictions (Polymarket) -->
-      <div id="panel-predictions" class="monitor-panel" data-panel="polymarket" style="order:10; grid-row: span 2;">
+      <div id="panel-predictions" class="monitor-panel" data-panel="polymarket" style="order:10;">
         <div class="panel-header">
           <span class="panel-title"><iconify-icon icon="solar:target-bold" class="text-[#a855f7] text-xs"></iconify-icon> Predictions</span>
           <span class="status-live">LIVE</span>
@@ -1406,34 +1455,63 @@ async function loadGlobe() {
       { name: 'Toronto', lat: 43.6532, lon: -79.3832 },
     ];
 
-    // Add markers
+    // ─── All markers as GeoJSON layers (no DOM markers = no floating/flying) ───
+    const allPoints = [];
     exchanges.forEach(ex => {
-      const size = ex.tier === 'mega' ? 10 : ex.tier === 'major' ? 7 : 5;
-      const color = ex.tier === 'mega' ? '#ff4444' : ex.tier === 'major' ? '#ff8800' : '#ffaa00';
-      const markerEl = document.createElement('div');
-      markerEl.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${color};border:1px solid rgba(255,255,255,0.3);cursor:pointer;transition:transform 0.2s;`;
-      markerEl.title = ex.name;
-      markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
-      markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
-      new maplibregl.Marker({ element: markerEl }).setLngLat([ex.lon, ex.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #2a2a2a;border-radius:2px;"><strong>${ex.name}</strong><br><span style="color:#888;font-size:9px;">Stock Exchange</span></div>`)).addTo(mapInstance);
+      allPoints.push({ type:'Feature', geometry:{ type:'Point', coordinates:[ex.lon,ex.lat] },
+        properties:{ name:ex.name, cat:'exchange', tier:ex.tier, label:ex.name }
+      });
     });
-
     centralBanks.forEach(cb => {
-      const markerEl = document.createElement('div');
-      markerEl.style.cssText = 'width:8px;height:8px;border-radius:2px;background:#3b82f6;border:1px solid rgba(255,255,255,0.3);cursor:pointer;transition:transform 0.2s;';
-      markerEl.title = cb.name;
-      markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
-      markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
-      new maplibregl.Marker({ element: markerEl }).setLngLat([cb.lon, cb.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #2a2a2a;border-radius:2px;"><strong>${cb.name}</strong><br><span style="color:#888;font-size:9px;">Central Bank</span></div>`)).addTo(mapInstance);
+      allPoints.push({ type:'Feature', geometry:{ type:'Point', coordinates:[cb.lon,cb.lat] },
+        properties:{ name:cb.name, cat:'bank', label:cb.name }
+      });
+    });
+    financialCenters.forEach(fc => {
+      allPoints.push({ type:'Feature', geometry:{ type:'Point', coordinates:[fc.lon,fc.lat] },
+        properties:{ name:fc.name, cat:'center', label:fc.name }
+      });
     });
 
-    financialCenters.forEach(fc => {
-      const markerEl = document.createElement('div');
-      markerEl.style.cssText = 'width:6px;height:6px;border-radius:50%;background:#a855f7;border:1px solid rgba(255,255,255,0.2);cursor:pointer;transition:transform 0.2s;';
-      markerEl.title = fc.name;
-      markerEl.onmouseenter = () => markerEl.style.transform = 'scale(1.6)';
-      markerEl.onmouseleave = () => markerEl.style.transform = 'scale(1)';
-      new maplibregl.Marker({ element: markerEl }).setLngLat([fc.lon, fc.lat]).setPopup(new maplibregl.Popup({ offset: 8, closeButton: false }).setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #2a2a2a;"><strong>${fc.name}</strong><br><span style="color:#888;font-size:9px;">Financial Center</span></div>`)).addTo(mapInstance);
+    mapInstance.addSource('markers', { type:'geojson', data:{ type:'FeatureCollection', features:allPoints } });
+
+    // Exchange circles (tiered sizes)
+    mapInstance.addLayer({ id:'exchanges-mega', type:'circle', source:'markers',
+      filter:['all',['==','cat','exchange'],['==','tier','mega']],
+      paint:{ 'circle-radius':6, 'circle-color':'#ff4444', 'circle-stroke-width':1, 'circle-stroke-color':'rgba(255,255,255,0.4)' }
+    });
+    mapInstance.addLayer({ id:'exchanges-major', type:'circle', source:'markers',
+      filter:['all',['==','cat','exchange'],['==','tier','major']],
+      paint:{ 'circle-radius':4.5, 'circle-color':'#ff8800', 'circle-stroke-width':1, 'circle-stroke-color':'rgba(255,255,255,0.3)' }
+    });
+    mapInstance.addLayer({ id:'exchanges-regional', type:'circle', source:'markers',
+      filter:['all',['==','cat','exchange'],['==','tier','regional']],
+      paint:{ 'circle-radius':3, 'circle-color':'#ffaa00', 'circle-stroke-width':1, 'circle-stroke-color':'rgba(255,255,255,0.2)' }
+    });
+    // Central banks (blue squares via circle)
+    mapInstance.addLayer({ id:'banks', type:'circle', source:'markers',
+      filter:['==','cat','bank'],
+      paint:{ 'circle-radius':4, 'circle-color':'#3b82f6', 'circle-stroke-width':1, 'circle-stroke-color':'rgba(255,255,255,0.3)' }
+    });
+    // Financial centers (purple dots)
+    mapInstance.addLayer({ id:'centers', type:'circle', source:'markers',
+      filter:['==','cat','center'],
+      paint:{ 'circle-radius':3, 'circle-color':'#a855f7', 'circle-stroke-width':1, 'circle-stroke-color':'rgba(255,255,255,0.2)' }
+    });
+
+    // Popup on click for any marker
+    const markerLayers = ['exchanges-mega','exchanges-major','exchanges-regional','banks','centers'];
+    markerLayers.forEach(layerId => {
+      mapInstance.on('click', layerId, (e) => {
+        const props = e.features[0].properties;
+        const catLabels = { exchange:'Stock Exchange', bank:'Central Bank', center:'Financial Center' };
+        new maplibregl.Popup({ closeButton:false, offset:8 })
+          .setLngLat(e.lngLat)
+          .setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #2a2a2a;"><strong>${props.name}</strong><br><span style="color:#888;font-size:9px;">${catLabels[props.cat]||''}</span></div>`)
+          .addTo(mapInstance);
+      });
+      mapInstance.on('mouseenter', layerId, () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
+      mapInstance.on('mouseleave', layerId, () => { mapInstance.getCanvas().style.cursor = ''; });
     });
 
     // ─── Undersea Cables (GeoJSON lines) ───
@@ -1498,7 +1576,7 @@ async function loadGlobe() {
       paint:{ 'line-color':'#ffaa00', 'line-width':1.2, 'line-opacity':0.35 }
     });
 
-    // ─── Strategic Waterways ───
+    // ─── Strategic Waterways (GeoJSON) ───
     const waterways = [
       { name:'TAIWAN STRAIT', lat:24.0, lon:119.5 }, { name:'MALACCA STRAIT', lat:2.5, lon:101.5 },
       { name:'STRAIT OF HORMUZ', lat:26.5, lon:56.5 }, { name:'BOSPHORUS', lat:41.1, lon:29.0 },
@@ -1506,18 +1584,24 @@ async function loadGlobe() {
       { name:'GIBRALTAR', lat:35.9, lon:-5.6 }, { name:'BAB EL-MANDEB', lat:12.5, lon:43.3 },
       { name:'DARDANELLES', lat:40.2, lon:26.4 },
     ];
-    waterways.forEach(w => {
-      const el = document.createElement('div');
-      el.style.cssText = 'width:10px;height:10px;border-radius:50%;background:rgba(59,130,246,0.6);border:2px solid #3b82f6;cursor:pointer;transition:transform 0.2s;';
-      el.title = w.name;
-      el.onmouseenter = () => el.style.transform = 'scale(1.5)';
-      el.onmouseleave = () => el.style.transform = 'scale(1)';
-      new maplibregl.Marker({ element:el }).setLngLat([w.lon,w.lat]).setPopup(
-        new maplibregl.Popup({ offset:10, closeButton:false }).setHTML(
-          `<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #3b82f6;"><strong>${w.name}</strong><br><span style="color:#3b82f6;font-size:9px;">Strategic Waterway</span></div>`
-        )
-      ).addTo(mapInstance);
+    mapInstance.addSource('waterways', { type:'geojson', data:{ type:'FeatureCollection',
+      features: waterways.map(w => ({ type:'Feature', geometry:{ type:'Point', coordinates:[w.lon,w.lat] }, properties:{ name:w.name } }))
+    }});
+    mapInstance.addLayer({ id:'waterways-glow', type:'circle', source:'waterways',
+      paint:{ 'circle-radius':8, 'circle-color':'rgba(59,130,246,0.15)', 'circle-blur':1 }
     });
+    mapInstance.addLayer({ id:'waterways-dot', type:'circle', source:'waterways',
+      paint:{ 'circle-radius':5, 'circle-color':'rgba(59,130,246,0.5)', 'circle-stroke-width':2, 'circle-stroke-color':'#3b82f6' }
+    });
+    mapInstance.on('click', 'waterways-dot', (e) => {
+      const props = e.features[0].properties;
+      new maplibregl.Popup({ closeButton:false, offset:8 })
+        .setLngLat(e.lngLat)
+        .setHTML(`<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#fff;background:#141414;padding:4px 8px;border:1px solid #3b82f6;"><strong>${props.name}</strong><br><span style="color:#3b82f6;font-size:9px;">Strategic Waterway</span></div>`)
+        .addTo(mapInstance);
+    });
+    mapInstance.on('mouseenter', 'waterways-dot', () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
+    mapInstance.on('mouseleave', 'waterways-dot', () => { mapInstance.getCanvas().style.cursor = ''; });
 
     // Cable hover popup
     mapInstance.on('mouseenter', 'cables-line', (e) => {
@@ -1529,6 +1613,46 @@ async function loadGlobe() {
         .addTo(mapInstance);
     });
     mapInstance.on('mouseleave', 'cables-line', () => { mapInstance.getCanvas().style.cursor = ''; });
+  });
+}
+
+// ═══ MAP CONTROLS ═══
+// UTC Clock
+function updateUTCClock() {
+  const el = document.getElementById('utc-clock');
+  if (el) el.textContent = new Date().toISOString().slice(11,19) + ' UTC';
+}
+setInterval(updateUTCClock, 1000);
+
+// Layer toggle
+const layerState = { exchanges:true, banks:true, centers:true, cables:true, pipelines:true, waterways:true };
+const layerMap = {
+  exchanges: ['exchanges-mega','exchanges-major','exchanges-regional'],
+  banks: ['banks'],
+  centers: ['centers'],
+  cables: ['cables-line'],
+  pipelines: ['pipes-oil','pipes-gas'],
+  waterways: ['waterways-glow','waterways-dot'],
+};
+function toggleLayer(key) {
+  layerState[key] = !layerState[key];
+  const vis = layerState[key] ? 'visible' : 'none';
+  if (mapInstance) {
+    (layerMap[key]||[]).forEach(id => {
+      try { mapInstance.setLayoutProperty(id, 'visibility', vis); } catch(e) {}
+    });
+  }
+  // Update button
+  const btn = document.querySelector(`.layer-btn[data-layer="${key}"]`);
+  if (btn) btn.classList.toggle('active', layerState[key]);
+}
+
+// Time range (filters news freshness — visual indicator)
+let currentTimeRange = '24h';
+function setTimeRange(range) {
+  currentTimeRange = range;
+  document.querySelectorAll('.time-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.range === range);
   });
 }
 
@@ -1667,6 +1791,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load ticker first (fast)
   loadTicker();
+
+  // Start UTC clock
+  updateUTCClock();
 
   // Load globe immediately (top section, visible first)
   loadGlobe();
