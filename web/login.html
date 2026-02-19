@@ -403,8 +403,7 @@
                   localStorage.removeItem('riskSettings');
                   localStorage.removeItem('alertSettings');
                   localStorage.removeItem('2fa_enabled');
-                  localStorage.removeItem('2fa_secret');
-                  localStorage.removeItem('bastion_exchange_credentials');
+                  localStorage.removeItem('bastion_connected_exchanges');
                 }
               } catch (e) {
                 // If parsing fails, clear everything to be safe
@@ -434,12 +433,10 @@
               });
               const cloudData = await cloudRes.json();
               
-              if (cloudData.success && cloudData.credentials) {
-                // Save credentials to localStorage for auto-connect on terminal
-                const existing = JSON.parse(localStorage.getItem('bastion_exchange_credentials') || '{}');
-                Object.assign(existing, cloudData.credentials);
-                localStorage.setItem('bastion_exchange_credentials', JSON.stringify(existing));
-                console.log('[LOGIN] Pre-loaded', Object.keys(cloudData.credentials).length, 'exchanges from cloud');
+              if (cloudData.success && cloudData.exchanges) {
+                // Store only exchange NAMES (never secrets) for UI indicator
+                localStorage.setItem('bastion_connected_exchanges', JSON.stringify(cloudData.exchanges));
+                console.log('[LOGIN] Pre-loaded', cloudData.exchanges.length, 'exchanges from cloud (names only)');
               }
             } catch (e) {
               console.log('[LOGIN] Could not pre-load exchanges:', e);
@@ -526,8 +523,7 @@
             localStorage.removeItem('riskSettings');
             localStorage.removeItem('alertSettings');
             localStorage.removeItem('2fa_enabled');
-            localStorage.removeItem('2fa_secret');
-            localStorage.removeItem('bastion_exchange_credentials');
+            localStorage.removeItem('bastion_connected_exchanges');
             
             // Store session
             localStorage.setItem('bastion_token', data.token);

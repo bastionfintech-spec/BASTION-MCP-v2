@@ -1422,36 +1422,25 @@
             return price.toFixed(6);
         }
         
-        // Auto-connect exchanges from localStorage on page load
+        // Auto-connect exchanges via server-side cloud keys (never stores secrets locally)
         async function autoConnectExchanges() {
-            const CREDS_KEY = 'bastion_exchange_credentials';
-            const saved = JSON.parse(localStorage.getItem(CREDS_KEY) || '{}');
-            const exchanges = Object.keys(saved);
-            
-            if (exchanges.length === 0) return;
-            
-            console.log('[TRADE-MGR] Auto-connecting exchanges:', exchanges);
-            
-            for (const exchange of exchanges) {
-                const creds = saved[exchange];
-                try {
-                    await fetch(`${API}/api/exchange/connect`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            exchange: exchange,
-                            api_key: creds.api_key,
-                            api_secret: creds.api_secret,
-                            passphrase: creds.passphrase,
-                            read_only: creds.read_only
-                        })
-                    });
-                    console.log(`[TRADE-MGR] Connected ${exchange}`);
-                } catch (e) {
-                    console.warn(`[TRADE-MGR] Failed to connect ${exchange}:`, e);
+            const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+            if (!token) return;
+            try {
+                console.log('[TRADE-MGR] Loading exchanges from cloud (server-side)...');
+                const res = await fetch('/api/auth/load-exchanges', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const data = await res.json();
+                if (data.success && data.loaded > 0) {
+                    console.log(`[TRADE-MGR] ✓ Cloud-loaded ${data.loaded} exchanges:`, data.exchanges);
                 }
+            } catch (e) {
+                console.warn('[TRADE-MGR] Cloud exchange load failed:', e);
             }
-            
+
             // Load positions after connecting
             setTimeout(loadLivePositions, 500);
         }

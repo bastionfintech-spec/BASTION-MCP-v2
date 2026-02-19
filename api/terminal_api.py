@@ -380,6 +380,11 @@ RATE_LIMIT_REQUESTS = 500  # requests per window (increased for heavy UI polling
 RATE_LIMIT_WINDOW = 60  # seconds
 RATE_LIMIT_MAX_IPS = 10000  # Max tracked IPs before eviction
 
+# Login-specific rate limiting (stricter)
+login_rate_limit_store: Dict[str, List[float]] = {}
+LOGIN_RATE_LIMIT = 10  # max login attempts per window
+LOGIN_RATE_WINDOW = 300  # 5 minutes
+
 class SecurityMiddleware(BaseHTTPMiddleware):
     """Add security headers and rate limiting."""
     
@@ -431,6 +436,15 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://cdn.tailwindcss.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+            "img-src 'self' data: blob: https:; "
+            "connect-src 'self' https://bastionfi.tech https://*.supabase.co wss: ws:; "
+            "frame-ancestors 'none'"
+        )
         
         # Remove server header (info disclosure)
         if "server" in response.headers:
@@ -1317,12 +1331,28 @@ async def register_user(data: dict):
 
 
 @app.post("/api/auth/login")
-async def login_user(data: dict):
+async def login_user(request: Request, data: dict):
     """Login and get session token."""
+    # Login-specific rate limiting (10 attempts per 5 minutes per IP)
+    client_ip = request.client.host if request.client else "unknown"
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        client_ip = forwarded.split(",")[0].strip()
+    ip_key = hashlib.md5(client_ip.encode()).hexdigest()[:16]
+    now = time.time()
+    if ip_key in login_rate_limit_store:
+        login_rate_limit_store[ip_key] = [t for t in login_rate_limit_store[ip_key] if now - t < LOGIN_RATE_WINDOW]
+    else:
+        login_rate_limit_store[ip_key] = []
+    if len(login_rate_limit_store[ip_key]) >= LOGIN_RATE_LIMIT:
+        logger.warning(f"[AUTH] Login rate limit exceeded for {client_ip}")
+        raise HTTPException(status_code=429, detail="Too many login attempts. Please wait 5 minutes.")
+    login_rate_limit_store[ip_key].append(now)
+
     email = data.get("email", "").lower().strip()
     password = data.get("password", "")
     totp_code = data.get("totp_code", "")
-    
+
     logger.info(f"[AUTH] Login attempt for: {email}")
     
     if not email or not password:
@@ -1386,9 +1416,12 @@ async def logout_user(data: dict):
 
 
 @app.get("/api/auth/me")
-async def get_current_user(token: str = None):
+async def get_current_user(request: Request, token: str = None):
     """Get current user from session token."""
-    # Token can come from query param or header
+    # Prefer Authorization header, fall back to query param
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
@@ -1542,6 +1575,56 @@ async def load_user_exchanges(data: dict):
     
     # Return exchange names only — NEVER send secrets to frontend
     return {"success": True, "loaded": loaded, "exchanges": list(user_exchanges[scope_id].keys())}
+
+
+@app.post("/api/auth/upgrade-exchange")
+async def upgrade_exchange_write_access(data: dict):
+    """Upgrade an exchange from read-only to write access using cloud-stored keys."""
+    token = data.get("token")
+    exchange_name = data.get("exchange")
+
+    if not token or not exchange_name or not user_service:
+        return {"success": False, "error": "Token and exchange name required"}
+
+    user = await user_service.validate_session(token)
+    if not user:
+        return {"success": False, "error": "Not authenticated"}
+
+    scope_id = user.id
+    if scope_id not in user_contexts:
+        user_contexts[scope_id] = UserContext()
+    ctx = user_contexts[scope_id]
+
+    try:
+        keys = await user_service.get_exchange_keys(user.id, exchange_name)
+        if not keys:
+            return {"success": False, "error": f"No cloud keys found for {exchange_name}"}
+
+        success = await ctx.connect_exchange(
+            exchange=exchange_name,
+            api_key=keys["api_key"],
+            api_secret=keys["api_secret"],
+            passphrase=keys.get("passphrase"),
+            read_only=False
+        )
+
+        if success:
+            if scope_id not in user_exchanges:
+                user_exchanges[scope_id] = {}
+            user_exchanges[scope_id][exchange_name] = {
+                "exchange": exchange_name,
+                "api_key": keys["api_key"][:8] + "...",
+                "read_only": False,
+                "connected_at": datetime.now().isoformat(),
+                "status": "active",
+                "from_cloud": True
+            }
+            logger.info(f"[EXCHANGE] Upgraded {exchange_name} to write access for user {scope_id[:8]}...")
+            return {"success": True, "exchange": exchange_name}
+        return {"success": False, "error": f"Failed to connect {exchange_name} with write access"}
+    except Exception as e:
+        logger.error(f"[EXCHANGE] Upgrade failed: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @app.delete("/api/auth/exchange-keys/{exchange}")
@@ -1838,8 +1921,12 @@ async def sync_upload(data: dict):
 
 
 @app.get("/api/sync/download")
-async def sync_download(token: str):
+async def sync_download(request: Request, token: str = None):
     """Download user settings from cloud (fetches from database)."""
+    # Prefer Authorization header, fall back to query param
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
     if not token:
         return {"success": False, "error": "Token required"}
     

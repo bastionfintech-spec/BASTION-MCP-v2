@@ -15,6 +15,21 @@ from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, asdict
 import base64
 
+# Security imports
+try:
+    import bcrypt
+    BCRYPT_AVAILABLE = True
+except ImportError:
+    BCRYPT_AVAILABLE = False
+    logging.getLogger(__name__).warning("bcrypt not installed — using SHA-256 fallback (install bcrypt for production)")
+
+try:
+    from cryptography.fernet import Fernet
+    FERNET_AVAILABLE = True
+except ImportError:
+    FERNET_AVAILABLE = False
+    logging.getLogger(__name__).warning("cryptography not installed — using base64 fallback (install cryptography for production)")
+
 logger = logging.getLogger(__name__)
 
 # Try to import supabase
@@ -249,13 +264,25 @@ class UserService:
         return self.client is not None
     
     def _hash_password(self, password: str) -> str:
-        """Hash password with salt"""
+        """Hash password using bcrypt (falls back to SHA-256 if bcrypt unavailable)"""
+        if BCRYPT_AVAILABLE:
+            return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        # Fallback for environments without bcrypt
         salt = os.getenv("PASSWORD_SALT", "bastion_default_salt_change_me")
         return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
-    
+
+    def _legacy_hash(self, password: str) -> str:
+        """Legacy SHA-256 hash — used only for migration check"""
+        salt = os.getenv("PASSWORD_SALT", "bastion_default_salt_change_me")
+        return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
+
     def verify_password(self, password: str, password_hash: str) -> bool:
-        """Verify a password against its hash"""
-        return self._hash_password(password) == password_hash
+        """Verify password — supports both bcrypt and legacy SHA-256 hashes"""
+        if BCRYPT_AVAILABLE and password_hash.startswith("$2"):
+            # bcrypt hash (starts with $2b$ or $2a$)
+            return bcrypt.checkpw(password.encode(), password_hash.encode())
+        # Legacy SHA-256 check
+        return self._legacy_hash(password) == password_hash
     
     def _generate_session_token(self) -> str:
         """Generate secure session token"""
@@ -370,8 +397,6 @@ class UserService:
     
     async def authenticate(self, email: str, password: str) -> Optional[str]:
         """Authenticate user and return session token"""
-        password_hash = self._hash_password(password)
-        
         # Try database first
         if self.is_db_available:
             try:
@@ -379,11 +404,26 @@ class UserService:
                     .select("id, password_hash")\
                     .eq("email", email)\
                     .execute()
-                
+
                 if result.data and len(result.data) > 0:
                     user_data = result.data[0]
-                    if user_data.get("password_hash") == password_hash:
+                    stored_hash = user_data.get("password_hash", "")
+
+                    if self.verify_password(password, stored_hash):
                         user_id = user_data["id"]
+
+                        # Auto-migrate legacy SHA-256 → bcrypt on successful login
+                        if BCRYPT_AVAILABLE and not stored_hash.startswith("$2"):
+                            try:
+                                new_hash = self._hash_password(password)
+                                self.client.table(self.users_table)\
+                                    .update({"password_hash": new_hash})\
+                                    .eq("id", user_id)\
+                                    .execute()
+                                logger.info(f"[UserService] Migrated password hash to bcrypt for user {user_id}")
+                            except Exception as e:
+                                logger.warning(f"[UserService] bcrypt migration failed (non-fatal): {e}")
+
                         # Create session
                         session = await self._create_session(user_id)
                         # Update last login (don't fail if this fails)
@@ -400,10 +440,10 @@ class UserService:
             except Exception as e:
                 logger.error(f"[UserService] Database auth failed, trying in-memory: {e}")
                 # Fall through to in-memory
-        
+
         # In-memory fallback
         ref = self._memory_users.get(f"email:{email}")
-        if ref and ref.get("password_hash") == password_hash:
+        if ref and self.verify_password(password, ref.get("password_hash", "")):
             session = await self._create_session(ref["user_id"])
             return session.token
         return None
@@ -539,12 +579,44 @@ class UserService:
     # Exchange Keys (Encrypted)
     # ========================
     
+    def _get_fernet(self):
+        """Get Fernet cipher using ENCRYPTION_KEY from env (auto-generates if missing)"""
+        if FERNET_AVAILABLE:
+            key = os.getenv("ENCRYPTION_KEY", "")
+            if key:
+                # Ensure key is valid Fernet key (32 url-safe base64 bytes)
+                try:
+                    return Fernet(key.encode() if isinstance(key, str) else key)
+                except Exception:
+                    logger.warning("[UserService] Invalid ENCRYPTION_KEY format, generating new one")
+            # Generate a valid Fernet key if none set
+            new_key = Fernet.generate_key()
+            logger.warning(f"[UserService] No valid ENCRYPTION_KEY set! Set this in .env: ENCRYPTION_KEY={new_key.decode()}")
+            return Fernet(new_key)
+        return None
+
+    def _encrypt_value(self, plaintext: str) -> str:
+        """Encrypt a value using Fernet (AES-128-CBC), falls back to base64"""
+        fernet = self._get_fernet()
+        if fernet:
+            encrypted = fernet.encrypt(plaintext.encode()).decode()
+            return f"fernet:{encrypted}"  # Prefix so we know it's Fernet-encrypted
+        return base64.b64encode(plaintext.encode()).decode()
+
+    def _decrypt_value(self, ciphertext: str) -> str:
+        """Decrypt a value — auto-detects Fernet vs legacy base64"""
+        if ciphertext.startswith("fernet:"):
+            fernet = self._get_fernet()
+            if fernet:
+                return fernet.decrypt(ciphertext[7:].encode()).decode()
+            raise ValueError("Fernet-encrypted data but cryptography not installed")
+        # Legacy base64 fallback
+        return base64.b64decode(ciphertext).decode()
+
     async def save_exchange_keys(self, user_id: str, exchange: str, api_key: str, api_secret: str, passphrase: Optional[str] = None) -> bool:
-        """Save encrypted exchange API keys"""
-        # Simple encryption (in production, use proper encryption)
-        key = os.getenv("ENCRYPTION_KEY", "bastion_default_key")
-        encrypted_secret = base64.b64encode(api_secret.encode()).decode()
-        encrypted_passphrase = base64.b64encode(passphrase.encode()).decode() if passphrase else None
+        """Save encrypted exchange API keys (uses Fernet AES if available, base64 fallback)"""
+        encrypted_secret = self._encrypt_value(api_secret)
+        encrypted_passphrase = self._encrypt_value(passphrase) if passphrase else None
         
         data = {
             "user_id": user_id,
@@ -571,7 +643,7 @@ class UserService:
         return False
     
     async def get_exchange_keys(self, user_id: str, exchange: str) -> Optional[Dict]:
-        """Get decrypted exchange API keys"""
+        """Get decrypted exchange API keys (auto-detects Fernet vs legacy base64)"""
         if self.is_db_available:
             try:
                 result = self.client.table(self.exchange_keys_table)\
@@ -584,8 +656,8 @@ class UserService:
                     data = result.data
                     return {
                         "api_key": data["api_key"],
-                        "api_secret": base64.b64decode(data["api_secret_encrypted"]).decode(),
-                        "passphrase": base64.b64decode(data["passphrase_encrypted"]).decode() if data.get("passphrase_encrypted") else None
+                        "api_secret": self._decrypt_value(data["api_secret_encrypted"]),
+                        "passphrase": self._decrypt_value(data["passphrase_encrypted"]) if data.get("passphrase_encrypted") else None
                     }
             except Exception as e:
                 logger.debug(f"Exchange keys not found: {user_id}:{exchange}")
@@ -594,8 +666,8 @@ class UserService:
             if data:
                 return {
                     "api_key": data["api_key"],
-                    "api_secret": base64.b64decode(data["api_secret_encrypted"]).decode(),
-                    "passphrase": base64.b64decode(data["passphrase_encrypted"]).decode() if data.get("passphrase_encrypted") else None
+                    "api_secret": self._decrypt_value(data["api_secret_encrypted"]),
+                    "passphrase": self._decrypt_value(data["passphrase_encrypted"]) if data.get("passphrase_encrypted") else None
                 }
         return None
     

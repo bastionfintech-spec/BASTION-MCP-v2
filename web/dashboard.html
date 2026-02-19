@@ -735,34 +735,24 @@
       const sessionId = getSessionId();
 
       // ── AUTO-RECONNECT EXCHANGES ──────────────────────────
-      // On page load, reconnect any saved exchange credentials from localStorage
-      // (connections are in-memory on the backend and lost on restart/reload)
+      // On page load, reconnect exchanges via server-side cloud keys (never stores secrets locally)
       async function autoReconnectExchanges() {
-        const CREDS_KEY = 'bastion_exchange_credentials';
-        const saved = JSON.parse(localStorage.getItem(CREDS_KEY) || '{}');
-        const exchanges = Object.keys(saved);
-        if (exchanges.length === 0) return;
-        console.log(`[DASHBOARD] Auto-reconnecting ${exchanges.length} exchange(s)...`);
-        for (const exchange of exchanges) {
-          const creds = saved[exchange];
-          try {
-            const res = await fetch('/api/exchange/connect', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                exchange: exchange,
-                api_key: creds.api_key,
-                api_secret: creds.api_secret,
-                passphrase: creds.passphrase || null,
-                read_only: creds.read_only,
-                session_id: sessionId
-              })
-            });
-            const data = await res.json();
-            console.log(`[DASHBOARD] ${exchange}: ${data.success ? 'connected' : 'failed'}`);
-          } catch (e) {
-            console.warn(`[DASHBOARD] Auto-reconnect ${exchange} failed:`, e);
+        const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
+        if (!token) return;
+        try {
+          console.log('[DASHBOARD] Loading exchanges from cloud (server-side)...');
+          const res = await fetch('/api/auth/load-exchanges', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          const data = await res.json();
+          if (data.success && data.loaded > 0) {
+            console.log(`[DASHBOARD] ✓ Cloud-loaded ${data.loaded} exchanges:`, data.exchanges);
+            localStorage.setItem('bastion_connected_exchanges', JSON.stringify(data.exchanges || []));
           }
+        } catch (e) {
+          console.warn('[DASHBOARD] Cloud exchange load failed:', e);
         }
       }
 
@@ -1543,33 +1533,21 @@
               // Exchanges are in read-only mode — auto-upgrade to write access
               btn.textContent = 'Upgrading...';
               showToast('Upgrading exchange to trade-enabled mode...', 'info', 3000);
-              const CREDS_KEY = 'bastion_exchange_credentials';
-              const saved = JSON.parse(localStorage.getItem(CREDS_KEY) || '{}');
+              const token = localStorage.getItem('bastion_token') || sessionStorage.getItem('bastion_token');
               let upgraded = false;
               for (const exName of data.read_only_exchanges) {
-                const creds = saved[exName];
-                if (creds) {
-                  try {
-                    // Reconnect with read_only = false
-                    const upRes = await fetch('/api/exchange/connect', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        exchange: exName, api_key: creds.api_key,
-                        api_secret: creds.api_secret, passphrase: creds.passphrase || null,
-                        read_only: false, session_id: sessionId
-                      })
-                    });
-                    const upData = await upRes.json();
-                    if (upData.success) {
-                      // Update localStorage too
-                      creds.read_only = false;
-                      saved[exName] = creds;
-                      localStorage.setItem(CREDS_KEY, JSON.stringify(saved));
-                      upgraded = true;
-                    }
-                  } catch (ue) { console.warn('[ARM] Upgrade failed:', ue); }
-                }
+                try {
+                  // Upgrade via server-side cloud keys (no secrets in localStorage)
+                  const upRes = await fetch('/api/auth/upgrade-exchange', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, exchange: exName })
+                  });
+                  const upData = await upRes.json();
+                  if (upData.success) {
+                    upgraded = true;
+                  }
+                } catch (ue) { console.warn('[ARM] Upgrade failed:', ue); }
               }
               if (upgraded) {
                 // Retry arming after upgrade

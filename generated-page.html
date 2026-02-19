@@ -5570,52 +5570,33 @@ Esc    - Close Dialogs
       
       let exchangeConnections = {};
 
-      // Auto-connect exchanges from localStorage and load positions
+      // Auto-connect exchanges via server-side cloud keys (never stores secrets locally)
       async function loadAndAutoConnectExchanges() {
-        const stored = localStorage.getItem('bastion_exchange_credentials');
-        
-        if (stored) {
+        const token = getAuthToken();
+        if (token) {
           try {
-            const credentials = JSON.parse(stored);
-            console.log('[POSITIONS] Found stored credentials for:', Object.keys(credentials));
-            
-            for (const [exchange, creds] of Object.entries(credentials)) {
-              try {
-                const payload = {
-                  exchange: exchange,
-                  api_key: creds.apiKey,
-                  api_secret: creds.apiSecret,
-                  passphrase: creds.passphrase || '',
-                  read_only: creds.readOnly !== false,
-                  token: getAuthToken(),
-                  session_id: getSessionId()
-                };
-
-                console.log(`[POSITIONS] Auto-connecting ${exchange} (scope: ${getSessionId().substring(0, 12)}...)...`);
-                const res = await fetch(`${API_BASE}/api/exchange/connect`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(payload)
-                });
-                
-                if (res.ok) {
-                  const data = await res.json();
-                  if (data.success || data.balance !== undefined) {
-                    exchangeConnections[exchange] = true;
-                    console.log(`[POSITIONS] ✓ Connected ${exchange}`);
-                  }
-                }
-              } catch (e) {
-                console.error(`[POSITIONS] Failed to auto-connect ${exchange}:`, e);
+            console.log('[POSITIONS] Loading exchanges from cloud (server-side)...');
+            const res = await fetch('/api/auth/load-exchanges', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
+            const cloudData = await res.json();
+            if (cloudData.success && cloudData.loaded > 0) {
+              console.log(`[POSITIONS] ✓ Cloud-loaded ${cloudData.loaded} exchanges:`, cloudData.exchanges);
+              for (const ex of (cloudData.exchanges || [])) {
+                exchangeConnections[ex] = true;
               }
+              // Store only exchange NAMES for UI indicator (never secrets)
+              localStorage.setItem('bastion_connected_exchanges', JSON.stringify(cloudData.exchanges || []));
+            } else {
+              console.log('[POSITIONS] No cloud exchanges found, checking server session...');
             }
           } catch (e) {
-            console.error('[POSITIONS] Error parsing stored credentials:', e);
+            console.log('[POSITIONS] Cloud exchange load failed, checking server session:', e);
           }
-        } else {
-          console.log('[POSITIONS] No stored exchange credentials, checking server session...');
         }
-        
+
         // ALWAYS load positions (they may exist on server via session)
         await loadPositions();
       }
@@ -6253,11 +6234,11 @@ Esc    - Close Dialogs
     async function updateExchangeIndicator() {
       const exchangeName = document.getElementById('connected-exchange-name');
       
-      // First check localStorage
-      const saved = localStorage.getItem('bastion_exchange_credentials');
+      // First check localStorage (names only — no secrets stored)
+      const saved = localStorage.getItem('bastion_connected_exchanges');
       if (saved) {
         try {
-          const exchanges = Object.keys(JSON.parse(saved));
+          const exchanges = JSON.parse(saved);
           if (exchanges.length > 0) {
             if (exchanges.length === 1) {
               exchangeName.textContent = exchanges[0].toUpperCase();
@@ -6305,12 +6286,10 @@ Esc    - Close Dialogs
         if (data.success && data.loaded > 0) {
           console.log(`[CLOUD] Loaded ${data.loaded} exchanges from cloud:`, data.exchanges);
           
-          // Save credentials to localStorage for auto-reconnect on future page loads
-          if (data.credentials) {
-            const existing = JSON.parse(localStorage.getItem('bastion_exchange_credentials') || '{}');
-            Object.assign(existing, data.credentials);
-            localStorage.setItem('bastion_exchange_credentials', JSON.stringify(existing));
-            console.log('[CLOUD] Saved cloud credentials to localStorage:', Object.keys(data.credentials));
+          // Store only exchange NAMES for UI indicator (never secrets in localStorage)
+          if (data.exchanges) {
+            localStorage.setItem('bastion_connected_exchanges', JSON.stringify(data.exchanges));
+            console.log('[CLOUD] Saved exchange names to localStorage:', data.exchanges);
           }
           
           // Update exchange indicator

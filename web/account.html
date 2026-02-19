@@ -1546,31 +1546,30 @@
         return params.toString();
       }
 
-      // ==================== EXCHANGE CREDENTIALS STORAGE ====================
-      const CREDS_STORAGE_KEY = 'bastion_exchange_credentials';
-      
+      // ==================== EXCHANGE NAMES STORAGE (no secrets in localStorage) ====================
+      const EXCHANGES_STORAGE_KEY = 'bastion_connected_exchanges';
+
       function saveCredentials(exchange, apiKey, apiSecret, passphrase, readOnly) {
-        const stored = JSON.parse(localStorage.getItem(CREDS_STORAGE_KEY) || '{}');
-        stored[exchange] = {
-          api_key: apiKey,
-          api_secret: apiSecret,
-          passphrase: passphrase || null,
-          read_only: readOnly,
-          connected_at: new Date().toISOString()
-        };
-        localStorage.setItem(CREDS_STORAGE_KEY, JSON.stringify(stored));
-        console.log(`[STORAGE] Saved credentials for ${exchange}`);
+        // Only store exchange NAME — keys are saved server-side in Supabase
+        const stored = JSON.parse(localStorage.getItem(EXCHANGES_STORAGE_KEY) || '[]');
+        if (!stored.includes(exchange)) stored.push(exchange);
+        localStorage.setItem(EXCHANGES_STORAGE_KEY, JSON.stringify(stored));
+        console.log(`[STORAGE] Saved exchange name: ${exchange} (keys stored server-side only)`);
       }
-      
+
       function removeCredentials(exchange) {
-        const stored = JSON.parse(localStorage.getItem(CREDS_STORAGE_KEY) || '{}');
-        delete stored[exchange];
-        localStorage.setItem(CREDS_STORAGE_KEY, JSON.stringify(stored));
-        console.log(`[STORAGE] Removed credentials for ${exchange}`);
+        const stored = JSON.parse(localStorage.getItem(EXCHANGES_STORAGE_KEY) || '[]');
+        const filtered = stored.filter(e => e !== exchange);
+        localStorage.setItem(EXCHANGES_STORAGE_KEY, JSON.stringify(filtered));
+        console.log(`[STORAGE] Removed exchange: ${exchange}`);
       }
-      
+
       function getSavedCredentials() {
-        return JSON.parse(localStorage.getItem(CREDS_STORAGE_KEY) || '{}');
+        // Return object format for backward compat with code that checks Object.keys()
+        const names = JSON.parse(localStorage.getItem(EXCHANGES_STORAGE_KEY) || '[]');
+        const obj = {};
+        for (const name of names) obj[name] = { connected: true };
+        return obj;
       }
       
       async function autoConnectExchanges() {
@@ -2304,7 +2303,7 @@
         }
         
         try {
-          const res = await fetch(`${API_BASE}/api/auth/me?token=${token}`);
+          const res = await fetch(`${API_BASE}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await res.json();
           
           if (data.success && data.user) {
@@ -2516,7 +2515,7 @@
           
           if (data.success) {
             localStorage.setItem('2fa_enabled', 'true');
-            localStorage.setItem('2fa_secret', pending2FASecret);
+            // 2FA secret stored server-side only — never in localStorage
             pending2FASecret = null;
             update2FAUI(true);
             showToast('2FA enabled successfully!', 'success');
@@ -2545,7 +2544,7 @@
       
       function disable2FA() {
         localStorage.removeItem('2fa_enabled');
-        localStorage.removeItem('2fa_secret');
+        // 2fa_secret no longer stored in localStorage
         update2FAUI(false);
         showToast('2FA disabled', 'success');
         
@@ -2684,7 +2683,7 @@
         showToast('Restoring from cloud...', 'info');
         
         try {
-          const res = await fetch(`${API_BASE}/api/sync/download?token=${token}`);
+          const res = await fetch(`${API_BASE}/api/sync/download`, { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await res.json();
           
           if (data.success && data.settings) {
