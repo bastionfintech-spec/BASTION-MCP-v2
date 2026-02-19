@@ -131,7 +131,7 @@
     <span class="text-zinc-400">bastionfi.tech/mcp/sse</span>
     <span class="text-zinc-700 mx-1">|</span>
     <span class="text-zinc-600">TOOLS:</span>
-    <span class="text-red-500">10</span>
+    <span class="text-red-500">40</span>
     <span class="text-zinc-700 mx-1">|</span>
     <span class="text-zinc-600">RESOURCES:</span>
     <span class="text-red-500">3</span>
@@ -160,21 +160,63 @@
       <a href="#installation" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Installation</a>
       <a href="#configuration" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Configuration</a>
 
-      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">TOOLS REFERENCE</div>
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">CORE AI</div>
       <a href="#bastion_evaluate_risk" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">
         <span class="text-red-600 mr-1">&#9679;</span>evaluate_risk
       </a>
       <a href="#bastion_chat" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">chat</a>
+      <a href="#bastion_evaluate_all_positions" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">evaluate_all</a>
+      <a href="#bastion_scan_signals" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">scan_signals</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">MARKET DATA</div>
       <a href="#bastion_get_price" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_price</a>
       <a href="#bastion_get_market_data" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_market_data</a>
-      <a href="#bastion_get_liquidations" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_liquidations</a>
-      <a href="#bastion_get_whale_activity" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_whale_activity</a>
+      <a href="#bastion_get_klines" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_klines</a>
+      <a href="#bastion_get_volatility" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_volatility</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">DERIVATIVES &amp; FLOW</div>
+      <a href="#bastion_get_open_interest" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_open_interest</a>
+      <a href="#bastion_get_oi_changes" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_oi_changes</a>
+      <a href="#bastion_get_cvd" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_cvd</a>
+      <a href="#bastion_get_orderflow" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_orderflow</a>
       <a href="#bastion_get_funding_rates" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_funding_rates</a>
+      <a href="#bastion_get_funding_arb" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_funding_arb</a>
+      <a href="#bastion_get_liquidations" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_liquidations</a>
+      <a href="#bastion_get_heatmap" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_heatmap</a>
+      <a href="#bastion_get_taker_ratio" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_taker_ratio</a>
+      <a href="#bastion_get_top_traders" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_top_traders</a>
+      <a href="#bastion_get_market_maker_magnet" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_mm_magnet</a>
+      <a href="#bastion_get_options" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_options</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">ON-CHAIN &amp; INTEL</div>
+      <a href="#bastion_get_whale_activity" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_whale_activity</a>
+      <a href="#bastion_get_exchange_flow" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_exchange_flow</a>
+      <a href="#bastion_get_onchain" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_onchain</a>
+      <a href="#bastion_get_news" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_news</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">MACRO &amp; SENTIMENT</div>
+      <a href="#bastion_get_fear_greed" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_fear_greed</a>
+      <a href="#bastion_get_macro_signals" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_macro_signals</a>
+      <a href="#bastion_get_etf_flows" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_etf_flows</a>
+      <a href="#bastion_get_stablecoin_markets" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_stablecoin_markets</a>
+      <a href="#bastion_get_economic_data" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_economic_data</a>
+      <a href="#bastion_get_polymarket" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_polymarket</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">RESEARCH</div>
       <a href="#bastion_generate_report" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">
         <span class="text-purple-500 mr-1">&#9679;</span>generate_report
       </a>
       <a href="#bastion_get_reports" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_reports</a>
       <a href="#bastion_calculate_position" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">calculate_position</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">PORTFOLIO &amp; TRADING</div>
+      <a href="#bastion_get_positions" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_positions</a>
+      <a href="#bastion_get_balance" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_balance</a>
+      <a href="#bastion_get_exchanges" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_exchanges</a>
+      <a href="#bastion_engine_status" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">engine_status</a>
+      <a href="#bastion_engine_history" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">engine_history</a>
+      <a href="#bastion_get_alerts" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_alerts</a>
+      <a href="#bastion_get_session_stats" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_session_stats</a>
 
       <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">RESOURCES</div>
       <a href="#resource-status" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">bastion://status</a>
@@ -211,7 +253,7 @@
         <!-- Stats row -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800">
           <div class="bg-[#050505] p-3 text-center">
-            <div class="text-white text-lg font-bold font-mono">10</div>
+            <div class="text-white text-lg font-bold font-mono">40</div>
             <div class="text-[8px] font-mono uppercase tracking-widest text-zinc-600">TOOLS</div>
           </div>
           <div class="bg-[#050505] p-3 text-center">
@@ -261,7 +303,7 @@
   }
 }</code></pre>
             </div>
-            <p class="text-zinc-600 text-[10px] font-mono mt-3">Restart Claude Code after saving. All 10 tools become available instantly.</p>
+            <p class="text-zinc-600 text-[10px] font-mono mt-3">Restart Claude Code after saving. All 40 tools become available instantly.</p>
           </div>
         </div>
 
@@ -381,7 +423,7 @@ async with sse_client(
       <!-- ═══════ TOOLS REFERENCE ═══════ -->
       <div id="tools-reference" class="mb-6">
         <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// TOOLS REFERENCE</div>
-        <h2 class="text-sm font-bold text-white mb-1 font-mono uppercase tracking-wider">10 TOOLS AVAILABLE</h2>
+        <h2 class="text-sm font-bold text-white mb-1 font-mono uppercase tracking-wider">40 TOOLS AVAILABLE</h2>
         <p class="text-zinc-600 text-[10px] font-mono">Each tool is called automatically when relevant to the conversation.</p>
       </div>
 
@@ -539,6 +581,264 @@ async with sse_client(
           </div>
           <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"Calculate position size: BTC long $95k, stop $93k, TP $100k, 5x leverage, $10k account"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
         </div>
+      </section>
+
+      <!-- ═══════ DERIVATIVES & ORDER FLOW TOOLS ═══════ -->
+      <div class="mb-6 mt-4">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// DERIVATIVES &amp; ORDER FLOW</div>
+      </div>
+
+      <section id="bastion_get_open_interest" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_open_interest</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Open interest across exchanges. Rising OI = new money entering, falling OI = positions closing.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_oi_changes" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_oi_changes</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">OI changes across all major pairs — identify where leveraged money is flowing. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_cvd" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_cvd</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Cumulative Volume Delta — tracks aggressive buying vs selling pressure over time.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_orderflow" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_orderflow</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Detailed order flow — aggressive buyers vs sellers, large orders, and book imbalances.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_funding_arb" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_funding_arb</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Funding rate arbitrage — cross-exchange differentials for delta-neutral yield strategies.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_heatmap" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_heatmap</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Liquidation heatmap — shows where clusters are building. These act as price magnets.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_taker_ratio" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_taker_ratio</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Taker buy/sell ratio. &gt;1 = aggressive buying, &lt;1 = aggressive selling. Real-time sentiment.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_top_traders" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_top_traders</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Top trader positions — how the biggest traders on Binance/Bybit are positioned (long/short ratio).</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_market_maker_magnet" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_market_maker_magnet</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Market maker gamma magnet levels — price levels where MM exposure creates pinning behavior.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_options" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_options</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Options data — OI, put/call ratio, max pain, notable flow indicating institutional positioning.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ ON-CHAIN & INTELLIGENCE TOOLS ═══════ -->
+      <div class="mb-6">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// ON-CHAIN &amp; INTELLIGENCE</div>
+      </div>
+
+      <section id="bastion_get_exchange_flow" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_exchange_flow</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Exchange inflow/outflow — large inflows precede selling, outflows suggest accumulation.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_onchain" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_onchain</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">On-chain metrics — active addresses, tx counts, MVRV, NVT, and other fundamental indicators. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_news" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_news</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Aggregated crypto news from CoinDesk, Cointelegraph, and other major outlets.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">limit</span><span class="text-zinc-600 w-16 shrink-0">int</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Number of articles (default 20)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ MACRO & SENTIMENT TOOLS ═══════ -->
+      <div class="mb-6">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// MACRO &amp; SENTIMENT</div>
+      </div>
+
+      <section id="bastion_get_fear_greed" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_fear_greed</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Crypto Fear &amp; Greed Index — 0 (extreme fear) to 100 (extreme greed). Composite sentiment. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_macro_signals" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_macro_signals</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Macro market signals — DXY, yields, equity indices, gold, and their crypto correlation. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_etf_flows" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_etf_flows</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">BTC/ETH ETF flow data — daily net inflows/outflows tracking institutional buying and selling. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_stablecoin_markets" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_stablecoin_markets</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Stablecoin market data — USDT/USDC/DAI supply, flows, and exchange reserves. Inflows precede buying. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_economic_data" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_economic_data</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">FRED economic data — rates, CPI, unemployment, GDP, and hundreds of macro indicators.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">series_id</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">FRED series (DFF, CPIAUCSL, T10Y2Y, UNRATE)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_polymarket" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_polymarket</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Polymarket prediction markets — regulatory decisions, ETF approvals, price targets.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">limit</span><span class="text-zinc-600 w-16 shrink-0">int</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Number of markets (default 15)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ PORTFOLIO & TRADING TOOLS ═══════ -->
+      <div class="mb-6">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// PORTFOLIO &amp; TRADING</div>
+      </div>
+
+      <section id="bastion_get_positions" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_positions</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">All open positions across connected exchanges with entry, current price, PnL, and leverage. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_balance" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_balance</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Total portfolio balance with per-exchange breakdown and available margin. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_exchanges" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_exchanges</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">List all connected exchanges with connection status. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_evaluate_all_positions" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5 flex items-center gap-2">
+          <span class="text-[8px] font-mono px-1.5 py-0.5 bg-red-600/20 border border-red-600/40 text-red-400 uppercase tracking-widest">AI</span>
+          <span class="text-[12px] font-mono text-white font-medium">bastion_evaluate_all_positions</span>
+        </div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Run AI risk evaluation on ALL open positions simultaneously through the 72B model. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_scan_signals" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5 flex items-center gap-2">
+          <span class="text-[8px] font-mono px-1.5 py-0.5 bg-red-600/20 border border-red-600/40 text-red-400 uppercase tracking-widest">AI</span>
+          <span class="text-[12px] font-mono text-white font-medium">bastion_scan_signals</span>
+        </div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Scan for trading signals across all supported pairs using the AI engine. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_engine_status" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_engine_status</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Autonomous trading engine status — running state, armed status, config, and execution stats. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_engine_history" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_engine_history</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Engine execution history — recent actions taken, positions evaluated, and reasoning.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">limit</span><span class="text-zinc-600 w-16 shrink-0">int</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">History entries (default 20)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_alerts" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_alerts</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Active risk alerts, liquidation warnings, whale alerts, and user price alerts. No parameters.</p></div>
+      </section>
+
+      <section id="bastion_get_klines" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_klines</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Candlestick OHLCV data for charting and analysis.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">interval</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">1m, 5m, 15m, 1h, 4h, 1d (default 1h)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">limit</span><span class="text-zinc-600 w-16 shrink-0">int</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Number of candles (default 100, max 500)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_volatility" class="mb-6 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_volatility</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Volatility metrics + regime detection (low/normal/high/extreme) with ATR data.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bastion_get_session_stats" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_session_stats</span></div>
+        <div class="p-4"><p class="text-zinc-500 text-[11px]">Current trading session stats — win rate, PnL, trade count, and risk metrics. No parameters.</p></div>
       </section>
 
       <!-- ═══════ RESOURCES ═══════ -->
