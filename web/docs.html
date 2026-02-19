@@ -3,210 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BASTION MCP — Documentation</title>
+    <title>BASTION // MCP DEVELOPER DOCS</title>
     <meta name="description" content="Connect your Claude agent to BASTION Risk Intelligence. 10 tools, 3 resources, 560+ real-time crypto signals.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
       body { font-family: 'Inter', sans-serif; }
-      .font-mono, code, pre { font-family: 'JetBrains Mono', monospace; }
+      .font-mono, code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+      /* Scrollbars — match research terminal */
       ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 99px; }
-      ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
-      .sidebar-link { position: relative; padding-left: 12px; }
-      .sidebar-link::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: transparent; border-radius: 1px; transition: background 0.2s; }
-      .sidebar-link.active { color: #fff; }
-      .sidebar-link.active::before { background: #dc2626; }
-      .sidebar-group-title { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #71717a; font-weight: 600; margin-bottom: 6px; padding-left: 12px; }
-      pre code { display: block; overflow-x: auto; padding: 16px; font-size: 12.5px; line-height: 1.6; }
+      ::-webkit-scrollbar-track { background: #18181b; }
+      ::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 99px; }
+      ::-webkit-scrollbar-thumb:hover { background: #ef4444; }
+      .custom-scroll::-webkit-scrollbar { width: 4px; }
+      .custom-scroll::-webkit-scrollbar-track { background: #09090b; }
+      .custom-scroll::-webkit-scrollbar-thumb { background: #27272a; border-radius: 99px; }
+      /* Grid overlay */
+      .bg-grid { background-image: linear-gradient(#27272a 1px, transparent 1px), linear-gradient(90deg, #27272a 1px, transparent 1px); background-size: 40px 40px; }
+      /* Sidebar */
+      .nav-item { border-left: 2px solid transparent; transition: all 0.15s; }
+      .nav-item:hover { border-left-color: #3f3f46; color: #d4d4d8; background: rgba(39,39,42,0.15); }
+      .nav-item.active { border-left-color: #dc2626; color: #fff; background: rgba(220,38,38,0.05); }
+      /* Section dividers */
+      .inst-section { border-left: 2px solid #27272a; padding-left: 1rem; }
+      /* Code blocks */
+      pre code { display: block; overflow-x: auto; padding: 14px 16px; font-size: 11.5px; line-height: 1.65; }
       .code-block { position: relative; }
-      .code-block .copy-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.2s; }
+      .code-block .copy-btn { position: absolute; top: 6px; right: 6px; opacity: 0; transition: opacity 0.15s; }
       .code-block:hover .copy-btn { opacity: 1; }
-      .param-table th { text-align: left; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #a1a1aa; }
-      .param-table td { font-size: 13px; }
-      .tab-btn.active { color: #fff; border-bottom-color: #dc2626; }
-      .toast { animation: toastIn 0.3s ease, toastOut 0.3s ease 1.5s forwards; }
-      @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
-      .hero-glow { background: radial-gradient(ellipse 600px 200px at 50% 0%, rgba(220,38,38,0.08), transparent); }
+      /* Tabs */
+      .install-tab { border-bottom: 2px solid transparent; }
+      .install-tab.active { color: #fff; border-bottom-color: #dc2626; }
+      /* Param rows */
+      .param-row { border-bottom: 1px solid rgba(39,39,42,0.4); }
+      .param-row:last-child { border-bottom: none; }
+      /* Toast */
+      .toast-anim { animation: slideUp 0.2s ease, fadeOut 0.3s ease 1.4s forwards; }
+      @keyframes slideUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes fadeOut { to { opacity:0; } }
+      /* Splash */
+      .splash-screen { position:fixed; inset:0; z-index:9999; background:#050505; display:flex; flex-direction:column; align-items:center; justify-content:center; transition: opacity 0.5s, visibility 0.5s; }
+      .splash-screen.fade-out { opacity:0; visibility:hidden; }
+      .splash-bar { height:2px; background:#dc2626; animation: loadBar 1s ease-out forwards; }
+      @keyframes loadBar { from { width:0; } to { width:100%; } }
+      @keyframes shieldBoot { 0% { transform:scale(0.8); opacity:0; } 50% { transform:scale(1.05); } 100% { transform:scale(1); opacity:1; } }
       /* Mobile sidebar */
       @media (max-width: 1023px) {
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; }
-        .sidebar-overlay.open { display: block; }
-        #sidebar { transform: translateX(-100%); transition: transform 0.3s ease; position: fixed; top: 56px; left: 0; bottom: 0; z-index: 50; }
+        #sidebar { transform: translateX(-100%); transition: transform 0.25s; position:fixed; top: calc(3.5rem + 50px); left:0; bottom:0; z-index:50; }
         #sidebar.open { transform: translateX(0); }
+        .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:40; }
+        .sidebar-overlay.open { display:block; }
       }
+      /* Selection */
+      ::selection { background: rgba(220,38,38,0.3); color: #fecaca; }
     </style>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              crimson: { 600: '#dc2626', 700: '#b91c1c' }
-            }
-          }
-        }
-      }
-    </script>
 </head>
-<body class="text-zinc-400 min-h-screen bg-[#050505]">
+<body class="text-zinc-400 min-h-screen bg-[#050505] overflow-x-hidden">
 
-<!-- ═══════════════════ HEADER ═══════════════════ -->
-<header class="fixed top-0 left-0 right-0 h-14 bg-[#0A0A0A]/95 backdrop-blur-md border-b border-zinc-800/60 z-50 flex items-center px-4 lg:px-6">
-  <a href="/" class="flex items-center gap-2.5 mr-8 group">
-    <div class="w-7 h-7 rounded bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white text-[11px] font-bold tracking-tight">B</div>
-    <span class="text-white font-semibold text-sm tracking-tight">BASTION</span>
-    <span class="text-zinc-600 text-[11px] font-mono">MCP</span>
-  </a>
-  <nav class="hidden md:flex items-center gap-6 text-[13px]">
-    <a href="#introduction" class="text-zinc-400 hover:text-white transition-colors">Docs</a>
-    <a href="#tools-reference" class="text-zinc-400 hover:text-white transition-colors">Tools</a>
-    <a href="#resources" class="text-zinc-400 hover:text-white transition-colors">Resources</a>
-    <a href="#api-keys" class="text-zinc-400 hover:text-white transition-colors">API Keys</a>
-  </nav>
-  <div class="ml-auto flex items-center gap-3">
-    <a href="https://github.com/bastion-fi" target="_blank" class="text-zinc-500 hover:text-white transition-colors">
-      <iconify-icon icon="mdi:github" width="20"></iconify-icon>
+<!-- ═══════════ SPLASH ═══════════ -->
+<div class="splash-screen" id="splash">
+  <iconify-icon icon="solar:shield-bold" class="text-red-600 text-4xl mb-3" style="animation:shieldBoot 0.6s ease-out"></iconify-icon>
+  <div class="text-[9px] font-mono uppercase tracking-[0.2em] text-zinc-600 mb-4">MCP DEVELOPER DOCS</div>
+  <div class="w-40"><div class="splash-bar rounded-full"></div></div>
+</div>
+
+<!-- ═══════════ HEADER — matches research terminal ═══════════ -->
+<header class="fixed top-0 left-0 right-0 h-14 lg:h-16 bg-[#050505] border-b border-zinc-800 z-50 flex items-center justify-between select-none">
+  <!-- LEFT: Logo -->
+  <div class="flex items-center h-full border-r border-zinc-800 px-4 lg:px-5">
+    <a href="/" class="flex items-center gap-2">
+      <iconify-icon icon="solar:shield-bold" class="text-red-600 text-xl"></iconify-icon>
+      <span class="text-white font-mono text-sm lg:text-base font-semibold tracking-tighter">BASTION</span>
     </a>
-    <a href="/" class="text-[12px] text-zinc-500 hover:text-white transition-colors font-mono hidden sm:block">bastionfi.tech</a>
-    <button id="mobile-menu-btn" class="lg:hidden p-1.5 text-zinc-400 hover:text-white">
-      <iconify-icon icon="solar:hamburger-menu-linear" width="22"></iconify-icon>
+    <!-- ENV badge (desktop) -->
+    <div class="hidden lg:flex items-center gap-1.5 ml-4 text-[9px] font-mono text-zinc-500 tracking-widest">
+      <span class="text-zinc-600">[</span>
+      <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span></span>
+      <span>ENV: LIVE</span>
+      <span class="text-zinc-600">]</span>
+    </div>
+  </div>
+
+  <!-- CENTER: Nav tabs (desktop) -->
+  <nav class="hidden lg:flex items-center h-full border-x border-zinc-800/50">
+    <a href="/terminal" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">
+      <iconify-icon icon="solar:monitor-bold" class="text-xs"></iconify-icon>RISK ENGINE
+    </a>
+    <a href="/research" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">
+      <iconify-icon icon="solar:documents-bold" class="text-xs"></iconify-icon>RESEARCH
+    </a>
+    <a href="/monitor" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">
+      <iconify-icon icon="solar:eye-bold" class="text-xs"></iconify-icon>PULSE
+    </a>
+    <div class="relative flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-white bg-zinc-900/50 border-r border-zinc-800/50">
+      <iconify-icon icon="solar:code-bold" class="text-xs text-red-500"></iconify-icon>MCP DOCS
+      <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600"></div>
+    </div>
+  </nav>
+
+  <!-- RIGHT -->
+  <div class="flex items-center h-full gap-2 px-4">
+    <a href="/lite" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-[9px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors">
+      <iconify-icon icon="solar:arrow-left-linear" class="text-xs"></iconify-icon>DASHBOARD
+    </a>
+    <!-- Mobile nav -->
+    <div class="flex lg:hidden items-center gap-3 text-[9px] font-mono uppercase tracking-widest">
+      <a href="/terminal" class="text-zinc-500 hover:text-white">Terminal</a>
+      <a href="/monitor" class="text-zinc-500 hover:text-white">Pulse</a>
+      <a href="/research" class="text-zinc-500 hover:text-white">Research</a>
+    </div>
+    <button id="mobile-menu-btn" class="lg:hidden p-1 text-zinc-400 hover:text-white ml-2">
+      <iconify-icon icon="solar:hamburger-menu-linear" width="20"></iconify-icon>
     </button>
   </div>
 </header>
 
-<!-- ═══════════════════ SIDEBAR OVERLAY (mobile) ═══════════════════ -->
+<!-- ═══════════ SUBHEADER BAR ═══════════ -->
+<div class="fixed top-14 lg:top-16 left-0 right-0 h-[50px] bg-[#050505] border-b border-zinc-800 z-40 flex items-center px-4 lg:px-5 gap-4 select-none">
+  <div class="flex items-center gap-2 shrink-0">
+    <iconify-icon icon="solar:code-bold" class="text-red-600 text-sm"></iconify-icon>
+    <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-300 font-medium">MCP DEVELOPER DOCS</span>
+    <span class="text-[9px] font-mono bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 text-zinc-500">v1.0</span>
+  </div>
+  <div class="hidden md:flex items-center gap-2 ml-auto text-[9px] font-mono">
+    <span class="text-zinc-600">SSE ENDPOINT:</span>
+    <span class="text-zinc-400">bastionfi.tech/mcp/sse</span>
+    <span class="text-zinc-700 mx-1">|</span>
+    <span class="text-zinc-600">TOOLS:</span>
+    <span class="text-red-500">10</span>
+    <span class="text-zinc-700 mx-1">|</span>
+    <span class="text-zinc-600">RESOURCES:</span>
+    <span class="text-red-500">3</span>
+    <span class="text-zinc-700 mx-1">|</span>
+    <span class="text-zinc-600">PROMPTS:</span>
+    <span class="text-red-500">3</span>
+  </div>
+</div>
+
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-<!-- ═══════════════════ LAYOUT ═══════════════════ -->
-<div class="pt-14 flex min-h-screen">
+<!-- ═══════════ MAIN LAYOUT ═══════════ -->
+<main class="pt-[calc(3.5rem+50px)] lg:pt-[calc(4rem+50px)] flex min-h-screen relative">
+  <!-- Grid overlay -->
+  <div class="absolute inset-0 bg-grid opacity-[0.02] pointer-events-none"></div>
 
-  <!-- ── SIDEBAR ── -->
-  <aside id="sidebar" class="w-[220px] shrink-0 bg-[#0A0A0A] border-r border-zinc-800/60 overflow-y-auto h-[calc(100vh-56px)] sticky top-14">
-    <nav class="py-5 px-3 text-[13px] space-y-5">
-      <!-- DOCUMENTATION -->
-      <div>
-        <div class="sidebar-group-title">Documentation</div>
-        <a href="#introduction" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">Introduction</a>
-        <a href="#why-bastion" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">Why BASTION MCP?</a>
-      </div>
-      <!-- SETUP -->
-      <div>
-        <div class="sidebar-group-title">Setup</div>
-        <a href="#installation" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">Installation</a>
-        <a href="#configuration" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">Configuration</a>
-      </div>
-      <!-- TOOLS REFERENCE -->
-      <div>
-        <div class="sidebar-group-title">Tools Reference</div>
-        <a href="#bastion_evaluate_risk" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_evaluate_risk</a>
-        <a href="#bastion_chat" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_chat</a>
-        <a href="#bastion_get_price" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_get_price</a>
-        <a href="#bastion_get_market_data" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_get_market_data</a>
-        <a href="#bastion_get_liquidations" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_get_liquidations</a>
-        <a href="#bastion_get_whale_activity" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_get_whale_activity</a>
-        <a href="#bastion_get_funding_rates" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_get_funding_rates</a>
-        <a href="#bastion_generate_report" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_generate_report</a>
-        <a href="#bastion_get_reports" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_get_reports</a>
-        <a href="#bastion_calculate_position" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion_calculate_position</a>
-      </div>
-      <!-- RESOURCES -->
-      <div>
-        <div class="sidebar-group-title">Resources</div>
-        <a href="#resource-status" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion://status</a>
-        <a href="#resource-symbols" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion://supported-symbols</a>
-        <a href="#resource-model" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">bastion://model-info</a>
-      </div>
-      <!-- MORE -->
-      <div>
-        <div class="sidebar-group-title">More</div>
-        <a href="#architecture" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">Architecture</a>
-        <a href="#api-keys" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">API Keys</a>
-        <a href="#rate-limits" class="sidebar-link block py-1.5 text-zinc-400 hover:text-white transition-colors">Rate Limits</a>
-      </div>
+  <!-- SIDEBAR (col 1) -->
+  <aside id="sidebar" class="w-[220px] lg:w-[240px] shrink-0 bg-[#050505] border-r border-zinc-800 overflow-y-auto custom-scroll h-[calc(100vh-3.5rem-50px)] lg:h-[calc(100vh-4rem-50px)] lg:sticky lg:top-[calc(4rem+50px)]">
+    <nav class="py-4 text-[10px] font-mono uppercase tracking-widest">
+
+      <div class="px-4 py-2 text-[8px] text-zinc-600 tracking-[0.15em]">GETTING STARTED</div>
+      <a href="#introduction" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Introduction</a>
+      <a href="#installation" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Installation</a>
+      <a href="#configuration" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Configuration</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">TOOLS REFERENCE</div>
+      <a href="#bastion_evaluate_risk" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">
+        <span class="text-red-600 mr-1">&#9679;</span>evaluate_risk
+      </a>
+      <a href="#bastion_chat" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">chat</a>
+      <a href="#bastion_get_price" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_price</a>
+      <a href="#bastion_get_market_data" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_market_data</a>
+      <a href="#bastion_get_liquidations" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_liquidations</a>
+      <a href="#bastion_get_whale_activity" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_whale_activity</a>
+      <a href="#bastion_get_funding_rates" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_funding_rates</a>
+      <a href="#bastion_generate_report" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">
+        <span class="text-purple-500 mr-1">&#9679;</span>generate_report
+      </a>
+      <a href="#bastion_get_reports" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">get_reports</a>
+      <a href="#bastion_calculate_position" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">calculate_position</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">RESOURCES</div>
+      <a href="#resource-status" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">bastion://status</a>
+      <a href="#resource-symbols" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">bastion://symbols</a>
+      <a href="#resource-model" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">bastion://model-info</a>
+
+      <div class="px-4 py-2 mt-3 text-[8px] text-zinc-600 tracking-[0.15em]">REFERENCE</div>
+      <a href="#architecture" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Architecture</a>
+      <a href="#api-keys" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">API Keys</a>
+      <a href="#rate-limits" class="nav-item block px-4 py-2 text-zinc-500 hover:text-white">Rate Limits</a>
     </nav>
   </aside>
 
-  <!-- ── MAIN CONTENT ── -->
-  <main class="flex-1 min-w-0 px-6 lg:px-12 py-10 max-w-[780px]">
+  <!-- CONTENT (col 2) -->
+  <div class="flex-1 min-w-0 overflow-y-auto custom-scroll">
+    <div class="max-w-[820px] px-6 lg:px-10 py-8">
 
-    <!-- ═══════════ INTRODUCTION ═══════════ -->
-    <section id="introduction" class="mb-16">
-      <div class="hero-glow rounded-xl p-px mb-8">
-        <div class="bg-[#0A0A0A] rounded-xl p-6 border border-zinc-800/40">
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-5 h-5 rounded bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white text-[9px] font-bold">B</div>
-            <span class="text-[11px] font-mono text-zinc-500">BASTION RISK INTELLIGENCE</span>
-          </div>
-          <h1 class="text-2xl sm:text-3xl font-bold text-white mb-3 leading-tight">Connect your Claude agent to<br>autonomous crypto risk intelligence.</h1>
-          <p class="text-zinc-400 text-[14px] leading-relaxed max-w-xl">
-            BASTION MCP gives any Claude agent access to a fine-tuned 32B parameter AI model that analyzes
-            560+ real-time market signals &mdash; liquidations, whale flows, funding rates, order flow, VPVR, market structure &mdash;
-            and returns specific trading actions with institutional-grade reasoning.
+      <!-- ═══════ INTRO ═══════ -->
+      <section id="introduction" class="mb-12">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// OVERVIEW</div>
+        <h1 class="text-xl lg:text-2xl font-bold text-white mb-4 tracking-tight">CONNECT YOUR CLAUDE AGENT TO<br><span class="text-red-500">AUTONOMOUS RISK INTELLIGENCE.</span></h1>
+        <div class="inst-section mb-6">
+          <p class="text-zinc-400 text-[12px] leading-relaxed">
+            BASTION MCP gives any Claude agent access to a fine-tuned 32B parameter AI model that analyzes 560+ real-time market signals &mdash; liquidations, whale flows, funding rates, order flow, VPVR, market structure &mdash; and returns specific trading actions with institutional-grade reasoning.
           </p>
-          <div class="flex flex-wrap items-center gap-3 mt-5">
-            <span class="text-[11px] font-mono px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-300">10 tools</span>
-            <span class="text-[11px] font-mono px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-300">3 resources</span>
-            <span class="text-[11px] font-mono px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-300">3 prompts</span>
-            <span class="text-[11px] font-mono px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-300">75.4% accuracy</span>
-            <span class="text-[11px] font-mono px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-300">SSE transport</span>
+        </div>
+        <!-- Stats row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800">
+          <div class="bg-[#050505] p-3 text-center">
+            <div class="text-white text-lg font-bold font-mono">10</div>
+            <div class="text-[8px] font-mono uppercase tracking-widest text-zinc-600">TOOLS</div>
+          </div>
+          <div class="bg-[#050505] p-3 text-center">
+            <div class="text-white text-lg font-bold font-mono">560+</div>
+            <div class="text-[8px] font-mono uppercase tracking-widest text-zinc-600">SIGNALS</div>
+          </div>
+          <div class="bg-[#050505] p-3 text-center">
+            <div class="text-red-500 text-lg font-bold font-mono">75.4%</div>
+            <div class="text-[8px] font-mono uppercase tracking-widest text-zinc-600">ACCURACY</div>
+          </div>
+          <div class="bg-[#050505] p-3 text-center">
+            <div class="text-white text-lg font-bold font-mono">&lt;3s</div>
+            <div class="text-[8px] font-mono uppercase tracking-widest text-zinc-600">LATENCY</div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ═══════════ WHY BASTION MCP ═══════════ -->
-    <section id="why-bastion" class="mb-16">
-      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <iconify-icon icon="solar:shield-check-bold" class="text-red-500"></iconify-icon>
-        Why BASTION MCP?
-      </h2>
-      <div class="grid sm:grid-cols-2 gap-4 text-[13px]">
-        <div class="bg-zinc-900/40 border border-zinc-800/50 rounded-lg p-4">
-          <div class="text-white font-medium mb-1.5">Autonomous Risk Intelligence</div>
-          <p class="text-zinc-500 leading-relaxed">Fine-tuned 32B model evaluates positions against 560+ signals. Not a wrapper around GPT &mdash; a purpose-built risk engine with 75.4% backtested accuracy.</p>
-        </div>
-        <div class="bg-zinc-900/40 border border-zinc-800/50 rounded-lg p-4">
-          <div class="text-white font-medium mb-1.5">Real-Time Data</div>
-          <p class="text-zinc-500 leading-relaxed">Live liquidation cascades, whale transactions across 11 blockchains, cross-exchange funding rates, VPVR volume profiles, and market structure analysis.</p>
-        </div>
-        <div class="bg-zinc-900/40 border border-zinc-800/50 rounded-lg p-4">
-          <div class="text-white font-medium mb-1.5">Institutional Reports</div>
-          <p class="text-zinc-500 leading-relaxed">Generate MCF Labs research with ratings, conviction scores, valuation scenarios, trade structures, and risk factors &mdash; on demand via a single tool call.</p>
-        </div>
-        <div class="bg-zinc-900/40 border border-zinc-800/50 rounded-lg p-4">
-          <div class="text-white font-medium mb-1.5">Works Everywhere</div>
-          <p class="text-zinc-500 leading-relaxed">Claude Code, Claude Desktop, Claude API, or any MCP-compatible client. One connection, all tools available instantly.</p>
-        </div>
-      </div>
-    </section>
+      <!-- ═══════ INSTALLATION ═══════ -->
+      <section id="installation" class="mb-12">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// SETUP</div>
+        <h2 class="text-sm font-bold text-white mb-4 font-mono uppercase tracking-wider">INSTALLATION</h2>
 
-    <!-- ═══════════ INSTALLATION ═══════════ -->
-    <section id="installation" class="mb-16">
-      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <iconify-icon icon="solar:download-minimalistic-bold" class="text-red-500"></iconify-icon>
-        Installation
-      </h2>
-      <p class="text-zinc-400 text-[13px] mb-5">Connect BASTION to your Claude client in under 60 seconds.</p>
+        <!-- Install tabs -->
+        <div class="flex border-b border-zinc-800 mb-0 text-[10px] font-mono uppercase tracking-widest">
+          <button class="install-tab active px-4 py-2.5 text-zinc-500 hover:text-white transition-colors" data-tab="claude-code">CLAUDE CODE</button>
+          <button class="install-tab px-4 py-2.5 text-zinc-500 hover:text-white transition-colors" data-tab="claude-desktop">CLAUDE DESKTOP</button>
+          <button class="install-tab px-4 py-2.5 text-zinc-500 hover:text-white transition-colors" data-tab="api">API / CUSTOM</button>
+        </div>
 
-      <!-- Tabs -->
-      <div class="flex border-b border-zinc-800 mb-5 gap-0 text-[13px]">
-        <button class="tab-btn active px-4 py-2.5 text-zinc-500 border-b-2 border-transparent transition-colors hover:text-white" data-tab="claude-code">Claude Code</button>
-        <button class="tab-btn px-4 py-2.5 text-zinc-500 border-b-2 border-transparent transition-colors hover:text-white" data-tab="claude-desktop">Claude Desktop</button>
-        <button class="tab-btn px-4 py-2.5 text-zinc-500 border-b-2 border-transparent transition-colors hover:text-white" data-tab="api">API / Custom</button>
-      </div>
-
-      <!-- Claude Code Tab -->
-      <div class="tab-content" data-tab="claude-code">
-        <p class="text-zinc-400 text-[13px] mb-3">Add BASTION to your Claude Code MCP settings:</p>
-        <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden mb-4">
-          <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-            <span class="text-[11px] font-mono text-zinc-500">~/.claude/settings.json</span>
-            <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-          </div>
-          <pre><code class="text-zinc-300">{
+        <!-- Claude Code -->
+        <div class="tab-content border border-t-0 border-zinc-800 bg-[#080808]" data-tab="claude-code">
+          <div class="p-4">
+            <p class="text-zinc-500 text-[11px] font-mono mb-3">Add to <span class="text-zinc-300">~/.claude/settings.json</span>:</p>
+            <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden">
+              <div class="bg-[#050505] border-b border-zinc-800 px-3 py-1.5 flex items-center justify-between">
+                <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">JSON</span>
+                <button class="copy-btn text-[9px] font-mono px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 transition-colors" onclick="copyCode(this)">COPY</button>
+              </div>
+              <pre><code class="text-zinc-300">{
   "mcpServers": {
     "bastion": {
       "url": "https://bastionfi.tech/mcp/sse",
@@ -216,19 +250,21 @@
     }
   }
 }</code></pre>
-        </div>
-        <p class="text-zinc-500 text-[12px]">Restart Claude Code after saving. Your agent now has access to all 10 BASTION tools.</p>
-      </div>
-
-      <!-- Claude Desktop Tab -->
-      <div class="tab-content hidden" data-tab="claude-desktop">
-        <p class="text-zinc-400 text-[13px] mb-3">Add to your Claude Desktop configuration file:</p>
-        <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden mb-4">
-          <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-            <span class="text-[11px] font-mono text-zinc-500">claude_desktop_config.json</span>
-            <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
+            </div>
+            <p class="text-zinc-600 text-[10px] font-mono mt-3">Restart Claude Code after saving. All 10 tools become available instantly.</p>
           </div>
-          <pre><code class="text-zinc-300">{
+        </div>
+
+        <!-- Claude Desktop -->
+        <div class="tab-content hidden border border-t-0 border-zinc-800 bg-[#080808]" data-tab="claude-desktop">
+          <div class="p-4">
+            <p class="text-zinc-500 text-[11px] font-mono mb-3">Add to your <span class="text-zinc-300">claude_desktop_config.json</span>:</p>
+            <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden">
+              <div class="bg-[#050505] border-b border-zinc-800 px-3 py-1.5 flex items-center justify-between">
+                <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">JSON</span>
+                <button class="copy-btn text-[9px] font-mono px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 transition-colors" onclick="copyCode(this)">COPY</button>
+              </div>
+              <pre><code class="text-zinc-300">{
   "mcpServers": {
     "bastion": {
       "transport": "sse",
@@ -239,22 +275,23 @@
     }
   }
 }</code></pre>
-        </div>
-        <div class="text-zinc-500 text-[12px] space-y-1">
-          <p><strong class="text-zinc-400">macOS:</strong> <code class="text-[11px] bg-zinc-800 px-1.5 py-0.5 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code></p>
-          <p><strong class="text-zinc-400">Windows:</strong> <code class="text-[11px] bg-zinc-800 px-1.5 py-0.5 rounded">%APPDATA%\Claude\claude_desktop_config.json</code></p>
-        </div>
-      </div>
-
-      <!-- API Tab -->
-      <div class="tab-content hidden" data-tab="api">
-        <p class="text-zinc-400 text-[13px] mb-3">Connect from any MCP-compatible client:</p>
-        <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden mb-4">
-          <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-            <span class="text-[11px] font-mono text-zinc-500">SSE Connection</span>
-            <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="mt-3 text-[10px] font-mono text-zinc-600 space-y-1">
+              <p><span class="text-zinc-500">macOS:</span> ~/Library/Application Support/Claude/claude_desktop_config.json</p>
+              <p><span class="text-zinc-500">Windows:</span> %APPDATA%\Claude\claude_desktop_config.json</p>
+            </div>
           </div>
-          <pre><code class="text-zinc-300"># SSE Endpoint
+        </div>
+
+        <!-- API -->
+        <div class="tab-content hidden border border-t-0 border-zinc-800 bg-[#080808]" data-tab="api">
+          <div class="p-4">
+            <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden mb-4">
+              <div class="bg-[#050505] border-b border-zinc-800 px-3 py-1.5 flex items-center justify-between">
+                <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">ENDPOINTS</span>
+                <button class="copy-btn text-[9px] font-mono px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 transition-colors" onclick="copyCode(this)">COPY</button>
+              </div>
+              <pre><code class="text-zinc-300"># SSE Endpoint
 https://bastionfi.tech/mcp/sse
 
 # Headers
@@ -262,13 +299,13 @@ Authorization: Bearer YOUR_API_KEY
 
 # Message Endpoint (POST)
 https://bastionfi.tech/mcp/messages/?session_id={id}</code></pre>
-        </div>
-        <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden mb-4">
-          <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-            <span class="text-[11px] font-mono text-zinc-500">Python (mcp SDK)</span>
-            <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-          </div>
-          <pre><code class="text-zinc-300">from mcp import ClientSession
+            </div>
+            <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden">
+              <div class="bg-[#050505] border-b border-zinc-800 px-3 py-1.5 flex items-center justify-between">
+                <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">PYTHON</span>
+                <button class="copy-btn text-[9px] font-mono px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 transition-colors" onclick="copyCode(this)">COPY</button>
+              </div>
+              <pre><code class="text-zinc-300">from mcp import ClientSession
 from mcp.client.sse import sse_client
 
 async with sse_client(
@@ -279,541 +316,412 @@ async with sse_client(
         await session.initialize()
         tools = await session.list_tools()
         print(f"Connected: {len(tools.tools)} tools")</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════ CONFIGURATION ═══════════ -->
-    <section id="configuration" class="mb-16">
-      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <iconify-icon icon="solar:settings-bold" class="text-red-500"></iconify-icon>
-        Configuration
-      </h2>
-      <p class="text-zinc-400 text-[13px] mb-4">After installation, verify your connection by asking Claude:</p>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden mb-5">
-        <pre><code class="text-zinc-300 text-[13px]">"What's the current BTC price?"</code></pre>
-      </div>
-      <p class="text-zinc-400 text-[13px] mb-3">Claude will call <code class="text-[12px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">bastion_get_price</code> automatically. If it works, you're connected.</p>
-      <div class="bg-zinc-900/40 border border-zinc-800/50 rounded-lg p-4 text-[13px]">
-        <div class="text-white font-medium mb-2 flex items-center gap-2">
-          <iconify-icon icon="solar:info-circle-bold" class="text-blue-400"></iconify-icon>
-          Supported Symbols
-        </div>
-        <p class="text-zinc-500 mb-2">30 crypto pairs with full data coverage on BTC, ETH, SOL:</p>
-        <div class="flex flex-wrap gap-1.5">
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">BTC</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">ETH</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">SOL</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">AVAX</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">XRP</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">DOGE</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">LINK</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">ADA</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">MATIC</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">DOT</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">ATOM</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">UNI</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">AAVE</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">ARB</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">OP</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">SUI</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">APT</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">NEAR</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">FTM</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">INJ</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">TIA</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">SEI</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">JUP</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">WIF</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">PEPE</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">BONK</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">RENDER</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">FET</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">TAO</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 bg-zinc-800/60 border border-zinc-700/30 rounded text-zinc-400">ONDO</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════ TOOLS REFERENCE HEADER ═══════════ -->
-    <div id="tools-reference" class="mb-8">
-      <h2 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
-        <iconify-icon icon="solar:bolt-circle-bold" class="text-red-500"></iconify-icon>
-        Tools Reference
-      </h2>
-      <p class="text-zinc-500 text-[13px]">10 tools available to your Claude agent. Each tool is called automatically when relevant to the conversation.</p>
-    </div>
-
-    <!-- ── TOOL 1: bastion_evaluate_risk ── -->
-    <section id="bastion_evaluate_risk" class="mb-14">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-[11px] font-mono px-2 py-0.5 bg-red-900/30 border border-red-800/40 rounded text-red-400">CORE</span>
-        <h3 class="text-[15px] font-bold text-white font-mono">bastion_evaluate_risk</h3>
-      </div>
-      <p class="text-zinc-400 text-[13px] mb-4 leading-relaxed">
-        Evaluate a crypto futures position using BASTION's AI risk intelligence engine. Sends a position to the fine-tuned 32B model which analyzes 560+ real-time signals and returns a specific action with reasoning.
-      </p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">symbol</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">Trading pair (e.g. BTC, ETH, SOL)</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">direction</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">LONG or SHORT</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">entry_price</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">Price at which position was opened</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">current_price</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">Current market price</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">leverage</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Leverage multiplier (default 1.0)</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">stop_loss</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Stop loss price (0 = no stop)</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">take_profit_1</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">First take profit target</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">take_profit_2</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Second take profit target</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">take_profit_3</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Third take profit target</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">position_size_usd</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Position size in USD (default 1000)</td></tr>
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">duration_hours</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Hours position has been open</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden mb-3">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example prompt</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"Evaluate my BTC long: entered at $95,000, current price $97,500,
-10x leverage, stop at $93,000, TP1 at $100,000"</code></pre>
-      </div>
-      <div class="bg-zinc-900/30 border border-zinc-800/40 rounded-lg p-3 text-[12px] text-zinc-500">
-        <strong class="text-zinc-300">Returns:</strong> action (HOLD / EXIT_FULL / TP_PARTIAL / EXIT_100% / REDUCE_SIZE / TRAIL_STOP), urgency, confidence (0-1), reason, detailed reasoning, and execution details.
-      </div>
-    </section>
-
-    <!-- ── TOOL 2: bastion_chat ── -->
-    <section id="bastion_chat" class="mb-14">
-      <h3 class="text-[15px] font-bold text-white font-mono mb-2">bastion_chat</h3>
-      <p class="text-zinc-400 text-[13px] mb-4 leading-relaxed">
-        Ask BASTION's neural AI anything about crypto markets, trading, or risk. Powered by the same fine-tuned 32B model. Context-aware &mdash; knows current market conditions, whale activity, and structure.
-      </p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">query</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">Your question about markets</td></tr>
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">symbol</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4">No</td><td class="py-2">Symbol context (default BTC)</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"Is ETH a buy right now? What does the order flow look like?"</code></pre>
-      </div>
-    </section>
-
-    <!-- ── TOOL 3: bastion_get_price ── -->
-    <section id="bastion_get_price" class="mb-14">
-      <h3 class="text-[15px] font-bold text-white font-mono mb-2">bastion_get_price</h3>
-      <p class="text-zinc-400 text-[13px] mb-4">Get the current live price of a cryptocurrency.</p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">symbol</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4">No</td><td class="py-2">Crypto symbol (default BTC)</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"What's the current SOL price?"</code></pre>
-      </div>
-    </section>
-
-    <!-- ── TOOL 4: bastion_get_market_data ── -->
-    <section id="bastion_get_market_data" class="mb-14">
-      <h3 class="text-[15px] font-bold text-white font-mono mb-2">bastion_get_market_data</h3>
-      <p class="text-zinc-400 text-[13px] mb-4">Get aggregated market intelligence: price, CVD (order flow), open interest, funding rates, and volatility metrics in one call.</p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">symbol</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4">No</td><td class="py-2">Crypto symbol (default BTC)</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"Show me the full market data for ETH — order flow, OI, funding, volatility"</code></pre>
-      </div>
-    </section>
-
-    <!-- ── TOOL 5: bastion_get_liquidations ── -->
-    <section id="bastion_get_liquidations" class="mb-14">
-      <h3 class="text-[15px] font-bold text-white font-mono mb-2">bastion_get_liquidations</h3>
-      <p class="text-zinc-400 text-[13px] mb-4">Get liquidation data: recent events, clusters, and cascade risk zones. Critical for understanding where leveraged positions are getting wiped.</p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">symbol</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4">No</td><td class="py-2">Crypto symbol (default BTC)</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"Where are the BTC liquidation clusters? Any cascade risk?"</code></pre>
-      </div>
-    </section>
-
-    <!-- ── TOOL 6: bastion_get_whale_activity ── -->
-    <section id="bastion_get_whale_activity" class="mb-14">
-      <h3 class="text-[15px] font-bold text-white font-mono mb-2">bastion_get_whale_activity</h3>
-      <p class="text-zinc-400 text-[13px] mb-4">Get recent whale transactions across 11 blockchains. Tracks large transfers (&gt;$1M) with exchange attribution.</p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">min_value_usd</td><td class="py-2 pr-4">int</td><td class="py-2 pr-4">No</td><td class="py-2">Min transaction value (default 1,000,000)</td></tr>
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">limit</td><td class="py-2 pr-4">int</td><td class="py-2 pr-4">No</td><td class="py-2">Number of results (default 20, max 50)</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"Show me whale transactions over $5M in the last hour"</code></pre>
-      </div>
-    </section>
-
-    <!-- ── TOOL 7: bastion_get_funding_rates ── -->
-    <section id="bastion_get_funding_rates" class="mb-14">
-      <h3 class="text-[15px] font-bold text-white font-mono mb-2">bastion_get_funding_rates</h3>
-      <p class="text-zinc-400 text-[13px] mb-4">Get cross-exchange funding rates. Positive = longs paying shorts (bullish overcrowding), negative = shorts paying longs (bearish overcrowding).</p>
-      <p class="text-zinc-500 text-[12px] mb-3 italic">No parameters required.</p>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"What are the current funding rates across exchanges?"</code></pre>
-      </div>
-    </section>
-
-    <!-- ── TOOL 8: bastion_generate_report ── -->
-    <section id="bastion_generate_report" class="mb-14">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-[11px] font-mono px-2 py-0.5 bg-purple-900/30 border border-purple-800/40 rounded text-purple-400">MCF LABS</span>
-        <h3 class="text-[15px] font-bold text-white font-mono">bastion_generate_report</h3>
-      </div>
-      <p class="text-zinc-400 text-[13px] mb-4">Generate an AI-powered MCF Labs research report with ratings, conviction scores, target prices, risk factors, trade structures, and valuation scenarios.</p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">report_type</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4">No</td><td class="py-2">institutional_research, market_structure, whale_intelligence, options_flow, or cycle_position</td></tr>
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">symbol</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4">No</td><td class="py-2">Symbol to analyze (default BTC)</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"Generate an institutional research report on SOL"</code></pre>
-      </div>
-    </section>
-
-    <!-- ── TOOL 9: bastion_get_reports ── -->
-    <section id="bastion_get_reports" class="mb-14">
-      <h3 class="text-[15px] font-bold text-white font-mono mb-2">bastion_get_reports</h3>
-      <p class="text-zinc-400 text-[13px] mb-4">List existing MCF Labs research reports. Filter by type or symbol.</p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">limit</td><td class="py-2 pr-4">int</td><td class="py-2 pr-4">No</td><td class="py-2">Number of reports (default 10)</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">report_type</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4">No</td><td class="py-2">Filter by type</td></tr>
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">symbol</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4">No</td><td class="py-2">Filter by symbol</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"Show me the latest whale intelligence reports"</code></pre>
-      </div>
-    </section>
-
-    <!-- ── TOOL 10: bastion_calculate_position ── -->
-    <section id="bastion_calculate_position" class="mb-14">
-      <h3 class="text-[15px] font-bold text-white font-mono mb-2">bastion_calculate_position</h3>
-      <p class="text-zinc-400 text-[13px] mb-4">Calculate optimal position size with Monte Carlo risk simulation. Runs 50,000 simulations to estimate probability of hitting TP vs SL, expected value, and trade quality score.</p>
-      <table class="param-table w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4">Parameter</th><th class="pb-2 pr-4">Type</th><th class="pb-2 pr-4">Required</th><th class="pb-2">Description</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">symbol</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">Trading pair</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">direction</td><td class="py-2 pr-4">string</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">LONG or SHORT</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">entry_price</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">Planned entry price</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">stop_loss</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">Stop loss price</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">take_profit</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4"><span class="text-red-400">Yes</span></td><td class="py-2">Take profit target</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">leverage</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Leverage (default 1.0)</td></tr>
-          <tr class="border-b border-zinc-800/40"><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">account_size</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Account size in USD (default 10,000)</td></tr>
-          <tr><td class="py-2 pr-4 font-mono text-zinc-300 text-[12px]">risk_percent</td><td class="py-2 pr-4">float</td><td class="py-2 pr-4">No</td><td class="py-2">Max risk per trade % (default 2.0)</td></tr>
-        </tbody>
-      </table>
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Example</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
-        </div>
-        <pre><code class="text-zinc-300">"Calculate position size for a BTC long at $95k, stop $93k,
-TP $100k, 5x leverage, $10k account, 2% risk"</code></pre>
-      </div>
-    </section>
-
-    <!-- ═══════════ RESOURCES ═══════════ -->
-    <section id="resources" class="mb-16">
-      <h2 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-        <iconify-icon icon="solar:database-bold" class="text-red-500"></iconify-icon>
-        Resources
-      </h2>
-      <p class="text-zinc-400 text-[13px] mb-6">MCP resources provide static/semi-static data that Claude can read without calling a tool.</p>
-
-      <div id="resource-status" class="mb-8">
-        <h3 class="text-[14px] font-bold text-white font-mono mb-2">bastion://status</h3>
-        <p class="text-zinc-400 text-[13px] mb-3">System status including model version, GPU health, API latency, and service availability.</p>
-        <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-          <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-            <span class="text-[11px] font-mono text-zinc-500">Response</span>
-            <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
+            </div>
           </div>
-          <pre><code class="text-zinc-300">{
+        </div>
+      </section>
+
+      <!-- ═══════ CONFIGURATION ═══════ -->
+      <section id="configuration" class="mb-12">
+        <h2 class="text-sm font-bold text-white mb-3 font-mono uppercase tracking-wider">VERIFY CONNECTION</h2>
+        <p class="text-zinc-500 text-[11px] font-mono mb-3">After installation, test by asking Claude:</p>
+        <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden mb-4">
+          <pre><code class="text-zinc-300 text-[12px]">"What's the current BTC price?"</code></pre>
+        </div>
+        <p class="text-zinc-600 text-[10px] font-mono mb-5">Claude will call <span class="text-zinc-400">bastion_get_price</span> automatically. If it works, you're connected.</p>
+
+        <div class="border border-zinc-800 bg-[#080808] p-4">
+          <div class="text-[9px] font-mono uppercase tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
+            <iconify-icon icon="solar:list-bold" class="text-red-600"></iconify-icon>SUPPORTED SYMBOLS <span class="text-zinc-700">(30)</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">BTC</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">ETH</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">SOL</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">AVAX</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">XRP</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">DOGE</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">LINK</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">ADA</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">DOT</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">ATOM</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">UNI</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">AAVE</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">ARB</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">OP</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">SUI</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">APT</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">NEAR</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">FTM</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">INJ</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">TIA</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">SEI</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">JUP</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">WIF</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">PEPE</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">BONK</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">RENDER</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">FET</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">TAO</span>
+            <span class="text-[9px] font-mono px-2 py-0.5 bg-[#0a0a0a] border border-zinc-800 text-zinc-400">ONDO</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ TOOLS REFERENCE ═══════ -->
+      <div id="tools-reference" class="mb-6">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// TOOLS REFERENCE</div>
+        <h2 class="text-sm font-bold text-white mb-1 font-mono uppercase tracking-wider">10 TOOLS AVAILABLE</h2>
+        <p class="text-zinc-600 text-[10px] font-mono">Each tool is called automatically when relevant to the conversation.</p>
+      </div>
+
+      <!-- TOOL TEMPLATE: bastion_evaluate_risk -->
+      <section id="bastion_evaluate_risk" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5 flex items-center gap-2">
+          <span class="text-[8px] font-mono px-1.5 py-0.5 bg-red-600/20 border border-red-600/40 text-red-400 uppercase tracking-widest">CORE</span>
+          <span class="text-[12px] font-mono text-white font-medium">bastion_evaluate_risk</span>
+        </div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] leading-relaxed mb-4">Evaluate a crypto futures position using BASTION's AI risk intelligence engine. Sends a position to the fine-tuned 32B model which analyzes 560+ real-time signals and returns a specific action with reasoning.</p>
+          <div class="text-[8px] font-mono uppercase tracking-widest text-zinc-600 mb-2">PARAMETERS</div>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono">
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Trading pair (BTC, ETH, SOL)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">direction</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">LONG or SHORT</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">entry_price</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Price position was opened at</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">current_price</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Current market price</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">leverage</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Leverage multiplier (default 1.0)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">stop_loss</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Stop loss price (0 = no stop)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">take_profit_1</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">First take profit target</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">take_profit_2</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Second take profit target</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">take_profit_3</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Third take profit target</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">position_size_usd</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Position size USD (default 1000)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">duration_hours</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Hours position has been open</span></div>
+          </div>
+          <div class="mt-3 text-[8px] font-mono uppercase tracking-widest text-zinc-600 mb-2">EXAMPLE PROMPT</div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden">
+            <pre><code class="text-zinc-400 text-[11px]">"Evaluate my BTC long: entered at $95,000, now $97,500, 10x leverage, stop $93k, TP1 $100k"</code></pre>
+            <button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button>
+          </div>
+          <div class="mt-3 text-[10px] font-mono text-zinc-600">
+            <span class="text-zinc-500">Returns:</span> action (HOLD / EXIT_FULL / TP_PARTIAL / EXIT_100% / REDUCE_SIZE / TRAIL_STOP), urgency, confidence, reasoning, execution details
+          </div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_chat -->
+      <section id="bastion_chat" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5 flex items-center gap-2">
+          <span class="text-[12px] font-mono text-white font-medium">bastion_chat</span>
+        </div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] leading-relaxed mb-3">Ask BASTION's neural AI anything about crypto markets. Context-aware &mdash; knows current conditions, whale activity, structure.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono mb-3">
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">query</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Your question about markets</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Symbol context (default BTC)</span></div>
+          </div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"Is ETH a buy right now? What does the order flow look like?"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_get_price -->
+      <section id="bastion_get_price" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_price</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Get the current live price of a cryptocurrency.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono mb-3">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"What's the current SOL price?"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_get_market_data -->
+      <section id="bastion_get_market_data" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_market_data</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Aggregated market intelligence: price, CVD, open interest, funding rates, volatility.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono mb-3">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"Show me ETH market data — order flow, OI, funding, volatility"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_get_liquidations -->
+      <section id="bastion_get_liquidations" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_liquidations</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Liquidation data: recent events, clusters, cascade risk zones.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono mb-3">
+            <div class="flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Crypto symbol (default BTC)</span></div>
+          </div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"Where are the BTC liquidation clusters? Any cascade risk?"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_get_whale_activity -->
+      <section id="bastion_get_whale_activity" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_whale_activity</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Whale transactions across 11 blockchains. Tracks large transfers (&gt;$1M) with exchange attribution.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono mb-3">
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">min_value_usd</span><span class="text-zinc-600 w-16 shrink-0">int</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Min value (default 1,000,000)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">limit</span><span class="text-zinc-600 w-16 shrink-0">int</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Results (default 20, max 50)</span></div>
+          </div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"Show me whale transactions over $5M"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_get_funding_rates -->
+      <section id="bastion_get_funding_rates" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_funding_rates</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Cross-exchange funding rates. Positive = longs paying shorts, negative = shorts paying longs.</p>
+          <p class="text-zinc-700 text-[10px] font-mono mb-3">No parameters required.</p>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"What are the funding rates across exchanges?"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_generate_report -->
+      <section id="bastion_generate_report" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5 flex items-center gap-2">
+          <span class="text-[8px] font-mono px-1.5 py-0.5 bg-purple-600/20 border border-purple-600/40 text-purple-400 uppercase tracking-widest">MCF LABS</span>
+          <span class="text-[12px] font-mono text-white font-medium">bastion_generate_report</span>
+        </div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Generate institutional-grade MCF Labs research report with ratings, conviction scores, target prices, risk factors, trade structures.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono mb-3">
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">report_type</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">institutional_research, market_structure, whale_intelligence, options_flow, cycle_position</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Symbol to analyze (default BTC)</span></div>
+          </div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"Generate an institutional research report on SOL"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_get_reports -->
+      <section id="bastion_get_reports" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_get_reports</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">List existing MCF Labs research reports. Filter by type or symbol.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono mb-3">
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">limit</span><span class="text-zinc-600 w-16 shrink-0">int</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Number of reports (default 10)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">report_type</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Filter by type</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Filter by symbol</span></div>
+          </div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"Show me the latest whale intelligence reports"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- TOOL: bastion_calculate_position -->
+      <section id="bastion_calculate_position" class="mb-10 border border-zinc-800 bg-[#080808]">
+        <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white font-medium">bastion_calculate_position</span></div>
+        <div class="p-4">
+          <p class="text-zinc-500 text-[11px] mb-3">Optimal position sizing with Monte Carlo simulation. 50,000 sims for TP/SL probability and expected value.</p>
+          <div class="border border-zinc-800 bg-[#0a0a0a] text-[11px] font-mono mb-3">
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">symbol</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Trading pair</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">direction</span><span class="text-zinc-600 w-16 shrink-0">string</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">LONG or SHORT</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">entry_price</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Planned entry price</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">stop_loss</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Stop loss price</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">take_profit</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-red-500 w-12 shrink-0">req</span><span class="text-zinc-500 flex-1">Take profit target</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">leverage</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Leverage (default 1.0)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">account_size</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Account USD (default 10,000)</span></div>
+            <div class="param-row flex px-3 py-2"><span class="text-zinc-300 w-36 shrink-0">risk_percent</span><span class="text-zinc-600 w-16 shrink-0">float</span><span class="text-zinc-700 w-12 shrink-0">opt</span><span class="text-zinc-500 flex-1">Max risk % (default 2.0)</span></div>
+          </div>
+          <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">"Calculate position size: BTC long $95k, stop $93k, TP $100k, 5x leverage, $10k account"</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+        </div>
+      </section>
+
+      <!-- ═══════ RESOURCES ═══════ -->
+      <section id="resources" class="mb-12">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// RESOURCES</div>
+        <h2 class="text-sm font-bold text-white mb-4 font-mono uppercase tracking-wider">MCP RESOURCES</h2>
+
+        <div id="resource-status" class="border border-zinc-800 bg-[#080808] mb-4">
+          <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white">bastion://status</span></div>
+          <div class="p-4">
+            <p class="text-zinc-500 text-[11px] mb-3">System status: model version, GPU health, API latency, services.</p>
+            <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">{
   "model_version": "v6",
   "model_base": "Qwen 32B",
   "gpu_cluster": "4x RTX 5090 (128GB VRAM)",
-  "api_status": "operational",
-  "mcp_server_version": "1.0.0"
-}</code></pre>
-        </div>
-      </div>
-
-      <div id="resource-symbols" class="mb-8">
-        <h3 class="text-[14px] font-bold text-white font-mono mb-2">bastion://supported-symbols</h3>
-        <p class="text-zinc-400 text-[13px] mb-3">Full list of supported cryptocurrency symbols with data coverage notes.</p>
-      </div>
-
-      <div id="resource-model" class="mb-8">
-        <h3 class="text-[14px] font-bold text-white font-mono mb-2">bastion://model-info</h3>
-        <p class="text-zinc-400 text-[13px] mb-3">Detailed AI model information: version, QLoRA methodology, training examples, accuracy breakdowns by symbol, supported actions, data sources, and inference infrastructure.</p>
-        <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-          <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-            <span class="text-[11px] font-mono text-zinc-500">Response (excerpt)</span>
-            <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
+  "api_status": "operational"
+}</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
           </div>
-          <pre><code class="text-zinc-300">{
+        </div>
+
+        <div id="resource-symbols" class="border border-zinc-800 bg-[#080808] mb-4">
+          <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white">bastion://supported-symbols</span></div>
+          <div class="p-4"><p class="text-zinc-500 text-[11px]">Full list of 30 supported cryptocurrency symbols with data coverage notes.</p></div>
+        </div>
+
+        <div id="resource-model" class="border border-zinc-800 bg-[#080808]">
+          <div class="border-b border-zinc-800 px-4 py-2.5"><span class="text-[12px] font-mono text-white">bastion://model-info</span></div>
+          <div class="p-4">
+            <p class="text-zinc-500 text-[11px] mb-3">Model details: version, QLoRA methodology, accuracy breakdowns, supported actions, data sources.</p>
+            <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden"><pre><code class="text-zinc-400 text-[11px]">{
   "version": "v6",
-  "base_model": "Qwen 32B",
   "method": "QLoRA (4-bit NF4 + LoRA rank=32, alpha=64)",
   "training_examples": 328,
-  "accuracy": {
-    "combined": "75.4%",
-    "btc": "71.7%",
-    "eth": "72.7%",
-    "sol": "81.8%"
-  },
-  "data_signals_per_evaluation": "560+",
-  "infrastructure": "4x RTX 5090 (128GB VRAM)"
-}</code></pre>
+  "accuracy": { "combined": "75.4%", "btc": "71.7%", "eth": "72.7%", "sol": "81.8%" },
+  "infrastructure": "4x RTX 5090 (128GB VRAM), vLLM TP=4"
+}</code></pre><button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button></div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ═══════════ ARCHITECTURE ═══════════ -->
-    <section id="architecture" class="mb-16">
-      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <iconify-icon icon="solar:server-bold" class="text-red-500"></iconify-icon>
-        Architecture
-      </h2>
-      <p class="text-zinc-400 text-[13px] mb-5 leading-relaxed">
-        When your Claude agent calls a BASTION tool, the request flows through the MCP server to BASTION's backend, which fetches live data from multiple sources in parallel and feeds it to the fine-tuned 32B model.
-      </p>
-      <div class="bg-zinc-900/50 border border-zinc-800/40 rounded-lg p-5 font-mono text-[12px] text-zinc-400 leading-relaxed overflow-x-auto">
-        <pre class="text-zinc-400">Claude Agent (your client)
+      <!-- ═══════ ARCHITECTURE ═══════ -->
+      <section id="architecture" class="mb-12">
+        <div class="text-[9px] font-mono uppercase tracking-[0.15em] text-zinc-600 mb-3">// SYSTEM</div>
+        <h2 class="text-sm font-bold text-white mb-4 font-mono uppercase tracking-wider">ARCHITECTURE</h2>
+        <div class="border border-zinc-800 bg-[#080808] p-5 font-mono text-[11px] text-zinc-500 leading-relaxed overflow-x-auto">
+<pre class="text-zinc-500">Claude Agent
     |
-    | SSE connection (Authorization: Bearer key)
+    | SSE (Authorization: Bearer key)
     v
-BASTION MCP Server  (bastionfi.tech/mcp)
-    |
-    | Internal API calls
-    v
-BASTION Backend  (FastAPI on Railway Pro)
-    |
-    |--- Helsinki VM ......... 33 quant endpoints (free)
-    |--- Coinglass Premium ... liquidations, OI, funding, whale positions
-    |--- Whale Alert ......... on-chain whale tracking (11 chains)
-    |--- Live Price Feeds .... Binance, Bybit, Helsinki proxy
+BASTION MCP Server ── bastionfi.tech/mcp
     |
     v
-Bastion 32B Model  (Vast.ai 4x RTX 5090, vLLM)
+BASTION Backend ──── FastAPI on Railway Pro
+    |
+    |── Helsinki VM ......... 33 quant endpoints
+    |── Coinglass Premium ... liquidations, OI, funding
+    |── Whale Alert ......... on-chain tracking (11 chains)
+    |── Live Price Feeds .... Binance, Bybit, Helsinki
     |
     v
-Structured Response ---> back to Claude Agent</pre>
-      </div>
-
-      <div class="mt-6 grid sm:grid-cols-3 gap-3 text-[12px]">
-        <div class="bg-zinc-900/30 border border-zinc-800/40 rounded-lg p-3 text-center">
-          <div class="text-white font-semibold mb-1">560+</div>
-          <div class="text-zinc-500">signals per evaluation</div>
+<span class="text-red-500">Bastion 32B Model</span> ── Vast.ai 4x RTX 5090, vLLM TP=4
+    |
+    v
+Structured Response ──> back to Claude</pre>
         </div>
-        <div class="bg-zinc-900/30 border border-zinc-800/40 rounded-lg p-3 text-center">
-          <div class="text-white font-semibold mb-1">7</div>
-          <div class="text-zinc-500">parallel data fetches</div>
+      </section>
+
+      <!-- ═══════ API KEYS ═══════ -->
+      <section id="api-keys" class="mb-12">
+        <h2 class="text-sm font-bold text-white mb-4 font-mono uppercase tracking-wider">API KEYS</h2>
+        <div class="inst-section mb-4">
+          <p class="text-zinc-500 text-[11px] leading-relaxed">An API key authenticates your Claude agent with BASTION MCP. Keys are passed via the Authorization header.</p>
         </div>
-        <div class="bg-zinc-900/30 border border-zinc-800/40 rounded-lg p-3 text-center">
-          <div class="text-white font-semibold mb-1">&lt;3s</div>
-          <div class="text-zinc-500">typical response time</div>
+        <div class="border border-zinc-800 bg-[#080808] p-4 mb-4 text-[11px] font-mono">
+          <div class="text-[8px] uppercase tracking-widest text-zinc-600 mb-2">STEPS</div>
+          <div class="text-zinc-500 space-y-1.5">
+            <div><span class="text-zinc-700 mr-2">01</span><span class="text-zinc-400">Create account at</span> <a href="/" class="text-red-500 hover:text-red-400">bastionfi.tech</a></div>
+            <div><span class="text-zinc-700 mr-2">02</span><span class="text-zinc-400">Account</span> <span class="text-zinc-600">&rarr;</span> <span class="text-zinc-400">API Keys</span></div>
+            <div><span class="text-zinc-700 mr-2">03</span><span class="text-zinc-400">Generate MCP API key</span></div>
+            <div><span class="text-zinc-700 mr-2">04</span><span class="text-zinc-400">Add to Claude client config</span></div>
+          </div>
         </div>
-      </div>
-    </section>
-
-    <!-- ═══════════ API KEYS ═══════════ -->
-    <section id="api-keys" class="mb-16">
-      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <iconify-icon icon="solar:key-bold" class="text-red-500"></iconify-icon>
-        API Keys
-      </h2>
-      <p class="text-zinc-400 text-[13px] mb-4 leading-relaxed">
-        An API key is required to authenticate your Claude agent with BASTION MCP. Keys are passed via the <code class="text-[12px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">Authorization</code> header.
-      </p>
-
-      <div class="bg-zinc-900/40 border border-zinc-800/50 rounded-lg p-4 mb-5 text-[13px]">
-        <div class="text-white font-medium mb-2">Getting a Key</div>
-        <ol class="text-zinc-400 space-y-1.5 list-decimal list-inside">
-          <li>Create a BASTION account at <a href="/" class="text-red-400 hover:text-red-300 underline">bastionfi.tech</a></li>
-          <li>Navigate to Account &rarr; API Keys</li>
-          <li>Generate a new MCP API key</li>
-          <li>Add the key to your Claude client config (see <a href="#installation" class="text-red-400 hover:text-red-300 underline">Installation</a>)</li>
-        </ol>
-      </div>
-
-      <div class="code-block bg-zinc-900/50 border border-zinc-800/40 rounded-lg overflow-hidden">
-        <div class="bg-zinc-900/80 border-b border-zinc-800/40 px-4 py-2 flex items-center justify-between">
-          <span class="text-[11px] font-mono text-zinc-500">Header format</span>
-          <button class="copy-btn text-[11px] px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors" onclick="copyCode(this)">Copy</button>
+        <div class="code-block bg-[#0a0a0a] border border-zinc-800 overflow-hidden">
+          <pre><code class="text-zinc-400 text-[11px]">Authorization: Bearer bst_live_xxxxxxxxxxxxxxxxxxxx</code></pre>
+          <button class="copy-btn text-[8px] font-mono px-1.5 py-0.5 bg-zinc-800 text-zinc-500" onclick="copyCode(this)">COPY</button>
         </div>
-        <pre><code class="text-zinc-300">Authorization: Bearer bst_live_xxxxxxxxxxxxxxxxxxxx</code></pre>
-      </div>
-    </section>
+      </section>
 
-    <!-- ═══════════ RATE LIMITS ═══════════ -->
-    <section id="rate-limits" class="mb-16">
-      <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-        <iconify-icon icon="solar:clock-circle-bold" class="text-red-500"></iconify-icon>
-        Rate Limits
-      </h2>
-      <table class="w-full text-[13px] mb-4">
-        <thead><tr class="border-b border-zinc-800"><th class="pb-2 pr-4 text-left text-[11px] uppercase tracking-wider text-zinc-500 font-medium">Tier</th><th class="pb-2 pr-4 text-left text-[11px] uppercase tracking-wider text-zinc-500 font-medium">Limit</th><th class="pb-2 text-left text-[11px] uppercase tracking-wider text-zinc-500 font-medium">Window</th></tr></thead>
-        <tbody class="text-zinc-400">
-          <tr class="border-b border-zinc-800/40"><td class="py-2.5 pr-4 text-zinc-300">Standard</td><td class="py-2.5 pr-4">100 requests</td><td class="py-2.5">per minute</td></tr>
-          <tr><td class="py-2.5 pr-4 text-zinc-300">Master Key</td><td class="py-2.5 pr-4">Unlimited</td><td class="py-2.5">-</td></tr>
-        </tbody>
-      </table>
-      <p class="text-zinc-500 text-[12px]">Rate limit headers are included in every response. If you exceed the limit, requests return <code class="bg-zinc-800 px-1.5 py-0.5 rounded">429 Too Many Requests</code> until the window resets.</p>
-    </section>
+      <!-- ═══════ RATE LIMITS ═══════ -->
+      <section id="rate-limits" class="mb-12">
+        <h2 class="text-sm font-bold text-white mb-4 font-mono uppercase tracking-wider">RATE LIMITS</h2>
+        <div class="border border-zinc-800 bg-[#080808] text-[11px] font-mono">
+          <div class="flex px-4 py-2.5 border-b border-zinc-800 text-[9px] uppercase tracking-widest text-zinc-600">
+            <span class="w-32">Tier</span><span class="w-32">Limit</span><span>Window</span>
+          </div>
+          <div class="flex px-4 py-2.5 border-b border-zinc-800/40">
+            <span class="w-32 text-zinc-300">Standard</span><span class="w-32 text-zinc-400">100 requests</span><span class="text-zinc-500">per minute</span>
+          </div>
+          <div class="flex px-4 py-2.5">
+            <span class="w-32 text-zinc-300">Master Key</span><span class="w-32 text-red-500">Unlimited</span><span class="text-zinc-500">-</span>
+          </div>
+        </div>
+        <p class="text-zinc-700 text-[10px] font-mono mt-3">Rate limit headers included in every response. Exceeding returns 429.</p>
+      </section>
 
-    <!-- ═══════════ FOOTER ═══════════ -->
-    <footer class="border-t border-zinc-800/40 pt-8 pb-12 text-center">
-      <div class="flex items-center justify-center gap-2 mb-3">
-        <div class="w-5 h-5 rounded bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center text-white text-[9px] font-bold">B</div>
-        <span class="text-white font-semibold text-sm">BASTION</span>
-      </div>
-      <p class="text-zinc-600 text-[12px]">Autonomous Risk Intelligence for Crypto Futures</p>
-      <p class="text-zinc-700 text-[11px] mt-2">Built with MCP (Model Context Protocol) by Anthropic</p>
-    </footer>
+      <!-- ═══════ FOOTER ═══════ -->
+      <footer class="border-t border-zinc-800 pt-6 pb-10 text-center">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <iconify-icon icon="solar:shield-bold" class="text-red-600 text-sm"></iconify-icon>
+          <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-500">BASTION</span>
+        </div>
+        <p class="text-zinc-700 text-[9px] font-mono uppercase tracking-widest">Autonomous Risk Intelligence for Crypto Futures</p>
+        <p class="text-zinc-800 text-[9px] font-mono mt-1">Built with MCP by Anthropic</p>
+      </footer>
 
-  </main>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════ TOAST ═══════ -->
+<div id="toast" class="fixed bottom-4 right-4 hidden z-50">
+  <div class="toast-anim bg-zinc-900 border border-zinc-800 text-[9px] font-mono uppercase tracking-widest text-zinc-300 px-4 py-2">COPIED TO CLIPBOARD</div>
 </div>
 
-<!-- ═══════════ TOAST ═══════════ -->
-<div id="toast" class="fixed bottom-6 right-6 hidden z-50">
-  <div class="toast bg-zinc-800 border border-zinc-700 text-white text-[12px] font-mono px-4 py-2 rounded-lg shadow-xl">Copied!</div>
-</div>
-
-<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<!-- ═══════ JS ═══════ -->
 <script>
-// ── Tab switching ──
-document.querySelectorAll('.tab-btn').forEach(btn => {
+// Splash
+setTimeout(() => { document.getElementById('splash')?.classList.add('fade-out'); }, 1200);
+setTimeout(() => { document.getElementById('splash')?.remove(); }, 1700);
+
+// Install tabs
+document.querySelectorAll('.install-tab').forEach(btn => {
   btn.addEventListener('click', () => {
     const tab = btn.dataset.tab;
-    // Deactivate all tabs
-    btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.parentElement.querySelectorAll('.install-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    // Hide all content
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-    // Show target
-    const target = document.querySelector(`.tab-content[data-tab="${tab}"]`);
-    if (target) target.classList.remove('hidden');
+    const t = document.querySelector(`.tab-content[data-tab="${tab}"]`);
+    if (t) t.classList.remove('hidden');
   });
 });
 
-// ── Copy to clipboard ──
+// Copy
 function copyCode(btn) {
-  const codeBlock = btn.closest('.code-block');
-  const code = codeBlock.querySelector('code');
+  const block = btn.closest('.code-block');
+  const code = block?.querySelector('code');
   if (!code) return;
   navigator.clipboard.writeText(code.textContent.trim()).then(() => {
     const toast = document.getElementById('toast');
     toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 2000);
-    btn.textContent = 'Copied!';
-    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    setTimeout(() => toast.classList.add('hidden'), 1800);
+    btn.textContent = 'DONE';
+    setTimeout(() => { btn.textContent = 'COPY'; }, 1200);
   });
 }
 
-// ── Sidebar scroll tracking (IntersectionObserver) ──
+// Sidebar scroll tracking
 const sections = document.querySelectorAll('section[id], div[id]');
-const sidebarLinks = document.querySelectorAll('.sidebar-link');
-
+const navItems = document.querySelectorAll('.nav-item');
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       const id = entry.target.id;
-      sidebarLinks.forEach(link => {
-        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      navItems.forEach(item => {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + id);
       });
     }
   });
-}, {
-  rootMargin: '-80px 0px -70% 0px',
-  threshold: 0
-});
+}, { rootMargin: '-100px 0px -65% 0px', threshold: 0 });
+sections.forEach(s => observer.observe(s));
 
-sections.forEach(section => observer.observe(section));
-
-// ── Smooth scroll on sidebar click ──
-sidebarLinks.forEach(link => {
-  link.addEventListener('click', (e) => {
+// Smooth scroll
+navItems.forEach(link => {
+  link.addEventListener('click', e => {
     e.preventDefault();
     const target = document.querySelector(link.getAttribute('href'));
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Close mobile sidebar
-      document.getElementById('sidebar').classList.remove('open');
-      document.getElementById('sidebar-overlay').classList.remove('open');
+      document.getElementById('sidebar')?.classList.remove('open');
+      document.getElementById('sidebar-overlay')?.classList.remove('open');
     }
   });
 });
 
-// ── Mobile sidebar toggle ──
-const menuBtn = document.getElementById('mobile-menu-btn');
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('sidebar-overlay');
-
-menuBtn?.addEventListener('click', () => {
-  sidebar.classList.toggle('open');
-  overlay.classList.toggle('open');
+// Mobile sidebar
+document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+  document.getElementById('sidebar')?.classList.toggle('open');
+  document.getElementById('sidebar-overlay')?.classList.toggle('open');
 });
-
-overlay?.addEventListener('click', () => {
-  sidebar.classList.remove('open');
-  overlay.classList.remove('open');
+document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebar-overlay')?.classList.remove('open');
 });
 </script>
-
 </body>
 </html>

@@ -353,6 +353,9 @@ app = FastAPI(
     title="BASTION Terminal API",
     description="Powers the BASTION Trading Terminal",
     version="1.0.0",
+    docs_url="/api/swagger",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
 # CORS - Restrict to known origins in production
