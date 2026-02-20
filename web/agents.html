@@ -219,6 +219,64 @@
       /* Trust badge glow */
       .trust-badge { border: 1px solid rgba(217, 119, 87, 0.2); background: rgba(217, 119, 87, 0.04); transition: all 0.3s; }
       .trust-badge:hover { border-color: rgba(217, 119, 87, 0.4); background: rgba(217, 119, 87, 0.08); box-shadow: 0 0 20px rgba(217, 119, 87, 0.1); }
+      /* 1B: Animated dashed connector lines between Getting Started steps */
+      .step-connector {
+        position: absolute; top: 24px; right: -1px; width: calc(100% - 52px);
+        height: 2px; overflow: hidden;
+      }
+      .step-connector::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 200%; height: 100%;
+        background: repeating-linear-gradient(90deg, #dc2626 0px, #dc2626 6px, transparent 6px, transparent 12px);
+        animation: dash-flow 1.2s linear infinite;
+        opacity: 0.4;
+      }
+      @keyframes dash-flow { to { transform: translateX(-12px); } }
+      /* 2B: Blueprint grid pattern for Architecture */
+      .blueprint-grid {
+        background-image:
+          radial-gradient(circle, rgba(220,38,38,0.08) 1px, transparent 1px);
+        background-size: 24px 24px;
+      }
+      /* 3A: Test Connection top accent line */
+      .test-connect-accent {
+        position: relative;
+      }
+      .test-connect-accent::before {
+        content: ''; position: absolute; top: -1px; left: 24px; right: 24px; height: 2px;
+        background: repeating-linear-gradient(90deg, rgba(220,38,38,0.4) 0px, rgba(220,38,38,0.4) 4px, transparent 4px, transparent 8px);
+        animation: dash-flow 1.2s linear infinite;
+      }
+      /* 6: Workflow pipeline vertical line */
+      .workflow-pipeline { position: relative; padding-left: 12px; }
+      .workflow-pipeline::before {
+        content: ''; position: absolute; left: 2px; top: 4px; bottom: 4px; width: 1px;
+        background: linear-gradient(to bottom, rgba(34,211,238,0.3), rgba(251,191,36,0.3), rgba(220,38,38,0.3), rgba(34,197,94,0.3));
+      }
+      /* 7B: Value prop icon box */
+      .value-icon-box {
+        width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+        border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);
+        margin-bottom: 1rem; transition: all 0.3s;
+      }
+      .value-card:hover .value-icon-box { border-color: var(--accent-color); background: var(--accent-bg); }
+      /* 8A: Trust section subtle radial glow */
+      .trust-glow-bg {
+        background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(217,119,87,0.04) 0%, transparent 70%);
+      }
+      /* Prompt featured card */
+      .prompt-featured { grid-column: span 2; }
+      @media (max-width: 767px) { .prompt-featured { grid-column: span 1; } }
+      /* Tool name dot */
+      .tool-dot { width: 4px; height: 4px; border-radius: 50%; display: inline-block; flex-shrink: 0; animation: step-pulse 2s ease-in-out infinite; }
+      /* MCP ping dot (footer) */
+      .mcp-ping { position: relative; }
+      .mcp-ping::before {
+        content: ''; position: absolute; top: 50%; left: -10px; transform: translateY(-50%);
+        width: 5px; height: 5px; border-radius: 50%; background: #22c55e;
+        box-shadow: 0 0 6px rgba(34,197,94,0.6);
+        animation: mcp-blink 2s ease-in-out infinite;
+      }
+      @keyframes mcp-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
     <style>
       @media (prefers-reduced-motion: no-preference) {
@@ -427,9 +485,9 @@
         <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800 border-t border-zinc-800">
           <!-- Step 1 -->
           <div class="bg-black p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-100 hover:bg-zinc-900/30 transition-colors group relative">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 border-2 border-red-600 flex items-center justify-center text-red-500 font-mono font-bold text-lg">1</div>
-              <div class="hidden lg:block flex-1 h-px bg-gradient-to-r from-red-600/40 to-transparent"></div>
+            <div class="flex items-center gap-3 mb-4 relative">
+              <div class="w-10 h-10 border-2 border-red-600 flex items-center justify-center text-red-500 font-mono font-bold text-lg group-hover:shadow-[0_0_12px_rgba(220,38,38,0.3)] transition-shadow">1</div>
+              <div class="hidden lg:block step-connector"></div>
             </div>
             <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Create Account</h3>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed mb-4">Sign up at bastionfi.tech. Free tier includes all 49 MCP tools.</p>
@@ -439,10 +497,10 @@
           </div>
 
           <!-- Step 2 -->
-          <div class="bg-black p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-200 hover:bg-zinc-900/30 transition-colors group">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 border-2 border-red-600 flex items-center justify-center text-red-500 font-mono font-bold text-lg">2</div>
-              <div class="hidden lg:block flex-1 h-px bg-gradient-to-r from-red-600/40 to-transparent"></div>
+          <div class="bg-black p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-200 hover:bg-zinc-900/30 transition-colors group relative">
+            <div class="flex items-center gap-3 mb-4 relative">
+              <div class="w-10 h-10 border-2 border-red-600 flex items-center justify-center text-red-500 font-mono font-bold text-lg group-hover:shadow-[0_0_12px_rgba(220,38,38,0.3)] transition-shadow">2</div>
+              <div class="hidden lg:block step-connector"></div>
             </div>
             <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Get API Key</h3>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed mb-4">Go to Account &rarr; API Keys. Click Generate. Copy your <span class="text-white">bst_</span> key.</p>
@@ -452,10 +510,10 @@
           </div>
 
           <!-- Step 3 -->
-          <div class="bg-black p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-300 hover:bg-zinc-900/30 transition-colors group">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 border-2 border-red-600 flex items-center justify-center text-red-500 font-mono font-bold text-lg">3</div>
-              <div class="hidden lg:block flex-1 h-px bg-gradient-to-r from-red-600/40 to-transparent"></div>
+          <div class="bg-black p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-300 hover:bg-zinc-900/30 transition-colors group relative">
+            <div class="flex items-center gap-3 mb-4 relative">
+              <div class="w-10 h-10 border-2 border-red-600 flex items-center justify-center text-red-500 font-mono font-bold text-lg group-hover:shadow-[0_0_12px_rgba(220,38,38,0.3)] transition-shadow">3</div>
+              <div class="hidden lg:block step-connector"></div>
             </div>
             <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Add to Claude</h3>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed mb-4">Paste 3 lines of JSON into your Claude Code or Desktop config. <a href="#quickstart" class="text-red-400 hover:text-red-300 underline">See below</a>.</p>
@@ -467,7 +525,7 @@
           <!-- Step 4 -->
           <div class="bg-black p-6 md:p-8 flex flex-col sys-reveal sys-rise sys-delay-400 hover:bg-zinc-900/30 transition-colors group">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 border-2 border-green-500 flex items-center justify-center text-green-400 font-mono font-bold text-lg">4</div>
+              <div class="w-10 h-10 border-2 border-green-500 flex items-center justify-center text-green-400 font-mono font-bold text-lg group-hover:shadow-[0_0_12px_rgba(34,197,94,0.3)] transition-shadow">4</div>
             </div>
             <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Start Talking</h3>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed mb-4">Tell Claude: <span class="text-white">"Use BASTION to check BTC risk"</span>. Your agent handles the rest.</p>
@@ -481,7 +539,7 @@
       <!-- ═════════════════════════════════════════════════ -->
       <!-- HOW IT WORKS — Architecture -->
       <!-- ═════════════════════════════════════════════════ -->
-      <section class="relative bg-black border-y border-zinc-800 overflow-hidden">
+      <section class="relative bg-black border-y border-zinc-800 overflow-hidden blueprint-grid">
 
         <div class="relative z-10 px-6 md:px-12 pt-10 pb-6">
           <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
@@ -681,7 +739,7 @@
           </div>
 
           <!-- Test Connection -->
-          <div id="test-connection" class="mt-8 p-5 bg-zinc-950 border border-zinc-800 sys-reveal sys-rise sys-delay-300">
+          <div id="test-connection" class="mt-8 p-5 bg-zinc-950 border border-zinc-800 sys-reveal sys-rise sys-delay-300 test-connect-accent">
             <div class="flex items-center gap-2 mb-4">
               <iconify-icon icon="solar:plug-circle-bold" class="text-red-500 text-lg"></iconify-icon>
               <span class="text-[10px] font-mono text-red-500 uppercase tracking-widest font-bold">Test Your Connection</span>
@@ -755,14 +813,14 @@
           <!-- Prompt Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            <!-- Prompt 1: Quick Market Check -->
-            <div class="bg-zinc-950 border border-zinc-800 overflow-hidden sys-reveal sys-rise sys-delay-200 hover:border-zinc-700 transition-all group">
+            <!-- Prompt 1: Quick Market Check (FEATURED) -->
+            <div class="bg-zinc-950 border border-blue-600/30 overflow-hidden sys-reveal sys-rise sys-delay-200 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.08)] transition-all group prompt-featured">
               <div class="flex items-center justify-between px-4 py-2.5 bg-zinc-900/60 border-b border-zinc-800">
                 <div class="flex items-center gap-2">
                   <iconify-icon icon="solar:chart-2-bold" class="text-blue-400"></iconify-icon>
                   <span class="text-[9px] font-mono text-blue-400 font-bold uppercase tracking-widest">Market Check</span>
                 </div>
-                <button onclick="copyPrompt('prompt-market')" class="opacity-0 group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
+                <button onclick="copyPrompt('prompt-market')" class="md:opacity-0 md:group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
               </div>
               <div class="p-4">
                 <p class="text-[10px] font-mono text-zinc-600 mb-2">No API key needed &mdash; instant market data</p>
@@ -777,7 +835,7 @@
                   <iconify-icon icon="solar:shield-bold" class="text-red-400"></iconify-icon>
                   <span class="text-[9px] font-mono text-red-400 font-bold uppercase tracking-widest">Risk Evaluation</span>
                 </div>
-                <button onclick="copyPrompt('prompt-risk')" class="opacity-0 group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
+                <button onclick="copyPrompt('prompt-risk')" class="md:opacity-0 md:group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
               </div>
               <div class="p-4">
                 <p class="text-[10px] font-mono text-zinc-600 mb-2">Requires API key + connected exchange</p>
@@ -792,7 +850,7 @@
                   <iconify-icon icon="solar:radar-2-bold" class="text-cyan-400"></iconify-icon>
                   <span class="text-[9px] font-mono text-cyan-400 font-bold uppercase tracking-widest">Whale Intelligence</span>
                 </div>
-                <button onclick="copyPrompt('prompt-whale')" class="opacity-0 group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
+                <button onclick="copyPrompt('prompt-whale')" class="md:opacity-0 md:group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
               </div>
               <div class="p-4">
                 <p class="text-[10px] font-mono text-zinc-600 mb-2">No API key needed &mdash; on-chain + derivatives data</p>
@@ -807,7 +865,7 @@
                   <iconify-icon icon="solar:document-text-bold" class="text-amber-400"></iconify-icon>
                   <span class="text-[9px] font-mono text-amber-400 font-bold uppercase tracking-widest">Research Report</span>
                 </div>
-                <button onclick="copyPrompt('prompt-research')" class="opacity-0 group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
+                <button onclick="copyPrompt('prompt-research')" class="md:opacity-0 md:group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
               </div>
               <div class="p-4">
                 <p class="text-[10px] font-mono text-zinc-600 mb-2">No API key needed &mdash; generates institutional-grade report</p>
@@ -822,7 +880,7 @@
                   <iconify-icon icon="solar:calculator-bold" class="text-green-400"></iconify-icon>
                   <span class="text-[9px] font-mono text-green-400 font-bold uppercase tracking-widest">Pre-Trade Check</span>
                 </div>
-                <button onclick="copyPrompt('prompt-pretrade')" class="opacity-0 group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
+                <button onclick="copyPrompt('prompt-pretrade')" class="md:opacity-0 md:group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
               </div>
               <div class="p-4">
                 <p class="text-[10px] font-mono text-zinc-600 mb-2">No API key needed &mdash; validates trade idea with data</p>
@@ -837,7 +895,7 @@
                   <iconify-icon icon="solar:eye-bold" class="text-purple-400"></iconify-icon>
                   <span class="text-[9px] font-mono text-purple-400 font-bold uppercase tracking-widest">Continuous Monitor</span>
                 </div>
-                <button onclick="copyPrompt('prompt-monitor')" class="opacity-0 group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
+                <button onclick="copyPrompt('prompt-monitor')" class="md:opacity-0 md:group-hover:opacity-100 text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
               </div>
               <div class="p-4">
                 <p class="text-[10px] font-mono text-zinc-600 mb-2">Requires API key &mdash; loop-based portfolio guard</p>
@@ -882,11 +940,11 @@
             </div>
             <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Core AI</h3>
             <p class="text-[11px] font-mono text-zinc-500 leading-relaxed mb-4">72B parameter model evaluates positions, analyzes markets, and chats with institutional-grade intelligence.</p>
-            <div class="mt-auto pt-4 border-t border-zinc-800/50 space-y-1">
-              <div class="text-[9px] font-mono text-red-400">bastion_evaluate_risk</div>
-              <div class="text-[9px] font-mono text-red-400">bastion_chat</div>
-              <div class="text-[9px] font-mono text-red-400">bastion_evaluate_all_positions</div>
-              <div class="text-[9px] font-mono text-red-400">bastion_scan_signals</div>
+            <div class="mt-auto pt-4 border-t border-zinc-800/50 space-y-1.5">
+              <div class="text-[9px] font-mono text-red-400 flex items-center gap-2"><span class="tool-dot bg-red-500"></span>bastion_evaluate_risk</div>
+              <div class="text-[9px] font-mono text-red-400 flex items-center gap-2"><span class="tool-dot bg-red-500"></span>bastion_chat</div>
+              <div class="text-[9px] font-mono text-red-400 flex items-center gap-2"><span class="tool-dot bg-red-500"></span>bastion_evaluate_all_positions</div>
+              <div class="text-[9px] font-mono text-red-400 flex items-center gap-2"><span class="tool-dot bg-red-500"></span>bastion_scan_signals</div>
             </div>
           </div>
 
@@ -897,11 +955,11 @@
             </div>
             <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Derivatives & Flow</h3>
             <p class="text-[11px] font-mono text-zinc-500 leading-relaxed mb-4">Open interest, CVD, funding rates, liquidation heatmaps, taker ratio, top trader positions — the signals that move price.</p>
-            <div class="mt-auto pt-4 border-t border-zinc-800/50 space-y-1">
-              <div class="text-[9px] font-mono text-amber-400">bastion_get_open_interest</div>
-              <div class="text-[9px] font-mono text-amber-400">bastion_get_cvd</div>
-              <div class="text-[9px] font-mono text-amber-400">bastion_get_heatmap</div>
-              <div class="text-[9px] font-mono text-zinc-600">+ 7 more tools</div>
+            <div class="mt-auto pt-4 border-t border-zinc-800/50 space-y-1.5">
+              <div class="text-[9px] font-mono text-amber-400 flex items-center gap-2"><span class="tool-dot bg-amber-400"></span>bastion_get_open_interest</div>
+              <div class="text-[9px] font-mono text-amber-400 flex items-center gap-2"><span class="tool-dot bg-amber-400"></span>bastion_get_cvd</div>
+              <div class="text-[9px] font-mono text-amber-400 flex items-center gap-2"><span class="tool-dot bg-amber-400"></span>bastion_get_heatmap</div>
+              <a href="/docs" class="text-[9px] font-mono text-zinc-500 hover:text-amber-400 transition-colors flex items-center gap-1">+ 7 more tools <iconify-icon icon="solar:arrow-right-linear" width="10"></iconify-icon></a>
             </div>
           </div>
 
@@ -912,11 +970,11 @@
             </div>
             <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">On-Chain & Intel</h3>
             <p class="text-[11px] font-mono text-zinc-500 leading-relaxed mb-4">Whale wallet tracking across 11 blockchains, exchange flows, on-chain analytics, sentiment, and breaking news.</p>
-            <div class="mt-auto pt-4 border-t border-zinc-800/50 space-y-1">
-              <div class="text-[9px] font-mono text-cyan-400">bastion_get_whale_activity</div>
-              <div class="text-[9px] font-mono text-cyan-400">bastion_get_exchange_flow</div>
-              <div class="text-[9px] font-mono text-cyan-400">bastion_get_fear_greed</div>
-              <div class="text-[9px] font-mono text-zinc-600">+ 3 more tools</div>
+            <div class="mt-auto pt-4 border-t border-zinc-800/50 space-y-1.5">
+              <div class="text-[9px] font-mono text-cyan-400 flex items-center gap-2"><span class="tool-dot bg-cyan-400"></span>bastion_get_whale_activity</div>
+              <div class="text-[9px] font-mono text-cyan-400 flex items-center gap-2"><span class="tool-dot bg-cyan-400"></span>bastion_get_exchange_flow</div>
+              <div class="text-[9px] font-mono text-cyan-400 flex items-center gap-2"><span class="tool-dot bg-cyan-400"></span>bastion_get_fear_greed</div>
+              <a href="/docs" class="text-[9px] font-mono text-zinc-500 hover:text-cyan-400 transition-colors flex items-center gap-1">+ 3 more tools <iconify-icon icon="solar:arrow-right-linear" width="10"></iconify-icon></a>
             </div>
           </div>
 
@@ -927,11 +985,11 @@
             </div>
             <h3 class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Portfolio & Trading</h3>
             <p class="text-[11px] font-mono text-zinc-500 leading-relaxed mb-4">Read positions, check balances, monitor the risk engine, view execution history — full portfolio awareness for your agent.</p>
-            <div class="mt-auto pt-4 border-t border-zinc-800/50 space-y-1">
-              <div class="text-[9px] font-mono text-green-400">bastion_get_positions</div>
-              <div class="text-[9px] font-mono text-green-400">bastion_get_balance</div>
-              <div class="text-[9px] font-mono text-green-400">bastion_engine_status</div>
-              <div class="text-[9px] font-mono text-zinc-600">+ 5 more tools</div>
+            <div class="mt-auto pt-4 border-t border-zinc-800/50 space-y-1.5">
+              <div class="text-[9px] font-mono text-green-400 flex items-center gap-2"><span class="tool-dot bg-green-400"></span>bastion_get_positions</div>
+              <div class="text-[9px] font-mono text-green-400 flex items-center gap-2"><span class="tool-dot bg-green-400"></span>bastion_get_balance</div>
+              <div class="text-[9px] font-mono text-green-400 flex items-center gap-2"><span class="tool-dot bg-green-400"></span>bastion_engine_status</div>
+              <a href="/docs" class="text-[9px] font-mono text-zinc-500 hover:text-green-400 transition-colors flex items-center gap-1">+ 5 more tools <iconify-icon icon="solar:arrow-right-linear" width="10"></iconify-icon></a>
             </div>
           </div>
         </div>
@@ -970,8 +1028,8 @@
                 <span class="text-[8px] font-mono text-zinc-600">WORKFLOW</span>
               </div>
               <div class="p-5">
-                <p class="text-[11px] font-mono text-zinc-300 mb-4 leading-relaxed">"Check all my positions every 5 minutes. If BASTION says EXIT or REDUCE, alert me on Telegram."</p>
-                <div class="space-y-2 text-[10px] font-mono">
+                <p class="text-[11px] font-mono text-zinc-300 mb-4 leading-relaxed italic"><span class="text-red-500 not-italic">&ldquo;</span>Check all my positions every 5 minutes. If BASTION says EXIT or REDUCE, alert me on Telegram.<span class="text-red-500 not-italic">&rdquo;</span></p>
+                <div class="space-y-2 text-[10px] font-mono workflow-pipeline">
                   <div class="flex items-center gap-2"><span class="step-dot bg-cyan-400" style="animation-delay: 0s;"></span><span class="text-cyan-400">bastion_get_positions</span><span class="text-zinc-600">&rarr; fetch open positions</span></div>
                   <div class="flex items-center gap-2"><span class="step-dot bg-red-400" style="animation-delay: 0.3s;"></span><span class="text-red-400">bastion_evaluate_risk</span><span class="text-zinc-600">&rarr; AI evaluates each</span></div>
                   <div class="flex items-center gap-2"><span class="step-dot bg-amber-400" style="animation-delay: 0.6s;"></span><span class="text-amber-400">if action != HOLD</span><span class="text-zinc-600">&rarr; send alert</span></div>
@@ -989,8 +1047,8 @@
                 <span class="text-[8px] font-mono text-zinc-600">WORKFLOW</span>
               </div>
               <div class="p-5">
-                <p class="text-[11px] font-mono text-zinc-300 mb-4 leading-relaxed">"Scan BTC, ETH, SOL every hour. Show me whale activity, funding anomalies, and liquidation clusters."</p>
-                <div class="space-y-2 text-[10px] font-mono">
+                <p class="text-[11px] font-mono text-zinc-300 mb-4 leading-relaxed italic"><span class="text-amber-500 not-italic">&ldquo;</span>Scan BTC, ETH, SOL every hour. Show me whale activity, funding anomalies, and liquidation clusters.<span class="text-amber-500 not-italic">&rdquo;</span></p>
+                <div class="space-y-2 text-[10px] font-mono workflow-pipeline">
                   <div class="flex items-center gap-2"><span class="step-dot bg-cyan-400" style="animation-delay: 0s;"></span><span class="text-cyan-400">bastion_get_whale_activity</span><span class="text-zinc-600">&rarr; whale moves</span></div>
                   <div class="flex items-center gap-2"><span class="step-dot bg-amber-400" style="animation-delay: 0.3s;"></span><span class="text-amber-400">bastion_get_funding_rates</span><span class="text-zinc-600">&rarr; funding anomalies</span></div>
                   <div class="flex items-center gap-2"><span class="step-dot bg-red-400" style="animation-delay: 0.6s;"></span><span class="text-red-400">bastion_get_heatmap</span><span class="text-zinc-600">&rarr; liquidation clusters</span></div>
@@ -1008,8 +1066,8 @@
                 <span class="text-[8px] font-mono text-zinc-600">WORKFLOW</span>
               </div>
               <div class="p-5">
-                <p class="text-[11px] font-mono text-zinc-300 mb-4 leading-relaxed">"Generate an institutional-grade research report on ETH with market structure, on-chain data, and macro context."</p>
-                <div class="space-y-2 text-[10px] font-mono">
+                <p class="text-[11px] font-mono text-zinc-300 mb-4 leading-relaxed italic"><span class="text-cyan-400 not-italic">&ldquo;</span>Generate an institutional-grade research report on ETH with market structure, on-chain data, and macro context.<span class="text-cyan-400 not-italic">&rdquo;</span></p>
+                <div class="space-y-2 text-[10px] font-mono workflow-pipeline">
                   <div class="flex items-center gap-2"><span class="step-dot bg-cyan-400" style="animation-delay: 0s;"></span><span class="text-cyan-400">bastion_get_market_data</span><span class="text-zinc-600">&rarr; market structure</span></div>
                   <div class="flex items-center gap-2"><span class="step-dot bg-amber-400" style="animation-delay: 0.3s;"></span><span class="text-amber-400">bastion_get_onchain</span><span class="text-zinc-600">&rarr; on-chain analytics</span></div>
                   <div class="flex items-center gap-2"><span class="step-dot bg-red-400" style="animation-delay: 0.6s;"></span><span class="text-red-400">bastion_get_macro_signals</span><span class="text-zinc-600">&rarr; macro context</span></div>
@@ -1027,8 +1085,8 @@
                 <span class="text-[8px] font-mono text-zinc-600">WORKFLOW</span>
               </div>
               <div class="p-5">
-                <p class="text-[11px] font-mono text-zinc-300 mb-4 leading-relaxed">"Before I enter any trade, check the risk. Look at whale activity, OI changes, and funding. Give me a go/no-go."</p>
-                <div class="space-y-2 text-[10px] font-mono">
+                <p class="text-[11px] font-mono text-zinc-300 mb-4 leading-relaxed italic"><span class="text-green-400 not-italic">&ldquo;</span>Before I enter any trade, check the risk. Look at whale activity, OI changes, and funding. Give me a go/no-go.<span class="text-green-400 not-italic">&rdquo;</span></p>
+                <div class="space-y-2 text-[10px] font-mono workflow-pipeline">
                   <div class="flex items-center gap-2"><span class="step-dot bg-cyan-400" style="animation-delay: 0s;"></span><span class="text-cyan-400">bastion_get_oi_changes</span><span class="text-zinc-600">&rarr; positioning shifts</span></div>
                   <div class="flex items-center gap-2"><span class="step-dot bg-amber-400" style="animation-delay: 0.3s;"></span><span class="text-amber-400">bastion_get_whale_activity</span><span class="text-zinc-600">&rarr; smart money</span></div>
                   <div class="flex items-center gap-2"><span class="step-dot bg-red-400" style="animation-delay: 0.6s;"></span><span class="text-red-400">bastion_get_volatility</span><span class="text-zinc-600">&rarr; regime check</span></div>
@@ -1044,24 +1102,42 @@
       <!-- WHY BASTION — Value Props -->
       <!-- ═════════════════════════════════════════════════ -->
       <section class="relative bg-black border-b border-zinc-800 overflow-hidden">
+        <div class="relative z-10 px-6 md:px-12 pt-10 pb-6">
+          <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
+            <span class="w-4 h-px bg-red-600"></span>
+            // WHY_BASTION
+          </div>
+          <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-2 sys-reveal sys-rise">
+            why developers <span class="text-red-600">choose us</span>
+          </h2>
+          <p class="text-xs text-zinc-500 font-mono leading-relaxed max-w-lg sys-reveal sys-rise sys-delay-100">Intelligence without custody. Your keys, your agent, your control.</p>
+        </div>
         <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800 border-t border-zinc-800">
-          <div class="bg-black p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-100 hover:bg-zinc-900/30 transition-colors">
-            <iconify-icon icon="solar:lock-bold" class="text-green-500 text-3xl mb-4"></iconify-icon>
+          <div class="value-card bg-black p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-100 hover:bg-zinc-900/30 transition-colors border-t-2 border-t-transparent hover:border-t-green-500" style="--accent-color: rgba(34,197,94,0.4); --accent-bg: rgba(34,197,94,0.05);">
+            <div class="value-icon-box">
+              <iconify-icon icon="solar:lock-bold" class="text-green-500 text-2xl"></iconify-icon>
+            </div>
             <div class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Zero Custody</div>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed">BASTION never holds funds. Your agent uses YOUR exchange API keys. We provide intelligence, not custody.</p>
           </div>
-          <div class="bg-black p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-200 hover:bg-zinc-900/30 transition-colors">
-            <iconify-icon icon="solar:server-bold" class="text-red-500 text-3xl mb-4"></iconify-icon>
+          <div class="value-card bg-black p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-200 hover:bg-zinc-900/30 transition-colors border-t-2 border-t-transparent hover:border-t-red-500" style="--accent-color: rgba(220,38,38,0.4); --accent-bg: rgba(220,38,38,0.05);">
+            <div class="value-icon-box">
+              <iconify-icon icon="solar:server-bold" class="text-red-500 text-2xl"></iconify-icon>
+            </div>
             <div class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Your Compute</div>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed">Your agent runs on YOUR Claude API. You control the compute budget, the frequency, and the trading logic.</p>
           </div>
-          <div class="bg-black p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-300 hover:bg-zinc-900/30 transition-colors">
-            <iconify-icon icon="solar:bolt-bold" class="text-amber-400 text-3xl mb-4"></iconify-icon>
+          <div class="value-card bg-black p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-300 hover:bg-zinc-900/30 transition-colors border-t-2 border-t-transparent hover:border-t-amber-400" style="--accent-color: rgba(251,191,36,0.4); --accent-bg: rgba(251,191,36,0.05);">
+            <div class="value-icon-box">
+              <iconify-icon icon="solar:bolt-bold" class="text-amber-400 text-2xl"></iconify-icon>
+            </div>
             <div class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Native MCP</div>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed">No SDK. No wrapper. No boilerplate. Claude agents speak MCP natively. Add 3 lines of config and go.</p>
           </div>
-          <div class="bg-black p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-400 hover:bg-zinc-900/30 transition-colors">
-            <iconify-icon icon="solar:scaling-bold" class="text-cyan-400 text-3xl mb-4"></iconify-icon>
+          <div class="value-card bg-black p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-400 hover:bg-zinc-900/30 transition-colors border-t-2 border-t-transparent hover:border-t-cyan-400" style="--accent-color: rgba(34,211,238,0.4); --accent-bg: rgba(34,211,238,0.05);">
+            <div class="value-icon-box">
+              <iconify-icon icon="solar:scaling-bold" class="text-cyan-400 text-2xl"></iconify-icon>
+            </div>
             <div class="text-white font-semibold text-sm uppercase tracking-tight mb-2">560+ Signals</div>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed">Derivatives, on-chain, whale tracking, market structure, macro — institutional-grade data your agent can't get anywhere else.</p>
           </div>
@@ -1071,7 +1147,7 @@
       <!-- ═════════════════════════════════════════════════ -->
       <!-- TRUST SIGNALS — Built for Claude -->
       <!-- ═════════════════════════════════════════════════ -->
-      <section class="relative bg-black border-b border-zinc-800 overflow-hidden py-10 md:py-14">
+      <section class="relative bg-black border-b border-zinc-800 overflow-hidden py-10 md:py-14 trust-glow-bg">
         <div class="relative z-10 px-6 md:px-12 max-w-4xl mx-auto">
           <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
             <!-- Built for Claude -->
@@ -1138,7 +1214,7 @@
           </div>
 
           <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8 sys-reveal sys-rise sys-delay-300">
-            <a href="#quickstart" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-10 py-4 transition-all flex items-center justify-center gap-3 font-bold">
+            <a href="#quickstart" class="group bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest px-10 py-4 transition-all flex items-center justify-center gap-3 font-bold cta-pulse">
               Connect Now
               <iconify-icon icon="solar:arrow-up-linear" width="16" class="group-hover:-translate-y-0.5 transition-transform"></iconify-icon>
             </a>
@@ -1162,7 +1238,9 @@
             <div class="flex gap-6 font-mono"><a href="/" class="hover:text-white transition-colors">Home</a><a href="/docs" class="hover:text-white transition-colors">MCP Docs</a><a href="/api/swagger" class="hover:text-white transition-colors">API Reference</a></div>
           </div>
           <div class="flex items-center gap-6 font-mono">
-            <div class="flex items-center gap-2"><iconify-icon icon="solar:server-linear" width="12"></iconify-icon><span>MCP ONLINE</span></div>
+            <a href="https://github.com/bastionfintech-spec/bastion-mcp-server" target="_blank" rel="noopener" class="flex items-center gap-1.5 hover:text-white transition-colors" title="Open Source on GitHub"><iconify-icon icon="mdi:github" width="14"></iconify-icon><span class="hidden md:inline">GitHub</span></a>
+            <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
+            <div class="flex items-center gap-2 mcp-ping" style="padding-left: 14px;"><iconify-icon icon="solar:server-linear" width="12"></iconify-icon><span>MCP ONLINE</span></div>
             <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
             <div class="flex items-center gap-1.5 text-zinc-600">
               <svg class="w-3 h-3 fill-[#D97757]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>
