@@ -17,11 +17,37 @@
       pre { tab-size: 2; }
       .copy-btn { opacity: 0; transition: opacity 0.2s; }
       pre:hover .copy-btn, .code-block:hover .copy-btn { opacity: 1; }
-      /* Animated aurora background */
+      /* Unicorn Studio scene background */
+      .unicorn-scene-wrap {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden;
+        pointer-events: none;
+      }
+      .unicorn-scene-wrap [data-us-project] {
+        width: 100% !important; height: 100% !important;
+        position: absolute; top: 0; left: 0;
+        pointer-events: auto;
+      }
+      .unicorn-scene-wrap canvas {
+        width: 100% !important; height: 100% !important;
+        object-fit: cover;
+        display: block;
+      }
+      /* Unicorn scene fade-out at bottom */
+      .unicorn-scene-fade {
+        position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
+        background: linear-gradient(to bottom, transparent 0%, black 100%);
+        z-index: 1; pointer-events: none;
+      }
+      /* Ensure hero content clickable above scene */
+      .hero-content-layer {
+        position: relative; z-index: 2;
+      }
+      /* Animated aurora background (fallback / secondary layer) */
       .aurora-bg {
         position: absolute; top: 0; left: 0; width: 100%; height: 800px; z-index: -1; overflow: hidden;
         mask-image: linear-gradient(black 0%, black 60%, transparent 100%);
         -webkit-mask-image: linear-gradient(black 0%, black 60%, transparent 100%);
+        opacity: 0.4;
       }
       .aurora-bg::before {
         content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
@@ -255,12 +281,18 @@
       <!-- HERO — Your Agent + BASTION Intelligence -->
       <!-- ═════════════════════════════════════════════════ -->
       <div class="relative w-full min-h-[80vh] flex items-center overflow-hidden bg-black">
+        <!-- Unicorn Studio Scene (full-bleed hero background) -->
+        <div class="unicorn-scene-wrap">
+          <div data-us-project="KtU6Xzzy22r0sRtyIRUm" data-us-scale="1" data-us-dpi="1.5" data-us-fps="60"></div>
+          <div class="unicorn-scene-fade"></div>
+        </div>
+
         <div class="absolute inset-0 z-0 pointer-events-none">
           <!-- Bottom fade -->
           <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent"></div>
         </div>
 
-        <div class="container mx-auto px-6 md:px-12 py-16 md:py-24 relative z-10">
+        <div class="container mx-auto px-6 md:px-12 py-16 md:py-24 relative z-10 hero-content-layer">
           <div class="flex flex-col md:flex-row items-center gap-10 md:gap-12">
           <div class="flex-1 max-w-2xl">
             <div class="flex items-center gap-3 mb-6 sys-reveal sys-rise">
@@ -1140,6 +1172,9 @@
         </div>
       </footer>
     </main>
+
+    <!-- Unicorn Studio Loader -->
+    <script type="text/javascript">!function(){var u=window.UnicornStudio;if(u&&u.init){if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",function(){u.init()})}else{u.init()}}else{window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.0.5/dist/unicornStudio.umd.js",i.onload=function(){if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",function(){UnicornStudio.init()})}else{UnicornStudio.init()}},(document.head||document.body).appendChild(i)}}();</script>
 
     <!-- Scripts -->
     <script>
