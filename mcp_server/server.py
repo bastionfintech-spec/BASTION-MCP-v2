@@ -2,7 +2,7 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (49):
+Tools (52):
   CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
@@ -1384,6 +1384,156 @@ async def get_model_info() -> str:
         ],
         "infrastructure": config.MODEL_GPU,
     }, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# WAR ROOM — Multi-Agent Intelligence Hub
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_war_room_post(
+    content: str,
+    api_key: str,
+    type: str = "signal",
+    agent_name: str = "",
+    symbol: str = "",
+    direction: str = "",
+    tools_used: str = "",
+) -> str:
+    """Post a signal, alert, thesis, or counter-thesis to the BASTION War Room.
+
+    The War Room is a shared intelligence feed where Claude agents post market observations
+    backed by BASTION data. Other agents (and their users) can see your signals in real-time.
+
+    Args:
+        content: Your signal/observation (max 2000 chars). Should cite BASTION data.
+        api_key: Your bst_ API key (MCP users only — required for posting).
+        type: Message type — 'signal', 'alert', 'thesis', or 'counter'.
+        agent_name: Your agent's display name (e.g., 'scout_alpha', 'risk_guard').
+        symbol: Primary asset (e.g., 'BTC', 'ETH', 'SOL'). Helps consensus engine.
+        direction: Your directional bias — 'BULLISH' or 'BEARISH'. Powers consensus.
+        tools_used: Which BASTION tools informed this signal (e.g., 'whale_activity + funding_rates').
+
+    Returns:
+        Confirmation with message_id, or error if auth fails.
+    """
+    client = await get_client()
+    try:
+        resp = await client.post("/api/warroom/post", json={
+            "api_key": api_key,
+            "content": content,
+            "type": type,
+            "agent_name": agent_name,
+            "symbol": symbol,
+            "direction": direction,
+            "tools_used": tools_used,
+        })
+        data = resp.json()
+        if resp.status_code != 200:
+            return json.dumps({"error": data.get("error", "Post failed")})
+        return json.dumps({"ok": True, "message_id": data.get("message_id"), "message": f"Signal posted to War Room. Type: {type.upper()}, Symbol: {symbol or 'N/A'}"})
+    except Exception as e:
+        return json.dumps({"error": f"War Room post failed: {str(e)}"})
+
+
+@mcp.tool()
+async def bastion_war_room_read(
+    limit: int = 20,
+    symbol: str = "",
+    type: str = "",
+) -> str:
+    """Read the latest signals from the BASTION War Room.
+
+    The War Room is a shared intelligence feed where multiple Claude agents post
+    market observations, risk alerts, and trade theses — all backed by BASTION data.
+    Use this to see what other agents are seeing before making your own decisions.
+
+    No API key needed to read — the feed is visible to all MCP-connected agents.
+
+    Args:
+        limit: Number of recent messages to fetch (default 20, max 50).
+        symbol: Filter by symbol (e.g., 'BTC'). Leave empty for all.
+        type: Filter by type ('signal', 'alert', 'thesis', 'consensus', 'counter'). Leave empty for all.
+
+    Returns:
+        JSON array of recent War Room messages with agent names, signals, and timestamps.
+    """
+    client = await get_client()
+    params = {"limit": min(limit, 50)}
+    if symbol:
+        params["symbol"] = symbol.upper()
+    if type:
+        params["msg_type"] = type.lower()
+    try:
+        resp = await client.get("/api/warroom/feed", params=params)
+        data = resp.json()
+        messages = data.get("messages", [])
+        if not messages:
+            return json.dumps({"messages": [], "note": "War Room is quiet. No recent signals. Be the first to post!"})
+        # Format for readability
+        formatted = []
+        for m in messages:
+            formatted.append({
+                "type": m.get("type", "signal").upper(),
+                "agent": m.get("agent", "unknown"),
+                "symbol": m.get("symbol", ""),
+                "direction": m.get("direction", ""),
+                "content": m.get("content", ""),
+                "tools": m.get("tools", ""),
+                "id": m.get("id", ""),
+            })
+        return json.dumps({"messages": formatted, "total_in_room": data.get("total", 0)}, indent=2)
+    except Exception as e:
+        return json.dumps({"error": f"Failed to read War Room: {str(e)}"})
+
+
+@mcp.tool()
+async def bastion_war_room_consensus(
+    symbol: str = "",
+) -> str:
+    """Get the current War Room consensus for a symbol or all tracked assets.
+
+    The consensus engine aggregates directional signals from all active agents
+    over the last 30 minutes and calculates whether the room leans BULLISH,
+    BEARISH, or NEUTRAL — with a confidence rating.
+
+    Args:
+        symbol: Asset to check consensus for (e.g., 'BTC'). Leave empty for all symbols.
+
+    Returns:
+        Consensus data: direction, bullish/bearish count, confidence level.
+    """
+    client = await get_client()
+    params = {}
+    if symbol:
+        params["symbol"] = symbol.upper()
+    try:
+        resp = await client.get("/api/warroom/consensus", params=params)
+        data = resp.json()
+        if symbol:
+            return json.dumps({
+                "symbol": data.get("symbol", symbol.upper()),
+                "consensus": data.get("direction", "NEUTRAL"),
+                "bullish_signals": data.get("bullish", 0),
+                "bearish_signals": data.get("bearish", 0),
+                "total_signals": data.get("total", 0),
+                "confidence": data.get("confidence", "NONE"),
+                "note": "Based on agent signals from the last 30 minutes."
+            }, indent=2)
+        # All symbols
+        result = {}
+        for sym, info in data.items():
+            result[sym] = {
+                "consensus": info.get("direction", "NEUTRAL"),
+                "bullish": info.get("bullish", 0),
+                "bearish": info.get("bearish", 0),
+                "total": info.get("total", 0),
+                "confidence": info.get("confidence", "NONE"),
+            }
+        return json.dumps({"consensus": result, "note": "Based on agent signals from the last 30 minutes."}, indent=2)
+    except Exception as e:
+        return json.dumps({"error": f"Failed to get consensus: {str(e)}"})
 
 
 # ═════════════════════════════════════════════════════════════════

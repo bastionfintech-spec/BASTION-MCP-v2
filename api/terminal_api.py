@@ -786,6 +786,212 @@ async def serve_agents_v1():
 
 
 # ═══════════════════════════════════════════════════════════════
+# WAR ROOM — Multi-Agent Intelligence Hub
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/warroom", response_class=HTMLResponse)
+async def serve_warroom():
+    """Serve the BASTION War Room — multi-agent intelligence feed."""
+    wr_path = bastion_path / "web" / "warroom.html"
+    if wr_path.exists():
+        return FileResponse(wr_path)
+    return HTMLResponse(
+        "<h1 style='color:#fff;background:#050505;font-family:monospace;padding:2em;'>"
+        "BASTION War Room — Coming Soon</h1>"
+    )
+
+
+# ── War Room In-Memory Store (fallback if DB unavailable) ──
+_warroom_messages: list = []  # Recent messages (capped at 500)
+_warroom_connections: list = []  # Active WebSocket connections
+_warroom_consensus: dict = {}  # Per-symbol consensus cache
+
+
+@app.websocket("/ws/warroom")
+async def warroom_websocket(websocket: WebSocket):
+    """WebSocket endpoint for real-time War Room feed."""
+    await websocket.accept()
+    _warroom_connections.append(websocket)
+    try:
+        # Send recent history on connect
+        recent = _warroom_messages[-50:] if _warroom_messages else []
+        for msg in recent:
+            await websocket.send_json(msg)
+        # Keep connection alive and listen for pings
+        while True:
+            data = await websocket.receive_text()
+            # Client can send pings or requests — for now just keep alive
+    except Exception:
+        pass
+    finally:
+        if websocket in _warroom_connections:
+            _warroom_connections.remove(websocket)
+
+
+async def _broadcast_warroom(message: dict):
+    """Broadcast a message to all connected War Room WebSocket clients."""
+    dead = []
+    for ws in _warroom_connections:
+        try:
+            await ws.send_json(message)
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        if ws in _warroom_connections:
+            _warroom_connections.remove(ws)
+
+
+def _update_consensus(symbol: str, direction: str):
+    """Update the rolling consensus for a symbol."""
+    import time
+    now = time.time()
+    if symbol not in _warroom_consensus:
+        _warroom_consensus[symbol] = {"signals": [], "last_updated": now}
+    # Add signal with timestamp
+    _warroom_consensus[symbol]["signals"].append({"direction": direction, "time": now})
+    # Prune signals older than 30 minutes
+    cutoff = now - 1800
+    _warroom_consensus[symbol]["signals"] = [
+        s for s in _warroom_consensus[symbol]["signals"] if s["time"] > cutoff
+    ]
+    _warroom_consensus[symbol]["last_updated"] = now
+
+
+def _get_consensus(symbol: str) -> dict:
+    """Get current consensus for a symbol."""
+    import time
+    if symbol not in _warroom_consensus:
+        return {"symbol": symbol, "direction": "NEUTRAL", "bullish": 0, "bearish": 0, "total": 0, "confidence": "NONE"}
+    signals = _warroom_consensus[symbol]["signals"]
+    # Prune old signals
+    cutoff = time.time() - 1800
+    signals = [s for s in signals if s["time"] > cutoff]
+    bullish = sum(1 for s in signals if s["direction"].upper() in ("BULLISH", "LONG", "BUY"))
+    bearish = sum(1 for s in signals if s["direction"].upper() in ("BEARISH", "SHORT", "SELL"))
+    total = len(signals)
+    if total == 0:
+        return {"symbol": symbol, "direction": "NEUTRAL", "bullish": 0, "bearish": 0, "total": 0, "confidence": "NONE"}
+    direction = "BULLISH" if bullish > bearish else "BEARISH" if bearish > bullish else "NEUTRAL"
+    ratio = max(bullish, bearish) / total if total > 0 else 0
+    confidence = "HIGH" if ratio >= 0.75 else "MED" if ratio >= 0.5 else "LOW"
+    return {"symbol": symbol, "direction": direction, "bullish": bullish, "bearish": bearish, "total": total, "confidence": confidence}
+
+
+@app.post("/api/warroom/post")
+async def warroom_post(request: Request):
+    """Post a signal to the War Room. Requires valid bst_ API key (MCP users only)."""
+    import time, uuid
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+
+    api_key = body.get("api_key")
+    if not api_key or not api_key.startswith("bst_"):
+        return JSONResponse({"error": "War Room requires a valid bst_ API key. MCP users only."}, status_code=401)
+
+    # Validate API key
+    from mcp_server.auth import validate_bst_key
+    key_info = await validate_bst_key(api_key)
+    if not key_info:
+        return JSONResponse({"error": "Invalid or expired API key."}, status_code=401)
+
+    # Build message
+    msg_type = body.get("type", "signal").lower()
+    if msg_type not in ("signal", "alert", "thesis", "counter"):
+        msg_type = "signal"
+
+    content = body.get("content", "").strip()
+    if not content:
+        return JSONResponse({"error": "Message content is required."}, status_code=400)
+    if len(content) > 2000:
+        return JSONResponse({"error": "Message too long (max 2000 chars)."}, status_code=400)
+
+    agent_name = body.get("agent_name", "agent_" + key_info.get("user_id", "anon")[:6])
+    symbol = body.get("symbol", "").upper()
+    direction = body.get("direction", "").upper()
+    tools_used = body.get("tools_used", "")
+
+    message = {
+        "id": str(uuid.uuid4())[:8],
+        "type": msg_type,
+        "agent": agent_name,
+        "content": content,
+        "symbol": symbol,
+        "direction": direction,
+        "tools": tools_used,
+        "timestamp": time.time(),
+        "user_id": key_info.get("user_id", "")[:8],
+    }
+
+    # Store (cap at 500 messages)
+    _warroom_messages.append(message)
+    if len(_warroom_messages) > 500:
+        _warroom_messages.pop(0)
+
+    # Update consensus if symbol + direction provided
+    if symbol and direction:
+        _update_consensus(symbol, direction)
+
+    # Broadcast to all connected clients
+    await _broadcast_warroom(message)
+
+    # Check if consensus threshold crossed — auto-post consensus message
+    if symbol and direction:
+        consensus = _get_consensus(symbol)
+        if consensus["total"] >= 3 and consensus["confidence"] in ("HIGH", "MED"):
+            majority = max(consensus["bullish"], consensus["bearish"])
+            if majority >= 3:
+                consensus_msg = {
+                    "id": str(uuid.uuid4())[:8],
+                    "type": "consensus",
+                    "agent": "WAR_ROOM_SYSTEM",
+                    "content": f"{symbol} {consensus['direction']} — {majority}/{consensus['total']} active agents agree. Confidence: {consensus['confidence']}.",
+                    "symbol": symbol,
+                    "direction": consensus["direction"],
+                    "tools": "consensus_engine",
+                    "timestamp": time.time(),
+                    "user_id": "system",
+                }
+                _warroom_messages.append(consensus_msg)
+                await _broadcast_warroom(consensus_msg)
+
+    return JSONResponse({"ok": True, "message_id": message["id"]})
+
+
+@app.get("/api/warroom/feed")
+async def warroom_feed(limit: int = 50, symbol: str = None, msg_type: str = None):
+    """Read the War Room feed. Public endpoint (anyone can read)."""
+    msgs = _warroom_messages[-limit:]
+    if symbol:
+        msgs = [m for m in msgs if m.get("symbol", "").upper() == symbol.upper()]
+    if msg_type:
+        msgs = [m for m in msgs if m.get("type", "") == msg_type.lower()]
+    return JSONResponse({"messages": msgs, "total": len(_warroom_messages)})
+
+
+@app.get("/api/warroom/consensus")
+async def warroom_consensus(symbol: str = None):
+    """Get current consensus for a symbol or all symbols."""
+    if symbol:
+        return JSONResponse(_get_consensus(symbol.upper()))
+    # Return consensus for all tracked symbols
+    all_consensus = {}
+    for sym in _warroom_consensus:
+        all_consensus[sym] = _get_consensus(sym)
+    return JSONResponse(all_consensus)
+
+
+@app.get("/api/warroom/agents")
+async def warroom_agents():
+    """Get count of connected War Room agents."""
+    return JSONResponse({
+        "connected": len(_warroom_connections),
+        "total_messages": len(_warroom_messages),
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
 # NEW FEATURE ENDPOINTS — Playground, Usage, Password Reset,
 # Webhooks, Workflows, Multi-Agent
 # ═══════════════════════════════════════════════════════════════
