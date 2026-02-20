@@ -341,19 +341,20 @@
               <div class="flex-1 flex items-center justify-center relative terminal-grid-bg overflow-hidden">
                 <div class="bastion-scanline"></div>
                 <!--
-                  Bastion Shield SVG: Geometric fortress, Y-channel splits into 4 red blocks.
-                  Matches bastion-logo.png — shield wider at top, tapers at bottom.
-                  White Y = space between paths (transparent bg shows through).
+                  Bastion Shield SVG: Geometric fortress with inverted-Y channel.
+                  4 red blocks separated by white space. Matches bastion-logo.png.
+                  The logo is a shield wider at top, tapering at bottom.
+                  Deep V-notch at top center, vertical channel down center.
                 -->
-                <svg class="bastion-breathing-svg" width="140" height="170" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Top-left block -->
-                  <path d="M5 3 L44 3 L44 12 L31 30 L21 38 L5 38 Z" fill="#DC2626"/>
-                  <!-- Top-right block -->
-                  <path d="M56 3 L95 3 L95 38 L79 38 L69 30 L56 12 Z" fill="#DC2626"/>
-                  <!-- Bottom-left block -->
-                  <path d="M5 44 L21 44 L31 52 L44 70 L44 98 L36 108 Q33 113 28 113 L9 113 Q5 113 5 108 Z" fill="#DC2626"/>
-                  <!-- Bottom-right block -->
-                  <path d="M79 44 L95 44 L95 108 Q95 113 91 113 L72 113 Q67 113 64 108 L56 98 L56 70 L69 52 Z" fill="#DC2626"/>
+                <svg class="bastion-breathing-svg" width="130" height="168" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Top-left block: flat top, angled inner edge forming the V -->
+                  <path d="M4 2 L43 2 L43 14 L28 38 L4 38 Z" fill="#DC2626"/>
+                  <!-- Top-right block: mirror of top-left -->
+                  <path d="M57 2 L96 2 L96 38 L72 38 L57 14 Z" fill="#DC2626"/>
+                  <!-- Bottom-left block: below V-junction, tapers at bottom -->
+                  <path d="M4 46 L28 46 L43 68 L43 104 L34 118 C31 123 27 126 22 126 L8 126 C4 126 4 122 4 118 Z" fill="#DC2626"/>
+                  <!-- Bottom-right block: mirror of bottom-left -->
+                  <path d="M72 46 L96 46 L96 118 C96 122 96 126 92 126 L78 126 C73 126 69 123 66 118 L57 104 L57 68 Z" fill="#DC2626"/>
                 </svg>
               </div>
               <!-- Terminal status bar -->
