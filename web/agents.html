@@ -70,6 +70,53 @@
       .gradient-blur>div:nth-of-type(5) { z-index: 6; backdrop-filter: blur(16px); mask: linear-gradient(to top, rgba(0,0,0,0) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,0) 100%); }
       .gradient-blur>div:nth-of-type(6) { z-index: 7; backdrop-filter: blur(32px); mask: linear-gradient(to top, rgba(0,0,0,0) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,1) 100%); }
       .gradient-blur::after { content: ""; z-index: 8; backdrop-filter: blur(64px); mask: linear-gradient(to top, rgba(0,0,0,0) 87.5%, rgba(0,0,0,1) 100%); }
+      /* Breathing Bastion Logo */
+      .bastion-logo-terminal {
+        background: rgba(0,0,0,0.9);
+        border: 1px solid rgba(220,38,38,0.2);
+        backdrop-filter: blur(8px);
+        position: relative;
+        overflow: hidden;
+      }
+      .bastion-logo-terminal::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at center, rgba(220,38,38,0.04) 0%, transparent 70%);
+        pointer-events: none;
+      }
+      .bastion-breathing-svg {
+        animation: bastion-breathe 4s ease-in-out infinite;
+        filter: drop-shadow(0 0 20px rgba(220,38,38,0.3));
+      }
+      @keyframes bastion-breathe {
+        0%, 100% {
+          filter: drop-shadow(0 0 15px rgba(220,38,38,0.25)) drop-shadow(0 0 40px rgba(220,38,38,0.1));
+          opacity: 0.85;
+        }
+        50% {
+          filter: drop-shadow(0 0 25px rgba(220,38,38,0.5)) drop-shadow(0 0 60px rgba(220,38,38,0.25)) drop-shadow(0 0 100px rgba(220,38,38,0.1));
+          opacity: 1;
+        }
+      }
+      .bastion-scanline {
+        position: absolute;
+        left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(220,38,38,0.15), transparent);
+        animation: scanline-move 6s linear infinite;
+        pointer-events: none;
+      }
+      @keyframes scanline-move {
+        0% { top: 0%; }
+        100% { top: 100%; }
+      }
+      .terminal-grid-bg {
+        background-image:
+          linear-gradient(rgba(220,38,38,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(220,38,38,0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+      }
       /* Claude branding */
       .claude-orange { color: #D97757; }
       .claude-bg { background-color: rgba(217, 119, 87, 0.08); border-color: rgba(217, 119, 87, 0.25); }
@@ -210,7 +257,8 @@
         </div>
 
         <div class="container mx-auto px-6 md:px-12 py-16 md:py-24 relative z-10">
-          <div class="max-w-4xl">
+          <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+          <div class="flex-1 max-w-2xl">
             <div class="flex items-center gap-3 mb-6 sys-reveal sys-rise">
               <span class="relative flex h-2 w-2">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
@@ -266,6 +314,64 @@
                 <span class="text-[10px] font-mono text-zinc-400"><span class="text-white font-bold">&lt;3s</span> Latency</span>
               </div>
             </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Breathing Bastion Logo Terminal -->
+          <div class="hidden lg:block flex-shrink-0 sys-reveal sys-slide-r sys-delay-300">
+            <div class="bastion-logo-terminal w-[320px] h-[360px] flex flex-col">
+              <!-- Terminal header -->
+              <div class="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-900/40">
+                <div class="flex items-center gap-2">
+                  <div class="flex gap-1.5">
+                    <div class="w-2 h-2 rounded-full bg-red-500/80"></div>
+                    <div class="w-2 h-2 rounded-full bg-amber-500/60"></div>
+                    <div class="w-2 h-2 rounded-full bg-green-500/60"></div>
+                  </div>
+                  <span class="text-[8px] font-mono text-zinc-600 ml-2">bastion.sys</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="relative flex h-1.5 w-1.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                  </span>
+                  <span class="text-[7px] font-mono text-red-500/70 uppercase tracking-widest">LIVE</span>
+                </div>
+              </div>
+              <!-- Logo container -->
+              <div class="flex-1 flex items-center justify-center relative terminal-grid-bg">
+                <div class="bastion-scanline"></div>
+                <!-- Bastion Shield SVG — geometric fortress with Y-channel -->
+                <svg class="bastion-breathing-svg" width="150" height="180" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+                  <!--
+                    The Bastion logo: A geometric shield/fortress shape.
+                    An inverted-Y channel splits it into 4 red blocks:
+                    - Top-left: upper left wing
+                    - Top-right: upper right wing (mirror)
+                    - Bottom-left: lower left body
+                    - Bottom-right: lower right body (mirror)
+                    The Y-channel: V at top converging to center, then vertical line down
+                  -->
+                  <!-- Top-left block (upper-left wing) -->
+                  <path d="M12 6 L88 6 L88 24 L62 60 L42 76 L12 76 Z" fill="#DC2626"/>
+                  <!-- Top-right block (upper-right wing, mirror) -->
+                  <path d="M112 6 L188 6 L188 76 L158 76 L138 60 L112 24 Z" fill="#DC2626"/>
+                  <!-- Bottom-left block -->
+                  <path d="M12 88 L42 88 L62 104 L88 140 L88 195 L72 215 C68 222 62 226 56 226 L18 226 C12 226 12 220 12 216 Z" fill="#DC2626"/>
+                  <!-- Bottom-right block (mirror) -->
+                  <path d="M158 88 L188 88 L188 216 C188 220 188 226 182 226 L144 226 C138 226 132 222 128 215 L112 195 L112 140 L138 104 Z" fill="#DC2626"/>
+                </svg>
+              </div>
+              <!-- Terminal status bar -->
+              <div class="flex items-center justify-between px-4 py-2 border-t border-zinc-800/60 bg-zinc-900/30">
+                <span class="text-[7px] font-mono text-zinc-600 uppercase tracking-widest">RISK ENGINE v6</span>
+                <div class="flex items-center gap-3">
+                  <span class="text-[7px] font-mono text-red-500/60">72B PARAMS</span>
+                  <span class="text-[7px] font-mono text-zinc-700">|</span>
+                  <span class="text-[7px] font-mono text-green-500/60">560+ SIGNALS</span>
+                </div>
+              </div>
+            </div>
+          </div>
           </div>
         </div>
       </div>
