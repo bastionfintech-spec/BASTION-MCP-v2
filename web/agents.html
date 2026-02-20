@@ -341,26 +341,65 @@
               <div class="flex-1 flex items-center justify-center relative terminal-grid-bg overflow-hidden">
                 <div class="bastion-scanline"></div>
                 <!--
-                  Bastion Logo SVG — Faithful recreation of bastion-logo.png
-                  The logo is an isometric 3D fortress/shield shape.
-                  An upward chevron (^) at the top, Y-junction in the middle,
-                  two large pillar blocks at the bottom.
-                  The white Y-channel is the negative space between the 4 red paths.
-                  ViewBox 0 0 200 240 — centered.
+                  Bastion Logo SVG — Precise recreation of bastion-logo.png
+                  4 red shapes separated by white Y-channel negative space.
+                  Top: Two chevron arms forming upward V (^)
+                  Bottom: Two isometric 3D pillar/box shapes with tapered base
+                  The white gap = inverted Y splitting the 4 pieces.
+                  ViewBox 0 0 200 260
                 -->
-                <svg class="bastion-breathing-svg" width="140" height="168" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
-                  <!-- TOP-LEFT: Left arm of upward chevron.
-                       Outer-left edge is vertical, top edge angles up to center peak,
-                       inner edge angles back down to the Y-junction -->
-                  <path d="M10 88 L10 38 L85 2 L93 12 L55 52 L40 72 L25 88 Z" fill="#DC2626"/>
-                  <!-- TOP-RIGHT: Right arm of upward chevron (mirror) -->
-                  <path d="M190 88 L175 88 L160 72 L145 52 L107 12 L115 2 L190 38 Z" fill="#DC2626"/>
-                  <!-- BOTTOM-LEFT: Large pillar block below Y-junction.
-                       Top has angled inner edge from Y-junction,
-                       outer edge is vertical, bottom tapers inward -->
-                  <path d="M10 100 L40 82 L55 62 L90 100 L90 195 L76 215 L60 230 L10 230 Z" fill="#DC2626"/>
-                  <!-- BOTTOM-RIGHT: Mirror of bottom-left -->
-                  <path d="M190 100 L190 230 L140 230 L124 215 L110 195 L110 100 L145 62 L160 82 Z" fill="#DC2626"/>
+                <svg class="bastion-breathing-svg" width="140" height="182" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+                  <!-- TOP-LEFT ARM: Chevron left wing
+                       Starts at outer-left edge, angles up-right to center peak,
+                       inner edge comes back down-left to the Y-fork -->
+                  <path d="
+                    M 8 92
+                    L 8 52
+                    L 88 4
+                    L 100 16
+                    L 60 44
+                    L 40 62
+                    L 24 80
+                    Z
+                  " fill="#DC2626"/>
+                  <!-- TOP-RIGHT ARM: Chevron right wing (mirror) -->
+                  <path d="
+                    M 192 92
+                    L 192 52
+                    L 112 4
+                    L 100 16
+                    L 140 44
+                    L 160 62
+                    L 176 80
+                    Z
+                  " fill="#DC2626"/>
+                  <!-- BOTTOM-LEFT BLOCK: Isometric 3D pillar
+                       Top connects from Y-fork diagonal,
+                       left edge vertical, bottom angles inward (shield taper),
+                       inner edge is vertical stem of Y -->
+                  <path d="
+                    M 8 104
+                    L 8 232
+                    L 56 256
+                    L 72 240
+                    L 88 224
+                    L 88 112
+                    L 56 72
+                    L 38 88
+                    Z
+                  " fill="#DC2626"/>
+                  <!-- BOTTOM-RIGHT BLOCK: Mirror of bottom-left -->
+                  <path d="
+                    M 192 104
+                    L 192 232
+                    L 144 256
+                    L 128 240
+                    L 112 224
+                    L 112 112
+                    L 144 72
+                    L 162 88
+                    Z
+                  " fill="#DC2626"/>
                 </svg>
               </div>
               <!-- Terminal status bar -->
