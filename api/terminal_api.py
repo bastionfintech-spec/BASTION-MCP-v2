@@ -776,6 +776,14 @@ async def serve_agents():
         "BASTION Agents — Coming Soon</h1>"
     )
 
+@app.get("/agents-v1", response_class=HTMLResponse)
+async def serve_agents_v1():
+    """Serve the archived v1 agents page."""
+    v1_path = bastion_path / "web" / "agents-v1.html"
+    if v1_path.exists():
+        return FileResponse(v1_path)
+    return HTMLResponse("<h1>Not found</h1>", status_code=404)
+
 
 # ═══════════════════════════════════════════════════════════════
 # NEW FEATURE ENDPOINTS — Playground, Usage, Password Reset,
