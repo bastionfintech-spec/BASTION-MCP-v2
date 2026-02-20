@@ -317,10 +317,10 @@
           </div>
 
           <!-- RIGHT COLUMN: Breathing Bastion Logo Terminal -->
-          <div class="hidden lg:block flex-shrink-0 sys-reveal sys-slide-r sys-delay-300">
-            <div class="bastion-logo-terminal w-[320px] h-[360px] flex flex-col">
+          <div class="hidden lg:flex flex-shrink-0 items-center sys-reveal sys-slide-r sys-delay-300">
+            <div class="bastion-logo-terminal w-[300px] h-[340px] flex flex-col rounded-sm">
               <!-- Terminal header -->
-              <div class="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-900/40">
+              <div class="flex items-center justify-between px-4 py-2.5 border-b border-red-900/30 bg-zinc-950/80">
                 <div class="flex items-center gap-2">
                   <div class="flex gap-1.5">
                     <div class="w-2 h-2 rounded-full bg-red-500/80"></div>
@@ -337,32 +337,27 @@
                   <span class="text-[7px] font-mono text-red-500/70 uppercase tracking-widest">LIVE</span>
                 </div>
               </div>
-              <!-- Logo container -->
-              <div class="flex-1 flex items-center justify-center relative terminal-grid-bg">
+              <!-- Logo container with breathing SVG -->
+              <div class="flex-1 flex items-center justify-center relative terminal-grid-bg overflow-hidden">
                 <div class="bastion-scanline"></div>
-                <!-- Bastion Shield SVG — geometric fortress with Y-channel -->
-                <svg class="bastion-breathing-svg" width="150" height="180" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
-                  <!--
-                    The Bastion logo: A geometric shield/fortress shape.
-                    An inverted-Y channel splits it into 4 red blocks:
-                    - Top-left: upper left wing
-                    - Top-right: upper right wing (mirror)
-                    - Bottom-left: lower left body
-                    - Bottom-right: lower right body (mirror)
-                    The Y-channel: V at top converging to center, then vertical line down
-                  -->
-                  <!-- Top-left block (upper-left wing) -->
-                  <path d="M12 6 L88 6 L88 24 L62 60 L42 76 L12 76 Z" fill="#DC2626"/>
-                  <!-- Top-right block (upper-right wing, mirror) -->
-                  <path d="M112 6 L188 6 L188 76 L158 76 L138 60 L112 24 Z" fill="#DC2626"/>
+                <!--
+                  Bastion Shield SVG: Geometric fortress, Y-channel splits into 4 red blocks.
+                  Matches bastion-logo.png — shield wider at top, tapers at bottom.
+                  White Y = space between paths (transparent bg shows through).
+                -->
+                <svg class="bastion-breathing-svg" width="140" height="170" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Top-left block -->
+                  <path d="M5 3 L44 3 L44 12 L31 30 L21 38 L5 38 Z" fill="#DC2626"/>
+                  <!-- Top-right block -->
+                  <path d="M56 3 L95 3 L95 38 L79 38 L69 30 L56 12 Z" fill="#DC2626"/>
                   <!-- Bottom-left block -->
-                  <path d="M12 88 L42 88 L62 104 L88 140 L88 195 L72 215 C68 222 62 226 56 226 L18 226 C12 226 12 220 12 216 Z" fill="#DC2626"/>
-                  <!-- Bottom-right block (mirror) -->
-                  <path d="M158 88 L188 88 L188 216 C188 220 188 226 182 226 L144 226 C138 226 132 222 128 215 L112 195 L112 140 L138 104 Z" fill="#DC2626"/>
+                  <path d="M5 44 L21 44 L31 52 L44 70 L44 98 L36 108 Q33 113 28 113 L9 113 Q5 113 5 108 Z" fill="#DC2626"/>
+                  <!-- Bottom-right block -->
+                  <path d="M79 44 L95 44 L95 108 Q95 113 91 113 L72 113 Q67 113 64 108 L56 98 L56 70 L69 52 Z" fill="#DC2626"/>
                 </svg>
               </div>
               <!-- Terminal status bar -->
-              <div class="flex items-center justify-between px-4 py-2 border-t border-zinc-800/60 bg-zinc-900/30">
+              <div class="flex items-center justify-between px-4 py-2 border-t border-red-900/30 bg-zinc-950/80">
                 <span class="text-[7px] font-mono text-zinc-600 uppercase tracking-widest">RISK ENGINE v6</span>
                 <div class="flex items-center gap-3">
                   <span class="text-[7px] font-mono text-red-500/60">72B PARAMS</span>
