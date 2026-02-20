@@ -1436,6 +1436,18 @@
                       </div>
                     </div>
                   </div>
+                  <div class="mb-4">
+                    <label class="block text-[10px] text-zinc-500 uppercase mb-1">Expiration</label>
+                    <div class="flex items-center gap-3">
+                      <select id="api-key-expiration" class="bg-zinc-800/50 border border-zinc-700/50 rounded px-3 py-2 text-[12px] text-white focus:outline-none focus:border-crimson-600/50 appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml;utf8,<svg fill=\'%23a1a1aa\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'><path fill-rule=\'evenodd\' d=\'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\' clip-rule=\'evenodd\'/></svg>'); background-repeat: no-repeat; background-position: right 8px center; background-size: 16px; padding-right: 32px;">
+                        <option value="">Never expires</option>
+                        <option value="30">30 days</option>
+                        <option value="90" selected>90 days</option>
+                        <option value="365">1 year</option>
+                      </select>
+                      <span class="text-[9px] text-zinc-600 font-mono">Expired keys stop working automatically</span>
+                    </div>
+                  </div>
                   <button onclick="generateApiKey()" class="px-5 py-2 bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-bold rounded transition-colors">
                     <iconify-icon icon="solar:key-bold" class="mr-1"></iconify-icon>
                     GENERATE KEY
@@ -1479,6 +1491,7 @@
                           <th class="text-left py-2 px-2">Name</th>
                           <th class="text-left py-2 px-2">Key</th>
                           <th class="text-left py-2 px-2">Scopes</th>
+                          <th class="text-left py-2 px-2">Expires</th>
                           <th class="text-left py-2 px-2">Created</th>
                           <th class="text-left py-2 px-2">Last Used</th>
                           <th class="text-right py-2 px-2"></th>
@@ -3475,12 +3488,16 @@
         const scopes = ['read'];
         if (document.getElementById('scope-trade')?.checked) scopes.push('trade');
         if (document.getElementById('scope-engine')?.checked) scopes.push('engine');
+        const expirationVal = document.getElementById('api-key-expiration')?.value;
+        const expires_in = expirationVal ? parseInt(expirationVal) : null;
 
         try {
+          const body = { token, name, scopes };
+          if (expires_in) body.expires_in = expires_in;
           const res = await fetch(`${API_BASE}/api/auth/keys/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, name, scopes })
+            body: JSON.stringify(body)
           });
           const data = await res.json();
           if (data.success && data.key) {
@@ -3551,10 +3568,26 @@
               return `<span class="px-1.5 py-0.5 rounded text-[9px] ${colors[s] || 'text-zinc-400 bg-zinc-800'}">${s}</span>`;
             }).join(' ');
 
+            // Expiration display
+            let expiryHtml = '<span class="text-zinc-600">Never</span>';
+            if (k.expires_at) {
+              const expDate = new Date(k.expires_at);
+              const now = new Date();
+              const daysLeft = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+              if (daysLeft < 0) {
+                expiryHtml = '<span class="text-red-400 font-bold">EXPIRED</span>';
+              } else if (daysLeft <= 7) {
+                expiryHtml = `<span class="text-yellow-400">${daysLeft}d left</span>`;
+              } else {
+                expiryHtml = `<span class="text-zinc-500">${expDate.toLocaleDateString()}</span>`;
+              }
+            }
+
             tr.innerHTML = `
               <td class="py-2.5 px-2 text-zinc-300">${k.name}</td>
               <td class="py-2.5 px-2 font-mono text-zinc-500">${k.prefix}...</td>
               <td class="py-2.5 px-2">${scopeBadges}</td>
+              <td class="py-2.5 px-2 text-[10px]">${expiryHtml}</td>
               <td class="py-2.5 px-2 text-zinc-500">${created}</td>
               <td class="py-2.5 px-2 text-zinc-500">${lastUsed}</td>
               <td class="py-2.5 px-2 text-right">

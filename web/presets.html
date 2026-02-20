@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black scroll-smooth scroll-pt-24">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASTION — Agent Presets</title>
+    <link rel="icon" type="image/png" href="/static/bastion-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+      body { font-family: 'Inter', sans-serif; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='16' fill='none' stroke='%23dc2626' stroke-width='1.5' opacity='0.5'/%3E%3Ccircle cx='24' cy='24' r='8' fill='none' stroke='%23dc2626' stroke-width='1' opacity='0.35'/%3E%3Cline x1='24' y1='2' x2='24' y2='15' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='24' y1='33' x2='24' y2='46' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='2' y1='24' x2='15' y2='24' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='33' y1='24' x2='46' y2='24' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%23dc2626'/%3E%3C/svg%3E") 24 24, crosshair; }
+      a, button, [role="button"], input, select, textarea, .cursor-pointer { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='16' fill='none' stroke='%23ff3333' stroke-width='2' opacity='0.7'/%3E%3Ccircle cx='24' cy='24' r='8' fill='none' stroke='%23ff3333' stroke-width='1.5' opacity='0.5'/%3E%3Cline x1='24' y1='2' x2='24' y2='15' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='24' y1='33' x2='24' y2='46' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='2' y1='24' x2='15' y2='24' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='33' y1='24' x2='46' y2='24' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Ccircle cx='24' cy='24' r='3' fill='%23ff3333'/%3E%3C/svg%3E") 24 24, pointer; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      pre { tab-size: 2; }
+      /* Animated aurora background */
+      .aurora-bg {
+        position: absolute; top: 0; left: 0; width: 100%; height: 800px; z-index: -1; overflow: hidden;
+        mask-image: linear-gradient(black 0%, black 60%, transparent 100%);
+        -webkit-mask-image: linear-gradient(black 0%, black 60%, transparent 100%);
+      }
+      .aurora-bg::before {
+        content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: conic-gradient(from 0deg at 50% 50%, transparent 0%, #dc2626 8%, transparent 16%, transparent 33%, #7f1d1d 41%, transparent 49%, transparent 66%, #991b1b 74%, transparent 82%);
+        animation: aurora-spin 20s linear infinite;
+        opacity: 0.15;
+        filter: blur(80px);
+      }
+      .aurora-bg::after {
+        content: ''; position: absolute; top: -30%; left: -30%; width: 160%; height: 160%;
+        background: conic-gradient(from 180deg at 40% 60%, transparent 0%, #ef4444 6%, transparent 12%, transparent 50%, #b91c1c 56%, transparent 62%);
+        animation: aurora-spin 15s linear infinite reverse;
+        opacity: 0.12;
+        filter: blur(100px);
+      }
+      @keyframes aurora-spin { to { transform: rotate(360deg); } }
+      .aurora-orb-1 {
+        position: absolute; width: 600px; height: 400px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(220,38,38,0.2) 0%, transparent 70%);
+        top: 10%; left: 20%; filter: blur(60px);
+        animation: orb-drift-1 12s ease-in-out infinite;
+      }
+      .aurora-orb-2 {
+        position: absolute; width: 500px; height: 350px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(185,28,28,0.15) 0%, transparent 70%);
+        top: 5%; right: 15%; filter: blur(80px);
+        animation: orb-drift-2 16s ease-in-out infinite;
+      }
+      .aurora-orb-3 {
+        position: absolute; width: 400px; height: 300px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(239,68,68,0.1) 0%, transparent 70%);
+        top: 30%; left: 50%; filter: blur(70px);
+        animation: orb-drift-3 10s ease-in-out infinite;
+      }
+      @keyframes orb-drift-1 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(60px, -30px); } }
+      @keyframes orb-drift-2 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-40px, 20px); } }
+      @keyframes orb-drift-3 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-30px, -40px); } }
+      /* Progressive blur (top of page) */
+      .gradient-blur { position: fixed; z-index: 5; inset: 0 0 auto 0; height: 12%; pointer-events: none; }
+      .gradient-blur>div, .gradient-blur::before, .gradient-blur::after { position: absolute; inset: 0; }
+      .gradient-blur::before { content: ""; z-index: 1; backdrop-filter: blur(0.5px); mask: linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%); }
+      .gradient-blur>div:nth-of-type(1) { z-index: 2; backdrop-filter: blur(1px); mask: linear-gradient(to top, rgba(0,0,0,0) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,0) 50%); }
+      .gradient-blur>div:nth-of-type(2) { z-index: 3; backdrop-filter: blur(2px); mask: linear-gradient(to top, rgba(0,0,0,0) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 62.5%); }
+      .gradient-blur>div:nth-of-type(3) { z-index: 4; backdrop-filter: blur(4px); mask: linear-gradient(to top, rgba(0,0,0,0) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,0) 75%); }
+      .gradient-blur>div:nth-of-type(4) { z-index: 5; backdrop-filter: blur(8px); mask: linear-gradient(to top, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 87.5%); }
+      .gradient-blur>div:nth-of-type(5) { z-index: 6; backdrop-filter: blur(16px); mask: linear-gradient(to top, rgba(0,0,0,0) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,0) 100%); }
+      .gradient-blur>div:nth-of-type(6) { z-index: 7; backdrop-filter: blur(32px); mask: linear-gradient(to top, rgba(0,0,0,0) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,1) 100%); }
+      .gradient-blur::after { content: ""; z-index: 8; backdrop-filter: blur(64px); mask: linear-gradient(to top, rgba(0,0,0,0) 87.5%, rgba(0,0,0,1) 100%); }
+      /* JSON syntax highlighting */
+      .json-key { color: #EF4444; }
+      .json-string { color: #6EE7B7; }
+      .json-number { color: #93C5FD; }
+      .json-boolean { color: #FCD34D; }
+      .json-null { color: #9CA3AF; }
+      .json-bracket { color: #A1A1AA; }
+      /* Preset card */
+      .preset-card { transition: all 0.25s ease; border-left: 2px solid transparent; }
+      .preset-card:hover { border-left-color: #DC2626; background-color: rgba(220, 38, 38, 0.04); }
+      /* Community card */
+      .community-card { transition: all 0.25s ease; }
+      .community-card:hover { border-color: rgba(220, 38, 38, 0.4); }
+      /* Slider thumb */
+      input[type="range"] { -webkit-appearance: none; appearance: none; background: transparent; }
+      input[type="range"]::-webkit-slider-track { height: 4px; background: #27272a; border-radius: 2px; }
+      input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #DC2626; margin-top: -6px; border: 2px solid #18181b; }
+      input[type="range"]::-moz-range-track { height: 4px; background: #27272a; border-radius: 2px; border: none; }
+      input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #DC2626; border: 2px solid #18181b; }
+      /* Toggle switch */
+      .toggle-track { width: 40px; height: 22px; border-radius: 11px; background: #27272a; transition: background 0.2s; position: relative; }
+      .toggle-track.active { background: #DC2626; }
+      .toggle-thumb { width: 16px; height: 16px; border-radius: 50%; background: white; position: absolute; top: 3px; left: 3px; transition: transform 0.2s; }
+      .toggle-track.active .toggle-thumb { transform: translateX(18px); }
+      /* Checkbox */
+      .sym-check { accent-color: #DC2626; }
+      /* Tool group */
+      .tool-group-header { transition: color 0.15s; }
+      .tool-group-header:hover { color: #DC2626; }
+      /* Response viewer scrollbar */
+      .config-viewer::-webkit-scrollbar { width: 6px; height: 6px; }
+      .config-viewer::-webkit-scrollbar-track { background: #18181b; }
+      .config-viewer::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+      .config-viewer::-webkit-scrollbar-thumb:hover { background: #52525b; }
+      /* Sort button active */
+      .sort-btn.active { background-color: #DC2626; color: white; border-color: #DC2626; }
+      /* Star rating */
+      .star-filled { color: #EF4444; }
+      .star-empty { color: #3f3f46; }
+      /* Spinner */
+      @keyframes spinner-rotate { to { transform: rotate(360deg); } }
+      .exec-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spinner-rotate 0.6s linear infinite; display: inline-block; }
+      /* Scroll reveal */
+      @media (prefers-reduced-motion: no-preference) {
+        .sys-reveal { opacity: 0; transform: translateY(20px); filter: blur(4px); transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.8s cubic-bezier(0.16, 1, 0.3, 1), filter 1.8s ease-out; will-change: opacity, transform; }
+        .sys-active { opacity: 1; transform: translate(0) scale(1); filter: blur(0); }
+        .sys-delay-100 { transition-delay: 160ms; }
+        .sys-delay-200 { transition-delay: 320ms; }
+        .sys-delay-300 { transition-delay: 480ms; }
+      }
+      /* Param input focus */
+      .param-input:focus { border-color: #DC2626; box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.3); }
+      /* Modal overlay */
+      .modal-overlay { background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'red': { 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C', 900: '#7F1D1D' }
+            }
+          }
+        }
+      };
+    </script>
+</head>
+<body class="antialiased overflow-x-hidden text-zinc-400 min-h-screen flex flex-col selection:bg-red-600/30 selection:text-red-200 bg-black">
+    <!-- Animated Red Aurora Background -->
+    <div class="aurora-bg">
+      <div class="aurora-orb-1"></div>
+      <div class="aurora-orb-2"></div>
+      <div class="aurora-orb-3"></div>
+    </div>
+    <!-- Progressive Blur Top -->
+    <div class="gradient-blur" style="height: 120px;">
+      <div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-50 h-16 border-b border-zinc-800 bg-black/95 backdrop-blur-sm flex items-center justify-between sticky top-0">
+      <div class="flex items-center h-full pl-6 pr-8 border-r border-zinc-800 bg-black">
+        <a href="/" class="flex items-center gap-3 group">
+          <img src="/static/bastion-logo.png" alt="BASTION" class="w-7 h-7 group-hover:scale-110 transition-transform">
+          <span class="text-xl tracking-tighter text-white font-mono group-hover:text-red-600 transition-colors font-semibold">BASTION</span>
+        </a>
+        <div class="hidden lg:flex items-center ml-6 px-3 py-1 border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm rounded-sm gap-2">
+          <span class="text-[10px] font-mono text-zinc-600 leading-none">[</span>
+          <span class="relative flex h-1.5 w-1.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+          </span>
+          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">MCP: ONLINE</span>
+          <span class="text-[10px] font-mono text-zinc-600 leading-none">]</span>
+        </div>
+      </div>
+
+      <nav class="hidden lg:flex items-center h-full flex-1 justify-center">
+        <div class="flex h-full items-center border-x border-zinc-800/50">
+          <a href="/" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Home<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/agents" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Agents<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/docs" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">MCP Docs<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/frontend" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Terminal<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/monitor" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Pulse<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/playground" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Playground<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/presets" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Presets<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/usage" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">Usage<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+        </div>
+      </nav>
+
+      <div class="hidden md:flex items-center h-full border-l border-zinc-800 bg-black">
+        <a href="/login" class="h-full px-6 bg-transparent text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-widest transition-all flex items-center gap-2 border-r border-zinc-800">Login</a>
+        <a href="/account" class="h-full px-8 bg-red-600 text-white text-[10px] font-mono uppercase tracking-widest hover:bg-red-500 transition-all flex items-center gap-2 group shadow-[inset_0_0_20px_rgba(0,0,0,0.4)]">
+          Get Started
+          <iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
+        </a>
+      </div>
+
+      <button id="mobile-menu-btn" class="md:hidden p-0 w-16 h-full text-zinc-400 hover:text-white border-l border-zinc-800 bg-black flex items-center justify-center transition-colors hover:bg-zinc-900">
+        <iconify-icon icon="solar:hamburger-menu-linear" width="24"></iconify-icon>
+      </button>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="fixed inset-x-0 top-16 bottom-0 z-40 bg-black transform translate-x-full transition-transform duration-300 md:hidden flex flex-col border-t border-zinc-800 overflow-y-auto">
+      <div class="flex flex-col p-6 space-y-4">
+        <div class="flex flex-col border border-zinc-800 bg-zinc-900/20">
+          <a href="/" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Home</a>
+          <a href="/agents" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Agents</a>
+          <a href="/docs" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">MCP Docs</a>
+          <a href="/frontend" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Terminal</a>
+          <a href="/monitor" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Pulse</a>
+          <a href="/playground" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Playground</a>
+          <a href="/presets" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900 transition-colors">Presets</a>
+          <a href="/usage" class="flex items-center justify-between p-4 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Usage</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="relative z-10 flex-1 flex flex-col">
+
+      <!-- Hero -->
+      <section class="relative px-6 md:px-8 pt-20 pb-12 text-center">
+        <div class="max-w-4xl mx-auto">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm mb-8 text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+            <iconify-icon icon="solar:settings-minimalistic-bold" width="14" class="text-red-500"></iconify-icon>
+            <span>Agent Configuration Manager</span>
+          </div>
+          <h1 class="text-4xl md:text-6xl lg:text-7xl font-mono font-bold text-white tracking-tighter leading-[0.9] mb-6">
+            AGENT<br><span class="text-red-600">PRESETS</span>
+          </h1>
+          <p class="text-sm md:text-base text-zinc-500 max-w-xl mx-auto leading-relaxed font-mono">
+            Save, share, and import <span class="text-white font-semibold">Claude agent configurations</span>
+          </p>
+          <div class="flex items-center justify-center gap-6 mt-8 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:bookmark-linear" width="12" class="text-red-500"></iconify-icon>
+              <span>Save Presets</span>
+            </div>
+            <span class="w-px h-3 bg-zinc-800"></span>
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:share-linear" width="12" class="text-red-500"></iconify-icon>
+              <span>Share Configs</span>
+            </div>
+            <span class="w-px h-3 bg-zinc-800"></span>
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:download-linear" width="12" class="text-red-500"></iconify-icon>
+              <span>Quick Import</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Auth Gate -->
+      <div id="auth-gate" class="hidden px-6 md:px-8 pb-12">
+        <div class="max-w-lg mx-auto border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm p-8 text-center">
+          <iconify-icon icon="solar:lock-keyhole-linear" width="48" class="text-zinc-700 mb-4"></iconify-icon>
+          <h3 class="text-lg font-mono font-bold text-white tracking-tight mb-2">Authentication Required</h3>
+          <p class="text-xs font-mono text-zinc-500 mb-6 leading-relaxed">Sign in to save, manage, and share your agent presets.</p>
+          <a href="/login" class="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest transition-all group">
+            <iconify-icon icon="solar:login-linear" width="14"></iconify-icon>
+            Sign In
+            <iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
+          </a>
+        </div>
+      </div>
+
+      <!-- Authenticated Content -->
+      <div id="auth-content" class="hidden">
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- MY PRESETS SECTION -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <section class="px-6 md:px-8 pb-12 sys-reveal">
+          <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center gap-3">
+                <iconify-icon icon="solar:folder-with-files-bold" width="20" class="text-red-500"></iconify-icon>
+                <h2 class="text-lg font-mono font-bold text-white tracking-tight">My Presets</h2>
+                <span id="my-presets-count" class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest px-2 py-0.5 border border-zinc-800 bg-zinc-900/50">0</span>
+              </div>
+              <button id="create-preset-btn" class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-[10px] font-mono uppercase tracking-widest transition-all group">
+                <iconify-icon icon="solar:add-circle-linear" width="14"></iconify-icon>
+                Create New Preset
+              </button>
+            </div>
+
+            <!-- Presets Grid -->
+            <div id="my-presets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Populated by JS -->
+            </div>
+
+            <!-- Empty state -->
+            <div id="my-presets-empty" class="hidden border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm p-12 text-center">
+              <iconify-icon icon="solar:document-add-linear" width="48" class="text-zinc-800 mb-4"></iconify-icon>
+              <p class="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-4">No presets yet</p>
+              <p class="text-[10px] font-mono text-zinc-700 max-w-sm mx-auto">Create your first agent preset to save your preferred tool configurations, symbols, and risk settings.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- CREATE / EDIT PRESET MODAL -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div id="preset-modal" class="fixed inset-0 z-[100] hidden">
+          <div class="modal-overlay absolute inset-0" id="modal-backdrop"></div>
+          <div class="relative z-10 flex items-start justify-center pt-8 pb-8 min-h-screen overflow-y-auto">
+            <div class="w-full max-w-5xl mx-4 border border-zinc-800 bg-zinc-950 shadow-2xl">
+              <!-- Modal Header -->
+              <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+                <h3 id="modal-title" class="text-sm font-mono font-bold text-white uppercase tracking-widest">Create New Preset</h3>
+                <button id="close-modal-btn" class="text-zinc-600 hover:text-white transition-colors p-1">
+                  <iconify-icon icon="solar:close-circle-linear" width="20"></iconify-icon>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                <!-- Left: Form -->
+                <div class="p-6 space-y-6 border-b lg:border-b-0 lg:border-r border-zinc-800 max-h-[75vh] overflow-y-auto no-scrollbar">
+
+                  <!-- Preset Name -->
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Preset Name</label>
+                    <input id="preset-name" type="text" placeholder="e.g. BTC Scalper, ETH DeFi Monitor" class="param-input w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none transition-all">
+                  </div>
+
+                  <!-- Description -->
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Description</label>
+                    <textarea id="preset-description" rows="3" placeholder="Describe what this preset is optimized for..." class="param-input w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none transition-all resize-none"></textarea>
+                  </div>
+
+                  <!-- Default Symbols -->
+                  <div class="space-y-2">
+                    <label class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Default Symbols</label>
+                    <div class="grid grid-cols-4 gap-2" id="symbol-checkboxes">
+                      <label class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <input type="checkbox" value="BTC" class="sym-check" checked>
+                        <span class="text-[10px] font-mono text-zinc-400">BTC</span>
+                      </label>
+                      <label class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <input type="checkbox" value="ETH" class="sym-check" checked>
+                        <span class="text-[10px] font-mono text-zinc-400">ETH</span>
+                      </label>
+                      <label class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <input type="checkbox" value="SOL" class="sym-check" checked>
+                        <span class="text-[10px] font-mono text-zinc-400">SOL</span>
+                      </label>
+                      <label class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <input type="checkbox" value="XRP" class="sym-check">
+                        <span class="text-[10px] font-mono text-zinc-400">XRP</span>
+                      </label>
+                      <label class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <input type="checkbox" value="AVAX" class="sym-check">
+                        <span class="text-[10px] font-mono text-zinc-400">AVAX</span>
+                      </label>
+                      <label class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <input type="checkbox" value="DOGE" class="sym-check">
+                        <span class="text-[10px] font-mono text-zinc-400">DOGE</span>
+                      </label>
+                      <label class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <input type="checkbox" value="LINK" class="sym-check">
+                        <span class="text-[10px] font-mono text-zinc-400">LINK</span>
+                      </label>
+                      <label class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 transition-colors">
+                        <input type="checkbox" value="ADA" class="sym-check">
+                        <span class="text-[10px] font-mono text-zinc-400">ADA</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Default Tools -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <label class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Default Tools</label>
+                      <div class="flex gap-2">
+                        <button id="select-all-tools" class="text-[9px] font-mono text-zinc-600 hover:text-red-400 uppercase tracking-widest transition-colors">All</button>
+                        <span class="text-zinc-800">|</span>
+                        <button id="select-none-tools" class="text-[9px] font-mono text-zinc-600 hover:text-red-400 uppercase tracking-widest transition-colors">None</button>
+                      </div>
+                    </div>
+                    <div id="tools-selector" class="space-y-3 max-h-64 overflow-y-auto no-scrollbar border border-zinc-800 bg-zinc-900/30 p-3">
+                      <!-- Core AI -->
+                      <div>
+                        <div class="tool-group-header flex items-center gap-2 mb-1.5">
+                          <iconify-icon icon="solar:brain-linear" width="12" class="text-red-600/60"></iconify-icon>
+                          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Core AI</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1" data-group="core_ai">
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="evaluate_risk" checked><span class="text-[10px] font-mono text-zinc-400">evaluate_risk</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="neural_chat" checked><span class="text-[10px] font-mono text-zinc-400">neural_chat</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_system_health"><span class="text-[10px] font-mono text-zinc-400">get_system_health</span></label>
+                        </div>
+                      </div>
+                      <!-- Market Data -->
+                      <div>
+                        <div class="tool-group-header flex items-center gap-2 mb-1.5">
+                          <iconify-icon icon="solar:chart-linear" width="12" class="text-red-600/60"></iconify-icon>
+                          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Market Data</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1" data-group="market_data">
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_price" checked><span class="text-[10px] font-mono text-zinc-400">get_price</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_klines" checked><span class="text-[10px] font-mono text-zinc-400">get_klines</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_orderbook"><span class="text-[10px] font-mono text-zinc-400">get_orderbook</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_ticker_24h" checked><span class="text-[10px] font-mono text-zinc-400">get_ticker_24h</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_multi_ticker"><span class="text-[10px] font-mono text-zinc-400">get_multi_ticker</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_vwap"><span class="text-[10px] font-mono text-zinc-400">get_vwap</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_spread_analysis"><span class="text-[10px] font-mono text-zinc-400">get_spread_analysis</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_recent_trades"><span class="text-[10px] font-mono text-zinc-400">get_recent_trades</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_exchange_info"><span class="text-[10px] font-mono text-zinc-400">get_exchange_info</span></label>
+                        </div>
+                      </div>
+                      <!-- Derivatives -->
+                      <div>
+                        <div class="tool-group-header flex items-center gap-2 mb-1.5">
+                          <iconify-icon icon="solar:graph-up-linear" width="12" class="text-red-600/60"></iconify-icon>
+                          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Derivatives</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1" data-group="derivatives">
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_funding_rate" checked><span class="text-[10px] font-mono text-zinc-400">get_funding_rate</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_open_interest" checked><span class="text-[10px] font-mono text-zinc-400">get_open_interest</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_long_short_ratio"><span class="text-[10px] font-mono text-zinc-400">get_long_short_ratio</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_liquidations"><span class="text-[10px] font-mono text-zinc-400">get_liquidations</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_funding_history"><span class="text-[10px] font-mono text-zinc-400">get_funding_history</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_basis"><span class="text-[10px] font-mono text-zinc-400">get_basis</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_futures_premium"><span class="text-[10px] font-mono text-zinc-400">get_futures_premium</span></label>
+                        </div>
+                      </div>
+                      <!-- On-Chain -->
+                      <div>
+                        <div class="tool-group-header flex items-center gap-2 mb-1.5">
+                          <iconify-icon icon="solar:link-linear" width="12" class="text-red-600/60"></iconify-icon>
+                          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">On-Chain</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1" data-group="onchain">
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_whale_transfers"><span class="text-[10px] font-mono text-zinc-400">get_whale_transfers</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_exchange_flows"><span class="text-[10px] font-mono text-zinc-400">get_exchange_flows</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_gas_tracker"><span class="text-[10px] font-mono text-zinc-400">get_gas_tracker</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_defi_tvl"><span class="text-[10px] font-mono text-zinc-400">get_defi_tvl</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_token_flows"><span class="text-[10px] font-mono text-zinc-400">get_token_flows</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_wallet_analysis"><span class="text-[10px] font-mono text-zinc-400">get_wallet_analysis</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_mempool_analysis"><span class="text-[10px] font-mono text-zinc-400">get_mempool_analysis</span></label>
+                        </div>
+                      </div>
+                      <!-- Sentiment -->
+                      <div>
+                        <div class="tool-group-header flex items-center gap-2 mb-1.5">
+                          <iconify-icon icon="solar:chat-round-like-linear" width="12" class="text-red-600/60"></iconify-icon>
+                          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Sentiment</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1" data-group="sentiment">
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_crypto_fear_greed"><span class="text-[10px] font-mono text-zinc-400">get_crypto_fear_greed</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_social_sentiment"><span class="text-[10px] font-mono text-zinc-400">get_social_sentiment</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_news_sentiment"><span class="text-[10px] font-mono text-zinc-400">get_news_sentiment</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_trending_tokens"><span class="text-[10px] font-mono text-zinc-400">get_trending_tokens</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_social_buzz"><span class="text-[10px] font-mono text-zinc-400">get_social_buzz</span></label>
+                        </div>
+                      </div>
+                      <!-- Macro -->
+                      <div>
+                        <div class="tool-group-header flex items-center gap-2 mb-1.5">
+                          <iconify-icon icon="solar:global-linear" width="12" class="text-red-600/60"></iconify-icon>
+                          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Macro</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1" data-group="macro">
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_dxy"><span class="text-[10px] font-mono text-zinc-400">get_dxy</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_btc_dominance"><span class="text-[10px] font-mono text-zinc-400">get_btc_dominance</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_crypto_correlation"><span class="text-[10px] font-mono text-zinc-400">get_crypto_correlation</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_macro_calendar"><span class="text-[10px] font-mono text-zinc-400">get_macro_calendar</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_fed_watch"><span class="text-[10px] font-mono text-zinc-400">get_fed_watch</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_sp500"><span class="text-[10px] font-mono text-zinc-400">get_sp500</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_gold_price"><span class="text-[10px] font-mono text-zinc-400">get_gold_price</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_treasury_yields"><span class="text-[10px] font-mono text-zinc-400">get_treasury_yields</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_cpi_data"><span class="text-[10px] font-mono text-zinc-400">get_cpi_data</span></label>
+                        </div>
+                      </div>
+                      <!-- Portfolio -->
+                      <div>
+                        <div class="tool-group-header flex items-center gap-2 mb-1.5">
+                          <iconify-icon icon="solar:wallet-linear" width="12" class="text-red-600/60"></iconify-icon>
+                          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">Portfolio</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1" data-group="portfolio">
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_portfolio_summary" checked><span class="text-[10px] font-mono text-zinc-400">get_portfolio_summary</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_open_positions" checked><span class="text-[10px] font-mono text-zinc-400">get_open_positions</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_pnl_history"><span class="text-[10px] font-mono text-zinc-400">get_pnl_history</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_balance"><span class="text-[10px] font-mono text-zinc-400">get_balance</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_exposure_analysis"><span class="text-[10px] font-mono text-zinc-400">get_exposure_analysis</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_trade_history"><span class="text-[10px] font-mono text-zinc-400">get_trade_history</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_margin_status"><span class="text-[10px] font-mono text-zinc-400">get_margin_status</span></label>
+                          <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-zinc-800/30 transition-colors"><input type="checkbox" class="tool-check sym-check" value="get_allocation"><span class="text-[10px] font-mono text-zinc-400">get_allocation</span></label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Risk Threshold -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <label class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Risk Threshold</label>
+                      <span id="risk-label" class="text-[10px] font-mono text-red-400 uppercase tracking-widest">Moderate</span>
+                    </div>
+                    <input id="risk-slider" type="range" min="1" max="3" value="2" step="1" class="w-full">
+                    <div class="flex justify-between text-[9px] font-mono text-zinc-700 uppercase tracking-widest">
+                      <span>Conservative</span>
+                      <span>Moderate</span>
+                      <span>Aggressive</span>
+                    </div>
+                  </div>
+
+                  <!-- Auto-evaluate Toggle -->
+                  <div class="flex items-center justify-between p-3 border border-zinc-800 bg-zinc-900/30">
+                    <div>
+                      <div class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Auto-Evaluate</div>
+                      <div class="text-[9px] font-mono text-zinc-600 mt-0.5">Run risk eval on every position update</div>
+                    </div>
+                    <button id="auto-eval-toggle" class="toggle-track" role="switch" aria-checked="false">
+                      <div class="toggle-thumb"></div>
+                    </button>
+                  </div>
+
+                  <!-- Save Button -->
+                  <button id="save-preset-btn" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest transition-all flex items-center justify-center gap-2 group">
+                    <iconify-icon icon="solar:diskette-linear" width="14"></iconify-icon>
+                    <span id="save-preset-text">Save Preset</span>
+                  </button>
+                </div>
+
+                <!-- Right: Live Config Preview -->
+                <div class="p-6 flex flex-col">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Generated MCP Config</span>
+                    <button id="copy-config-btn" class="text-zinc-600 hover:text-white transition-colors p-1" title="Copy Config">
+                      <iconify-icon icon="solar:copy-linear" width="14"></iconify-icon>
+                    </button>
+                  </div>
+                  <div class="flex-1 border border-zinc-800 bg-zinc-900/50 config-viewer overflow-auto">
+                    <pre id="config-preview" class="p-4 text-[11px] font-mono leading-relaxed whitespace-pre-wrap break-words text-zinc-400"></pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- COMMUNITY PRESETS SECTION -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <section class="px-6 md:px-8 pb-12 sys-reveal">
+          <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+              <div class="flex items-center gap-3">
+                <iconify-icon icon="solar:users-group-rounded-bold" width="20" class="text-red-500"></iconify-icon>
+                <h2 class="text-lg font-mono font-bold text-white tracking-tight">Community Presets</h2>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="sort-btn active px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white transition-all" data-sort="popular">Popular</button>
+                <button class="sort-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white transition-all" data-sort="newest">Newest</button>
+                <button class="sort-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white transition-all" data-sort="tools">Most Tools</button>
+              </div>
+            </div>
+
+            <!-- Community Grid -->
+            <div id="community-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Populated by JS -->
+            </div>
+
+            <!-- Loading -->
+            <div id="community-loading" class="hidden border border-zinc-800 bg-zinc-950/80 p-12 text-center">
+              <span class="exec-spinner mr-2"></span>
+              <span class="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">Loading community presets...</span>
+            </div>
+
+            <!-- Empty -->
+            <div id="community-empty" class="hidden border border-zinc-800 bg-zinc-950/80 p-12 text-center">
+              <iconify-icon icon="solar:users-group-rounded-linear" width="48" class="text-zinc-800 mb-4"></iconify-icon>
+              <p class="text-xs font-mono text-zinc-600 uppercase tracking-widest">No community presets yet</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- QUICK IMPORT SECTION -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <section class="px-6 md:px-8 pb-20 sys-reveal">
+          <div class="max-w-3xl mx-auto">
+            <div class="flex items-center gap-3 mb-6">
+              <iconify-icon icon="solar:import-bold" width="20" class="text-red-500"></iconify-icon>
+              <h2 class="text-lg font-mono font-bold text-white tracking-tight">Quick Import</h2>
+            </div>
+
+            <div class="border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm">
+              <!-- Paste JSON -->
+              <div class="p-6 border-b border-zinc-800">
+                <label class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest mb-2 block">Paste JSON Config</label>
+                <textarea id="import-json" rows="6" placeholder='{"mcpServers":{"bastion":{"url":"...","tools":[...]}}' class="param-input w-full px-3 py-2.5 bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none transition-all resize-none"></textarea>
+              </div>
+              <!-- Or paste URL -->
+              <div class="p-6 border-b border-zinc-800">
+                <label class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest mb-2 block">Or Paste Share URL</label>
+                <div class="flex gap-2">
+                  <input id="import-url" type="text" placeholder="https://bastion.trade/presets/share/abc123" class="param-input flex-1 px-3 py-2.5 bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none transition-all">
+                  <button id="load-url-btn" class="px-4 py-2.5 border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 text-[10px] font-mono uppercase tracking-widest transition-all">
+                    Load
+                  </button>
+                </div>
+              </div>
+              <!-- Import button -->
+              <div class="p-6">
+                <button id="import-btn" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest transition-all flex items-center justify-center gap-2 group">
+                  <iconify-icon icon="solar:import-linear" width="14"></iconify-icon>
+                  <span id="import-text">Import Preset</span>
+                </button>
+                <div id="import-status" class="hidden mt-3 p-3 text-[10px] font-mono"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- end #auth-content -->
+
+      <!-- Footer -->
+      <footer class="border-t border-zinc-800 bg-black relative z-20">
+        <div class="border-b border-zinc-800/50 px-6 md:px-8 py-3">
+          <p class="text-[8px] font-mono text-zinc-600 leading-relaxed text-center max-w-4xl mx-auto">BASTION provides market intelligence via the Model Context Protocol (MCP) for Claude by Anthropic. BASTION does not execute trades, hold funds, or provide financial advice. All trading decisions are made by the user's autonomous agent using the user's own exchange API keys. Cryptocurrency trading involves substantial risk of loss.</p>
+        </div>
+        <div class="px-6 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+          <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-2 md:mb-0">
+            <span class="cursor-default font-mono">&copy; 2026 BASTION SYSTEMS.</span>
+            <span class="hidden md:inline w-px h-3 bg-zinc-800"></span>
+            <div class="flex gap-6 font-mono"><a href="/" class="hover:text-white transition-colors">Home</a><a href="/docs" class="hover:text-white transition-colors">MCP Docs</a><a href="/api/swagger" class="hover:text-white transition-colors">API Reference</a></div>
+          </div>
+          <div class="flex items-center gap-6 font-mono">
+            <div class="flex items-center gap-2"><iconify-icon icon="solar:server-linear" width="12"></iconify-icon><span>MCP ONLINE</span></div>
+            <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
+            <div class="flex items-center gap-1.5 text-zinc-600">
+              <svg class="w-3 h-3 fill-[#D97757]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>
+              <span>CLAUDE</span>
+            </div>
+            <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
+            <div class="flex items-center gap-2 text-red-600"><img src="/static/bastion-logo.png" alt="" class="w-3 h-3"><span>BASTION</span></div>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- JAVASCRIPT -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <script>
+    (function() {
+      'use strict';
+
+      // ─── State ───────────────────────────────────────
+      let currentUser = null;
+      let myPresets = [];
+      let communityPresets = [];
+      let editingPresetId = null;
+      let autoEvalEnabled = false;
+      let communitySort = 'popular';
+
+      // ─── DOM References ──────────────────────────────
+      const $ = id => document.getElementById(id);
+      const authGate = $('auth-gate');
+      const authContent = $('auth-content');
+      const myPresetsGrid = $('my-presets-grid');
+      const myPresetsEmpty = $('my-presets-empty');
+      const myPresetsCount = $('my-presets-count');
+      const communityGrid = $('community-grid');
+      const communityLoading = $('community-loading');
+      const communityEmpty = $('community-empty');
+      const presetModal = $('preset-modal');
+      const modalTitle = $('modal-title');
+      const presetNameInput = $('preset-name');
+      const presetDescInput = $('preset-description');
+      const riskSlider = $('risk-slider');
+      const riskLabel = $('risk-label');
+      const configPreview = $('config-preview');
+      const importJsonInput = $('import-json');
+      const importUrlInput = $('import-url');
+      const importStatus = $('import-status');
+
+      const RISK_LABELS = { 1: 'Conservative', 2: 'Moderate', 3: 'Aggressive' };
+
+      // ─── Auth Check ──────────────────────────────────
+      async function checkAuth() {
+        try {
+          const resp = await fetch('/api/auth/me', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Not authenticated');
+          currentUser = await resp.json();
+          authGate.classList.add('hidden');
+          authContent.classList.remove('hidden');
+          loadMyPresets();
+          loadCommunityPresets();
+        } catch (e) {
+          authGate.classList.remove('hidden');
+          authContent.classList.add('hidden');
+        }
+      }
+
+      // ─── Load My Presets ─────────────────────────────
+      async function loadMyPresets() {
+        try {
+          const resp = await fetch('/api/presets', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          myPresets = await resp.json();
+        } catch (e) {
+          myPresets = [];
+        }
+        renderMyPresets();
+      }
+
+      // ─── Render My Presets ───────────────────────────
+      function renderMyPresets() {
+        myPresetsCount.textContent = myPresets.length;
+        if (myPresets.length === 0) {
+          myPresetsGrid.innerHTML = '';
+          myPresetsEmpty.classList.remove('hidden');
+          return;
+        }
+        myPresetsEmpty.classList.add('hidden');
+        myPresetsGrid.innerHTML = myPresets.map(p => {
+          const symbols = (p.symbols || []).join(', ') || 'None';
+          const toolCount = (p.tools || []).length;
+          const created = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '--';
+          const riskText = RISK_LABELS[p.risk_threshold] || 'Moderate';
+          return `
+            <div class="preset-card border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm p-5" data-id="${p.id}">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <h4 class="text-sm font-mono font-bold text-white tracking-tight">${esc(p.name)}</h4>
+                  <p class="text-[10px] font-mono text-zinc-600 mt-0.5">${esc(p.description || '').substring(0, 80)}</p>
+                </div>
+                <span class="text-[9px] font-mono px-2 py-0.5 border border-zinc-800 bg-zinc-900 text-zinc-500 shrink-0">${riskText}</span>
+              </div>
+              <div class="flex items-center gap-4 mb-4 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">
+                <div class="flex items-center gap-1">
+                  <iconify-icon icon="solar:widget-linear" width="11" class="text-red-600/60"></iconify-icon>
+                  <span>${toolCount} tools</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <iconify-icon icon="solar:chart-linear" width="11" class="text-red-600/60"></iconify-icon>
+                  <span>${esc(symbols)}</span>
+                </div>
+                <div class="flex items-center gap-1 ml-auto">
+                  <iconify-icon icon="solar:calendar-linear" width="11"></iconify-icon>
+                  <span>${created}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 border-t border-zinc-800/50 pt-3">
+                <button class="preset-action flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] font-mono text-zinc-500 uppercase tracking-widest hover:text-white hover:bg-zinc-800/50 transition-colors" data-action="edit" data-id="${p.id}">
+                  <iconify-icon icon="solar:pen-linear" width="12"></iconify-icon>Edit
+                </button>
+                <button class="preset-action flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] font-mono text-zinc-500 uppercase tracking-widest hover:text-white hover:bg-zinc-800/50 transition-colors" data-action="share" data-id="${p.id}">
+                  <iconify-icon icon="solar:share-linear" width="12"></iconify-icon>Share
+                </button>
+                <button class="preset-action flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] font-mono text-zinc-500 uppercase tracking-widest hover:text-white hover:bg-zinc-800/50 transition-colors" data-action="export" data-id="${p.id}">
+                  <iconify-icon icon="solar:export-linear" width="12"></iconify-icon>JSON
+                </button>
+                <button class="preset-action flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] font-mono text-red-600/60 uppercase tracking-widest hover:text-red-400 hover:bg-red-600/10 transition-colors ml-auto" data-action="delete" data-id="${p.id}">
+                  <iconify-icon icon="solar:trash-bin-trash-linear" width="12"></iconify-icon>
+                </button>
+              </div>
+            </div>`;
+        }).join('');
+
+        // Bind preset actions
+        myPresetsGrid.querySelectorAll('.preset-action').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const action = btn.dataset.action;
+            const id = btn.dataset.id;
+            if (action === 'edit') editPreset(id);
+            else if (action === 'delete') deletePreset(id);
+            else if (action === 'share') sharePreset(id);
+            else if (action === 'export') exportPreset(id);
+          });
+        });
+      }
+
+      // ─── Load Community Presets ──────────────────────
+      async function loadCommunityPresets() {
+        communityLoading.classList.remove('hidden');
+        communityGrid.innerHTML = '';
+        communityEmpty.classList.add('hidden');
+        try {
+          const resp = await fetch(`/api/presets/community?sort=${communitySort}`, { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          communityPresets = await resp.json();
+        } catch (e) {
+          communityPresets = [];
+        }
+        communityLoading.classList.add('hidden');
+        renderCommunityPresets();
+      }
+
+      // ─── Render Community Presets ────────────────────
+      function renderCommunityPresets() {
+        if (communityPresets.length === 0) {
+          communityEmpty.classList.remove('hidden');
+          communityGrid.innerHTML = '';
+          return;
+        }
+        communityEmpty.classList.add('hidden');
+        communityGrid.innerHTML = communityPresets.map(p => {
+          const toolCount = (p.tools || []).length;
+          const stars = renderStars(p.rating || 0);
+          return `
+            <div class="community-card border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm p-5 transition-all">
+              <div class="flex items-start justify-between mb-3">
+                <h4 class="text-sm font-mono font-bold text-white tracking-tight">${esc(p.name)}</h4>
+                <div class="flex items-center gap-1">${stars}</div>
+              </div>
+              <p class="text-[10px] font-mono text-zinc-600 mb-3 leading-relaxed">${esc(p.description || '').substring(0, 120)}</p>
+              <div class="flex items-center gap-3 mb-4 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">
+                <div class="flex items-center gap-1">
+                  <iconify-icon icon="solar:user-linear" width="11"></iconify-icon>
+                  <span>${esc(p.author || 'Anonymous')}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <iconify-icon icon="solar:widget-linear" width="11"></iconify-icon>
+                  <span>${toolCount} tools</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <iconify-icon icon="solar:download-linear" width="11"></iconify-icon>
+                  <span>${p.uses || 0} uses</span>
+                </div>
+              </div>
+              <button class="community-import w-full py-2.5 border border-red-600/30 bg-red-600/10 text-red-400 hover:bg-red-600 hover:text-white text-[10px] font-mono uppercase tracking-widest transition-all flex items-center justify-center gap-2" data-id="${p.id}">
+                <iconify-icon icon="solar:import-linear" width="14"></iconify-icon>
+                Import
+              </button>
+            </div>`;
+        }).join('');
+
+        // Bind import
+        communityGrid.querySelectorAll('.community-import').forEach(btn => {
+          btn.addEventListener('click', () => importCommunityPreset(btn.dataset.id));
+        });
+      }
+
+      function renderStars(rating) {
+        const full = Math.round(rating);
+        let html = '';
+        for (let i = 1; i <= 5; i++) {
+          html += `<iconify-icon icon="solar:star-bold" width="11" class="${i <= full ? 'star-filled' : 'star-empty'}"></iconify-icon>`;
+        }
+        return html;
+      }
+
+      // ─── Modal Open/Close ────────────────────────────
+      function openModal(title) {
+        modalTitle.textContent = title || 'Create New Preset';
+        presetModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        updateConfigPreview();
+      }
+
+      function closeModal() {
+        presetModal.classList.add('hidden');
+        document.body.style.overflow = '';
+        editingPresetId = null;
+      }
+
+      // ─── Create Preset ──────────────────────────────
+      function openCreateModal() {
+        editingPresetId = null;
+        presetNameInput.value = '';
+        presetDescInput.value = '';
+        riskSlider.value = 2;
+        riskLabel.textContent = 'Moderate';
+        autoEvalEnabled = false;
+        $('auto-eval-toggle').classList.remove('active');
+        // Reset checkboxes to defaults
+        document.querySelectorAll('#symbol-checkboxes input').forEach(cb => {
+          cb.checked = ['BTC', 'ETH', 'SOL'].includes(cb.value);
+        });
+        document.querySelectorAll('.tool-check').forEach(cb => {
+          const defaults = ['evaluate_risk','neural_chat','get_price','get_klines','get_ticker_24h','get_funding_rate','get_open_interest','get_portfolio_summary','get_open_positions'];
+          cb.checked = defaults.includes(cb.value);
+        });
+        openModal('Create New Preset');
+      }
+
+      // ─── Edit Preset ────────────────────────────────
+      function editPreset(id) {
+        const preset = myPresets.find(p => p.id === id || p.id === parseInt(id));
+        if (!preset) return;
+        editingPresetId = preset.id;
+        presetNameInput.value = preset.name || '';
+        presetDescInput.value = preset.description || '';
+        riskSlider.value = preset.risk_threshold || 2;
+        riskLabel.textContent = RISK_LABELS[preset.risk_threshold] || 'Moderate';
+        autoEvalEnabled = !!preset.auto_evaluate;
+        $('auto-eval-toggle').classList.toggle('active', autoEvalEnabled);
+        // Set symbols
+        document.querySelectorAll('#symbol-checkboxes input').forEach(cb => {
+          cb.checked = (preset.symbols || []).includes(cb.value);
+        });
+        // Set tools
+        document.querySelectorAll('.tool-check').forEach(cb => {
+          cb.checked = (preset.tools || []).includes(cb.value);
+        });
+        openModal('Edit Preset');
+      }
+
+      // ─── Save Preset ────────────────────────────────
+      async function savePreset() {
+        const name = presetNameInput.value.trim();
+        if (!name) {
+          presetNameInput.focus();
+          presetNameInput.style.borderColor = '#DC2626';
+          setTimeout(() => presetNameInput.style.borderColor = '', 2000);
+          return;
+        }
+
+        const symbols = [];
+        document.querySelectorAll('#symbol-checkboxes input:checked').forEach(cb => symbols.push(cb.value));
+        const tools = [];
+        document.querySelectorAll('.tool-check:checked').forEach(cb => tools.push(cb.value));
+
+        const payload = {
+          name,
+          description: presetDescInput.value.trim(),
+          symbols,
+          tools,
+          risk_threshold: parseInt(riskSlider.value),
+          auto_evaluate: autoEvalEnabled
+        };
+
+        const saveText = $('save-preset-text');
+        saveText.innerHTML = '<span class="exec-spinner mr-2"></span>Saving...';
+
+        try {
+          const url = editingPresetId ? `/api/presets/${editingPresetId}` : '/api/presets';
+          const method = editingPresetId ? 'PUT' : 'POST';
+          const resp = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+          });
+          if (!resp.ok) throw new Error('Save failed');
+          closeModal();
+          loadMyPresets();
+        } catch (e) {
+          saveText.textContent = 'Error — Retry';
+          setTimeout(() => { saveText.textContent = 'Save Preset'; }, 2000);
+        }
+        saveText.textContent = 'Save Preset';
+      }
+
+      // ─── Delete Preset ──────────────────────────────
+      async function deletePreset(id) {
+        if (!confirm('Delete this preset?')) return;
+        try {
+          await fetch(`/api/presets/${id}`, { method: 'DELETE', credentials: 'include' });
+          loadMyPresets();
+        } catch (e) {}
+      }
+
+      // ─── Share Preset ───────────────────────────────
+      async function sharePreset(id) {
+        try {
+          const resp = await fetch(`/api/presets/${id}/share`, { method: 'POST', credentials: 'include' });
+          if (!resp.ok) throw new Error('Share failed');
+          const data = await resp.json();
+          const url = data.share_url || `${window.location.origin}/presets/share/${id}`;
+          await navigator.clipboard.writeText(url);
+          showToast('Share link copied to clipboard');
+        } catch (e) {
+          // Fallback: copy a constructed URL
+          const url = `${window.location.origin}/presets/share/${id}`;
+          await navigator.clipboard.writeText(url);
+          showToast('Share link copied');
+        }
+      }
+
+      // ─── Export Preset ──────────────────────────────
+      function exportPreset(id) {
+        const preset = myPresets.find(p => p.id === id || p.id === parseInt(id));
+        if (!preset) return;
+        const config = generateMCPConfig(preset);
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `bastion-preset-${(preset.name || 'config').toLowerCase().replace(/\s+/g, '-')}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      // ─── Import Community Preset ────────────────────
+      async function importCommunityPreset(id) {
+        try {
+          const resp = await fetch(`/api/presets/community/${id}/import`, { method: 'POST', credentials: 'include' });
+          if (!resp.ok) throw new Error('Import failed');
+          showToast('Preset imported to your collection');
+          loadMyPresets();
+        } catch (e) {
+          showToast('Import failed', true);
+        }
+      }
+
+      // ─── Quick Import ───────────────────────────────
+      async function quickImport() {
+        const json = importJsonInput.value.trim();
+        const url = importUrlInput.value.trim();
+        const importText = $('import-text');
+
+        if (!json && !url) {
+          showImportStatus('Paste a JSON config or share URL above', true);
+          return;
+        }
+
+        importText.innerHTML = '<span class="exec-spinner mr-2"></span>Importing...';
+
+        try {
+          let payload;
+          if (url) {
+            // Load from URL
+            const resp = await fetch(`/api/presets/import-url`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ url })
+            });
+            if (!resp.ok) throw new Error('URL import failed');
+            payload = await resp.json();
+          } else {
+            // Parse JSON
+            payload = JSON.parse(json);
+            const resp = await fetch('/api/presets/import', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
+            });
+            if (!resp.ok) throw new Error('JSON import failed');
+            payload = await resp.json();
+          }
+          showImportStatus('Preset imported successfully');
+          importJsonInput.value = '';
+          importUrlInput.value = '';
+          loadMyPresets();
+        } catch (e) {
+          showImportStatus(e.message || 'Import failed — check your JSON syntax', true);
+        }
+        importText.textContent = 'Import Preset';
+      }
+
+      async function loadFromUrl() {
+        const url = importUrlInput.value.trim();
+        if (!url) return;
+        try {
+          const resp = await fetch(`/api/presets/resolve-url?url=${encodeURIComponent(url)}`, { credentials: 'include' });
+          if (!resp.ok) throw new Error('Invalid URL');
+          const data = await resp.json();
+          importJsonInput.value = JSON.stringify(data, null, 2);
+          showImportStatus('Config loaded from URL — click Import to save');
+        } catch (e) {
+          showImportStatus('Could not load config from URL', true);
+        }
+      }
+
+      function showImportStatus(msg, isError) {
+        importStatus.classList.remove('hidden');
+        importStatus.className = `mt-3 p-3 text-[10px] font-mono border ${isError ? 'border-red-600/30 bg-red-600/10 text-red-400' : 'border-green-600/30 bg-green-600/10 text-green-400'}`;
+        importStatus.textContent = msg;
+        setTimeout(() => importStatus.classList.add('hidden'), 4000);
+      }
+
+      // ─── Generate MCP Config ─────────────────────────
+      function generateMCPConfig(preset) {
+        const symbols = preset ? preset.symbols : getSelectedSymbols();
+        const tools = preset ? preset.tools : getSelectedTools();
+        const riskVal = preset ? preset.risk_threshold : parseInt(riskSlider.value);
+        const autoEval = preset ? preset.auto_evaluate : autoEvalEnabled;
+
+        return {
+          mcpServers: {
+            bastion: {
+              url: "https://bastion.trade/mcp",
+              transport: "streamable-http",
+              tools: tools,
+              config: {
+                default_symbols: symbols.map(s => s + 'USDT'),
+                risk_threshold: RISK_LABELS[riskVal] ? RISK_LABELS[riskVal].toLowerCase() : 'moderate',
+                auto_evaluate: autoEval
+              }
+            }
+          }
+        };
+      }
+
+      function getSelectedSymbols() {
+        const syms = [];
+        document.querySelectorAll('#symbol-checkboxes input:checked').forEach(cb => syms.push(cb.value));
+        return syms;
+      }
+
+      function getSelectedTools() {
+        const tools = [];
+        document.querySelectorAll('.tool-check:checked').forEach(cb => tools.push(cb.value));
+        return tools;
+      }
+
+      // ─── Update Config Preview ──────────────────────
+      function updateConfigPreview() {
+        const config = generateMCPConfig(null);
+        const json = JSON.stringify(config, null, 2);
+        configPreview.innerHTML = syntaxHighlight(json);
+      }
+
+      // ─── JSON Syntax Highlighting ───────────────────
+      function syntaxHighlight(json) {
+        return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?/g, function(match) {
+            let cls = 'json-string';
+            if (/:$/.test(match)) cls = 'json-key';
+            return '<span class="' + cls + '">' + match + '</span>';
+          })
+          .replace(/\b(-?\d+\.?\d*([eE][+-]?\d+)?)\b/g, '<span class="json-number">$1</span>')
+          .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
+          .replace(/\bnull\b/g, '<span class="json-null">null</span>');
+      }
+
+      // ─── Toast Notification ──────────────────────────
+      function showToast(msg, isError) {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-6 right-6 z-[200] px-5 py-3 text-[10px] font-mono uppercase tracking-widest border ${isError ? 'border-red-600/50 bg-red-600/20 text-red-400' : 'border-green-600/50 bg-green-600/20 text-green-400'} backdrop-blur-sm shadow-lg`;
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.3s';
+          setTimeout(() => toast.remove(), 300);
+        }, 2500);
+      }
+
+      // ─── HTML Escape ─────────────────────────────────
+      function esc(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+      }
+
+      // ─── Event Bindings ──────────────────────────────
+      function bindEvents() {
+        // Mobile menu
+        $('mobile-menu-btn').addEventListener('click', () => {
+          $('mobile-menu').classList.toggle('translate-x-full');
+        });
+
+        // Create preset
+        $('create-preset-btn').addEventListener('click', openCreateModal);
+
+        // Close modal
+        $('close-modal-btn').addEventListener('click', closeModal);
+        $('modal-backdrop').addEventListener('click', closeModal);
+
+        // Save preset
+        $('save-preset-btn').addEventListener('click', savePreset);
+
+        // Risk slider
+        riskSlider.addEventListener('input', () => {
+          riskLabel.textContent = RISK_LABELS[riskSlider.value] || 'Moderate';
+          updateConfigPreview();
+        });
+
+        // Auto-eval toggle
+        $('auto-eval-toggle').addEventListener('click', () => {
+          autoEvalEnabled = !autoEvalEnabled;
+          $('auto-eval-toggle').classList.toggle('active', autoEvalEnabled);
+          updateConfigPreview();
+        });
+
+        // Select all/none tools
+        $('select-all-tools').addEventListener('click', () => {
+          document.querySelectorAll('.tool-check').forEach(cb => cb.checked = true);
+          updateConfigPreview();
+        });
+        $('select-none-tools').addEventListener('click', () => {
+          document.querySelectorAll('.tool-check').forEach(cb => cb.checked = false);
+          updateConfigPreview();
+        });
+
+        // Live config preview updates
+        document.querySelectorAll('#symbol-checkboxes input, .tool-check').forEach(cb => {
+          cb.addEventListener('change', updateConfigPreview);
+        });
+        presetNameInput.addEventListener('input', updateConfigPreview);
+
+        // Copy config
+        $('copy-config-btn').addEventListener('click', () => {
+          const config = generateMCPConfig(null);
+          navigator.clipboard.writeText(JSON.stringify(config, null, 2)).then(() => {
+            $('copy-config-btn').innerHTML = '<iconify-icon icon="solar:check-circle-linear" width="14" class="text-green-400"></iconify-icon>';
+            setTimeout(() => {
+              $('copy-config-btn').innerHTML = '<iconify-icon icon="solar:copy-linear" width="14"></iconify-icon>';
+            }, 1500);
+          });
+        });
+
+        // Community sort
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            communitySort = btn.dataset.sort;
+            loadCommunityPresets();
+          });
+        });
+
+        // Quick import
+        $('import-btn').addEventListener('click', quickImport);
+        $('load-url-btn').addEventListener('click', loadFromUrl);
+
+        // Escape key closes modal
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && !presetModal.classList.contains('hidden')) closeModal();
+        });
+      }
+
+      // ─── Scroll Reveal ───────────────────────────────
+      document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('sys-active'); observer.unobserve(entry.target); } });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.sys-reveal').forEach(el => observer.observe(el));
+      });
+
+      // ─── Boot ────────────────────────────────────────
+      bindEvents();
+      checkAuth();
+
+    })();
+    </script>
+</body>
+</html>

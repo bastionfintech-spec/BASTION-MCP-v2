@@ -145,7 +145,8 @@
           <a href="/frontend" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Terminal<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
           <a href="/monitor" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Pulse<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
           <a href="/playground" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Playground<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
-          <a href="/usage" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">Usage<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/usage" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Usage<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/presets" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">Presets<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
         </div>
       </nav>
 
@@ -357,6 +358,67 @@
           </div>
         </section>
 
+        <!-- Agent Activity Timeline -->
+        <section class="container mx-auto px-6 md:px-12 pb-8" id="activity-timeline-section">
+          <div class="border border-zinc-800 bg-zinc-950 sys-reveal sys-rise">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-6 border-b border-zinc-800 gap-4">
+              <div class="flex items-center gap-3">
+                <iconify-icon icon="solar:history-linear" width="18" class="text-red-600"></iconify-icon>
+                <h3 class="text-xs font-mono uppercase tracking-widest text-zinc-400">Agent Activity Timeline</h3>
+                <span class="relative flex h-1.5 w-1.5 ml-1">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600"></span>
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span id="activity-count-label" class="text-[10px] font-mono text-zinc-700">0 EVENTS</span>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 border border-zinc-800 bg-zinc-900/50 text-[9px] font-mono text-zinc-600">
+                  <iconify-icon icon="solar:refresh-circle-linear" width="10"></iconify-icon>
+                  AUTO: 30S
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between px-6 py-4 border-b border-zinc-800/50 gap-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <button onclick="setActivityFilter('all')" data-filter="all"
+                  class="activity-filter-btn active px-3 py-1.5 border text-[10px] font-mono uppercase tracking-widest transition-all border-red-600/50 bg-red-600/10 text-red-400">All</button>
+                <button onclick="setActivityFilter('core_ai')" data-filter="core_ai"
+                  class="activity-filter-btn px-3 py-1.5 border text-[10px] font-mono uppercase tracking-widest transition-all border-zinc-800 bg-zinc-900/30 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700">
+                  <iconify-icon icon="solar:brain-linear" width="10" class="mr-1"></iconify-icon>Core AI</button>
+                <button onclick="setActivityFilter('market_data')" data-filter="market_data"
+                  class="activity-filter-btn px-3 py-1.5 border text-[10px] font-mono uppercase tracking-widest transition-all border-zinc-800 bg-zinc-900/30 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700">
+                  <iconify-icon icon="solar:chart-2-linear" width="10" class="mr-1"></iconify-icon>Market Data</button>
+                <button onclick="setActivityFilter('derivatives')" data-filter="derivatives"
+                  class="activity-filter-btn px-3 py-1.5 border text-[10px] font-mono uppercase tracking-widest transition-all border-zinc-800 bg-zinc-900/30 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700">
+                  <iconify-icon icon="solar:graph-new-linear" width="10" class="mr-1"></iconify-icon>Derivatives</button>
+                <button onclick="setActivityFilter('on_chain')" data-filter="on_chain"
+                  class="activity-filter-btn px-3 py-1.5 border text-[10px] font-mono uppercase tracking-widest transition-all border-zinc-800 bg-zinc-900/30 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700">
+                  <iconify-icon icon="solar:link-minimalistic-2-linear" width="10" class="mr-1"></iconify-icon>On-Chain</button>
+              </div>
+              <div class="relative w-full md:w-64">
+                <iconify-icon icon="solar:magnifer-linear" width="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700"></iconify-icon>
+                <input type="text" id="activity-search" placeholder="Filter by tool name..."
+                  oninput="filterActivityBySearch(this.value)"
+                  class="w-full bg-zinc-900 border border-zinc-800 text-white text-[11px] font-mono pl-9 pr-4 py-2 placeholder:text-zinc-700 focus:outline-none focus:border-red-600/50 transition-colors">
+              </div>
+            </div>
+            <div id="activity-timeline" class="divide-y divide-zinc-800/30 max-h-[600px] overflow-y-auto no-scrollbar">
+              <div class="px-6 py-12 text-center">
+                <iconify-icon icon="solar:history-linear" width="32" class="text-zinc-800 mb-3"></iconify-icon>
+                <div class="text-xs font-mono text-zinc-600">Loading activity...</div>
+              </div>
+            </div>
+            <div class="p-4 border-t border-zinc-800/50 text-center">
+              <button onclick="loadMoreActivity()" id="activity-load-more-btn"
+                class="inline-flex items-center gap-2 px-6 py-2 border border-zinc-800 bg-zinc-900/50 text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white hover:border-zinc-700 transition-all">
+                <iconify-icon icon="solar:alt-arrow-down-linear" width="12"></iconify-icon>
+                Load More
+              </button>
+              <span id="activity-load-status" class="hidden text-[10px] font-mono text-zinc-700 ml-3"></span>
+            </div>
+          </div>
+        </section>
+
         <!-- Webhook Management -->
         <section class="container mx-auto px-6 md:px-12 pb-8">
           <div class="border border-zinc-800 bg-zinc-950 sys-reveal sys-rise">
@@ -543,6 +605,8 @@
         fetchWebhookEvents();
         fetchWorkflowTemplates();
         fetchTools();
+        fetchActivity(false);
+        setInterval(() => fetchActivity(false), 30000);
       }
 
       // ─── Refresh All ───
@@ -1068,6 +1132,132 @@
       const style = document.createElement('style');
       style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
       document.head.appendChild(style);
+
+      // ─── Activity Timeline ───
+      let activityData = [];
+      let activityOffset = 0;
+      const ACTIVITY_PAGE_SIZE = 25;
+      let activityFilter = 'all';
+      let activitySearchTerm = '';
+
+      const CATEGORY_MAP = {
+        'risk_evaluate':'core_ai','neural_chat':'core_ai','risk_intelligence':'core_ai','bastion_chat':'core_ai','ai_evaluate':'core_ai','model_query':'core_ai',
+        'get_price':'market_data','get_candles':'market_data','get_orderbook':'market_data','get_ticker':'market_data','get_trades':'market_data','market_overview':'market_data','get_funding_rate':'market_data','get_market_data':'market_data','screener':'market_data',
+        'get_positions':'derivatives','get_leverage':'derivatives','get_margin':'derivatives','set_leverage':'derivatives','place_order':'derivatives','cancel_order':'derivatives','get_open_orders':'derivatives','get_balance':'derivatives',
+        'get_gas':'on_chain','get_whale_txns':'on_chain','get_token_info':'on_chain','get_wallet_balance':'on_chain','on_chain_analysis':'on_chain','dex_volume':'on_chain'
+      };
+      const CATEGORY_ICONS = {
+        'core_ai':{ icon:'solar:brain-linear', color:'text-purple-400' },
+        'market_data':{ icon:'solar:chart-2-linear', color:'text-blue-400' },
+        'derivatives':{ icon:'solar:graph-new-linear', color:'text-yellow-400' },
+        'on_chain':{ icon:'solar:link-minimalistic-2-linear', color:'text-emerald-400' },
+        'unknown':{ icon:'solar:widget-linear', color:'text-zinc-500' }
+      };
+
+      function categorize(toolName) {
+        if (!toolName) return 'unknown';
+        const key = toolName.toLowerCase().replace(/[^a-z0-9_]/g,'_');
+        if (CATEGORY_MAP[key]) return CATEGORY_MAP[key];
+        for (const [p,c] of Object.entries(CATEGORY_MAP)) { if (key.includes(p)||p.includes(key)) return c; }
+        if (/risk|chat|ai|model|neural|evaluate/.test(key)) return 'core_ai';
+        if (/price|candle|ticker|orderbook|market|fund|screen/.test(key)) return 'market_data';
+        if (/position|leverage|margin|order|balance/.test(key)) return 'derivatives';
+        if (/gas|whale|token|wallet|chain|dex/.test(key)) return 'on_chain';
+        return 'unknown';
+      }
+
+      function relTime(ts) {
+        const d = Math.floor((Date.now()-new Date(ts).getTime())/1000);
+        if(d<5)return'just now';if(d<60)return d+'s ago';const m=Math.floor(d/60);if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';
+      }
+
+      function renderActivityEntry(entry, idx) {
+        const tool = entry.tool||entry.endpoint||'unknown';
+        const cat = categorize(tool);
+        const ci = CATEGORY_ICONS[cat]||CATEGORY_ICONS['unknown'];
+        const isErr = (entry.status||entry.status_code||200) >= 400;
+        const lat = entry.latency_ms != null ? entry.latency_ms : null;
+        const ts = entry.timestamp||new Date().toISOString();
+        return `<div class="group hover:bg-zinc-900/30 transition-colors" data-category="${cat}" data-tool="${esc(tool.toLowerCase())}">
+          <div class="flex items-center gap-4 px-6 py-3 cursor-pointer" onclick="document.getElementById('ad-${idx}').classList.toggle('hidden');document.getElementById('aa-${idx}').style.transform=document.getElementById('ad-${idx}').classList.contains('hidden')?'':'rotate(180deg)'">
+            <div class="flex items-center gap-3 shrink-0 w-24 md:w-32">
+              <div class="relative w-8 h-8 border border-zinc-800 bg-zinc-900/80 flex items-center justify-center group-hover:border-zinc-700 transition-colors">
+                <iconify-icon icon="${ci.icon}" width="14" class="${ci.color}"></iconify-icon>
+                ${isErr?'<div class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-zinc-950"></div>':''}
+              </div>
+              <span class="text-[10px] font-mono text-zinc-600 whitespace-nowrap">${relTime(ts)}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="text-[11px] font-mono text-zinc-300 group-hover:text-white transition-colors truncate block">${esc(tool)}</span>
+              <span class="text-[9px] font-mono text-zinc-700 uppercase tracking-widest">${cat.replace('_',' ')}</span>
+            </div>
+            <div class="shrink-0 text-right w-16 md:w-20">
+              ${lat!=null?`<span class="text-[11px] font-mono ${lat>3000?'text-red-400':lat>1000?'text-yellow-400':'text-zinc-400'}">${lat.toLocaleString()}ms</span>`:'<span class="text-[10px] font-mono text-zinc-700">--</span>'}
+            </div>
+            <div class="shrink-0 w-16 text-right">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-mono uppercase ${isErr?'text-red-400 bg-red-600/10 border border-red-600/20':'text-green-400 bg-green-600/10 border border-green-600/20'}">
+                <span class="w-1 h-1 rounded-full ${isErr?'bg-red-400':'bg-green-400'}"></span>${isErr?'ERR':'OK'}
+              </span>
+            </div>
+            <div class="shrink-0 w-5 text-center">
+              <iconify-icon id="aa-${idx}" icon="solar:alt-arrow-down-linear" width="12" class="text-zinc-700 group-hover:text-zinc-500 transition-all duration-200"></iconify-icon>
+            </div>
+          </div>
+          <div id="ad-${idx}" class="hidden px-6 pb-4">
+            <div class="ml-11 md:ml-[8.5rem] border border-zinc-800 bg-zinc-900/60 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-mono uppercase tracking-widest text-zinc-600">Response Detail</span>
+                <span class="text-[9px] font-mono text-zinc-700">${new Date(ts).toLocaleString()}</span>
+              </div>
+              <pre class="text-[10px] font-mono text-zinc-400 leading-relaxed overflow-x-auto no-scrollbar max-h-48 overflow-y-auto">${esc(entry.response?typeof entry.response==='string'?entry.response:JSON.stringify(entry.response,null,2):JSON.stringify(entry,null,2))}</pre>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      function renderTimeline(entries, append) {
+        const c = document.getElementById('activity-timeline'); if(!c) return;
+        let f = entries;
+        if (activityFilter!=='all') f=f.filter(e=>categorize(e.tool||e.endpoint||'')===activityFilter);
+        if (activitySearchTerm) { const t=activitySearchTerm.toLowerCase(); f=f.filter(e=>(e.tool||e.endpoint||'').toLowerCase().includes(t)); }
+        if (!f.length && !append) {
+          c.innerHTML='<div class="px-6 py-12 text-center"><iconify-icon icon="solar:ghost-linear" width="32" class="text-zinc-800 mb-3"></iconify-icon><div class="text-xs font-mono text-zinc-600">No activity events found</div></div>'; return;
+        }
+        const html=f.map((e,i)=>renderActivityEntry(e,append?(activityOffset-ACTIVITY_PAGE_SIZE+i):i)).join('');
+        if(append){c.insertAdjacentHTML('beforeend',html);}else{c.innerHTML=html;}
+        const cl=document.getElementById('activity-count-label'); if(cl)cl.textContent=activityData.length+' EVENT'+(activityData.length!==1?'S':'');
+      }
+
+      async function fetchActivity(append) {
+        try {
+          const p = new URLSearchParams({limit:ACTIVITY_PAGE_SIZE,offset:append?activityOffset:0});
+          const r = await fetch('/api/usage/activity?'+p.toString(),{credentials:'include'});
+          if(!r.ok)throw new Error('Failed');
+          const d = await r.json();
+          const ev = d.events||d.activity||d||[];
+          if(append){activityData=activityData.concat(ev);activityOffset+=ev.length;}
+          else{activityData=ev;activityOffset=ev.length;}
+          renderTimeline(append?ev:activityData,append);
+          const lb=document.getElementById('activity-load-more-btn'),ls=document.getElementById('activity-load-status');
+          if(ev.length<ACTIVITY_PAGE_SIZE){if(lb)lb.classList.add('opacity-30','pointer-events-none');if(ls){ls.classList.remove('hidden');ls.textContent='All events loaded';}}
+          else{if(lb)lb.classList.remove('opacity-30','pointer-events-none');if(ls)ls.classList.add('hidden');}
+        } catch(e) {
+          const c=document.getElementById('activity-timeline');
+          if(c&&!append)c.innerHTML='<div class="px-6 py-12 text-center"><iconify-icon icon="solar:danger-triangle-linear" width="32" class="text-zinc-800 mb-3"></iconify-icon><div class="text-xs font-mono text-zinc-600">Failed to load activity</div></div>';
+        }
+      }
+
+      window.setActivityFilter = function(filter) {
+        activityFilter=filter;
+        document.querySelectorAll('.activity-filter-btn').forEach(btn=>{
+          const a=btn.getAttribute('data-filter')===filter;
+          if(a){btn.classList.remove('border-zinc-800','bg-zinc-900/30','text-zinc-500');btn.classList.add('border-red-600/50','bg-red-600/10','text-red-400');}
+          else{btn.classList.add('border-zinc-800','bg-zinc-900/30','text-zinc-500');btn.classList.remove('border-red-600/50','bg-red-600/10','text-red-400');}
+        });
+        renderTimeline(activityData,false);
+      };
+      window.filterActivityBySearch = function(term) { activitySearchTerm=term.trim(); renderTimeline(activityData,false); };
+      window.loadMoreActivity = function() { fetchActivity(true); };
 
       // ─── Init on load ───
       checkAuth();

@@ -383,6 +383,31 @@ async def lifespan(app: FastAPI):
                 logger.info("[DB] bastion_workflows table ensured")
             except Exception:
                 logger.debug("[DB] bastion_workflows table creation via RPC unavailable — OK (create manually)")
+            # Create bastion_presets table if not exists
+            try:
+                _db.rpc("exec_sql", {"query": """
+                    CREATE TABLE IF NOT EXISTS bastion_presets (
+                        id TEXT PRIMARY KEY,
+                        user_id UUID REFERENCES bastion_users(id) ON DELETE CASCADE,
+                        name TEXT NOT NULL,
+                        description TEXT DEFAULT '',
+                        tools JSONB DEFAULT '[]',
+                        settings JSONB DEFAULT '{}',
+                        is_public BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW(),
+                        use_count INTEGER DEFAULT 0
+                    )
+                """}).execute()
+                logger.info("[DB] bastion_presets table ensured")
+            except Exception:
+                logger.debug("[DB] bastion_presets table creation via RPC unavailable — OK (create manually)")
+            # Add expires_at column to bastion_api_keys if missing
+            try:
+                _db.rpc("exec_sql", {"query": "ALTER TABLE bastion_api_keys ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ DEFAULT NULL"}).execute()
+                logger.info("[DB] bastion_api_keys.expires_at column ensured")
+            except Exception:
+                logger.debug("[DB] expires_at column may already exist or RPC unavailable — OK")
         except Exception as e:
             logger.warning(f"[DB] Table setup failed (non-critical, features fall back to in-memory): {e}")
 
@@ -2573,6 +2598,7 @@ async def generate_api_key(data: dict):
     token = data.get("token", "")
     key_name = data.get("name", "Default")
     scopes = data.get("scopes", ["read"])
+    expires_in = data.get("expires_in")  # days: 30, 90, 365, or None=never
 
     if not user_service:
         raise HTTPException(status_code=503, detail="User service unavailable")
@@ -2592,20 +2618,29 @@ async def generate_api_key(data: dict):
     key_hash = _hashlib.sha256(raw_key.encode()).hexdigest()
     key_prefix = raw_key[:12]  # "bst_XXXXXXXX" for display
 
+    # Calculate expiration
+    expires_at = None
+    if expires_in and isinstance(expires_in, (int, float)) and expires_in > 0:
+        from datetime import timedelta
+        expires_at = (datetime.utcnow() + timedelta(days=int(expires_in))).isoformat()
+
     # Check if Supabase is available
     if not (user_service.client and hasattr(user_service.client, 'table')):
         raise HTTPException(status_code=503, detail="Database unavailable")
 
     try:
-        user_service.client.table("bastion_api_keys").insert({
+        insert_data = {
             "user_id": user.id,
             "key_hash": key_hash,
             "key_prefix": key_prefix,
             "name": key_name,
             "scopes": scopes,
-        }).execute()
+        }
+        if expires_at:
+            insert_data["expires_at"] = expires_at
+        user_service.client.table("bastion_api_keys").insert(insert_data).execute()
 
-        logger.info(f"[API KEYS] Generated key {key_prefix}... for user {user.id[:8]}... scopes={scopes}")
+        logger.info(f"[API KEYS] Generated key {key_prefix}... for user {user.id[:8]}... scopes={scopes} expires={'never' if not expires_at else expires_at[:10]}")
 
         return {
             "success": True,
@@ -2613,6 +2648,7 @@ async def generate_api_key(data: dict):
             "prefix": key_prefix,
             "name": key_name,
             "scopes": scopes,
+            "expires_at": expires_at,
             "message": "Save this key now — it cannot be retrieved after this."
         }
     except Exception as e:
@@ -2638,7 +2674,7 @@ async def list_api_keys(token: str):
     try:
         result = (
             user_service.client.table("bastion_api_keys")
-            .select("id, key_prefix, name, scopes, created_at, last_used_at, revoked")
+            .select("id, key_prefix, name, scopes, created_at, last_used_at, revoked, expires_at")
             .eq("user_id", user.id)
             .eq("revoked", False)
             .order("created_at", desc=True)
@@ -2654,6 +2690,7 @@ async def list_api_keys(token: str):
                 "scopes": row.get("scopes", ["read"]),
                 "created_at": row["created_at"],
                 "last_used_at": row.get("last_used_at"),
+                "expires_at": row.get("expires_at"),
             })
 
         return {"success": True, "keys": keys}
@@ -9645,6 +9682,507 @@ async def health():
         "supported_symbols": len(SUPPORTED_SYMBOLS),
         "timestamp": datetime.now().isoformat()
     }
+
+
+# =============================================================================
+# TIER 2 FEATURES — WebSocket Agent Feed, Agent Presets, Activity Log,
+# API Key Expiration
+# =============================================================================
+
+# ── WebSocket Agent Feed ─────────────────────────────────────
+# Authenticated WS endpoint that pushes real-time events to connected agents.
+# Agents subscribe to channels: price, risk, whale, funding, liquidation, engine
+
+_agent_ws_connections: Dict[str, List] = {}  # user_id -> [ws1, ws2, ...]
+
+@app.websocket("/ws/agent")
+async def agent_websocket(websocket: WebSocket):
+    """Authenticated WebSocket for MCP agents — subscribe to real-time event channels."""
+    await websocket.accept()
+    user_id = "_anonymous"
+    subscriptions = set()
+
+    try:
+        # First message must be auth
+        auth_msg = await asyncio.wait_for(websocket.receive_json(), timeout=10.0)
+        api_key = auth_msg.get("api_key", "")
+        if api_key:
+            try:
+                from mcp_server.auth import validate_bst_key
+                key_info = await validate_bst_key(api_key)
+                if key_info:
+                    user_id = key_info.get("user_id", "_anonymous")
+            except Exception:
+                pass
+        else:
+            # Try session token
+            token = auth_msg.get("token", "")
+            if token and user_service:
+                user = await user_service.validate_session(token)
+                if user:
+                    user_id = user.id
+
+        subscriptions = set(auth_msg.get("channels", ["price", "risk"]))
+        valid_channels = {"price", "risk", "whale", "funding", "liquidation", "engine", "all"}
+        subscriptions = subscriptions & valid_channels
+        if not subscriptions:
+            subscriptions = {"price"}
+
+        # Register connection
+        if user_id not in _agent_ws_connections:
+            _agent_ws_connections[user_id] = []
+        _agent_ws_connections[user_id].append(websocket)
+        logger.info(f"[WS/AGENT] Connected: user={user_id[:8]}... channels={subscriptions}")
+
+        await websocket.send_json({
+            "type": "connected",
+            "user_id": user_id[:8] + "...",
+            "channels": list(subscriptions),
+            "timestamp": datetime.utcnow().isoformat()
+        })
+
+        # Event loop — push data on intervals
+        tick = 0
+        while True:
+            tick += 1
+
+            # Price updates every 2 seconds
+            if "price" in subscriptions or "all" in subscriptions:
+                if tick % 2 == 0:
+                    try:
+                        async with httpx.AsyncClient(timeout=2.0) as client:
+                            res = await client.get("https://api.kraken.com/0/public/Ticker?pair=XXBTZUSD,XETHZUSD,SOLUSD")
+                            data = res.json()
+                            prices = {}
+                            if data.get("result"):
+                                for key, ticker in data["result"].items():
+                                    price = float(ticker["c"][0])
+                                    change = round((float(ticker["c"][0]) - float(ticker["o"])) / float(ticker["o"]) * 100, 2) if float(ticker["o"]) > 0 else 0
+                                    if "XBT" in key: prices["BTC"] = {"price": price, "change_24h": change}
+                                    elif "ETH" in key: prices["ETH"] = {"price": price, "change_24h": change}
+                                    elif "SOL" in key: prices["SOL"] = {"price": price, "change_24h": change}
+                            if prices:
+                                await websocket.send_json({"type": "price", "data": prices, "ts": datetime.utcnow().isoformat()})
+                    except Exception:
+                        pass
+
+            # Funding rates every 60 seconds
+            if ("funding" in subscriptions or "all" in subscriptions) and tick % 60 == 0:
+                try:
+                    port = os.getenv("PORT", "3001")
+                    async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=5.0) as client:
+                        res = await client.get("/api/funding")
+                        if res.status_code == 200:
+                            await websocket.send_json({"type": "funding", "data": res.json(), "ts": datetime.utcnow().isoformat()})
+                except Exception:
+                    pass
+
+            # Whale activity every 120 seconds
+            if ("whale" in subscriptions or "all" in subscriptions) and tick % 120 == 0:
+                try:
+                    port = os.getenv("PORT", "3001")
+                    async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=5.0) as client:
+                        res = await client.get("/api/whales")
+                        if res.status_code == 200:
+                            await websocket.send_json({"type": "whale", "data": res.json(), "ts": datetime.utcnow().isoformat()})
+                except Exception:
+                    pass
+
+            # Check for client messages (subscribe/unsubscribe)
+            try:
+                msg = await asyncio.wait_for(websocket.receive_json(), timeout=0.5)
+                if msg.get("action") == "subscribe":
+                    new_channels = set(msg.get("channels", [])) & valid_channels
+                    subscriptions |= new_channels
+                    await websocket.send_json({"type": "subscribed", "channels": list(subscriptions)})
+                elif msg.get("action") == "unsubscribe":
+                    rm_channels = set(msg.get("channels", []))
+                    subscriptions -= rm_channels
+                    await websocket.send_json({"type": "unsubscribed", "channels": list(subscriptions)})
+                elif msg.get("action") == "ping":
+                    await websocket.send_json({"type": "pong", "ts": datetime.utcnow().isoformat()})
+            except asyncio.TimeoutError:
+                pass
+
+            await asyncio.sleep(1)
+
+    except (WebSocketDisconnect, Exception) as e:
+        if not isinstance(e, WebSocketDisconnect):
+            logger.debug(f"[WS/AGENT] Error: {type(e).__name__}: {e}")
+    finally:
+        try:
+            if user_id in _agent_ws_connections:
+                _agent_ws_connections[user_id] = [ws for ws in _agent_ws_connections[user_id] if ws != websocket]
+                if not _agent_ws_connections[user_id]:
+                    del _agent_ws_connections[user_id]
+        except Exception:
+            pass
+        logger.info(f"[WS/AGENT] Disconnected: user={user_id[:8]}...")
+
+
+# Helper to broadcast events to all connected agent websockets
+async def _broadcast_agent_event(event_type: str, data: dict, user_id: str = None):
+    """Push an event to all connected agent WebSockets (or specific user)."""
+    targets = []
+    if user_id and user_id in _agent_ws_connections:
+        targets = _agent_ws_connections[user_id]
+    else:
+        for conns in _agent_ws_connections.values():
+            targets.extend(conns)
+    msg = {"type": event_type, "data": data, "ts": datetime.utcnow().isoformat()}
+    for ws in targets:
+        try:
+            await ws.send_json(msg)
+        except Exception:
+            pass
+
+
+# ── Agent Activity Log ───────────────────────────────────────
+@app.get("/api/usage/activity")
+async def get_usage_activity(request: Request, limit: int = 50, offset: int = 0, category: str = "", search: str = ""):
+    """Get detailed agent activity log with filtering."""
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    user_id = user.id if user else "_anonymous"
+    data = _usage_data.get(user_id, {"calls": []})
+    calls = list(reversed(data.get("calls", [])))  # Newest first
+
+    # Category filter
+    category_map = {
+        "core_ai": ["risk_evaluate", "neural_chat", "signals_scan", "mcp_playground"],
+        "market_data": ["price_", "market_", "klines_", "volatility_", "fear-greed"],
+        "derivatives": ["funding", "oi", "liquidations", "heatmap", "cvd", "taker-ratio", "options"],
+        "onchain": ["whales", "exchange-flow", "onchain", "orderflow"],
+        "macro": ["macro", "etf-flows", "kelly", "monte-carlo"],
+    }
+    if category and category in category_map:
+        prefixes = category_map[category]
+        calls = [c for c in calls if any(p in c.get("tool", "") for p in prefixes)]
+
+    # Search filter
+    if search:
+        search_lower = search.lower()
+        calls = [c for c in calls if search_lower in c.get("tool", "").lower()]
+
+    total = len(calls)
+    calls = calls[offset:offset + limit]
+
+    # Enrich with relative timestamps and categories
+    now = time.time()
+    enriched = []
+    for c in calls:
+        age = now - c.get("timestamp", now)
+        if age < 60: rel = f"{int(age)}s ago"
+        elif age < 3600: rel = f"{int(age/60)}m ago"
+        elif age < 86400: rel = f"{int(age/3600)}h ago"
+        else: rel = f"{int(age/86400)}d ago"
+
+        tool = c.get("tool", "unknown")
+        cat = "other"
+        for cat_name, prefixes in category_map.items():
+            if any(p in tool for p in prefixes):
+                cat = cat_name
+                break
+
+        enriched.append({
+            "tool": tool,
+            "timestamp": c.get("timestamp"),
+            "relative_time": rel,
+            "latency_ms": c.get("latency_ms", 0),
+            "success": c.get("success", True),
+            "category": cat,
+        })
+
+    return {"activity": enriched, "total": total, "offset": offset, "limit": limit}
+
+
+# ── Agent Presets / Saved Configurations ─────────────────────
+_presets_memory: dict = {}  # In-memory fallback
+
+@app.get("/presets", response_class=HTMLResponse)
+async def serve_presets():
+    presets_path = bastion_path / "web" / "presets.html"
+    if presets_path.exists():
+        return FileResponse(presets_path)
+    return HTMLResponse("<h1 style='color:#fff;background:#000;font-family:monospace;padding:2em;'>Presets — Coming Soon</h1>")
+
+@app.get("/api/presets")
+async def get_presets(request: Request):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    db = _get_db()
+    if db:
+        try:
+            result = db.table("bastion_presets").select("*").eq("user_id", user.id).execute()
+            presets = []
+            for p in (result.data or []):
+                if isinstance(p.get("config"), str):
+                    p["config"] = json.loads(p["config"])
+                presets.append(p)
+            return {"presets": presets}
+        except Exception:
+            pass
+    return {"presets": _presets_memory.get(user.id, [])}
+
+@app.post("/api/presets")
+async def create_preset(request: Request, data: dict):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Preset name required")
+    config = data.get("config", {})
+    preset = {
+        "id": secrets.token_urlsafe(8),
+        "user_id": user.id,
+        "name": name,
+        "description": data.get("description", ""),
+        "config": json.dumps(config) if not isinstance(config, str) else config,
+        "symbols": data.get("symbols", ["BTC", "ETH", "SOL"]),
+        "tools": data.get("tools", []),
+        "risk_level": data.get("risk_level", "moderate"),
+        "auto_evaluate": data.get("auto_evaluate", False),
+        "is_public": data.get("is_public", False),
+        "uses_count": 0,
+        "author_name": user.display_name if hasattr(user, "display_name") else "Anonymous",
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    db = _get_db()
+    if db:
+        try:
+            existing = db.table("bastion_presets").select("id").eq("user_id", user.id).execute()
+            if len(existing.data or []) >= 20:
+                raise HTTPException(status_code=400, detail="Max 20 presets per user")
+            db.table("bastion_presets").insert(preset).execute()
+            preset["config"] = config  # Return parsed
+            return {"success": True, "preset": preset}
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"[PRESETS] DB insert failed: {e}")
+    # Fallback
+    preset["config"] = config
+    if user.id not in _presets_memory:
+        _presets_memory[user.id] = []
+    if len(_presets_memory[user.id]) >= 20:
+        raise HTTPException(status_code=400, detail="Max 20 presets")
+    _presets_memory[user.id].append(preset)
+    return {"success": True, "preset": preset}
+
+@app.put("/api/presets/{preset_id}")
+async def update_preset(request: Request, preset_id: str, data: dict):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    updates = {}
+    for field in ["name", "description", "symbols", "tools", "risk_level", "auto_evaluate", "is_public"]:
+        if field in data:
+            updates[field] = data[field]
+    if "config" in data:
+        updates["config"] = json.dumps(data["config"]) if not isinstance(data["config"], str) else data["config"]
+    db = _get_db()
+    if db and updates:
+        try:
+            db.table("bastion_presets").update(updates).eq("id", preset_id).eq("user_id", user.id).execute()
+            return {"success": True}
+        except Exception:
+            pass
+    # Memory fallback
+    for p in _presets_memory.get(user.id, []):
+        if p["id"] == preset_id:
+            p.update(updates)
+            return {"success": True}
+    raise HTTPException(status_code=404, detail="Preset not found")
+
+@app.delete("/api/presets/{preset_id}")
+async def delete_preset(request: Request, preset_id: str):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    db = _get_db()
+    if db:
+        try:
+            db.table("bastion_presets").delete().eq("id", preset_id).eq("user_id", user.id).execute()
+            return {"success": True}
+        except Exception:
+            pass
+    if user.id in _presets_memory:
+        _presets_memory[user.id] = [p for p in _presets_memory[user.id] if p["id"] != preset_id]
+    return {"success": True}
+
+@app.get("/api/presets/community")
+async def get_community_presets(sort: str = "popular", limit: int = 20):
+    """Get publicly shared presets from all users."""
+    db = _get_db()
+    if db:
+        try:
+            order_col = "uses_count" if sort == "popular" else "created_at"
+            result = db.table("bastion_presets").select("id,name,description,symbols,tools,risk_level,auto_evaluate,uses_count,author_name,created_at").eq("is_public", True).order(order_col, desc=True).limit(limit).execute()
+            return {"presets": result.data or []}
+        except Exception:
+            pass
+    # Collect all public presets from memory
+    public = []
+    for uid, presets in _presets_memory.items():
+        for p in presets:
+            if p.get("is_public"):
+                public.append({k: v for k, v in p.items() if k != "user_id"})
+    return {"presets": sorted(public, key=lambda x: x.get("uses_count", 0), reverse=True)[:limit]}
+
+@app.post("/api/presets/{preset_id}/import")
+async def import_preset(request: Request, preset_id: str):
+    """Clone a community preset into user's own presets."""
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    # Find source preset
+    source = None
+    db = _get_db()
+    if db:
+        try:
+            result = db.table("bastion_presets").select("*").eq("id", preset_id).eq("is_public", True).execute()
+            source = (result.data or [None])[0]
+        except Exception:
+            pass
+    if not source:
+        for uid, presets in _presets_memory.items():
+            for p in presets:
+                if p["id"] == preset_id and p.get("is_public"):
+                    source = p
+                    break
+    if not source:
+        raise HTTPException(status_code=404, detail="Preset not found or not public")
+    # Increment uses_count on source
+    if db:
+        try:
+            db.table("bastion_presets").update({"uses_count": (source.get("uses_count", 0) or 0) + 1}).eq("id", preset_id).execute()
+        except Exception:
+            pass
+    # Clone to user
+    clone_data = {
+        "name": source["name"] + " (imported)",
+        "description": source.get("description", ""),
+        "config": source.get("config", {}),
+        "symbols": source.get("symbols", []),
+        "tools": source.get("tools", []),
+        "risk_level": source.get("risk_level", "moderate"),
+        "auto_evaluate": source.get("auto_evaluate", False),
+    }
+    # Reuse create logic
+    from starlette.datastructures import State
+    class FakeRequest:
+        def __init__(self, cookies, headers):
+            self.cookies = cookies
+            self.headers = headers
+    fake_req = FakeRequest(request.cookies, request.headers)
+    return await create_preset(fake_req, clone_data)
+
+@app.get("/api/presets/{preset_id}/export")
+async def export_preset(preset_id: str):
+    """Export a preset as a Claude MCP config JSON."""
+    db = _get_db()
+    preset = None
+    if db:
+        try:
+            result = db.table("bastion_presets").select("*").eq("id", preset_id).execute()
+            preset = (result.data or [None])[0]
+        except Exception:
+            pass
+    if not preset:
+        for uid, presets in _presets_memory.items():
+            for p in presets:
+                if p["id"] == preset_id:
+                    preset = p
+                    break
+    if not preset:
+        raise HTTPException(status_code=404, detail="Preset not found")
+    config = preset.get("config", {})
+    if isinstance(config, str):
+        config = json.loads(config)
+    return {
+        "preset_name": preset.get("name", ""),
+        "mcp_config": {
+            "mcpServers": {
+                "bastion": {
+                    "url": "https://bastionfi.tech/mcp/sse"
+                }
+            }
+        },
+        "recommended_symbols": preset.get("symbols", []),
+        "recommended_tools": preset.get("tools", []),
+        "risk_level": preset.get("risk_level", "moderate"),
+        "auto_evaluate": preset.get("auto_evaluate", False),
+        "custom_config": config,
+    }
+
+
+# ── API Key Expiration Enhancement ───────────────────────────
+# The generate endpoint already accepts expires_in — enhance it to store properly
+# and add an endpoint to check/extend expiration
+
+@app.get("/api/auth/keys/{key_id}/info")
+async def get_key_info(request: Request, key_id: str):
+    """Get detailed info about an API key including expiration."""
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    db = _get_db()
+    if not db:
+        return {"error": "Database unavailable"}
+    try:
+        result = db.table("bastion_api_keys").select("id,key_prefix,name,scopes,created_at,expires_at,last_used_at,revoked,label").eq("id", key_id).eq("user_id", user.id).execute()
+        key_data = (result.data or [None])[0]
+        if not key_data:
+            raise HTTPException(status_code=404, detail="Key not found")
+        # Calculate remaining time
+        if key_data.get("expires_at"):
+            from dateutil import parser as _dtparser
+            try:
+                exp = _dtparser.parse(key_data["expires_at"])
+                remaining_seconds = (exp - datetime.utcnow()).total_seconds()
+                key_data["expired"] = remaining_seconds <= 0
+                key_data["remaining_hours"] = max(0, round(remaining_seconds / 3600, 1))
+            except Exception:
+                key_data["expired"] = False
+                key_data["remaining_hours"] = None
+        else:
+            key_data["expired"] = False
+            key_data["remaining_hours"] = None
+        return {"key": key_data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/auth/keys/{key_id}/expiration")
+async def update_key_expiration(request: Request, key_id: str, data: dict):
+    """Update the expiration date of an API key."""
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    expires_in = data.get("expires_in")  # days: 30, 90, 365, or null for never
+    db = _get_db()
+    if not db:
+        return {"error": "Database unavailable"}
+    try:
+        if expires_in and isinstance(expires_in, (int, float)) and expires_in > 0:
+            from datetime import timedelta
+            new_expiry = (datetime.utcnow() + timedelta(days=int(expires_in))).isoformat()
+        else:
+            new_expiry = None
+        db.table("bastion_api_keys").update({"expires_at": new_expiry}).eq("id", key_id).eq("user_id", user.id).execute()
+        return {"success": True, "expires_at": new_expiry, "expires_in_days": expires_in}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # =============================================================================
