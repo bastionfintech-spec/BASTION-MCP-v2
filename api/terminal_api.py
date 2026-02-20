@@ -682,6 +682,27 @@ async def serve_docs():
     )
 
 
+@app.get("/agents", response_class=HTMLResponse)
+async def serve_agents():
+    """Serve the BASTION Agent landing page — connect your Claude agent via MCP."""
+    agents_path = bastion_path / "web" / "agents.html"
+    if agents_path.exists():
+        return FileResponse(agents_path)
+    return HTMLResponse(
+        "<h1 style='color:#fff;background:#050505;font-family:monospace;padding:2em;'>"
+        "BASTION Agents — Coming Soon</h1>"
+    )
+
+
+@app.get("/favicon.ico")
+async def serve_favicon():
+    """Serve the BASTION logo as favicon."""
+    favicon_path = bastion_path / "web" / "bastion-logo.png"
+    if favicon_path.exists():
+        return FileResponse(favicon_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Favicon not found")
+
+
 @app.get("/settings.js")
 async def serve_settings_js():
     """Serve the settings.js file."""
