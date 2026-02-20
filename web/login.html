@@ -105,9 +105,10 @@
         </div>
 
         <!-- Tab Switcher -->
-        <div class="grid grid-cols-2 p-1 bg-[#121214] border border-[#27272a]">
+        <div class="grid grid-cols-3 p-1 bg-[#121214] border border-[#27272a]">
           <button onclick="switchTab('login')" id="tab-login" class="text-xs font-bold uppercase tracking-wider py-2.5 transition-all text-white bg-[#1f1f22] shadow-sm border border-[#27272a]">Login</button>
           <button onclick="switchTab('register')" id="tab-register" class="text-xs font-bold uppercase tracking-wider py-2.5 transition-all text-zinc-500 hover:text-zinc-300">Register</button>
+          <button onclick="switchTab('reset')" id="tab-reset" class="text-xs font-bold uppercase tracking-wider py-2.5 transition-all text-zinc-500 hover:text-zinc-300">Reset</button>
         </div>
 
         <!-- LOGIN FORM -->
@@ -153,7 +154,7 @@
               </div>
               <span class="text-xs text-zinc-500 group-hover:text-zinc-400 font-mono">REMEMBER DEVICE</span>
             </label>
-            <a href="#" class="text-xs text-[#DC2626] hover:text-red-400 font-mono hover:underline">FORGOT PASSWORD?</a>
+            <a href="#" onclick="switchTab('reset')" class="text-xs text-[#DC2626] hover:text-red-400 font-mono hover:underline">FORGOT PASSWORD?</a>
           </div>
 
           <!-- Status Message -->
@@ -232,6 +233,47 @@
           </button>
         </form>
 
+        <!-- PASSWORD RESET FORM -->
+        <form id="reset-form" class="hidden flex flex-col gap-5" onsubmit="handleResetRequest(event)">
+          <div class="space-y-3">
+            <p class="text-xs text-zinc-500 font-mono leading-relaxed">Enter your email to receive a password reset token.</p>
+            <div class="relative group">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-[#DC2626] transition-colors">
+                <iconify-icon icon="solar:letter-linear" width="18"></iconify-icon>
+              </div>
+              <input type="email" id="reset-email" placeholder="OPERATOR EMAIL" class="w-full bg-[#18181b] border border-[#3f3f46] text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626] pl-10 pr-4 py-3 transition-all font-mono placeholder:tracking-wider">
+            </div>
+          </div>
+
+          <div id="reset-status" class="hidden text-xs font-mono p-3 border"></div>
+
+          <button type="submit" id="reset-request-btn" class="w-full bg-[#DC2626] hover:bg-red-700 text-white font-bold uppercase tracking-widest text-xs py-3.5 border border-transparent transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] flex items-center justify-center gap-2 group">
+            <span>Request Reset Token</span>
+            <iconify-icon icon="solar:key-linear" width="16" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
+          </button>
+
+          <!-- Step 2: Enter token + new password (shown after request) -->
+          <div id="reset-step2" class="hidden space-y-4 border-t border-zinc-800 pt-4 mt-2">
+            <p class="text-xs text-zinc-500 font-mono leading-relaxed">Enter your reset token and new password.</p>
+            <div class="relative group">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-[#DC2626] transition-colors">
+                <iconify-icon icon="solar:key-linear" width="18"></iconify-icon>
+              </div>
+              <input type="text" id="reset-token" placeholder="RESET TOKEN" class="w-full bg-[#18181b] border border-[#3f3f46] text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626] pl-10 pr-4 py-3 transition-all font-mono placeholder:tracking-wider">
+            </div>
+            <div class="relative group">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-[#DC2626] transition-colors">
+                <iconify-icon icon="solar:lock-password-linear" width="18"></iconify-icon>
+              </div>
+              <input type="password" id="reset-new-password" placeholder="NEW PASSWORD" class="w-full bg-[#18181b] border border-[#3f3f46] text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626] pl-10 pr-4 py-3 transition-all font-mono placeholder:tracking-wider">
+            </div>
+            <button type="button" onclick="handlePasswordReset()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-widest text-xs py-3.5 border border-transparent transition-all flex items-center justify-center gap-2 group">
+              <span>Reset Password</span>
+              <iconify-icon icon="solar:shield-check-linear" width="16" class="group-hover:scale-110 transition-transform"></iconify-icon>
+            </button>
+          </div>
+        </form>
+
       </div>
     </main>
 
@@ -259,30 +301,80 @@
       })();
 
       function switchTab(tab) {
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const loginBtn = document.getElementById('tab-login');
-        const registerBtn = document.getElementById('tab-register');
+        const forms = { login: 'login-form', register: 'register-form', reset: 'reset-form' };
+        const btns = { login: 'tab-login', register: 'tab-register', reset: 'tab-reset' };
 
-        if (tab === 'login') {
-          loginForm.classList.remove('hidden');
-          registerForm.classList.add('hidden');
-          
-          loginBtn.classList.add('text-white', 'bg-[#1f1f22]', 'border', 'border-[#27272a]', 'shadow-sm');
-          loginBtn.classList.remove('text-zinc-500');
-          
-          registerBtn.classList.remove('text-white', 'bg-[#1f1f22]', 'border', 'border-[#27272a]', 'shadow-sm');
-          registerBtn.classList.add('text-zinc-500');
-        } else {
-          loginForm.classList.add('hidden');
-          registerForm.classList.remove('hidden');
-          
-          registerBtn.classList.add('text-white', 'bg-[#1f1f22]', 'border', 'border-[#27272a]', 'shadow-sm');
-          registerBtn.classList.remove('text-zinc-500');
-          
-          loginBtn.classList.remove('text-white', 'bg-[#1f1f22]', 'border', 'border-[#27272a]', 'shadow-sm');
-          loginBtn.classList.add('text-zinc-500');
+        // Hide all forms, deactivate all buttons
+        Object.values(forms).forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        Object.values(btns).forEach(id => {
+          const b = document.getElementById(id);
+          if (b) { b.classList.remove('text-white', 'bg-[#1f1f22]', 'border', 'border-[#27272a]', 'shadow-sm'); b.classList.add('text-zinc-500'); }
+        });
+
+        // Activate selected
+        document.getElementById(forms[tab])?.classList.remove('hidden');
+        const activeBtn = document.getElementById(btns[tab]);
+        if (activeBtn) { activeBtn.classList.add('text-white', 'bg-[#1f1f22]', 'border', 'border-[#27272a]', 'shadow-sm'); activeBtn.classList.remove('text-zinc-500'); }
+      }
+
+      // Password Reset
+      async function handleResetRequest(e) {
+        e.preventDefault();
+        const email = document.getElementById('reset-email').value.trim();
+        const status = document.getElementById('reset-status');
+        if (!email) { showStatus(status, 'Email required', 'error'); return; }
+
+        try {
+          const resp = await fetch('/api/auth/forgot-password', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email })
+          });
+          const data = await resp.json();
+
+          if (data.success) {
+            showStatus(status, 'Reset token generated! Check below.', 'success');
+            document.getElementById('reset-step2').classList.remove('hidden');
+            if (data.reset_token) {
+              document.getElementById('reset-token').value = data.reset_token;
+            }
+          } else {
+            showStatus(status, data.detail || 'Request failed', 'error');
+          }
+        } catch(err) {
+          showStatus(status, 'Network error', 'error');
         }
+      }
+
+      async function handlePasswordReset() {
+        const token = document.getElementById('reset-token').value.trim();
+        const newPw = document.getElementById('reset-new-password').value;
+        const status = document.getElementById('reset-status');
+
+        if (!token || !newPw) { showStatus(status, 'Token and new password required', 'error'); return; }
+        if (newPw.length < 8) { showStatus(status, 'Password must be at least 8 characters', 'error'); return; }
+
+        try {
+          const resp = await fetch('/api/auth/reset-password', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ token, new_password: newPw })
+          });
+          const data = await resp.json();
+
+          if (data.success) {
+            showStatus(status, 'Password reset! Redirecting to login...', 'success');
+            setTimeout(() => switchTab('login'), 2000);
+          } else {
+            showStatus(status, data.detail || 'Reset failed', 'error');
+          }
+        } catch(err) {
+          showStatus(status, 'Network error', 'error');
+        }
+      }
+
+      function showStatus(el, msg, type) {
+        el.classList.remove('hidden');
+        el.className = 'text-xs font-mono p-3 border ' + (type === 'error' ? 'border-red-800 bg-red-950/50 text-red-400' : 'border-green-800 bg-green-950/50 text-green-400');
+        el.textContent = msg;
       }
 
       function togglePassword(inputId, iconId) {

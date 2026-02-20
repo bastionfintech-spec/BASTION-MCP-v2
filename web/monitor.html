@@ -278,6 +278,17 @@
     </div>
   </header>
 
+  <!-- MCP Integration Banner -->
+  <div id="mcp-banner" style="background:linear-gradient(90deg, rgba(68,255,136,0.06), transparent); border-bottom:1px solid rgba(68,255,136,0.15);" class="px-3 md:px-4 py-1.5 flex items-center justify-between shrink-0 relative z-30">
+    <div class="flex items-center gap-2">
+      <iconify-icon icon="solar:cpu-bolt-bold" class="text-[#44ff88] text-xs"></iconify-icon>
+      <span class="text-[9px] font-mono text-[#888]">All market data available via <span class="text-white font-bold">MCP</span> — <a href="/agents" class="text-[#44ff88] hover:text-white underline">connect your Claude agent</a></span>
+    </div>
+    <button onclick="this.closest('#mcp-banner').style.display='none'" class="text-[#555] hover:text-[#888] transition-colors ml-2">
+      <iconify-icon icon="solar:close-circle-linear" width="12"></iconify-icon>
+    </button>
+  </div>
+
   <!-- Mobile Nav -->
   <div id="mobile-nav" class="hidden md:hidden absolute top-10 left-0 right-0 z-50 bg-[#111] border-b border-[#2a2a2a] px-4 py-3 space-y-1">
     <a href="/lite" class="flex items-center gap-3 px-3 py-2.5 hover:bg-[#1a1a1a] text-xs text-[#888] hover:text-white transition-all">

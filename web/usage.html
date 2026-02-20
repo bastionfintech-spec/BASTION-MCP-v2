@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black scroll-smooth scroll-pt-24">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASTION — Usage Dashboard</title>
+    <link rel="icon" type="image/png" href="/static/bastion-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+      body { font-family: 'Inter', sans-serif; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='16' fill='none' stroke='%23dc2626' stroke-width='1.5' opacity='0.5'/%3E%3Ccircle cx='24' cy='24' r='8' fill='none' stroke='%23dc2626' stroke-width='1' opacity='0.35'/%3E%3Cline x1='24' y1='2' x2='24' y2='15' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='24' y1='33' x2='24' y2='46' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='2' y1='24' x2='15' y2='24' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='33' y1='24' x2='46' y2='24' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%23dc2626'/%3E%3C/svg%3E") 24 24, crosshair; }
+      a, button, [role="button"], input, select, textarea, .cursor-pointer { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='16' fill='none' stroke='%23ff3333' stroke-width='2' opacity='0.7'/%3E%3Ccircle cx='24' cy='24' r='8' fill='none' stroke='%23ff3333' stroke-width='1.5' opacity='0.5'/%3E%3Cline x1='24' y1='2' x2='24' y2='15' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='24' y1='33' x2='24' y2='46' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='2' y1='24' x2='15' y2='24' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='33' y1='24' x2='46' y2='24' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Ccircle cx='24' cy='24' r='3' fill='%23ff3333'/%3E%3C/svg%3E") 24 24, pointer; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      /* Animated aurora background */
+      .aurora-bg {
+        position: absolute; top: 0; left: 0; width: 100%; height: 800px; z-index: -1; overflow: hidden;
+        mask-image: linear-gradient(black 0%, black 60%, transparent 100%);
+        -webkit-mask-image: linear-gradient(black 0%, black 60%, transparent 100%);
+      }
+      .aurora-bg::before {
+        content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: conic-gradient(from 0deg at 50% 50%, transparent 0%, #dc2626 8%, transparent 16%, transparent 33%, #7f1d1d 41%, transparent 49%, transparent 66%, #991b1b 74%, transparent 82%);
+        animation: aurora-spin 20s linear infinite;
+        opacity: 0.15;
+        filter: blur(80px);
+      }
+      .aurora-bg::after {
+        content: ''; position: absolute; top: -30%; left: -30%; width: 160%; height: 160%;
+        background: conic-gradient(from 180deg at 40% 60%, transparent 0%, #ef4444 6%, transparent 12%, transparent 50%, #b91c1c 56%, transparent 62%);
+        animation: aurora-spin 15s linear infinite reverse;
+        opacity: 0.12;
+        filter: blur(100px);
+      }
+      @keyframes aurora-spin { to { transform: rotate(360deg); } }
+      .aurora-orb-1 {
+        position: absolute; width: 600px; height: 400px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(220,38,38,0.2) 0%, transparent 70%);
+        top: 10%; left: 20%; filter: blur(60px);
+        animation: orb-drift-1 12s ease-in-out infinite;
+      }
+      .aurora-orb-2 {
+        position: absolute; width: 500px; height: 350px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(185,28,28,0.15) 0%, transparent 70%);
+        top: 5%; right: 15%; filter: blur(80px);
+        animation: orb-drift-2 16s ease-in-out infinite;
+      }
+      .aurora-orb-3 {
+        position: absolute; width: 400px; height: 300px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(239,68,68,0.1) 0%, transparent 70%);
+        top: 30%; left: 50%; filter: blur(70px);
+        animation: orb-drift-3 10s ease-in-out infinite;
+      }
+      @keyframes orb-drift-1 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(60px, -30px); } }
+      @keyframes orb-drift-2 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-40px, 20px); } }
+      @keyframes orb-drift-3 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-30px, -40px); } }
+      /* Progressive blur (top of page) */
+      .gradient-blur { position: fixed; z-index: 5; inset: 0 0 auto 0; height: 12%; pointer-events: none; }
+      .gradient-blur>div, .gradient-blur::before, .gradient-blur::after { position: absolute; inset: 0; }
+      .gradient-blur::before { content: ""; z-index: 1; backdrop-filter: blur(0.5px); mask: linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%); }
+      .gradient-blur>div:nth-of-type(1) { z-index: 2; backdrop-filter: blur(1px); mask: linear-gradient(to top, rgba(0,0,0,0) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,0) 50%); }
+      .gradient-blur>div:nth-of-type(2) { z-index: 3; backdrop-filter: blur(2px); mask: linear-gradient(to top, rgba(0,0,0,0) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 62.5%); }
+      .gradient-blur>div:nth-of-type(3) { z-index: 4; backdrop-filter: blur(4px); mask: linear-gradient(to top, rgba(0,0,0,0) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,0) 75%); }
+      .gradient-blur>div:nth-of-type(4) { z-index: 5; backdrop-filter: blur(8px); mask: linear-gradient(to top, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 87.5%); }
+      .gradient-blur>div:nth-of-type(5) { z-index: 6; backdrop-filter: blur(16px); mask: linear-gradient(to top, rgba(0,0,0,0) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,0) 100%); }
+      .gradient-blur>div:nth-of-type(6) { z-index: 7; backdrop-filter: blur(32px); mask: linear-gradient(to top, rgba(0,0,0,0) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,1) 100%); }
+      .gradient-blur::after { content: ""; z-index: 8; backdrop-filter: blur(64px); mask: linear-gradient(to top, rgba(0,0,0,0) 87.5%, rgba(0,0,0,1) 100%); }
+      /* Scroll reveal animations */
+      @media (prefers-reduced-motion: no-preference) {
+        .sys-reveal { opacity: 0; transform: translateY(20px); filter: blur(4px); transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.8s cubic-bezier(0.16, 1, 0.3, 1), filter 1.8s ease-out; will-change: opacity, transform; }
+        .sys-rise { transform: translateY(34px); }
+        .sys-slide-l { transform: translateX(-34px); }
+        .sys-slide-r { transform: translateX(34px); }
+        .sys-scale { transform: scale(0.92); }
+        .sys-active { opacity: 1; transform: translate(0) scale(1); filter: blur(0); }
+        .sys-delay-100 { transition-delay: 160ms; }
+        .sys-delay-200 { transition-delay: 320ms; }
+        .sys-delay-300 { transition-delay: 480ms; }
+        .sys-delay-400 { transition-delay: 640ms; }
+        .sys-delay-500 { transition-delay: 800ms; }
+      }
+      /* Bar chart animations */
+      .bar-fill { transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+      .bar-fill-v { transition: height 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+      /* Status indicator pulse */
+      .status-ok { color: #22c55e; }
+      .status-err { color: #ef4444; }
+      /* Inline edit */
+      .inline-edit { background: transparent; border: 1px solid transparent; transition: all 0.2s; }
+      .inline-edit:hover { border-color: #3f3f46; }
+      .inline-edit:focus { border-color: #dc2626; outline: none; background: rgba(39,39,42,0.5); }
+      /* Workflow step connector */
+      .step-connector { position: relative; }
+      .step-connector::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 1px; background: #27272a; }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'red': { 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C', 900: '#7F1D1D' }
+            }
+          }
+        }
+      };
+    </script>
+</head>
+<body class="antialiased overflow-x-hidden text-zinc-400 min-h-screen flex flex-col selection:bg-red-600/30 selection:text-red-200 bg-black">
+    <!-- Animated Red Aurora Background -->
+    <div class="aurora-bg">
+      <div class="aurora-orb-1"></div>
+      <div class="aurora-orb-2"></div>
+      <div class="aurora-orb-3"></div>
+    </div>
+    <!-- Progressive Blur Top -->
+    <div class="gradient-blur" style="height: 120px;">
+      <div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-50 h-16 border-b border-zinc-800 bg-black/95 backdrop-blur-sm flex items-center justify-between sticky top-0">
+      <div class="flex items-center h-full pl-6 pr-8 border-r border-zinc-800 bg-black">
+        <a href="/" class="flex items-center gap-3 group">
+          <img src="/static/bastion-logo.png" alt="BASTION" class="w-7 h-7 group-hover:scale-110 transition-transform">
+          <span class="text-xl tracking-tighter text-white font-mono group-hover:text-red-600 transition-colors font-semibold">BASTION</span>
+        </a>
+        <div class="hidden lg:flex items-center ml-6 px-3 py-1 border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm rounded-sm gap-2">
+          <span class="text-[10px] font-mono text-zinc-600 leading-none">[</span>
+          <span class="relative flex h-1.5 w-1.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+          </span>
+          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">MCP: ONLINE</span>
+          <span class="text-[10px] font-mono text-zinc-600 leading-none">]</span>
+        </div>
+      </div>
+
+      <nav class="hidden lg:flex items-center h-full flex-1 justify-center">
+        <div class="flex h-full items-center border-x border-zinc-800/50">
+          <a href="/" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Home<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/agents" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Agents<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/docs" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">MCP Docs<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/frontend" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Terminal<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/monitor" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">Pulse<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+        </div>
+      </nav>
+
+      <div class="hidden md:flex items-center h-full border-l border-zinc-800 bg-black">
+        <a href="/login" class="h-full px-6 bg-transparent text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-widest transition-all flex items-center gap-2 border-r border-zinc-800">Login</a>
+        <a href="/account" class="h-full px-8 bg-red-600 text-white text-[10px] font-mono uppercase tracking-widest hover:bg-red-500 transition-all flex items-center gap-2 group shadow-[inset_0_0_20px_rgba(0,0,0,0.4)]">
+          Get Started
+          <iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
+        </a>
+      </div>
+
+      <button id="mobile-menu-btn" class="md:hidden p-0 w-16 h-full text-zinc-400 hover:text-white border-l border-zinc-800 bg-black flex items-center justify-center transition-colors hover:bg-zinc-900">
+        <iconify-icon icon="solar:hamburger-menu-linear" width="24"></iconify-icon>
+      </button>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="fixed inset-x-0 top-16 bottom-0 z-40 bg-black transform translate-x-full transition-transform duration-300 md:hidden flex flex-col border-t border-zinc-800 overflow-y-auto">
+      <div class="flex flex-col p-6 space-y-4">
+        <div class="flex flex-col border border-zinc-800 bg-zinc-900/20">
+          <a href="/" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Home</a>
+          <a href="/agents" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Agents</a>
+          <a href="/docs" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">MCP Docs</a>
+          <a href="/frontend" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Terminal</a>
+          <a href="/monitor" class="flex items-center justify-between p-4 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group">Pulse</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="relative z-10 flex-1 flex flex-col">
+
+      <!-- Auth Gate (hidden when logged in) -->
+      <div id="auth-gate" class="hidden w-full min-h-[60vh] flex items-center justify-center">
+        <div class="text-center max-w-md px-6">
+          <div class="w-16 h-16 mx-auto mb-6 border border-zinc-800 bg-zinc-950 flex items-center justify-center">
+            <iconify-icon icon="solar:lock-keyhole-linear" width="32" class="text-red-600"></iconify-icon>
+          </div>
+          <h2 class="text-2xl font-mono text-white uppercase tracking-tight mb-3">Authentication Required</h2>
+          <p class="text-sm text-zinc-500 font-mono mb-8">Sign in to access your API usage analytics, webhooks, workflows, and agent management.</p>
+          <a href="/login" class="inline-flex items-center gap-2 px-8 py-3 bg-red-600 text-white text-xs font-mono uppercase tracking-widest hover:bg-red-500 transition-all">
+            <iconify-icon icon="solar:login-3-linear" width="16"></iconify-icon>
+            Sign In
+          </a>
+        </div>
+      </div>
+
+      <!-- Dashboard (hidden until auth confirmed) -->
+      <div id="dashboard" class="hidden">
+
+        <!-- Page Title Bar -->
+        <div class="border-b border-zinc-800 bg-black/80 backdrop-blur-sm">
+          <div class="container mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="sys-reveal sys-rise">
+              <div class="flex items-center gap-3 mb-2">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                </span>
+                <span class="text-[10px] uppercase text-zinc-500 tracking-widest font-mono">USAGE DASHBOARD <span class="text-zinc-700 mx-2">//</span> <span id="user-email-display" class="text-zinc-400"></span></span>
+              </div>
+              <h1 class="text-3xl md:text-4xl uppercase leading-none font-medium text-white tracking-tight font-mono">API Analytics</h1>
+            </div>
+            <div class="flex items-center gap-3 sys-reveal sys-rise sys-delay-100">
+              <span id="last-refresh" class="text-[10px] font-mono text-zinc-600"></span>
+              <button onclick="refreshAll()" id="refresh-btn" class="flex items-center gap-2 px-4 py-2 border border-zinc-800 bg-zinc-950 hover:bg-zinc-900 hover:border-zinc-700 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white transition-all">
+                <iconify-icon icon="solar:refresh-linear" width="14" id="refresh-icon"></iconify-icon>
+                Refresh
+              </button>
+              <div class="flex items-center gap-2 px-3 py-2 border border-zinc-800 bg-zinc-950 text-[10px] font-mono text-zinc-600">
+                <iconify-icon icon="solar:clock-circle-linear" width="12"></iconify-icon>
+                Auto: 60s
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Overview Cards -->
+        <section class="container mx-auto px-6 md:px-12 py-8">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total API Calls -->
+            <div class="border border-zinc-800 bg-zinc-950 p-6 sys-reveal sys-rise">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-600">Total API Calls</span>
+                <iconify-icon icon="solar:chart-square-linear" width="18" class="text-zinc-700"></iconify-icon>
+              </div>
+              <div class="text-3xl font-bold text-white font-mono" id="stat-total">--</div>
+              <div class="text-[10px] font-mono text-zinc-600 mt-2">All time</div>
+            </div>
+            <!-- Calls Today -->
+            <div class="border border-zinc-800 bg-zinc-950 p-6 sys-reveal sys-rise sys-delay-100">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-600">Calls Today</span>
+                <iconify-icon icon="solar:calendar-linear" width="18" class="text-zinc-700"></iconify-icon>
+              </div>
+              <div class="text-3xl font-bold text-white font-mono" id="stat-today">--</div>
+              <div class="text-[10px] font-mono text-zinc-600 mt-2">Last 24 hours</div>
+            </div>
+            <!-- Error Rate -->
+            <div class="border border-zinc-800 bg-zinc-950 p-6 sys-reveal sys-rise sys-delay-200">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-600">Error Rate</span>
+                <iconify-icon icon="solar:danger-triangle-linear" width="18" class="text-zinc-700"></iconify-icon>
+              </div>
+              <div class="text-3xl font-bold font-mono" id="stat-error-rate">
+                <span class="text-white">--</span><span class="text-zinc-600 text-lg">%</span>
+              </div>
+              <div class="text-[10px] font-mono text-zinc-600 mt-2">4xx + 5xx responses</div>
+            </div>
+            <!-- Avg Latency -->
+            <div class="border border-zinc-800 bg-zinc-950 p-6 sys-reveal sys-rise sys-delay-300">
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-600">Avg Latency (p50)</span>
+                <iconify-icon icon="solar:stopwatch-linear" width="18" class="text-zinc-700"></iconify-icon>
+              </div>
+              <div class="text-3xl font-bold font-mono" id="stat-latency">
+                <span class="text-white">--</span><span class="text-zinc-600 text-lg">ms</span>
+              </div>
+              <div class="text-[10px] font-mono text-zinc-600 mt-2">Median response time</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tool Breakdown + Hourly Distribution -->
+        <section class="container mx-auto px-6 md:px-12 pb-8">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Tool Breakdown -->
+            <div class="border border-zinc-800 bg-zinc-950 p-6 sys-reveal sys-rise">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-zinc-400">Tool Breakdown</h3>
+                <span class="text-[10px] font-mono text-zinc-700">TOP TOOLS BY USAGE</span>
+              </div>
+              <div id="tool-breakdown" class="space-y-3">
+                <div class="text-xs font-mono text-zinc-600 text-center py-8">Loading...</div>
+              </div>
+            </div>
+            <!-- Hourly Distribution -->
+            <div class="border border-zinc-800 bg-zinc-950 p-6 sys-reveal sys-rise sys-delay-100">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xs font-mono uppercase tracking-widest text-zinc-400">Hourly Distribution</h3>
+                <span class="text-[10px] font-mono text-zinc-700">24H CALL VOLUME</span>
+              </div>
+              <div id="hourly-chart" class="flex items-end gap-[3px] h-40">
+                <div class="text-xs font-mono text-zinc-600 text-center py-8 w-full">Loading...</div>
+              </div>
+              <div class="flex justify-between mt-2 text-[8px] font-mono text-zinc-700">
+                <span>00:00</span>
+                <span>06:00</span>
+                <span>12:00</span>
+                <span>18:00</span>
+                <span>23:00</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Latency Stats -->
+        <section class="container mx-auto px-6 md:px-12 pb-8">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="border border-zinc-800 bg-zinc-950 p-6 text-center sys-reveal sys-rise">
+              <div class="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mb-3">P50 Latency</div>
+              <div class="text-4xl font-bold text-white font-mono" id="latency-p50">--</div>
+              <div class="text-xs font-mono text-zinc-600 mt-1">ms</div>
+              <div class="mt-4 h-1 bg-zinc-900 rounded-full overflow-hidden">
+                <div id="latency-p50-bar" class="h-full bg-green-500 bar-fill rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="border border-zinc-800 bg-zinc-950 p-6 text-center sys-reveal sys-rise sys-delay-100">
+              <div class="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mb-3">P95 Latency</div>
+              <div class="text-4xl font-bold text-yellow-500 font-mono" id="latency-p95">--</div>
+              <div class="text-xs font-mono text-zinc-600 mt-1">ms</div>
+              <div class="mt-4 h-1 bg-zinc-900 rounded-full overflow-hidden">
+                <div id="latency-p95-bar" class="h-full bg-yellow-500 bar-fill rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="border border-zinc-800 bg-zinc-950 p-6 text-center sys-reveal sys-rise sys-delay-200">
+              <div class="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mb-3">P99 Latency</div>
+              <div class="text-4xl font-bold text-red-500 font-mono" id="latency-p99">--</div>
+              <div class="text-xs font-mono text-zinc-600 mt-1">ms</div>
+              <div class="mt-4 h-1 bg-zinc-900 rounded-full overflow-hidden">
+                <div id="latency-p99-bar" class="h-full bg-red-500 bar-fill rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Recent Calls Log -->
+        <section class="container mx-auto px-6 md:px-12 pb-8">
+          <div class="border border-zinc-800 bg-zinc-950 sys-reveal sys-rise">
+            <div class="flex items-center justify-between p-6 border-b border-zinc-800">
+              <h3 class="text-xs font-mono uppercase tracking-widest text-zinc-400">Recent API Calls</h3>
+              <span class="text-[10px] font-mono text-zinc-700">LAST 50 CALLS</span>
+            </div>
+            <div class="overflow-x-auto no-scrollbar">
+              <table class="w-full text-xs font-mono">
+                <thead>
+                  <tr class="border-b border-zinc-800/50 text-[10px] uppercase tracking-widest text-zinc-600">
+                    <th class="text-left px-6 py-3 font-medium">Time</th>
+                    <th class="text-left px-6 py-3 font-medium">Tool</th>
+                    <th class="text-left px-6 py-3 font-medium">Latency</th>
+                    <th class="text-left px-6 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-calls-body">
+                  <tr><td colspan="4" class="px-6 py-8 text-center text-zinc-600">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Webhook Management -->
+        <section class="container mx-auto px-6 md:px-12 pb-8">
+          <div class="border border-zinc-800 bg-zinc-950 sys-reveal sys-rise">
+            <div class="flex items-center justify-between p-6 border-b border-zinc-800">
+              <div class="flex items-center gap-3">
+                <iconify-icon icon="solar:link-round-linear" width="18" class="text-red-600"></iconify-icon>
+                <h3 class="text-xs font-mono uppercase tracking-widest text-zinc-400">Webhook Management</h3>
+              </div>
+              <span id="webhook-count" class="text-[10px] font-mono text-zinc-700">0 WEBHOOKS</span>
+            </div>
+
+            <!-- Existing Webhooks List -->
+            <div id="webhook-list" class="divide-y divide-zinc-800/50">
+              <div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">Loading webhooks...</div>
+            </div>
+
+            <!-- Add Webhook Form -->
+            <div class="p-6 border-t border-zinc-800 bg-zinc-950/50">
+              <div class="flex items-center gap-2 mb-4">
+                <iconify-icon icon="solar:add-circle-linear" width="16" class="text-red-600"></iconify-icon>
+                <span class="text-xs font-mono uppercase tracking-widest text-zinc-400">Add Webhook</span>
+              </div>
+              <div class="flex flex-col md:flex-row gap-3">
+                <input type="url" id="webhook-url-input" placeholder="https://your-endpoint.com/webhook"
+                  class="flex-1 bg-zinc-900 border border-zinc-800 text-white text-xs font-mono px-4 py-3 placeholder:text-zinc-700 focus:outline-none focus:border-red-600 transition-colors">
+                <button onclick="addWebhook()" class="flex items-center gap-2 px-6 py-3 bg-red-600 text-white text-xs font-mono uppercase tracking-widest hover:bg-red-500 transition-all whitespace-nowrap">
+                  <iconify-icon icon="solar:add-circle-bold" width="14"></iconify-icon>
+                  Add
+                </button>
+              </div>
+              <div id="webhook-events-container" class="mt-4">
+                <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-600 block mb-2">Event Types</span>
+                <div id="webhook-events-checkboxes" class="flex flex-wrap gap-3">
+                  <span class="text-xs font-mono text-zinc-700">Loading events...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Workflow Builder -->
+        <section class="container mx-auto px-6 md:px-12 pb-8">
+          <div class="border border-zinc-800 bg-zinc-950 sys-reveal sys-rise">
+            <div class="flex items-center justify-between p-6 border-b border-zinc-800">
+              <div class="flex items-center gap-3">
+                <iconify-icon icon="solar:routing-3-linear" width="18" class="text-red-600"></iconify-icon>
+                <h3 class="text-xs font-mono uppercase tracking-widest text-zinc-400">Workflow Builder</h3>
+              </div>
+              <span id="workflow-count" class="text-[10px] font-mono text-zinc-700">0 WORKFLOWS</span>
+            </div>
+
+            <!-- Existing Workflows -->
+            <div id="workflow-list" class="divide-y divide-zinc-800/50">
+              <div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">Loading workflows...</div>
+            </div>
+
+            <!-- Templates -->
+            <div class="p-6 border-t border-zinc-800">
+              <div class="flex items-center gap-2 mb-4">
+                <iconify-icon icon="solar:document-text-linear" width="16" class="text-zinc-500"></iconify-icon>
+                <span class="text-xs font-mono uppercase tracking-widest text-zinc-400">Pre-Built Templates</span>
+              </div>
+              <div id="workflow-templates" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div class="text-xs font-mono text-zinc-600 text-center py-4 col-span-full">Loading templates...</div>
+              </div>
+            </div>
+
+            <!-- Create Workflow Form -->
+            <div class="p-6 border-t border-zinc-800 bg-zinc-950/50">
+              <div class="flex items-center gap-2 mb-4">
+                <iconify-icon icon="solar:add-circle-linear" width="16" class="text-red-600"></iconify-icon>
+                <span class="text-xs font-mono uppercase tracking-widest text-zinc-400">Create Workflow</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <input type="text" id="wf-name-input" placeholder="Workflow name"
+                  class="bg-zinc-900 border border-zinc-800 text-white text-xs font-mono px-4 py-3 placeholder:text-zinc-700 focus:outline-none focus:border-red-600 transition-colors">
+                <input type="text" id="wf-desc-input" placeholder="Description (optional)"
+                  class="bg-zinc-900 border border-zinc-800 text-white text-xs font-mono px-4 py-3 placeholder:text-zinc-700 focus:outline-none focus:border-red-600 transition-colors">
+              </div>
+
+              <!-- Steps Builder -->
+              <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-600">Steps</span>
+                  <button onclick="addWorkflowStep()" class="text-[10px] font-mono text-red-600 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center gap-1">
+                    <iconify-icon icon="solar:add-circle-linear" width="12"></iconify-icon> Add Step
+                  </button>
+                </div>
+                <div id="wf-steps" class="space-y-2">
+                  <!-- Steps added dynamically -->
+                </div>
+              </div>
+
+              <button onclick="createWorkflow()" class="flex items-center gap-2 px-6 py-3 bg-red-600 text-white text-xs font-mono uppercase tracking-widest hover:bg-red-500 transition-all">
+                <iconify-icon icon="solar:play-bold" width="14"></iconify-icon>
+                Create Workflow
+              </button>
+            </div>
+
+            <!-- Workflow Results -->
+            <div id="wf-results" class="hidden p-6 border-t border-zinc-800">
+              <div class="flex items-center gap-2 mb-3">
+                <iconify-icon icon="solar:monitor-linear" width="16" class="text-green-500"></iconify-icon>
+                <span class="text-xs font-mono uppercase tracking-widest text-zinc-400">Execution Results</span>
+              </div>
+              <pre id="wf-results-content" class="bg-zinc-900 border border-zinc-800 p-4 text-xs font-mono text-zinc-300 overflow-x-auto max-h-64 overflow-y-auto no-scrollbar"></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- Multi-Agent Management -->
+        <section class="container mx-auto px-6 md:px-12 pb-8">
+          <div class="border border-zinc-800 bg-zinc-950 sys-reveal sys-rise">
+            <div class="flex items-center justify-between p-6 border-b border-zinc-800">
+              <div class="flex items-center gap-3">
+                <iconify-icon icon="solar:users-group-rounded-linear" width="18" class="text-red-600"></iconify-icon>
+                <h3 class="text-xs font-mono uppercase tracking-widest text-zinc-400">API Keys &amp; Agents</h3>
+              </div>
+              <a href="/account" class="text-[10px] font-mono uppercase tracking-widest text-red-600 hover:text-red-400 transition-colors flex items-center gap-1">
+                <iconify-icon icon="solar:key-linear" width="12"></iconify-icon>
+                Generate New Key
+              </a>
+            </div>
+            <div id="agent-list" class="divide-y divide-zinc-800/50">
+              <div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">Loading agents...</div>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /dashboard -->
+
+      <!-- Footer -->
+      <footer class="border-t border-zinc-800 bg-black relative z-20 mt-auto">
+        <div class="border-b border-zinc-800/50 px-6 md:px-8 py-3">
+          <p class="text-[8px] font-mono text-zinc-600 leading-relaxed text-center max-w-4xl mx-auto">BASTION provides market intelligence via the Model Context Protocol (MCP) for Claude by Anthropic. BASTION does not execute trades, hold funds, or provide financial advice. All trading decisions are made by the user's autonomous agent using the user's own exchange API keys. Cryptocurrency trading involves substantial risk of loss.</p>
+        </div>
+        <div class="px-6 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+          <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-2 md:mb-0">
+            <span class="cursor-default font-mono">&copy; 2026 BASTION SYSTEMS.</span>
+            <span class="hidden md:inline w-px h-3 bg-zinc-800"></span>
+            <div class="flex gap-6 font-mono"><a href="/" class="hover:text-white transition-colors">Home</a><a href="/docs" class="hover:text-white transition-colors">MCP Docs</a><a href="/api/swagger" class="hover:text-white transition-colors">API Reference</a></div>
+          </div>
+          <div class="flex items-center gap-6 font-mono">
+            <div class="flex items-center gap-2"><iconify-icon icon="solar:server-linear" width="12"></iconify-icon><span>MCP ONLINE</span></div>
+            <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
+            <div class="flex items-center gap-2 text-red-600"><img src="/static/bastion-logo.png" alt="" class="w-3 h-3"><span>BASTION</span></div>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+    (function() {
+      'use strict';
+
+      // ─── State ───
+      let currentUser = null;
+      let autoRefreshTimer = null;
+      let workflowStepCount = 0;
+      let availableTools = [];
+
+      // ─── Auth Check ───
+      async function checkAuth() {
+        try {
+          const resp = await fetch('/api/auth/me', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Not authenticated');
+          currentUser = await resp.json();
+          document.getElementById('auth-gate').classList.add('hidden');
+          document.getElementById('dashboard').classList.remove('hidden');
+          document.getElementById('user-email-display').textContent = currentUser.email || currentUser.username || '';
+          initDashboard();
+        } catch (e) {
+          document.getElementById('auth-gate').classList.remove('hidden');
+          document.getElementById('auth-gate').style.display = 'flex';
+          document.getElementById('dashboard').classList.add('hidden');
+        }
+      }
+
+      // ─── Init ───
+      function initDashboard() {
+        refreshAll();
+        autoRefreshTimer = setInterval(refreshAll, 60000);
+        fetchWebhookEvents();
+        fetchWorkflowTemplates();
+        fetchTools();
+      }
+
+      // ─── Refresh All ───
+      window.refreshAll = async function() {
+        const icon = document.getElementById('refresh-icon');
+        icon.style.animation = 'spin 0.6s linear';
+        setTimeout(() => icon.style.animation = '', 600);
+
+        await Promise.allSettled([
+          fetchStats(),
+          fetchRecent(),
+          fetchWebhooks(),
+          fetchWorkflows(),
+          fetchAgents()
+        ]);
+
+        document.getElementById('last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      };
+
+      // ─── Fetch Tools (for workflow builder) ───
+      async function fetchTools() {
+        try {
+          const resp = await fetch('/api/mcp/tools', { credentials: 'include' });
+          if (resp.ok) {
+            const data = await resp.json();
+            availableTools = data.tools || data || [];
+          }
+        } catch (e) { /* silent */ }
+      }
+
+      // ─── Stats ───
+      async function fetchStats() {
+        try {
+          const resp = await fetch('/api/usage/stats', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          const data = await resp.json();
+
+          document.getElementById('stat-total').textContent = (data.total_calls || 0).toLocaleString();
+          document.getElementById('stat-today').textContent = (data.calls_today || 0).toLocaleString();
+
+          const errRate = data.error_rate != null ? data.error_rate : 0;
+          document.getElementById('stat-error-rate').innerHTML =
+            `<span class="${errRate > 5 ? 'text-red-500' : 'text-white'}">${errRate.toFixed(1)}</span><span class="text-zinc-600 text-lg">%</span>`;
+
+          const latP50 = data.latency_p50 || data.avg_latency || 0;
+          document.getElementById('stat-latency').innerHTML =
+            `<span class="text-white">${Math.round(latP50)}</span><span class="text-zinc-600 text-lg">ms</span>`;
+
+          // Latency percentiles
+          const p50 = data.latency_p50 || 0;
+          const p95 = data.latency_p95 || 0;
+          const p99 = data.latency_p99 || 0;
+          const maxLat = Math.max(p99, 5000) || 5000;
+
+          document.getElementById('latency-p50').textContent = Math.round(p50);
+          document.getElementById('latency-p95').textContent = Math.round(p95);
+          document.getElementById('latency-p99').textContent = Math.round(p99);
+
+          setTimeout(() => {
+            document.getElementById('latency-p50-bar').style.width = Math.min((p50 / maxLat) * 100, 100) + '%';
+            document.getElementById('latency-p95-bar').style.width = Math.min((p95 / maxLat) * 100, 100) + '%';
+            document.getElementById('latency-p99-bar').style.width = Math.min((p99 / maxLat) * 100, 100) + '%';
+          }, 100);
+
+          // Tool breakdown
+          renderToolBreakdown(data.tool_breakdown || []);
+
+          // Hourly distribution
+          renderHourlyChart(data.hourly_distribution || []);
+
+        } catch (e) {
+          document.getElementById('stat-total').textContent = '--';
+          document.getElementById('stat-today').textContent = '--';
+        }
+      }
+
+      // ─── Tool Breakdown ───
+      function renderToolBreakdown(tools) {
+        const container = document.getElementById('tool-breakdown');
+        if (!tools.length) {
+          container.innerHTML = '<div class="text-xs font-mono text-zinc-600 text-center py-8">No tool usage data available</div>';
+          return;
+        }
+        const maxCount = Math.max(...tools.map(t => t.count || t.calls || 0));
+        container.innerHTML = tools.slice(0, 12).map(tool => {
+          const count = tool.count || tool.calls || 0;
+          const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+          const name = tool.tool || tool.name || 'unknown';
+          return `
+            <div class="group">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[11px] font-mono text-zinc-400 group-hover:text-white transition-colors truncate max-w-[60%]">${escHtml(name)}</span>
+                <span class="text-[10px] font-mono text-zinc-600">${count.toLocaleString()}</span>
+              </div>
+              <div class="h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                <div class="h-full bg-red-600 bar-fill rounded-full" style="width: ${pct}%"></div>
+              </div>
+            </div>`;
+        }).join('');
+
+        // Animate bars
+        setTimeout(() => {
+          container.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.style.width);
+        }, 50);
+      }
+
+      // ─── Hourly Distribution ───
+      function renderHourlyChart(hours) {
+        const container = document.getElementById('hourly-chart');
+        if (!hours.length) {
+          // Generate empty 24 slots
+          hours = Array(24).fill(0);
+        }
+        // Pad to 24 if needed
+        while (hours.length < 24) hours.push(0);
+
+        const maxVal = Math.max(...hours, 1);
+        container.innerHTML = hours.slice(0, 24).map((val, i) => {
+          const h = maxVal > 0 ? Math.max((val / maxVal) * 100, 2) : 2;
+          const isNow = new Date().getHours() === i;
+          return `
+            <div class="flex-1 flex flex-col items-center justify-end h-full group" title="${String(i).padStart(2,'0')}:00 — ${val} calls">
+              <div class="w-full ${isNow ? 'bg-red-600' : 'bg-zinc-700 group-hover:bg-red-600/60'} bar-fill-v rounded-t-sm transition-colors"
+                   style="height: ${h}%"></div>
+            </div>`;
+        }).join('');
+      }
+
+      // ─── Recent Calls ───
+      async function fetchRecent() {
+        try {
+          const resp = await fetch('/api/usage/recent', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          const data = await resp.json();
+          const calls = data.calls || data || [];
+
+          const tbody = document.getElementById('recent-calls-body');
+          if (!calls.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-zinc-600">No recent API calls</td></tr>';
+            return;
+          }
+          tbody.innerHTML = calls.slice(0, 50).map(call => {
+            const time = call.timestamp ? new Date(call.timestamp).toLocaleTimeString() : '--';
+            const tool = call.tool || call.endpoint || '--';
+            const latency = call.latency_ms != null ? call.latency_ms + 'ms' : '--';
+            const status = call.status || call.status_code || 200;
+            const isErr = status >= 400;
+            return `
+              <tr class="border-b border-zinc-800/30 hover:bg-zinc-900/30 transition-colors">
+                <td class="px-6 py-3 text-zinc-500">${escHtml(time)}</td>
+                <td class="px-6 py-3 text-zinc-300">${escHtml(tool)}</td>
+                <td class="px-6 py-3 text-zinc-500">${escHtml(String(latency))}</td>
+                <td class="px-6 py-3">
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono uppercase ${isErr ? 'text-red-400 bg-red-600/10 border border-red-600/20' : 'text-green-400 bg-green-600/10 border border-green-600/20'}">
+                    <span class="w-1 h-1 rounded-full ${isErr ? 'bg-red-400' : 'bg-green-400'}"></span>
+                    ${status}
+                  </span>
+                </td>
+              </tr>`;
+          }).join('');
+        } catch (e) {
+          document.getElementById('recent-calls-body').innerHTML =
+            '<tr><td colspan="4" class="px-6 py-8 text-center text-zinc-600">Failed to load recent calls</td></tr>';
+        }
+      }
+
+      // ─── Webhooks ───
+      async function fetchWebhooks() {
+        try {
+          const resp = await fetch('/api/webhooks', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          const data = await resp.json();
+          const hooks = data.webhooks || data || [];
+
+          document.getElementById('webhook-count').textContent = hooks.length + ' WEBHOOK' + (hooks.length !== 1 ? 'S' : '');
+          const container = document.getElementById('webhook-list');
+
+          if (!hooks.length) {
+            container.innerHTML = '<div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">No webhooks configured</div>';
+            return;
+          }
+          container.innerHTML = hooks.map(hook => `
+            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-mono text-zinc-300 truncate">${escHtml(hook.url)}</div>
+                <div class="flex items-center gap-2 mt-1">
+                  ${(hook.events || []).map(e => `<span class="text-[9px] font-mono px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-500">${escHtml(e)}</span>`).join('')}
+                  <span class="text-[9px] font-mono text-zinc-700">${hook.created_at ? 'Created ' + new Date(hook.created_at).toLocaleDateString() : ''}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="testWebhook('${escAttr(hook.id)}')" class="px-3 py-1.5 border border-zinc-800 bg-zinc-900 text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:border-zinc-700 transition-all">Test</button>
+                <button onclick="deleteWebhook('${escAttr(hook.id)}')" class="px-3 py-1.5 border border-red-600/30 bg-red-600/5 text-[10px] font-mono uppercase tracking-widest text-red-500 hover:bg-red-600/10 hover:border-red-600/50 transition-all">Delete</button>
+              </div>
+            </div>`).join('');
+        } catch (e) {
+          document.getElementById('webhook-list').innerHTML =
+            '<div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">Failed to load webhooks</div>';
+        }
+      }
+
+      async function fetchWebhookEvents() {
+        try {
+          const resp = await fetch('/api/webhooks/events', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          const data = await resp.json();
+          const events = data.events || data || [];
+          const container = document.getElementById('webhook-events-checkboxes');
+
+          if (!events.length) {
+            container.innerHTML = '<span class="text-xs font-mono text-zinc-700">No event types available</span>';
+            return;
+          }
+          container.innerHTML = events.map(evt => `
+            <label class="flex items-center gap-2 px-3 py-1.5 border border-zinc-800 bg-zinc-900 hover:border-zinc-700 transition-colors">
+              <input type="checkbox" value="${escAttr(evt.id || evt.name || evt)}" class="webhook-event-cb accent-red-600 w-3 h-3">
+              <span class="text-[10px] font-mono text-zinc-400 uppercase">${escHtml(evt.label || evt.name || evt)}</span>
+            </label>`).join('');
+        } catch (e) {
+          document.getElementById('webhook-events-checkboxes').innerHTML =
+            '<span class="text-xs font-mono text-zinc-700">Failed to load events</span>';
+        }
+      }
+
+      window.addWebhook = async function() {
+        const url = document.getElementById('webhook-url-input').value.trim();
+        if (!url) return;
+        const events = [...document.querySelectorAll('.webhook-event-cb:checked')].map(cb => cb.value);
+
+        try {
+          const resp = await fetch('/api/webhooks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ url, events })
+          });
+          if (!resp.ok) throw new Error('Failed to create webhook');
+          document.getElementById('webhook-url-input').value = '';
+          document.querySelectorAll('.webhook-event-cb').forEach(cb => cb.checked = false);
+          await fetchWebhooks();
+        } catch (e) {
+          alert('Error creating webhook: ' + e.message);
+        }
+      };
+
+      window.testWebhook = async function(id) {
+        try {
+          const resp = await fetch(`/api/webhooks/${id}/test`, { method: 'POST', credentials: 'include' });
+          const data = await resp.json();
+          alert(data.success ? 'Webhook test successful! Response: ' + (data.status_code || 'OK') : 'Webhook test failed: ' + (data.error || 'Unknown error'));
+        } catch (e) {
+          alert('Test failed: ' + e.message);
+        }
+      };
+
+      window.deleteWebhook = async function(id) {
+        if (!confirm('Delete this webhook?')) return;
+        try {
+          await fetch(`/api/webhooks/${id}`, { method: 'DELETE', credentials: 'include' });
+          await fetchWebhooks();
+        } catch (e) {
+          alert('Delete failed: ' + e.message);
+        }
+      };
+
+      // ─── Workflows ───
+      async function fetchWorkflows() {
+        try {
+          const resp = await fetch('/api/workflows', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          const data = await resp.json();
+          const workflows = data.workflows || data || [];
+
+          document.getElementById('workflow-count').textContent = workflows.length + ' WORKFLOW' + (workflows.length !== 1 ? 'S' : '');
+          const container = document.getElementById('workflow-list');
+
+          if (!workflows.length) {
+            container.innerHTML = '<div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">No saved workflows</div>';
+            return;
+          }
+          container.innerHTML = workflows.map(wf => `
+            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-mono text-zinc-200 font-medium">${escHtml(wf.name)}</div>
+                <div class="text-[11px] font-mono text-zinc-600 mt-0.5">${escHtml(wf.description || 'No description')} &mdash; ${(wf.steps || []).length} step${(wf.steps || []).length !== 1 ? 's' : ''}</div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="runWorkflow('${escAttr(wf.id)}')" class="px-3 py-1.5 border border-zinc-800 bg-zinc-900 text-[10px] font-mono uppercase tracking-widest text-green-400 hover:text-green-300 hover:border-green-600/30 transition-all flex items-center gap-1.5">
+                  <iconify-icon icon="solar:play-bold" width="10"></iconify-icon> Run
+                </button>
+                <button onclick="deleteWorkflow('${escAttr(wf.id)}')" class="px-3 py-1.5 border border-red-600/30 bg-red-600/5 text-[10px] font-mono uppercase tracking-widest text-red-500 hover:bg-red-600/10 hover:border-red-600/50 transition-all">Delete</button>
+              </div>
+            </div>`).join('');
+        } catch (e) {
+          document.getElementById('workflow-list').innerHTML =
+            '<div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">Failed to load workflows</div>';
+        }
+      }
+
+      async function fetchWorkflowTemplates() {
+        try {
+          const resp = await fetch('/api/workflows/templates', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          const data = await resp.json();
+          const templates = data.templates || data || [];
+          const container = document.getElementById('workflow-templates');
+
+          if (!templates.length) {
+            container.innerHTML = '<div class="text-xs font-mono text-zinc-600 text-center py-4 col-span-full">No templates available</div>';
+            return;
+          }
+          container.innerHTML = templates.map(tpl => `
+            <div class="border border-zinc-800 bg-zinc-900/50 p-4 hover:border-zinc-700 transition-all group">
+              <div class="flex items-center gap-2 mb-2">
+                <iconify-icon icon="solar:document-text-linear" width="14" class="text-zinc-600 group-hover:text-red-600 transition-colors"></iconify-icon>
+                <span class="text-xs font-mono text-zinc-300 font-medium">${escHtml(tpl.name)}</span>
+              </div>
+              <p class="text-[10px] font-mono text-zinc-600 mb-3 leading-relaxed">${escHtml(tpl.description || '')}</p>
+              <button onclick='useTemplate(${JSON.stringify(JSON.stringify(tpl))})' class="text-[10px] font-mono text-red-600 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center gap-1">
+                <iconify-icon icon="solar:copy-linear" width="10"></iconify-icon> Use Template
+              </button>
+            </div>`).join('');
+        } catch (e) {
+          document.getElementById('workflow-templates').innerHTML =
+            '<div class="text-xs font-mono text-zinc-600 text-center py-4 col-span-full">Failed to load templates</div>';
+        }
+      }
+
+      window.useTemplate = function(tplJson) {
+        try {
+          const tpl = JSON.parse(tplJson);
+          document.getElementById('wf-name-input').value = tpl.name || '';
+          document.getElementById('wf-desc-input').value = tpl.description || '';
+          // Clear existing steps and populate from template
+          document.getElementById('wf-steps').innerHTML = '';
+          workflowStepCount = 0;
+          if (tpl.steps && tpl.steps.length) {
+            tpl.steps.forEach(step => {
+              addWorkflowStep();
+              const idx = workflowStepCount;
+              const toolSelect = document.getElementById(`wf-step-tool-${idx}`);
+              const paramsInput = document.getElementById(`wf-step-params-${idx}`);
+              if (toolSelect && step.tool) toolSelect.value = step.tool;
+              if (paramsInput && step.params) paramsInput.value = typeof step.params === 'string' ? step.params : JSON.stringify(step.params);
+            });
+          }
+        } catch(e) { /* silent */ }
+      };
+
+      window.addWorkflowStep = function() {
+        workflowStepCount++;
+        const idx = workflowStepCount;
+        const toolOptions = availableTools.length
+          ? availableTools.map(t => `<option value="${escAttr(t.name || t)}">${escHtml(t.name || t)}</option>`).join('')
+          : '<option value="">-- type tool name --</option>';
+
+        const step = document.createElement('div');
+        step.className = 'flex flex-col md:flex-row gap-2 p-3 border border-zinc-800 bg-zinc-900/30';
+        step.id = `wf-step-${idx}`;
+        step.innerHTML = `
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[10px] font-mono text-zinc-600 w-5">${idx}.</span>
+          </div>
+          <select id="wf-step-tool-${idx}" class="flex-1 bg-zinc-900 border border-zinc-800 text-white text-xs font-mono px-3 py-2 focus:outline-none focus:border-red-600 transition-colors">
+            ${toolOptions}
+          </select>
+          <input type="text" id="wf-step-params-${idx}" placeholder='{"param": "value"}' class="flex-1 bg-zinc-900 border border-zinc-800 text-white text-xs font-mono px-3 py-2 placeholder:text-zinc-700 focus:outline-none focus:border-red-600 transition-colors">
+          <button onclick="document.getElementById('wf-step-${idx}').remove()" class="px-2 py-1 text-zinc-600 hover:text-red-500 transition-colors">
+            <iconify-icon icon="solar:trash-bin-minimalistic-linear" width="14"></iconify-icon>
+          </button>`;
+        document.getElementById('wf-steps').appendChild(step);
+      };
+
+      window.createWorkflow = async function() {
+        const name = document.getElementById('wf-name-input').value.trim();
+        if (!name) { alert('Workflow name is required'); return; }
+        const description = document.getElementById('wf-desc-input').value.trim();
+
+        const stepEls = document.querySelectorAll('[id^="wf-step-"]');
+        const steps = [];
+        stepEls.forEach(el => {
+          const idx = el.id.replace('wf-step-', '');
+          const toolSelect = document.getElementById(`wf-step-tool-${idx}`);
+          const paramsInput = document.getElementById(`wf-step-params-${idx}`);
+          if (toolSelect) {
+            let params = {};
+            try { params = JSON.parse(paramsInput.value || '{}'); } catch(e) { params = { raw: paramsInput.value }; }
+            steps.push({ tool: toolSelect.value, params });
+          }
+        });
+
+        try {
+          const resp = await fetch('/api/workflows', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ name, description, steps })
+          });
+          if (!resp.ok) throw new Error('Failed to create workflow');
+          document.getElementById('wf-name-input').value = '';
+          document.getElementById('wf-desc-input').value = '';
+          document.getElementById('wf-steps').innerHTML = '';
+          workflowStepCount = 0;
+          await fetchWorkflows();
+        } catch (e) {
+          alert('Error creating workflow: ' + e.message);
+        }
+      };
+
+      window.runWorkflow = async function(id) {
+        const resultsDiv = document.getElementById('wf-results');
+        const resultsPre = document.getElementById('wf-results-content');
+        resultsDiv.classList.remove('hidden');
+        resultsPre.textContent = 'Executing workflow...';
+
+        try {
+          const resp = await fetch(`/api/workflows/${id}/run`, { method: 'POST', credentials: 'include' });
+          const data = await resp.json();
+          resultsPre.textContent = JSON.stringify(data, null, 2);
+        } catch (e) {
+          resultsPre.textContent = 'Execution failed: ' + e.message;
+        }
+      };
+
+      window.deleteWorkflow = async function(id) {
+        if (!confirm('Delete this workflow?')) return;
+        try {
+          await fetch(`/api/workflows/${id}`, { method: 'DELETE', credentials: 'include' });
+          await fetchWorkflows();
+        } catch (e) {
+          alert('Delete failed: ' + e.message);
+        }
+      };
+
+      // ─── Agents ───
+      async function fetchAgents() {
+        try {
+          const resp = await fetch('/api/auth/agents', { credentials: 'include' });
+          if (!resp.ok) throw new Error('Failed');
+          const data = await resp.json();
+          const agents = data.agents || data || [];
+          const container = document.getElementById('agent-list');
+
+          if (!agents.length) {
+            container.innerHTML = '<div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">No API keys found. <a href="/account" class="text-red-600 hover:text-red-400">Generate one</a>.</div>';
+            return;
+          }
+          container.innerHTML = agents.map(agent => {
+            const keyPrefix = agent.key_prefix || agent.api_key_prefix || (agent.api_key ? agent.api_key.slice(0, 12) + '...' : '***');
+            const scopes = agent.scopes || agent.permissions || [];
+            const topTools = agent.top_tools || [];
+            return `
+            <div class="px-6 py-5">
+              <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-3 mb-2">
+                    <input type="text" value="${escAttr(agent.label || agent.name || 'Unnamed Agent')}"
+                      onchange="updateAgentLabel('${escAttr(agent.id)}', this.value)"
+                      class="inline-edit text-sm font-mono text-white font-medium px-2 py-0.5 rounded-sm bg-transparent max-w-xs">
+                    <span class="text-[10px] font-mono px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-600">${escHtml(keyPrefix)}</span>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2 mb-2">
+                    ${scopes.map(s => `<span class="text-[9px] font-mono px-1.5 py-0.5 bg-red-600/10 border border-red-600/20 text-red-400 uppercase">${escHtml(s)}</span>`).join('')}
+                  </div>
+                  <div class="flex flex-wrap items-center gap-4 text-[10px] font-mono text-zinc-600">
+                    <span>Last used: ${agent.last_used ? new Date(agent.last_used).toLocaleDateString() : 'Never'}</span>
+                    <span class="w-px h-3 bg-zinc-800"></span>
+                    <span>Calls: ${(agent.total_calls || 0).toLocaleString()}</span>
+                  </div>
+                  ${topTools.length ? `
+                  <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                    <span class="text-[9px] font-mono text-zinc-700">Top tools:</span>
+                    ${topTools.slice(0, 5).map(t => `<span class="text-[9px] font-mono px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-500">${escHtml(typeof t === 'string' ? t : t.name || t.tool)}</span>`).join('')}
+                  </div>` : ''}
+                </div>
+              </div>
+            </div>`;
+          }).join('');
+        } catch (e) {
+          document.getElementById('agent-list').innerHTML =
+            '<div class="px-6 py-8 text-center text-xs font-mono text-zinc-600">Failed to load agents</div>';
+        }
+      }
+
+      window.updateAgentLabel = async function(id, newLabel) {
+        try {
+          await fetch(`/api/auth/keys/${id}/label`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ label: newLabel })
+          });
+        } catch (e) {
+          alert('Failed to update label: ' + e.message);
+        }
+      };
+
+      // ─── Utility ───
+      function escHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+      }
+
+      function escAttr(str) {
+        return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      }
+
+      // ─── Mobile menu toggle ───
+      document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+        document.getElementById('mobile-menu').classList.toggle('translate-x-full');
+      });
+
+      // ─── Scroll animations ───
+      document.addEventListener("DOMContentLoaded", () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add("sys-active"); observer.unobserve(entry.target); } });
+        }, { threshold: 0.1 });
+        document.querySelectorAll(".sys-reveal, .sys-rise").forEach(el => observer.observe(el));
+      });
+
+      // ─── Spin keyframe for refresh icon ───
+      const style = document.createElement('style');
+      style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+      document.head.appendChild(style);
+
+      // ─── Init on load ───
+      checkAuth();
+
+    })();
+    </script>
+</body>
+</html>

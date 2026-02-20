@@ -704,6 +704,468 @@ async def serve_agents():
     )
 
 
+# ═══════════════════════════════════════════════════════════════
+# NEW FEATURE ENDPOINTS — Playground, Usage, Password Reset,
+# Webhooks, Workflows, Multi-Agent
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/playground", response_class=HTMLResponse)
+async def serve_playground():
+    pg_path = bastion_path / "web" / "playground.html"
+    if pg_path.exists():
+        return FileResponse(pg_path)
+    return HTMLResponse("<h1 style='color:#fff;background:#000;font-family:monospace;padding:2em;'>Playground — Coming Soon</h1>")
+
+@app.get("/usage", response_class=HTMLResponse)
+async def serve_usage():
+    usage_path = bastion_path / "web" / "usage.html"
+    if usage_path.exists():
+        return FileResponse(usage_path)
+    return HTMLResponse("<h1 style='color:#fff;background:#000;font-family:monospace;padding:2em;'>Usage — Coming Soon</h1>")
+
+@app.post("/api/mcp/test-key")
+async def test_mcp_key(data: dict):
+    """Test if a BASTION API key is valid."""
+    api_key = data.get("api_key", "").strip()
+    if not api_key:
+        return {"valid": False, "msg": "No API key provided"}
+    try:
+        from mcp_server.auth import validate_bst_key
+        key_info = await validate_bst_key(api_key)
+        if key_info:
+            return {"valid": True, "scopes": key_info.get("scopes", ["read"]), "user_id": key_info.get("user_id"), "msg": "Key is valid"}
+        return {"valid": False, "msg": "Invalid or expired API key"}
+    except Exception as e:
+        logger.error(f"[MCP] Key test error: {e}")
+        return {"valid": False, "msg": "Key validation service unavailable"}
+
+@app.get("/api/mcp/tools")
+async def list_mcp_tools():
+    """List all MCP tools with schemas for the playground."""
+    tools = [
+        {"name": "bastion_evaluate_risk", "category": "Core AI", "scope": "read", "description": "AI risk evaluation for a crypto position", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Trading pair (BTC, ETH, SOL...)", "default": "BTC"},
+            {"name": "direction", "type": "string", "required": True, "description": "LONG or SHORT", "default": "LONG"},
+            {"name": "entry_price", "type": "number", "required": True, "description": "Entry price"},
+            {"name": "current_price", "type": "number", "required": True, "description": "Current market price"},
+            {"name": "leverage", "type": "number", "required": False, "description": "Leverage", "default": 1},
+            {"name": "stop_loss", "type": "number", "required": False, "description": "Stop loss price", "default": 0},
+            {"name": "position_size_usd", "type": "number", "required": False, "description": "Size in USD", "default": 1000},
+        ]},
+        {"name": "bastion_chat", "category": "Core AI", "scope": "read", "description": "Ask BASTION AI about crypto markets", "params": [
+            {"name": "message", "type": "string", "required": True, "description": "Your question", "default": "What's the current state of BTC?"},
+        ]},
+        {"name": "bastion_scan_signals", "category": "Core AI", "scope": "read", "description": "Scan for trading signals", "params": [
+            {"name": "symbols", "type": "string", "required": False, "description": "Comma-separated symbols", "default": "BTC,ETH,SOL"},
+        ]},
+        {"name": "bastion_get_price", "category": "Market Data", "scope": "public", "description": "Get live crypto price", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_market_data", "category": "Market Data", "scope": "public", "description": "Aggregated market intelligence", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_klines", "category": "Market Data", "scope": "public", "description": "Candlestick OHLCV data", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+            {"name": "interval", "type": "string", "required": False, "description": "Timeframe", "default": "1h"},
+            {"name": "limit", "type": "number", "required": False, "description": "Candle count", "default": 50},
+        ]},
+        {"name": "bastion_get_volatility", "category": "Market Data", "scope": "public", "description": "Volatility + regime detection", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_open_interest", "category": "Derivatives", "scope": "public", "description": "Open interest across exchanges", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_funding_rates", "category": "Derivatives", "scope": "public", "description": "Cross-exchange funding rates", "params": []},
+        {"name": "bastion_get_liquidations", "category": "Derivatives", "scope": "public", "description": "Liquidation events", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_heatmap", "category": "Derivatives", "scope": "public", "description": "Liquidation heatmap", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_cvd", "category": "Derivatives", "scope": "public", "description": "Cumulative Volume Delta", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_oi_changes", "category": "Derivatives", "scope": "public", "description": "OI changes across pairs", "params": []},
+        {"name": "bastion_get_taker_ratio", "category": "Derivatives", "scope": "public", "description": "Taker buy/sell ratio", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_options", "category": "Derivatives", "scope": "public", "description": "Options data", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_whale_activity", "category": "On-Chain", "scope": "public", "description": "Whale transactions", "params": []},
+        {"name": "bastion_get_exchange_flow", "category": "On-Chain", "scope": "public", "description": "Exchange inflow/outflow", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_fear_greed", "category": "Sentiment", "scope": "public", "description": "Fear & Greed Index", "params": []},
+        {"name": "bastion_get_etf_flows", "category": "Macro", "scope": "public", "description": "ETF flow data", "params": []},
+        {"name": "bastion_get_macro_signals", "category": "Macro", "scope": "public", "description": "Macro signals", "params": []},
+        {"name": "bastion_get_positions", "category": "Portfolio", "scope": "read", "description": "Open positions", "params": [
+            {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
+        ]},
+        {"name": "bastion_get_balance", "category": "Portfolio", "scope": "read", "description": "Portfolio balance", "params": [
+            {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
+        ]},
+        {"name": "bastion_engine_status", "category": "Portfolio", "scope": "read", "description": "Risk engine status", "params": [
+            {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
+        ]},
+    ]
+    return {"tools": tools, "total": 49, "listed": len(tools)}
+
+@app.post("/api/mcp/playground/execute")
+async def execute_playground_tool(data: dict):
+    """Execute an MCP tool from the playground."""
+    raw_tool = data.get("tool", "")
+    # Normalize: accept both "get_price" and "bastion_get_price"
+    tool_name = raw_tool if raw_tool.startswith("bastion_") else f"bastion_{raw_tool}"
+    params = data.get("params", {})
+    tool_map = {
+        "bastion_get_price": ("GET", "/api/price/{symbol}"),
+        "bastion_get_market_data": ("GET", "/api/market/{symbol}"),
+        "bastion_get_klines": ("GET", "/api/klines/{symbol}"),
+        "bastion_get_volatility": ("GET", "/api/volatility/{symbol}"),
+        "bastion_get_open_interest": ("GET", "/api/oi/{symbol}"),
+        "bastion_get_funding_rates": ("GET", "/api/funding"),
+        "bastion_get_liquidations": ("GET", "/api/coinglass/liquidations/{symbol}"),
+        "bastion_get_heatmap": ("GET", "/api/heatmap/{symbol}"),
+        "bastion_get_cvd": ("GET", "/api/cvd/{symbol}"),
+        "bastion_get_oi_changes": ("GET", "/api/oi-changes"),
+        "bastion_get_taker_ratio": ("GET", "/api/taker-ratio/{symbol}"),
+        "bastion_get_options": ("GET", "/api/options/{symbol}"),
+        "bastion_get_whale_activity": ("GET", "/api/whales"),
+        "bastion_get_exchange_flow": ("GET", "/api/exchange-flow/{symbol}"),
+        "bastion_get_fear_greed": ("GET", "/api/fear-greed"),
+        "bastion_get_etf_flows": ("GET", "/api/etf-flows"),
+        "bastion_get_macro_signals": ("GET", "/api/market-pulse"),
+        "bastion_get_positions": ("GET", "/api/positions/all"),
+        "bastion_get_balance": ("GET", "/api/balance/total"),
+        "bastion_engine_status": ("GET", "/api/engine/status"),
+    }
+    post_tools = {
+        "bastion_evaluate_risk": "/api/risk/evaluate",
+        "bastion_chat": "/api/neural/chat",
+        "bastion_scan_signals": "/api/signals/scan",
+    }
+    import httpx
+    t0 = time.time()
+    port = os.getenv("PORT", "3001")
+    try:
+        if tool_name in post_tools:
+            async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=60.0) as client:
+                if tool_name == "bastion_evaluate_risk":
+                    body = {"symbol": params.get("symbol", "BTC"), "direction": params.get("direction", "LONG"), "entry_price": float(params.get("entry_price", 0)), "current_price": float(params.get("current_price", 0)), "leverage": float(params.get("leverage", 1)), "stop_loss": float(params.get("stop_loss", 0)), "position_size_usd": float(params.get("position_size_usd", 1000))}
+                elif tool_name == "bastion_chat":
+                    body = {"message": params.get("message", ""), "conversation_id": "playground"}
+                elif tool_name == "bastion_scan_signals":
+                    body = {"symbols": [s.strip() for s in params.get("symbols", "BTC,ETH,SOL").split(",") if s.strip()]}
+                else:
+                    body = params
+                resp = await client.post(post_tools[tool_name], json=body)
+                return {"result": resp.json(), "latency_ms": round((time.time() - t0) * 1000), "status": resp.status_code}
+        elif tool_name in tool_map:
+            method, path_template = tool_map[tool_name]
+            symbol = params.get("symbol", "BTC")
+            path = path_template.replace("{symbol}", symbol)
+            query_params = {k: v for k, v in params.items() if k not in ("symbol", "api_key") and v}
+            async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=60.0) as client:
+                resp = await client.get(path, params=query_params)
+                return {"result": resp.json(), "latency_ms": round((time.time() - t0) * 1000), "status": resp.status_code}
+        else:
+            return {"error": f"Unknown tool: {tool_name}"}
+    except Exception as e:
+        return {"error": str(e), "latency_ms": round((time.time() - t0) * 1000)}
+
+# ── Password Reset ────────────────────────────────────────────
+_reset_tokens: dict = {}
+
+@app.post("/api/auth/forgot-password")
+async def forgot_password(data: dict):
+    email = data.get("email", "").lower().strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email required")
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    user = await user_service.get_user_by_email(email)
+    if not user:
+        return {"success": True, "message": "If an account exists, a reset link has been sent."}
+    token = secrets.token_urlsafe(32)
+    _reset_tokens[token] = {"email": email, "user_id": user.id, "expires": time.time() + 3600}
+    logger.info(f"[AUTH] Password reset token for: {email}")
+    return {"success": True, "message": "If an account exists, a reset link has been sent.", "reset_token": token, "expires_in": 3600}
+
+@app.post("/api/auth/reset-password")
+async def reset_password(data: dict):
+    token = data.get("token", "").strip()
+    new_password = data.get("new_password", "")
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token and new password required")
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    token_data = _reset_tokens.get(token)
+    if not token_data:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    if time.time() > token_data["expires"]:
+        _reset_tokens.pop(token, None)
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+    try:
+        new_hash = user_service._hash_password(new_password)
+        if user_service.is_db_available:
+            user_service.client.table(user_service.users_table).update({"password_hash": new_hash}).eq("id", token_data["user_id"]).execute()
+        _reset_tokens.pop(token, None)
+        return {"success": True, "message": "Password reset successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")
+
+# ── Usage Tracking ────────────────────────────────────────────
+_usage_data: dict = {}
+
+def _track_usage(user_id: str, tool_name: str, latency_ms: int = 0, success: bool = True):
+    if not user_id:
+        user_id = "_anonymous"
+    if user_id not in _usage_data:
+        _usage_data[user_id] = {"calls": [], "tool_counts": {}, "total_calls": 0, "total_errors": 0, "first_call": time.time()}
+    entry = _usage_data[user_id]
+    entry["calls"].append({"tool": tool_name, "timestamp": time.time(), "latency_ms": latency_ms, "success": success})
+    if len(entry["calls"]) > 1000:
+        entry["calls"] = entry["calls"][-500:]
+    entry["tool_counts"][tool_name] = entry["tool_counts"].get(tool_name, 0) + 1
+    entry["total_calls"] += 1
+    if not success:
+        entry["total_errors"] += 1
+
+@app.get("/api/usage/stats")
+async def get_usage_stats(request: Request):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    user_id = user.id if user else "_anonymous"
+    data = _usage_data.get(user_id, {"calls": [], "tool_counts": {}, "total_calls": 0, "total_errors": 0})
+    now = time.time()
+    calls = data.get("calls", [])
+    calls_24h = [c for c in calls if now - c["timestamp"] < 86400]
+    calls_7d = [c for c in calls if now - c["timestamp"] < 604800]
+    latencies = [c["latency_ms"] for c in calls_24h if c.get("latency_ms")]
+    p50 = sorted(latencies)[len(latencies)//2] if latencies else 0
+    p95 = sorted(latencies)[int(len(latencies)*0.95)] if latencies else 0
+    p99 = sorted(latencies)[int(len(latencies)*0.99)] if latencies else 0
+    tool_breakdown = {}
+    for c in calls_7d:
+        tool_breakdown[c["tool"]] = tool_breakdown.get(c["tool"], 0) + 1
+    hourly = [0] * 24
+    for c in calls_24h:
+        h = datetime.fromtimestamp(c["timestamp"]).hour
+        hourly[h] += 1
+    return {"total_calls": data.get("total_calls", 0), "total_errors": data.get("total_errors", 0), "calls_24h": len(calls_24h), "calls_7d": len(calls_7d), "calls_30d": len([c for c in calls if now - c["timestamp"] < 2592000]), "latency": {"p50": p50, "p95": p95, "p99": p99}, "tool_breakdown": sorted(tool_breakdown.items(), key=lambda x: -x[1])[:20], "hourly_distribution": hourly, "error_rate": round(data.get("total_errors", 0) / max(data.get("total_calls", 1), 1) * 100, 2)}
+
+@app.get("/api/usage/recent")
+async def get_recent_calls(request: Request, limit: int = 50):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    user_id = user.id if user else "_anonymous"
+    data = _usage_data.get(user_id, {"calls": []})
+    calls = data.get("calls", [])[-limit:]
+    calls.reverse()
+    return {"calls": calls, "total": len(data.get("calls", []))}
+
+# ── Webhooks ──────────────────────────────────────────────────
+_webhook_configs: dict = {}
+
+@app.get("/api/webhooks")
+async def get_webhooks(request: Request):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return {"webhooks": _webhook_configs.get(user.id, [])}
+
+@app.post("/api/webhooks")
+async def create_webhook(request: Request, data: dict):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    url = data.get("url", "").strip()
+    if not url or not url.startswith("http"):
+        raise HTTPException(status_code=400, detail="Valid webhook URL required")
+    webhook = {"id": secrets.token_urlsafe(8), "name": data.get("name", "Webhook"), "url": url, "events": data.get("events", []), "active": True, "created_at": datetime.utcnow().isoformat(), "last_triggered": None, "trigger_count": 0}
+    if user.id not in _webhook_configs:
+        _webhook_configs[user.id] = []
+    if len(_webhook_configs[user.id]) >= 10:
+        raise HTTPException(status_code=400, detail="Max 10 webhooks")
+    _webhook_configs[user.id].append(webhook)
+    return {"success": True, "webhook": webhook}
+
+@app.delete("/api/webhooks/{webhook_id}")
+async def delete_webhook(request: Request, webhook_id: str):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    hooks = _webhook_configs.get(user.id, [])
+    _webhook_configs[user.id] = [h for h in hooks if h["id"] != webhook_id]
+    return {"success": True}
+
+@app.post("/api/webhooks/{webhook_id}/test")
+async def test_webhook(request: Request, webhook_id: str):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    hooks = _webhook_configs.get(user.id, [])
+    hook = next((h for h in hooks if h["id"] == webhook_id), None)
+    if not hook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(hook["url"], json={"event": "test", "source": "bastion", "timestamp": datetime.utcnow().isoformat(), "data": {"message": "Test webhook from BASTION"}})
+            return {"success": True, "status_code": resp.status_code}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/webhooks/events")
+async def list_webhook_events():
+    return {"events": [
+        {"id": "risk.exit_full", "name": "Risk: EXIT_FULL", "description": "AI recommends full exit"},
+        {"id": "risk.exit_100", "name": "Risk: EXIT_100%", "description": "AI recommends 100% exit"},
+        {"id": "risk.reduce_size", "name": "Risk: REDUCE_SIZE", "description": "AI recommends reducing"},
+        {"id": "risk.tp_partial", "name": "Risk: TP_PARTIAL", "description": "AI recommends partial TP"},
+        {"id": "risk.hold", "name": "Risk: HOLD", "description": "AI recommends hold"},
+        {"id": "risk.any", "name": "Risk: Any Action", "description": "Any risk evaluation"},
+        {"id": "whale.large_transfer", "name": "Whale: Large Transfer", "description": "Large whale transfer"},
+        {"id": "funding.anomaly", "name": "Funding: Anomaly", "description": "Unusual funding rate"},
+        {"id": "liquidation.cluster", "name": "Liquidation: Cluster", "description": "Liquidation cluster"},
+        {"id": "portfolio.drawdown_5pct", "name": "Portfolio: 5% Drawdown", "description": "Portfolio down 5%"},
+        {"id": "engine.action_taken", "name": "Engine: Action", "description": "Engine executed trade"},
+    ]}
+
+# ── Workflows / Tool Chains ──────────────────────────────────
+_workflows: dict = {}
+
+@app.get("/api/workflows")
+async def get_workflows(request: Request):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return {"workflows": _workflows.get(user.id, [])}
+
+@app.post("/api/workflows")
+async def create_workflow(request: Request, data: dict):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    name = data.get("name", "").strip()
+    steps = data.get("steps", [])
+    if not name:
+        raise HTTPException(status_code=400, detail="Workflow name required")
+    if not steps or len(steps) < 2:
+        raise HTTPException(status_code=400, detail="Need at least 2 steps")
+    workflow = {"id": secrets.token_urlsafe(8), "name": name, "description": data.get("description", ""), "steps": steps[:10], "created_at": datetime.utcnow().isoformat(), "last_run": None, "run_count": 0}
+    if user.id not in _workflows:
+        _workflows[user.id] = []
+    if len(_workflows[user.id]) >= 20:
+        raise HTTPException(status_code=400, detail="Max 20 workflows")
+    _workflows[user.id].append(workflow)
+    return {"success": True, "workflow": workflow}
+
+@app.post("/api/workflows/{workflow_id}/run")
+async def run_workflow(request: Request, workflow_id: str):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    workflows = _workflows.get(user.id, [])
+    workflow = next((w for w in workflows if w["id"] == workflow_id), None)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    results = []
+    total_start = time.time()
+    for i, step in enumerate(workflow["steps"]):
+        t0 = time.time()
+        try:
+            step_result = await execute_playground_tool({"tool": step.get("tool", ""), "params": step.get("params", {})})
+            results.append({"step": i + 1, "tool": step.get("tool"), "label": step.get("label", f"Step {i+1}"), "result": step_result, "latency_ms": round((time.time() - t0) * 1000), "success": "error" not in step_result})
+        except Exception as e:
+            results.append({"step": i + 1, "tool": step.get("tool"), "error": str(e), "success": False})
+    workflow["last_run"] = datetime.utcnow().isoformat()
+    workflow["run_count"] += 1
+    return {"workflow_id": workflow_id, "name": workflow["name"], "results": results, "total_latency_ms": round((time.time() - total_start) * 1000)}
+
+@app.delete("/api/workflows/{workflow_id}")
+async def delete_workflow(request: Request, workflow_id: str):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    wfs = _workflows.get(user.id, [])
+    _workflows[user.id] = [w for w in wfs if w["id"] != workflow_id]
+    return {"success": True}
+
+@app.get("/api/workflows/templates")
+async def get_workflow_templates():
+    return {"templates": [
+        {"name": "Morning Briefing", "description": "Price, whales, funding, sentiment", "steps": [
+            {"tool": "bastion_get_price", "params": {"symbol": "BTC"}, "label": "BTC Price"},
+            {"tool": "bastion_get_whale_activity", "params": {}, "label": "Whale Activity"},
+            {"tool": "bastion_get_funding_rates", "params": {}, "label": "Funding Rates"},
+            {"tool": "bastion_get_fear_greed", "params": {}, "label": "Fear & Greed"},
+        ]},
+        {"name": "Pre-Trade Analysis", "description": "Full analysis before entering a trade", "steps": [
+            {"tool": "bastion_get_market_data", "params": {"symbol": "BTC"}, "label": "Market Structure"},
+            {"tool": "bastion_get_open_interest", "params": {"symbol": "BTC"}, "label": "Open Interest"},
+            {"tool": "bastion_get_whale_activity", "params": {}, "label": "Whale Flows"},
+            {"tool": "bastion_get_volatility", "params": {"symbol": "BTC"}, "label": "Volatility"},
+            {"tool": "bastion_get_funding_rates", "params": {}, "label": "Funding Rates"},
+        ]},
+        {"name": "Research Deep Dive", "description": "Institutional-grade research data", "steps": [
+            {"tool": "bastion_get_market_data", "params": {"symbol": "ETH"}, "label": "Market Overview"},
+            {"tool": "bastion_get_cvd", "params": {"symbol": "ETH"}, "label": "Volume Delta"},
+            {"tool": "bastion_get_exchange_flow", "params": {"symbol": "ETH"}, "label": "Exchange Flows"},
+            {"tool": "bastion_get_options", "params": {"symbol": "ETH"}, "label": "Options Data"},
+            {"tool": "bastion_get_etf_flows", "params": {}, "label": "ETF Flows"},
+        ]},
+    ]}
+
+# ── Multi-Agent ───────────────────────────────────────────────
+
+@app.get("/api/auth/agents")
+async def get_user_agents(request: Request):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    if not user_service.is_db_available:
+        return {"agents": []}
+    try:
+        result = user_service.client.table("bastion_api_keys").select("id, key_prefix, scopes, label, created_at, last_used_at, revoked").eq("user_id", user.id).eq("revoked", False).order("created_at", desc=True).execute()
+        agents = []
+        for row in (result.data or []):
+            agents.append({"id": row.get("id", ""), "key_prefix": row.get("key_prefix", "bst_****"), "label": row.get("label", "Unnamed Agent"), "scopes": row.get("scopes", ["read"]), "created_at": row.get("created_at"), "last_used_at": row.get("last_used_at")})
+        return {"agents": agents, "total": len(agents), "max_agents": 10}
+    except Exception as e:
+        logger.error(f"[AUTH] Error listing agents: {e}")
+        return {"agents": [], "error": str(e)}
+
+@app.put("/api/auth/keys/{key_id}/label")
+async def update_key_label(request: Request, key_id: str, data: dict):
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    label = data.get("label", "").strip()
+    if not label:
+        raise HTTPException(status_code=400, detail="Label required")
+    if not user_service.is_db_available:
+        return {"success": False, "error": "Database unavailable"}
+    try:
+        user_service.client.table("bastion_api_keys").update({"label": label}).eq("id", key_id).eq("user_id", user.id).execute()
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/favicon.ico")
 async def serve_favicon():
     """Serve the BASTION logo as favicon."""

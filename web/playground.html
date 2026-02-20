@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black scroll-smooth scroll-pt-24">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASTION — MCP Tool Playground</title>
+    <link rel="icon" type="image/png" href="/static/bastion-logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+      body { font-family: 'Inter', sans-serif; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='16' fill='none' stroke='%23dc2626' stroke-width='1.5' opacity='0.5'/%3E%3Ccircle cx='24' cy='24' r='8' fill='none' stroke='%23dc2626' stroke-width='1' opacity='0.35'/%3E%3Cline x1='24' y1='2' x2='24' y2='15' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='24' y1='33' x2='24' y2='46' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='2' y1='24' x2='15' y2='24' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Cline x1='33' y1='24' x2='46' y2='24' stroke='%23dc2626' stroke-width='2' opacity='0.8'/%3E%3Ccircle cx='24' cy='24' r='2.5' fill='%23dc2626'/%3E%3C/svg%3E") 24 24, crosshair; }
+      a, button, [role="button"], input, select, textarea, .cursor-pointer { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='16' fill='none' stroke='%23ff3333' stroke-width='2' opacity='0.7'/%3E%3Ccircle cx='24' cy='24' r='8' fill='none' stroke='%23ff3333' stroke-width='1.5' opacity='0.5'/%3E%3Cline x1='24' y1='2' x2='24' y2='15' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='24' y1='33' x2='24' y2='46' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='2' y1='24' x2='15' y2='24' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Cline x1='33' y1='24' x2='46' y2='24' stroke='%23ff3333' stroke-width='2.5' opacity='0.9'/%3E%3Ccircle cx='24' cy='24' r='3' fill='%23ff3333'/%3E%3C/svg%3E") 24 24, pointer; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      pre { tab-size: 2; }
+      /* Animated aurora background */
+      .aurora-bg {
+        position: absolute; top: 0; left: 0; width: 100%; height: 800px; z-index: -1; overflow: hidden;
+        mask-image: linear-gradient(black 0%, black 60%, transparent 100%);
+        -webkit-mask-image: linear-gradient(black 0%, black 60%, transparent 100%);
+      }
+      .aurora-bg::before {
+        content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: conic-gradient(from 0deg at 50% 50%, transparent 0%, #dc2626 8%, transparent 16%, transparent 33%, #7f1d1d 41%, transparent 49%, transparent 66%, #991b1b 74%, transparent 82%);
+        animation: aurora-spin 20s linear infinite;
+        opacity: 0.15;
+        filter: blur(80px);
+      }
+      .aurora-bg::after {
+        content: ''; position: absolute; top: -30%; left: -30%; width: 160%; height: 160%;
+        background: conic-gradient(from 180deg at 40% 60%, transparent 0%, #ef4444 6%, transparent 12%, transparent 50%, #b91c1c 56%, transparent 62%);
+        animation: aurora-spin 15s linear infinite reverse;
+        opacity: 0.12;
+        filter: blur(100px);
+      }
+      @keyframes aurora-spin { to { transform: rotate(360deg); } }
+      .aurora-orb-1 {
+        position: absolute; width: 600px; height: 400px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(220,38,38,0.2) 0%, transparent 70%);
+        top: 10%; left: 20%; filter: blur(60px);
+        animation: orb-drift-1 12s ease-in-out infinite;
+      }
+      .aurora-orb-2 {
+        position: absolute; width: 500px; height: 350px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(185,28,28,0.15) 0%, transparent 70%);
+        top: 5%; right: 15%; filter: blur(80px);
+        animation: orb-drift-2 16s ease-in-out infinite;
+      }
+      .aurora-orb-3 {
+        position: absolute; width: 400px; height: 300px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(239,68,68,0.1) 0%, transparent 70%);
+        top: 30%; left: 50%; filter: blur(70px);
+        animation: orb-drift-3 10s ease-in-out infinite;
+      }
+      @keyframes orb-drift-1 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(60px, -30px); } }
+      @keyframes orb-drift-2 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-40px, 20px); } }
+      @keyframes orb-drift-3 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-30px, -40px); } }
+      /* Progressive blur (top of page) */
+      .gradient-blur { position: fixed; z-index: 5; inset: 0 0 auto 0; height: 12%; pointer-events: none; }
+      .gradient-blur>div, .gradient-blur::before, .gradient-blur::after { position: absolute; inset: 0; }
+      .gradient-blur::before { content: ""; z-index: 1; backdrop-filter: blur(0.5px); mask: linear-gradient(to top, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,0) 37.5%); }
+      .gradient-blur>div:nth-of-type(1) { z-index: 2; backdrop-filter: blur(1px); mask: linear-gradient(to top, rgba(0,0,0,0) 12.5%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,0) 50%); }
+      .gradient-blur>div:nth-of-type(2) { z-index: 3; backdrop-filter: blur(2px); mask: linear-gradient(to top, rgba(0,0,0,0) 25%, rgba(0,0,0,1) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 62.5%); }
+      .gradient-blur>div:nth-of-type(3) { z-index: 4; backdrop-filter: blur(4px); mask: linear-gradient(to top, rgba(0,0,0,0) 37.5%, rgba(0,0,0,1) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,0) 75%); }
+      .gradient-blur>div:nth-of-type(4) { z-index: 5; backdrop-filter: blur(8px); mask: linear-gradient(to top, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,0) 87.5%); }
+      .gradient-blur>div:nth-of-type(5) { z-index: 6; backdrop-filter: blur(16px); mask: linear-gradient(to top, rgba(0,0,0,0) 62.5%, rgba(0,0,0,1) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,0) 100%); }
+      .gradient-blur>div:nth-of-type(6) { z-index: 7; backdrop-filter: blur(32px); mask: linear-gradient(to top, rgba(0,0,0,0) 75%, rgba(0,0,0,1) 87.5%, rgba(0,0,0,1) 100%); }
+      .gradient-blur::after { content: ""; z-index: 8; backdrop-filter: blur(64px); mask: linear-gradient(to top, rgba(0,0,0,0) 87.5%, rgba(0,0,0,1) 100%); }
+      /* Category filter active */
+      .cat-btn.active { background-color: #DC2626; color: white; border-color: #DC2626; }
+      /* JSON syntax highlighting */
+      .json-key { color: #EF4444; }
+      .json-string { color: #6EE7B7; }
+      .json-number { color: #93C5FD; }
+      .json-boolean { color: #FCD34D; }
+      .json-null { color: #9CA3AF; }
+      .json-bracket { color: #A1A1AA; }
+      /* Pulse animation for execute button */
+      @keyframes exec-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); } }
+      .exec-pulse { animation: exec-pulse 2s ease-in-out infinite; }
+      /* Scroll reveal */
+      @media (prefers-reduced-motion: no-preference) {
+        .sys-reveal { opacity: 0; transform: translateY(20px); filter: blur(4px); transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.8s cubic-bezier(0.16, 1, 0.3, 1), filter 1.8s ease-out; will-change: opacity, transform; }
+        .sys-active { opacity: 1; transform: translate(0) scale(1); filter: blur(0); }
+      }
+      /* Custom scrollbar for response viewer */
+      .response-viewer::-webkit-scrollbar { width: 6px; height: 6px; }
+      .response-viewer::-webkit-scrollbar-track { background: #18181b; }
+      .response-viewer::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+      .response-viewer::-webkit-scrollbar-thumb:hover { background: #52525b; }
+      /* Param field focus */
+      .param-input:focus { border-color: #DC2626; box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.3); }
+      /* Tool list item */
+      .tool-item { transition: all 0.15s ease; }
+      .tool-item:hover { background-color: rgba(220, 38, 38, 0.06); }
+      .tool-item.selected { background-color: rgba(220, 38, 38, 0.1); border-left-color: #DC2626; }
+      /* Spinner */
+      @keyframes spinner-rotate { to { transform: rotate(360deg); } }
+      .exec-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spinner-rotate 0.6s linear infinite; display: inline-block; }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'red': { 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C', 900: '#7F1D1D' }
+            }
+          }
+        }
+      };
+    </script>
+</head>
+<body class="antialiased overflow-x-hidden text-zinc-400 min-h-screen flex flex-col selection:bg-red-600/30 selection:text-red-200 bg-black">
+    <!-- Animated Red Aurora Background -->
+    <div class="aurora-bg">
+      <div class="aurora-orb-1"></div>
+      <div class="aurora-orb-2"></div>
+      <div class="aurora-orb-3"></div>
+    </div>
+    <!-- Progressive Blur Top -->
+    <div class="gradient-blur" style="height: 120px;">
+      <div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-50 h-16 border-b border-zinc-800 bg-black/95 backdrop-blur-sm flex items-center justify-between sticky top-0">
+      <div class="flex items-center h-full pl-6 pr-8 border-r border-zinc-800 bg-black">
+        <a href="/" class="flex items-center gap-3 group">
+          <img src="/static/bastion-logo.png" alt="BASTION" class="w-7 h-7 group-hover:scale-110 transition-transform">
+          <span class="text-xl tracking-tighter text-white font-mono group-hover:text-red-600 transition-colors font-semibold">BASTION</span>
+        </a>
+        <div class="hidden lg:flex items-center ml-6 px-3 py-1 border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm rounded-sm gap-2">
+          <span class="text-[10px] font-mono text-zinc-600 leading-none">[</span>
+          <span class="relative flex h-1.5 w-1.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+          </span>
+          <span class="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">MCP: ONLINE</span>
+          <span class="text-[10px] font-mono text-zinc-600 leading-none">]</span>
+        </div>
+      </div>
+
+      <nav class="hidden lg:flex items-center h-full flex-1 justify-center">
+        <div class="flex h-full items-center border-x border-zinc-800/50">
+          <a href="/" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Home<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/agents" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Agents<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/docs" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">MCP Docs<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/frontend" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Terminal<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/monitor" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 transition-colors border-r border-zinc-800/50 relative group">Pulse<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div></a>
+          <a href="/playground" class="flex items-center px-6 h-full text-[10px] font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900/50 transition-colors relative group">Playground<div class="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 scale-x-100 transition-transform origin-left"></div></a>
+        </div>
+      </nav>
+
+      <div class="hidden md:flex items-center h-full border-l border-zinc-800 bg-black">
+        <a href="/login" class="h-full px-6 bg-transparent text-zinc-400 hover:text-white text-[10px] font-mono uppercase tracking-widest transition-all flex items-center gap-2 border-r border-zinc-800">Login</a>
+        <a href="/account" class="h-full px-8 bg-red-600 text-white text-[10px] font-mono uppercase tracking-widest hover:bg-red-500 transition-all flex items-center gap-2 group shadow-[inset_0_0_20px_rgba(0,0,0,0.4)]">
+          Get Started
+          <iconify-icon icon="solar:arrow-right-linear" width="14" class="group-hover:translate-x-1 transition-transform"></iconify-icon>
+        </a>
+      </div>
+
+      <button id="mobile-menu-btn" class="md:hidden p-0 w-16 h-full text-zinc-400 hover:text-white border-l border-zinc-800 bg-black flex items-center justify-center transition-colors hover:bg-zinc-900">
+        <iconify-icon icon="solar:hamburger-menu-linear" width="24"></iconify-icon>
+      </button>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="fixed inset-x-0 top-16 bottom-0 z-40 bg-black transform translate-x-full transition-transform duration-300 md:hidden flex flex-col border-t border-zinc-800 overflow-y-auto">
+      <div class="flex flex-col p-6 space-y-4">
+        <div class="flex flex-col border border-zinc-800 bg-zinc-900/20">
+          <a href="/" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Home</a>
+          <a href="/agents" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Agents</a>
+          <a href="/docs" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">MCP Docs</a>
+          <a href="/frontend" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Terminal</a>
+          <a href="/monitor" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Pulse</a>
+          <a href="/playground" class="flex items-center justify-between p-4 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900 transition-colors">Playground</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="relative z-10 flex-1 flex flex-col">
+
+      <!-- Hero -->
+      <section class="relative px-6 md:px-8 pt-20 pb-12 text-center">
+        <div class="max-w-4xl mx-auto">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm mb-8 text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+            <iconify-icon icon="solar:test-tube-minimalistic-bold" width="14" class="text-red-500"></iconify-icon>
+            <span>Interactive Testing Environment</span>
+          </div>
+          <h1 class="text-4xl md:text-6xl lg:text-7xl font-mono font-bold text-white tracking-tighter leading-[0.9] mb-6">
+            MCP TOOL<br><span class="text-red-600">PLAYGROUND</span>
+          </h1>
+          <p class="text-sm md:text-base text-zinc-500 max-w-xl mx-auto leading-relaxed font-mono">
+            Test any of BASTION's <span class="text-white font-semibold">49 MCP tools</span> in your browser. No Claude agent needed.
+          </p>
+          <div class="flex items-center justify-center gap-6 mt-8 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:bolt-linear" width="12" class="text-red-500"></iconify-icon>
+              <span>Real-time Execution</span>
+            </div>
+            <span class="w-px h-3 bg-zinc-800"></span>
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:code-linear" width="12" class="text-red-500"></iconify-icon>
+              <span>JSON Response</span>
+            </div>
+            <span class="w-px h-3 bg-zinc-800"></span>
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:lock-linear" width="12" class="text-red-500"></iconify-icon>
+              <span>Auth Required</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- API Key Bar -->
+      <section class="px-6 md:px-8 pb-6">
+        <div class="max-w-7xl mx-auto">
+          <div class="flex items-center gap-3 p-3 border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm">
+            <iconify-icon icon="solar:key-linear" width="16" class="text-zinc-600 shrink-0"></iconify-icon>
+            <input id="api-key-input" type="password" placeholder="Enter your BASTION API key to execute tools..." class="param-input flex-1 bg-transparent text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none border-none">
+            <button id="toggle-key-vis" class="text-zinc-600 hover:text-zinc-400 transition-colors" title="Toggle visibility">
+              <iconify-icon icon="solar:eye-linear" width="16"></iconify-icon>
+            </button>
+            <div id="key-status" class="hidden items-center gap-1.5 px-2.5 py-1 text-[9px] font-mono uppercase tracking-widest">
+              <span class="relative flex h-1.5 w-1.5"><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span></span>
+              <span class="text-green-500">Authenticated</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Category Filters -->
+      <section class="px-6 md:px-8 pb-6">
+        <div class="max-w-7xl mx-auto">
+          <div id="category-bar" class="flex flex-wrap gap-2">
+            <button class="cat-btn active px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 transition-all" data-category="all">
+              All Tools
+            </button>
+            <button class="cat-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 transition-all" data-category="core_ai">
+              <iconify-icon icon="solar:brain-linear" width="12" class="mr-1"></iconify-icon>Core AI
+            </button>
+            <button class="cat-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 transition-all" data-category="market_data">
+              <iconify-icon icon="solar:chart-linear" width="12" class="mr-1"></iconify-icon>Market Data
+            </button>
+            <button class="cat-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 transition-all" data-category="derivatives">
+              <iconify-icon icon="solar:graph-up-linear" width="12" class="mr-1"></iconify-icon>Derivatives
+            </button>
+            <button class="cat-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 transition-all" data-category="onchain">
+              <iconify-icon icon="solar:link-linear" width="12" class="mr-1"></iconify-icon>On-Chain
+            </button>
+            <button class="cat-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 transition-all" data-category="sentiment">
+              <iconify-icon icon="solar:chat-round-like-linear" width="12" class="mr-1"></iconify-icon>Sentiment
+            </button>
+            <button class="cat-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 transition-all" data-category="macro">
+              <iconify-icon icon="solar:global-linear" width="12" class="mr-1"></iconify-icon>Macro
+            </button>
+            <button class="cat-btn px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-red-600 transition-all" data-category="portfolio">
+              <iconify-icon icon="solar:wallet-linear" width="12" class="mr-1"></iconify-icon>Portfolio
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Playground Grid -->
+      <section class="px-6 md:px-8 pb-20 flex-1">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- Tool Selector (Left Panel) -->
+          <div class="lg:col-span-3">
+            <div class="border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-20">
+              <!-- Search -->
+              <div class="p-3 border-b border-zinc-800">
+                <div class="flex items-center gap-2 px-3 py-2 bg-zinc-900/50 border border-zinc-800">
+                  <iconify-icon icon="solar:magnifer-linear" width="14" class="text-zinc-600"></iconify-icon>
+                  <input id="tool-search" type="text" placeholder="Search tools..." class="param-input flex-1 bg-transparent text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none border-none">
+                </div>
+              </div>
+              <!-- Tool Count -->
+              <div class="px-3 py-2 border-b border-zinc-800/50 flex items-center justify-between">
+                <span id="tool-count" class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">0 tools</span>
+                <span id="tool-loading" class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest hidden">
+                  <iconify-icon icon="solar:refresh-bold" width="10" class="animate-spin mr-1"></iconify-icon>Loading...
+                </span>
+              </div>
+              <!-- Tool List -->
+              <div id="tool-list" class="max-h-[60vh] overflow-y-auto no-scrollbar">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Parameter Form + Response (Right Panel) -->
+          <div class="lg:col-span-9 space-y-6">
+
+            <!-- Selected Tool Info -->
+            <div id="tool-info" class="border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm">
+              <div class="p-6 border-b border-zinc-800">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <div class="flex items-center gap-3 mb-2">
+                      <h2 id="tool-name" class="text-lg font-mono font-bold text-white tracking-tight">Select a Tool</h2>
+                      <span id="tool-category-badge" class="hidden px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest border border-red-600/30 bg-red-600/10 text-red-400"></span>
+                    </div>
+                    <p id="tool-description" class="text-xs font-mono text-zinc-500 leading-relaxed">Choose a tool from the left panel to view its parameters and test it.</p>
+                  </div>
+                  <div id="tool-method" class="hidden px-3 py-1 text-[10px] font-mono uppercase tracking-widest border border-zinc-700 text-zinc-400 bg-zinc-900 shrink-0">POST</div>
+                </div>
+              </div>
+
+              <!-- Parameter Form -->
+              <div id="param-section" class="hidden">
+                <div class="px-6 py-3 border-b border-zinc-800/50 flex items-center justify-between">
+                  <span class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Parameters</span>
+                  <button id="clear-params" class="text-[10px] font-mono text-zinc-600 uppercase tracking-widest hover:text-red-400 transition-colors">Clear All</button>
+                </div>
+                <div id="param-form" class="p-6 space-y-4">
+                  <!-- Populated by JS -->
+                </div>
+                <div class="px-6 pb-6">
+                  <button id="execute-btn" class="w-full py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-mono uppercase tracking-widest transition-all flex items-center justify-center gap-2 group exec-pulse disabled:opacity-40 disabled:cursor-not-allowed disabled:exec-pulse-none" disabled>
+                    <iconify-icon icon="solar:play-bold" width="14" class="group-hover:scale-110 transition-transform"></iconify-icon>
+                    <span id="execute-text">Execute Tool</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div id="empty-state" class="p-12 text-center">
+                <iconify-icon icon="solar:test-tube-minimalistic-linear" width="48" class="text-zinc-800 mb-4"></iconify-icon>
+                <p class="text-xs font-mono text-zinc-700 uppercase tracking-widest">Select a tool to begin testing</p>
+              </div>
+            </div>
+
+            <!-- Response Viewer -->
+            <div id="response-section" class="hidden border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm">
+              <!-- Response Header -->
+              <div class="px-6 py-3 border-b border-zinc-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Response</span>
+                  <span id="response-status" class="px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest border border-green-600/30 bg-green-600/10 text-green-400">200 OK</span>
+                  <span id="response-latency" class="px-2 py-0.5 text-[9px] font-mono tracking-widest border border-zinc-700 bg-zinc-900 text-zinc-400">--ms</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="copy-response" class="text-zinc-600 hover:text-white transition-colors p-1" title="Copy JSON">
+                    <iconify-icon icon="solar:copy-linear" width="14"></iconify-icon>
+                  </button>
+                  <button id="collapse-response" class="text-zinc-600 hover:text-white transition-colors p-1" title="Collapse">
+                    <iconify-icon icon="solar:minimize-linear" width="14"></iconify-icon>
+                  </button>
+                </div>
+              </div>
+              <!-- Response Body -->
+              <div id="response-body" class="p-6 response-viewer max-h-[50vh] overflow-auto">
+                <pre id="response-json" class="text-xs font-mono leading-relaxed whitespace-pre-wrap break-words"></pre>
+              </div>
+            </div>
+
+            <!-- Request History -->
+            <div id="history-section" class="border border-zinc-800 bg-zinc-950/80 backdrop-blur-sm">
+              <div class="px-6 py-3 border-b border-zinc-800 flex items-center justify-between">
+                <span class="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Request History</span>
+                <button id="clear-history" class="text-[10px] font-mono text-zinc-600 uppercase tracking-widest hover:text-red-400 transition-colors">Clear</button>
+              </div>
+              <div id="history-list" class="max-h-48 overflow-y-auto no-scrollbar">
+                <div class="p-6 text-center">
+                  <p class="text-[10px] font-mono text-zinc-700 uppercase tracking-widest">No requests yet</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="border-t border-zinc-800 bg-black relative z-20">
+        <div class="border-b border-zinc-800/50 px-6 md:px-8 py-3">
+          <p class="text-[8px] font-mono text-zinc-600 leading-relaxed text-center max-w-4xl mx-auto">BASTION provides market intelligence via the Model Context Protocol (MCP) for Claude by Anthropic. BASTION does not execute trades, hold funds, or provide financial advice. All trading decisions are made by the user's autonomous agent using the user's own exchange API keys. Cryptocurrency trading involves substantial risk of loss.</p>
+        </div>
+        <div class="px-6 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between text-[10px] uppercase tracking-wider text-zinc-500">
+          <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-2 md:mb-0">
+            <span class="cursor-default font-mono">&copy; 2026 BASTION SYSTEMS.</span>
+            <span class="hidden md:inline w-px h-3 bg-zinc-800"></span>
+            <div class="flex gap-6 font-mono"><a href="/" class="hover:text-white transition-colors">Home</a><a href="/docs" class="hover:text-white transition-colors">MCP Docs</a><a href="/api/swagger" class="hover:text-white transition-colors">API Reference</a></div>
+          </div>
+          <div class="flex items-center gap-6 font-mono">
+            <div class="flex items-center gap-2"><iconify-icon icon="solar:server-linear" width="12"></iconify-icon><span>MCP ONLINE</span></div>
+            <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
+            <div class="flex items-center gap-1.5 text-zinc-600">
+              <svg class="w-3 h-3 fill-[#D97757]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/></svg>
+              <span>CLAUDE</span>
+            </div>
+            <div class="hidden md:block w-px h-3 bg-zinc-800"></div>
+            <div class="flex items-center gap-2 text-red-600"><img src="/static/bastion-logo.png" alt="" class="w-3 h-3"><span>BASTION</span></div>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- JAVASCRIPT -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <script>
+    (function() {
+      'use strict';
+
+      // ─── State ───────────────────────────────────────
+      let allTools = [];
+      let selectedTool = null;
+      let activeCategory = 'all';
+      let requestHistory = [];
+      let responseCollapsed = false;
+      let rawResponseJson = '';
+
+      // ─── Category Definitions ────────────────────────
+      const CATEGORIES = {
+        core_ai:     { label: 'Core AI',      icon: 'solar:brain-linear' },
+        market_data: { label: 'Market Data',   icon: 'solar:chart-linear' },
+        derivatives: { label: 'Derivatives',   icon: 'solar:graph-up-linear' },
+        onchain:     { label: 'On-Chain',      icon: 'solar:link-linear' },
+        sentiment:   { label: 'Sentiment',     icon: 'solar:chat-round-like-linear' },
+        macro:       { label: 'Macro',         icon: 'solar:global-linear' },
+        portfolio:   { label: 'Portfolio',     icon: 'solar:wallet-linear' }
+      };
+
+      // Category assignment keywords
+      const CATEGORY_KEYWORDS = {
+        core_ai:     ['risk', 'evaluate', 'chat', 'neural', 'ai', 'intelligence', 'analyze', 'health', 'status', 'ping', 'system'],
+        market_data: ['price', 'candle', 'kline', 'ohlcv', 'ticker', 'market', 'orderbook', 'depth', 'spread', 'volume', 'vwap', 'trades', 'quote', 'exchange'],
+        derivatives: ['funding', 'futures', 'perp', 'perpetual', 'leverage', 'liquidation', 'open_interest', 'oi', 'basis', 'premium', 'long_short'],
+        onchain:     ['chain', 'whale', 'transfer', 'wallet', 'address', 'transaction', 'mempool', 'gas', 'defi', 'tvl', 'protocol', 'nft', 'token_flow'],
+        sentiment:   ['sentiment', 'social', 'news', 'fear', 'greed', 'index', 'buzz', 'trending', 'reddit', 'twitter', 'crypto_fear'],
+        macro:       ['macro', 'dxy', 'dollar', 'interest', 'fed', 'cpi', 'inflation', 'yield', 'treasury', 'sp500', 'gold', 'correlation', 'dominance'],
+        portfolio:   ['portfolio', 'position', 'pnl', 'balance', 'allocation', 'exposure', 'margin', 'account']
+      };
+
+      function guessCategory(tool) {
+        if (tool.category) return tool.category;
+        const name = (tool.name || '').toLowerCase();
+        const desc = (tool.description || '').toLowerCase();
+        const text = name + ' ' + desc;
+        for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+          for (const kw of keywords) {
+            if (text.includes(kw)) return cat;
+          }
+        }
+        return 'core_ai';
+      }
+
+      // ─── DOM References ──────────────────────────────
+      const $ = id => document.getElementById(id);
+      const toolListEl       = $('tool-list');
+      const toolCountEl      = $('tool-count');
+      const toolLoadingEl    = $('tool-loading');
+      const toolNameEl       = $('tool-name');
+      const toolDescEl       = $('tool-description');
+      const toolCatBadge     = $('tool-category-badge');
+      const toolMethodEl     = $('tool-method');
+      const paramSection     = $('param-section');
+      const paramFormEl      = $('param-form');
+      const emptyState       = $('empty-state');
+      const executeBtn       = $('execute-btn');
+      const executeText      = $('execute-text');
+      const responseSection  = $('response-section');
+      const responseStatus   = $('response-status');
+      const responseLatency  = $('response-latency');
+      const responseJsonEl   = $('response-json');
+      const historyList      = $('history-list');
+      const searchInput      = $('tool-search');
+      const apiKeyInput      = $('api-key-input');
+      const keyStatus        = $('key-status');
+
+      // ─── Fallback Tool Definitions ───────────────────
+      // If /api/mcp/tools is not yet deployed, use these
+      const FALLBACK_TOOLS = [
+        { name: 'get_price', description: 'Get current price for a cryptocurrency pair', category: 'market_data', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol (e.g. BTCUSDT)' } }, required: ['symbol'] }},
+        { name: 'get_klines', description: 'Get OHLCV candlestick data for a trading pair', category: 'market_data', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' }, interval: { type: 'string', description: 'Candle interval (1m, 5m, 15m, 1h, 4h, 1d)', default: '1h' }, limit: { type: 'number', description: 'Number of candles to return', default: 100 } }, required: ['symbol'] }},
+        { name: 'get_orderbook', description: 'Get current orderbook depth for a trading pair', category: 'market_data', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' }, limit: { type: 'number', description: 'Depth limit (5, 10, 20, 50, 100)', default: 20 } }, required: ['symbol'] }},
+        { name: 'get_recent_trades', description: 'Get recent trades for a trading pair', category: 'market_data', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' }, limit: { type: 'number', description: 'Number of trades', default: 50 } }, required: ['symbol'] }},
+        { name: 'get_ticker_24h', description: 'Get 24-hour ticker statistics for a symbol', category: 'market_data', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' } }, required: ['symbol'] }},
+        { name: 'get_multi_ticker', description: 'Get tickers for multiple symbols at once', category: 'market_data', inputSchema: { type: 'object', properties: { symbols: { type: 'string', description: 'Comma-separated symbols (e.g. BTCUSDT,ETHUSDT,SOLUSDT)' } }, required: ['symbols'] }},
+        { name: 'get_exchange_info', description: 'Get exchange trading rules and symbol info', category: 'market_data', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol (optional, omit for all)' } }, required: [] }},
+        { name: 'get_vwap', description: 'Calculate Volume Weighted Average Price', category: 'market_data', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' }, interval: { type: 'string', description: 'Candle interval', default: '1h' }, period: { type: 'number', description: 'Number of periods', default: 24 } }, required: ['symbol'] }},
+        { name: 'get_spread_analysis', description: 'Analyze bid-ask spread for a trading pair', category: 'market_data', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' } }, required: ['symbol'] }},
+        { name: 'evaluate_risk', description: 'AI-powered risk evaluation for an open position', category: 'core_ai', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' }, direction: { type: 'string', description: 'Position direction: LONG or SHORT' }, entry_price: { type: 'number', description: 'Entry price' }, current_price: { type: 'number', description: 'Current market price' }, leverage: { type: 'number', description: 'Position leverage', default: 1 }, stop_loss: { type: 'number', description: 'Stop loss price (optional)' }, take_profit: { type: 'number', description: 'Take profit price (optional)' }, unrealized_pnl_pct: { type: 'number', description: 'Unrealized PnL percentage' } }, required: ['symbol', 'direction', 'entry_price', 'current_price', 'unrealized_pnl_pct'] }},
+        { name: 'neural_chat', description: 'Chat with BASTION Neural AI about crypto markets', category: 'core_ai', inputSchema: { type: 'object', properties: { message: { type: 'string', description: 'Your question or message' }, context: { type: 'string', description: 'Optional context (e.g. current positions)' } }, required: ['message'] }},
+        { name: 'get_system_health', description: 'Check BASTION system health and status', category: 'core_ai', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_funding_rate', description: 'Get current funding rate for perpetual futures', category: 'derivatives', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Perpetual futures symbol' } }, required: ['symbol'] }},
+        { name: 'get_funding_history', description: 'Get historical funding rates', category: 'derivatives', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Perpetual futures symbol' }, limit: { type: 'number', description: 'Number of records', default: 20 } }, required: ['symbol'] }},
+        { name: 'get_open_interest', description: 'Get open interest data for futures', category: 'derivatives', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Futures symbol' } }, required: ['symbol'] }},
+        { name: 'get_long_short_ratio', description: 'Get long/short ratio for a symbol', category: 'derivatives', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' }, period: { type: 'string', description: 'Period (5m, 15m, 30m, 1h, 4h, 1d)', default: '1h' } }, required: ['symbol'] }},
+        { name: 'get_liquidations', description: 'Get recent liquidation events', category: 'derivatives', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' }, limit: { type: 'number', description: 'Number of records', default: 20 } }, required: ['symbol'] }},
+        { name: 'get_basis', description: 'Calculate futures basis vs spot', category: 'derivatives', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Trading pair symbol' } }, required: ['symbol'] }},
+        { name: 'get_futures_premium', description: 'Get futures premium index', category: 'derivatives', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Futures symbol' } }, required: ['symbol'] }},
+        { name: 'get_whale_transfers', description: 'Get recent large whale transfers', category: 'onchain', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Token symbol (BTC, ETH, etc.)' }, min_usd: { type: 'number', description: 'Minimum transfer value in USD', default: 1000000 } }, required: ['symbol'] }},
+        { name: 'get_exchange_flows', description: 'Get exchange inflow/outflow data', category: 'onchain', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Token symbol' }, exchange: { type: 'string', description: 'Exchange name (optional)' } }, required: ['symbol'] }},
+        { name: 'get_gas_tracker', description: 'Get current gas prices for Ethereum', category: 'onchain', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_defi_tvl', description: 'Get DeFi Total Value Locked data', category: 'onchain', inputSchema: { type: 'object', properties: { protocol: { type: 'string', description: 'Protocol name (optional, omit for top protocols)' } }, required: [] }},
+        { name: 'get_token_flows', description: 'Analyze token flow between wallets and exchanges', category: 'onchain', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Token symbol' }, period: { type: 'string', description: 'Analysis period (1h, 4h, 1d)', default: '1d' } }, required: ['symbol'] }},
+        { name: 'get_wallet_analysis', description: 'Analyze a wallet address for holdings and activity', category: 'onchain', inputSchema: { type: 'object', properties: { address: { type: 'string', description: 'Wallet address' }, chain: { type: 'string', description: 'Blockchain (ethereum, bitcoin, solana)', default: 'ethereum' } }, required: ['address'] }},
+        { name: 'get_mempool_analysis', description: 'Analyze current mempool state', category: 'onchain', inputSchema: { type: 'object', properties: { chain: { type: 'string', description: 'Blockchain (bitcoin, ethereum)', default: 'bitcoin' } }, required: [] }},
+        { name: 'get_crypto_fear_greed', description: 'Get Crypto Fear & Greed Index', category: 'sentiment', inputSchema: { type: 'object', properties: { days: { type: 'number', description: 'Number of days of history', default: 7 } }, required: [] }},
+        { name: 'get_social_sentiment', description: 'Get social media sentiment for a coin', category: 'sentiment', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Token symbol' } }, required: ['symbol'] }},
+        { name: 'get_news_sentiment', description: 'Get aggregated news sentiment analysis', category: 'sentiment', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Token symbol (optional)' }, limit: { type: 'number', description: 'Number of articles', default: 10 } }, required: [] }},
+        { name: 'get_trending_tokens', description: 'Get currently trending tokens on social media', category: 'sentiment', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_social_buzz', description: 'Get social media mention volume and buzz metrics', category: 'sentiment', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Token symbol' }, period: { type: 'string', description: 'Period (1h, 4h, 1d, 7d)', default: '1d' } }, required: ['symbol'] }},
+        { name: 'get_dxy', description: 'Get US Dollar Index (DXY) data', category: 'macro', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_sp500', description: 'Get S&P 500 index data', category: 'macro', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_gold_price', description: 'Get current gold price', category: 'macro', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_treasury_yields', description: 'Get US Treasury yield curve data', category: 'macro', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_btc_dominance', description: 'Get Bitcoin dominance and market cap data', category: 'macro', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_crypto_correlation', description: 'Get correlation matrix between crypto assets', category: 'macro', inputSchema: { type: 'object', properties: { symbols: { type: 'string', description: 'Comma-separated symbols', default: 'BTCUSDT,ETHUSDT,SOLUSDT' }, period: { type: 'string', description: 'Correlation period', default: '30d' } }, required: [] }},
+        { name: 'get_macro_calendar', description: 'Get upcoming macro economic events', category: 'macro', inputSchema: { type: 'object', properties: { days_ahead: { type: 'number', description: 'Days to look ahead', default: 7 } }, required: [] }},
+        { name: 'get_fed_watch', description: 'Get Fed interest rate probability data', category: 'macro', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_cpi_data', description: 'Get latest CPI inflation data', category: 'macro', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_portfolio_summary', description: 'Get complete portfolio overview and summary', category: 'portfolio', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_open_positions', description: 'Get all open trading positions', category: 'portfolio', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Filter by symbol (optional)' } }, required: [] }},
+        { name: 'get_pnl_history', description: 'Get historical PnL data', category: 'portfolio', inputSchema: { type: 'object', properties: { period: { type: 'string', description: 'Period (1d, 7d, 30d)', default: '7d' } }, required: [] }},
+        { name: 'get_balance', description: 'Get account balance and margin info', category: 'portfolio', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_exposure_analysis', description: 'Analyze portfolio exposure by asset and direction', category: 'portfolio', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_trade_history', description: 'Get historical trade records', category: 'portfolio', inputSchema: { type: 'object', properties: { symbol: { type: 'string', description: 'Filter by symbol (optional)' }, limit: { type: 'number', description: 'Number of records', default: 20 } }, required: [] }},
+        { name: 'get_margin_status', description: 'Get margin utilization and risk levels', category: 'portfolio', inputSchema: { type: 'object', properties: {}, required: [] }},
+        { name: 'get_allocation', description: 'Get portfolio allocation breakdown', category: 'portfolio', inputSchema: { type: 'object', properties: {}, required: [] }}
+      ];
+
+      // ─── Initialize ──────────────────────────────────
+      async function init() {
+        toolLoadingEl.classList.remove('hidden');
+        try {
+          const resp = await fetch('/api/mcp/tools');
+          if (!resp.ok) throw new Error('API not available');
+          const data = await resp.json();
+          allTools = (data.tools || data || []).map(t => ({
+            ...t,
+            category: guessCategory(t)
+          }));
+        } catch (e) {
+          console.warn('MCP tools endpoint not available, using fallback definitions:', e.message);
+          allTools = FALLBACK_TOOLS;
+        }
+        toolLoadingEl.classList.add('hidden');
+        renderToolList();
+        bindEvents();
+      }
+
+      // ─── Render Tool List ────────────────────────────
+      function renderToolList() {
+        const query = (searchInput.value || '').toLowerCase().trim();
+        const filtered = allTools.filter(t => {
+          const matchCat = activeCategory === 'all' || t.category === activeCategory;
+          const matchSearch = !query || t.name.toLowerCase().includes(query) || (t.description || '').toLowerCase().includes(query);
+          return matchCat && matchSearch;
+        });
+
+        // Group by category
+        const groups = {};
+        filtered.forEach(t => {
+          const cat = t.category || 'core_ai';
+          if (!groups[cat]) groups[cat] = [];
+          groups[cat].push(t);
+        });
+
+        let html = '';
+        const catOrder = ['core_ai', 'market_data', 'derivatives', 'onchain', 'sentiment', 'macro', 'portfolio'];
+        for (const cat of catOrder) {
+          if (!groups[cat] || groups[cat].length === 0) continue;
+          const catInfo = CATEGORIES[cat] || { label: cat, icon: 'solar:widget-linear' };
+          html += `<div class="px-3 py-2 border-b border-zinc-800/30 bg-zinc-900/20 flex items-center gap-2">
+            <iconify-icon icon="${catInfo.icon}" width="11" class="text-red-600/60"></iconify-icon>
+            <span class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">${catInfo.label}</span>
+            <span class="text-[9px] font-mono text-zinc-700 ml-auto">${groups[cat].length}</span>
+          </div>`;
+          for (const tool of groups[cat]) {
+            const isSelected = selectedTool && selectedTool.name === tool.name;
+            html += `<div class="tool-item px-4 py-2.5 border-b border-zinc-800/20 border-l-2 ${isSelected ? 'selected border-l-red-600' : 'border-l-transparent'}" data-tool="${tool.name}">
+              <div class="text-[11px] font-mono ${isSelected ? 'text-white' : 'text-zinc-300'} truncate">${tool.name}</div>
+              <div class="text-[9px] font-mono text-zinc-600 truncate mt-0.5">${(tool.description || '').substring(0, 60)}${(tool.description || '').length > 60 ? '...' : ''}</div>
+            </div>`;
+          }
+        }
+
+        if (filtered.length === 0) {
+          html = `<div class="p-6 text-center"><p class="text-[10px] font-mono text-zinc-700 uppercase tracking-widest">No tools match your filter</p></div>`;
+        }
+
+        toolListEl.innerHTML = html;
+        toolCountEl.textContent = `${filtered.length} tool${filtered.length !== 1 ? 's' : ''}`;
+
+        // Bind tool click
+        toolListEl.querySelectorAll('.tool-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const toolName = el.dataset.tool;
+            const tool = allTools.find(t => t.name === toolName);
+            if (tool) selectTool(tool);
+          });
+        });
+      }
+
+      // ─── Select Tool ─────────────────────────────────
+      function selectTool(tool) {
+        selectedTool = tool;
+        const catInfo = CATEGORIES[tool.category] || { label: tool.category || 'unknown' };
+
+        toolNameEl.textContent = tool.name;
+        toolDescEl.textContent = tool.description || 'No description available.';
+        toolCatBadge.textContent = catInfo.label;
+        toolCatBadge.classList.remove('hidden');
+        toolMethodEl.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        paramSection.classList.remove('hidden');
+        executeBtn.disabled = false;
+
+        renderParamForm(tool);
+        renderToolList(); // re-render to highlight selected
+      }
+
+      // ─── Render Parameter Form ───────────────────────
+      function renderParamForm(tool) {
+        const schema = tool.inputSchema || { properties: {}, required: [] };
+        const props = schema.properties || {};
+        const required = schema.required || [];
+        const keys = Object.keys(props);
+
+        if (keys.length === 0) {
+          paramFormEl.innerHTML = `
+            <div class="text-center py-4">
+              <p class="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">No parameters required</p>
+              <p class="text-[9px] font-mono text-zinc-700 mt-1">This tool can be executed without any input.</p>
+            </div>`;
+          return;
+        }
+
+        let html = '';
+        for (const key of keys) {
+          const prop = props[key];
+          const isReq = required.includes(key);
+          const type = prop.type || 'string';
+          const defaultVal = prop.default !== undefined ? prop.default : '';
+          const desc = prop.description || '';
+
+          html += `<div class="space-y-1.5">`;
+          html += `<div class="flex items-center gap-2">`;
+          html += `<label class="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">${key}</label>`;
+          if (isReq) html += `<span class="text-[8px] font-mono text-red-500 uppercase tracking-widest px-1 py-0.5 border border-red-600/30 bg-red-600/10">Required</span>`;
+          html += `<span class="text-[9px] font-mono text-zinc-700 ml-auto">${type}</span>`;
+          html += `</div>`;
+
+          if (prop.enum) {
+            html += `<select data-param="${key}" class="param-input w-full px-3 py-2 bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 outline-none transition-all">`;
+            html += `<option value="">-- Select --</option>`;
+            for (const opt of prop.enum) {
+              html += `<option value="${opt}" ${opt === defaultVal ? 'selected' : ''}>${opt}</option>`;
+            }
+            html += `</select>`;
+          } else if (type === 'boolean') {
+            html += `<select data-param="${key}" class="param-input w-full px-3 py-2 bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 outline-none transition-all">`;
+            html += `<option value="">-- Select --</option>`;
+            html += `<option value="true" ${defaultVal === true ? 'selected' : ''}>true</option>`;
+            html += `<option value="false" ${defaultVal === false ? 'selected' : ''}>false</option>`;
+            html += `</select>`;
+          } else if (type === 'number' || type === 'integer') {
+            html += `<input data-param="${key}" type="number" step="any" placeholder="${defaultVal !== '' ? defaultVal : key}" value="${defaultVal}" class="param-input w-full px-3 py-2 bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none transition-all">`;
+          } else {
+            html += `<input data-param="${key}" type="text" placeholder="${defaultVal !== '' ? defaultVal : key}" value="${defaultVal}" class="param-input w-full px-3 py-2 bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 placeholder-zinc-700 outline-none transition-all">`;
+          }
+
+          if (desc) {
+            html += `<p class="text-[9px] font-mono text-zinc-600 leading-relaxed">${desc}</p>`;
+          }
+
+          html += `</div>`;
+        }
+
+        paramFormEl.innerHTML = html;
+      }
+
+      // ─── Collect Parameters ──────────────────────────
+      function collectParams() {
+        const params = {};
+        paramFormEl.querySelectorAll('[data-param]').forEach(el => {
+          const key = el.dataset.param;
+          let val = el.value.trim();
+          if (val === '') return;
+
+          // Type coerce
+          const schema = selectedTool.inputSchema || {};
+          const propDef = (schema.properties || {})[key] || {};
+          if (propDef.type === 'number' || propDef.type === 'integer') {
+            val = Number(val);
+            if (isNaN(val)) return;
+          } else if (propDef.type === 'boolean') {
+            val = val === 'true';
+          }
+
+          params[key] = val;
+        });
+        return params;
+      }
+
+      // ─── Execute Tool ────────────────────────────────
+      async function executeTool() {
+        if (!selectedTool) return;
+        const params = collectParams();
+        const apiKey = apiKeyInput.value.trim();
+
+        // UI: loading state
+        executeBtn.disabled = true;
+        executeText.innerHTML = '<span class="exec-spinner mr-2"></span>Executing...';
+        responseSection.classList.remove('hidden');
+        responseStatus.textContent = '...';
+        responseStatus.className = 'px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest border border-zinc-700 bg-zinc-900 text-zinc-400';
+        responseLatency.textContent = '--ms';
+        responseJsonEl.textContent = 'Sending request...';
+
+        const t0 = performance.now();
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          if (apiKey) headers['X-API-Key'] = apiKey;
+
+          const resp = await fetch('/api/mcp/playground/execute', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ tool: selectedTool.name, params })
+          });
+
+          const latency = Math.round(performance.now() - t0);
+          const statusCode = resp.status;
+          let data;
+          try {
+            data = await resp.json();
+          } catch {
+            data = { error: 'Non-JSON response', status: statusCode };
+          }
+
+          // Status badge
+          if (statusCode >= 200 && statusCode < 300) {
+            responseStatus.textContent = `${statusCode} OK`;
+            responseStatus.className = 'px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest border border-green-600/30 bg-green-600/10 text-green-400';
+          } else if (statusCode >= 400 && statusCode < 500) {
+            responseStatus.textContent = `${statusCode} ERROR`;
+            responseStatus.className = 'px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest border border-yellow-600/30 bg-yellow-600/10 text-yellow-400';
+          } else {
+            responseStatus.textContent = `${statusCode} FAIL`;
+            responseStatus.className = 'px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest border border-red-600/30 bg-red-600/10 text-red-400';
+          }
+
+          responseLatency.textContent = `${latency}ms`;
+          rawResponseJson = JSON.stringify(data, null, 2);
+          responseJsonEl.innerHTML = syntaxHighlight(rawResponseJson);
+
+          // Add to history
+          addHistoryEntry(selectedTool.name, params, statusCode, latency);
+
+        } catch (err) {
+          const latency = Math.round(performance.now() - t0);
+          responseStatus.textContent = 'NETWORK ERROR';
+          responseStatus.className = 'px-2 py-0.5 text-[9px] font-mono uppercase tracking-widest border border-red-600/30 bg-red-600/10 text-red-400';
+          responseLatency.textContent = `${latency}ms`;
+          rawResponseJson = JSON.stringify({ error: err.message, hint: 'Is the BASTION server running? Check /api/health' }, null, 2);
+          responseJsonEl.innerHTML = syntaxHighlight(rawResponseJson);
+          addHistoryEntry(selectedTool.name, params, 0, latency);
+        }
+
+        // Reset button
+        executeBtn.disabled = false;
+        executeText.innerHTML = '<iconify-icon icon="solar:play-bold" width="14" class="group-hover:scale-110 transition-transform mr-1"></iconify-icon>Execute Tool';
+      }
+
+      // ─── JSON Syntax Highlighting ────────────────────
+      function syntaxHighlight(json) {
+        return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?/g, function(match) {
+            let cls = 'json-string';
+            if (/:$/.test(match)) {
+              cls = 'json-key';
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+          })
+          .replace(/\b(-?\d+\.?\d*([eE][+-]?\d+)?)\b/g, '<span class="json-number">$1</span>')
+          .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>')
+          .replace(/\bnull\b/g, '<span class="json-null">null</span>');
+      }
+
+      // ─── History ─────────────────────────────────────
+      function addHistoryEntry(toolName, params, status, latency) {
+        requestHistory.unshift({ toolName, params, status, latency, timestamp: new Date() });
+        if (requestHistory.length > 50) requestHistory.pop();
+        renderHistory();
+      }
+
+      function renderHistory() {
+        if (requestHistory.length === 0) {
+          historyList.innerHTML = `<div class="p-6 text-center"><p class="text-[10px] font-mono text-zinc-700 uppercase tracking-widest">No requests yet</p></div>`;
+          return;
+        }
+
+        let html = '';
+        for (const entry of requestHistory) {
+          const statusColor = entry.status >= 200 && entry.status < 300 ? 'text-green-400' : entry.status === 0 ? 'text-red-400' : 'text-yellow-400';
+          const timeStr = entry.timestamp.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const paramStr = Object.keys(entry.params).length > 0 ? Object.entries(entry.params).map(([k,v]) => `${k}=${v}`).join(', ') : 'no params';
+
+          html += `<div class="flex items-center gap-3 px-4 py-2.5 border-b border-zinc-800/30 hover:bg-zinc-900/30 transition-colors tool-item" data-history-tool="${entry.toolName}">
+            <span class="text-[9px] font-mono text-zinc-700 shrink-0">${timeStr}</span>
+            <span class="text-[10px] font-mono text-zinc-300 truncate flex-1">${entry.toolName}</span>
+            <span class="text-[9px] font-mono text-zinc-600 truncate max-w-32 hidden sm:inline">${paramStr}</span>
+            <span class="text-[9px] font-mono ${statusColor} shrink-0">${entry.status || 'ERR'}</span>
+            <span class="text-[9px] font-mono text-zinc-700 shrink-0">${entry.latency}ms</span>
+          </div>`;
+        }
+        historyList.innerHTML = html;
+
+        // Click to re-select tool from history
+        historyList.querySelectorAll('[data-history-tool]').forEach(el => {
+          el.addEventListener('click', () => {
+            const tool = allTools.find(t => t.name === el.dataset.historyTool);
+            if (tool) selectTool(tool);
+          });
+        });
+      }
+
+      // ─── Event Bindings ──────────────────────────────
+      function bindEvents() {
+        // Category filter
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeCategory = btn.dataset.category;
+            renderToolList();
+          });
+        });
+
+        // Search
+        searchInput.addEventListener('input', () => renderToolList());
+
+        // Execute
+        executeBtn.addEventListener('click', executeTool);
+
+        // Clear params
+        $('clear-params').addEventListener('click', () => {
+          paramFormEl.querySelectorAll('[data-param]').forEach(el => el.value = '');
+        });
+
+        // Copy response
+        $('copy-response').addEventListener('click', () => {
+          navigator.clipboard.writeText(rawResponseJson).then(() => {
+            $('copy-response').innerHTML = '<iconify-icon icon="solar:check-circle-linear" width="14" class="text-green-400"></iconify-icon>';
+            setTimeout(() => {
+              $('copy-response').innerHTML = '<iconify-icon icon="solar:copy-linear" width="14"></iconify-icon>';
+            }, 1500);
+          });
+        });
+
+        // Collapse response
+        $('collapse-response').addEventListener('click', () => {
+          responseCollapsed = !responseCollapsed;
+          $('response-body').classList.toggle('hidden', responseCollapsed);
+          $('collapse-response').innerHTML = responseCollapsed
+            ? '<iconify-icon icon="solar:maximize-linear" width="14"></iconify-icon>'
+            : '<iconify-icon icon="solar:minimize-linear" width="14"></iconify-icon>';
+        });
+
+        // Clear history
+        $('clear-history').addEventListener('click', () => {
+          requestHistory = [];
+          renderHistory();
+        });
+
+        // API key visibility toggle
+        $('toggle-key-vis').addEventListener('click', () => {
+          const isPassword = apiKeyInput.type === 'password';
+          apiKeyInput.type = isPassword ? 'text' : 'password';
+          $('toggle-key-vis').innerHTML = isPassword
+            ? '<iconify-icon icon="solar:eye-closed-linear" width="16"></iconify-icon>'
+            : '<iconify-icon icon="solar:eye-linear" width="16"></iconify-icon>';
+        });
+
+        // API key status indicator
+        apiKeyInput.addEventListener('input', () => {
+          if (apiKeyInput.value.trim().length > 10) {
+            keyStatus.classList.remove('hidden');
+            keyStatus.classList.add('flex');
+          } else {
+            keyStatus.classList.add('hidden');
+            keyStatus.classList.remove('flex');
+          }
+        });
+
+        // Keyboard shortcut: Ctrl+Enter to execute
+        document.addEventListener('keydown', (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && selectedTool && !executeBtn.disabled) {
+            executeTool();
+          }
+        });
+
+        // Mobile menu
+        $('mobile-menu-btn').addEventListener('click', () => {
+          $('mobile-menu').classList.toggle('translate-x-full');
+        });
+      }
+
+      // ─── Scroll Reveal ───────────────────────────────
+      document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('sys-active'); observer.unobserve(entry.target); } });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.sys-reveal').forEach(el => observer.observe(el));
+      });
+
+      // ─── Boot ────────────────────────────────────────
+      init();
+
+    })();
+    </script>
+</body>
+</html>
