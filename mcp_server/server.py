@@ -2,20 +2,20 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (40):
-  CORE AI
+Tools (49):
+  CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
     bastion_evaluate_all_positions — Evaluate all open positions at once
     bastion_scan_signals         — Scan for trading signals across pairs
 
-  MARKET DATA
+  MARKET DATA (public — no auth needed)
     bastion_get_price            — Live crypto price
     bastion_get_market_data      — Aggregated market intelligence
     bastion_get_klines           — Candlestick OHLCV data
     bastion_get_volatility       — Volatility metrics + regime detection
 
-  DERIVATIVES & ORDER FLOW
+  DERIVATIVES & ORDER FLOW (public)
     bastion_get_open_interest    — Open interest across exchanges
     bastion_get_oi_changes       — OI changes across all pairs
     bastion_get_cvd              — Cumulative Volume Delta
@@ -29,13 +29,13 @@ Tools (40):
     bastion_get_market_maker_magnet — MM gamma magnet levels
     bastion_get_options          — Options OI, P/C ratio, max pain
 
-  ON-CHAIN & INTELLIGENCE
+  ON-CHAIN & INTELLIGENCE (public)
     bastion_get_whale_activity   — Whale transactions (11 chains)
     bastion_get_exchange_flow    — Exchange inflow/outflow
     bastion_get_onchain          — On-chain metrics
     bastion_get_news             — Aggregated crypto news
 
-  MACRO & SENTIMENT
+  MACRO & SENTIMENT (public)
     bastion_get_fear_greed       — Fear & Greed Index
     bastion_get_macro_signals    — Macro signals (DXY, yields, equities)
     bastion_get_etf_flows        — BTC/ETH ETF flow data
@@ -43,12 +43,12 @@ Tools (40):
     bastion_get_economic_data    — FRED economic data series
     bastion_get_polymarket       — Prediction market data
 
-  RESEARCH
+  RESEARCH (auth optional)
     bastion_generate_report      — Generate MCF Labs research report
     bastion_get_reports          — List existing reports
     bastion_calculate_position   — Position sizing + Monte Carlo
 
-  PORTFOLIO & TRADING
+  PORTFOLIO (auth required — 'read' scope)
     bastion_get_positions        — All open positions
     bastion_get_balance          — Total portfolio balance
     bastion_get_exchanges        — Connected exchanges
@@ -56,6 +56,19 @@ Tools (40):
     bastion_engine_history       — Engine execution history
     bastion_get_alerts           — Active alerts & notifications
     bastion_get_session_stats    — Trading session statistics
+
+  TRADING ACTIONS (auth required — 'trade' scope)
+    bastion_emergency_exit       — Close ALL positions immediately
+    bastion_partial_close        — Close % of a position
+    bastion_set_take_profit      — Set/update take-profit
+    bastion_set_stop_loss        — Set/update stop-loss
+    bastion_move_to_breakeven    — Move stops to entry price
+    bastion_flatten_winners      — Close all winning positions
+
+  ENGINE CONTROL (auth required — 'engine' scope)
+    bastion_engine_start         — Start autonomous risk engine
+    bastion_engine_arm           — Arm engine for auto-execution
+    bastion_engine_disarm        — Disarm engine (advisory only)
 
 Resources:
   bastion://status, bastion://supported-symbols, bastion://model-info
@@ -96,11 +109,11 @@ async def get_client() -> httpx.AsyncClient:
     return _client
 
 
-async def api_get(path: str, params: dict = None) -> dict:
+async def api_get(path: str, params: dict = None, auth_headers: dict = None) -> dict:
     """Make a GET request to the BASTION API."""
     client = await get_client()
     try:
-        resp = await client.get(path, params=params)
+        resp = await client.get(path, params=params, headers=auth_headers)
         resp.raise_for_status()
         return resp.json()
     except httpx.HTTPStatusError as e:
@@ -109,17 +122,50 @@ async def api_get(path: str, params: dict = None) -> dict:
         return {"error": f"API request failed: {str(e)}"}
 
 
-async def api_post(path: str, data: dict = None) -> dict:
+async def api_post(path: str, data: dict = None, auth_headers: dict = None) -> dict:
     """Make a POST request to the BASTION API."""
     client = await get_client()
     try:
-        resp = await client.post(path, json=data)
+        resp = await client.post(path, json=data, headers=auth_headers)
         resp.raise_for_status()
         return resp.json()
     except httpx.HTTPStatusError as e:
         return {"error": f"API returned {e.response.status_code}: {e.response.text[:200]}"}
     except Exception as e:
         return {"error": f"API request failed: {str(e)}"}
+
+
+async def resolve_auth(api_key: Optional[str], required_scope: str = "read") -> tuple:
+    """
+    Validate a bst_ API key and return auth headers for the backend.
+
+    Returns:
+        (auth_headers dict, error_string or None)
+        If auth fails, auth_headers is None and error is set.
+        If no api_key provided, returns empty headers (guest mode).
+    """
+    from .auth import validate_bst_key, check_scope
+
+    if not api_key:
+        return {}, None  # Guest mode — no auth headers
+
+    key_info = await validate_bst_key(api_key)
+    if not key_info:
+        return None, "Invalid or expired API key."
+
+    if not check_scope(key_info, required_scope):
+        return None, f"API key lacks required scope: '{required_scope}'. Your scopes: {key_info.get('scopes', [])}"
+
+    user_id = key_info.get("user_id")
+    if not user_id:
+        return {}, None  # Legacy key — no user identity
+
+    # Build internal auth headers for the backend
+    headers = {
+        "X-Bastion-Internal": config.MCP_INTERNAL_SECRET,
+        "X-Bastion-User-Id": user_id,
+    }
+    return headers, None
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -140,6 +186,7 @@ async def bastion_evaluate_risk(
     take_profit_3: float = 0.0,
     position_size_usd: float = 1000.0,
     duration_hours: float = 0.0,
+    api_key: str = "",
 ) -> str:
     """Evaluate a crypto futures position using BASTION's AI risk intelligence engine.
 
@@ -159,12 +206,16 @@ async def bastion_evaluate_risk(
         take_profit_3: Third take profit target (0 = none)
         position_size_usd: Position size in USD (default 1000)
         duration_hours: How long the position has been open in hours
+        api_key: Your BASTION API key (bst_...) for authenticated access
 
     Returns:
         JSON with: action (HOLD/EXIT_FULL/TP_PARTIAL/EXIT_100%/REDUCE_SIZE/TRAIL_STOP),
         urgency (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), reason, detailed reasoning,
         and execution details.
     """
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
     symbol = symbol.upper().replace("USDT", "").replace("USD", "").replace("-PERP", "")
 
     # Build take profits list
@@ -191,7 +242,7 @@ async def bastion_evaluate_risk(
         }
     }
 
-    result = await api_post("/api/risk/evaluate", payload)
+    result = await api_post("/api/risk/evaluate", payload, auth_headers=auth_headers)
 
     if "error" in result:
         return json.dumps(result, indent=2)
@@ -213,6 +264,7 @@ async def bastion_evaluate_risk(
 async def bastion_chat(
     query: str,
     symbol: str = "BTC",
+    api_key: str = "",
 ) -> str:
     """Ask BASTION's neural AI anything about crypto markets, trading, or risk.
 
@@ -222,17 +274,22 @@ async def bastion_chat(
     Args:
         query: Your question (e.g. "Is BTC a buy right now?", "Where are whales moving?")
         symbol: Symbol context for the query (default BTC)
+        api_key: Your BASTION API key (bst_...) for authenticated access
 
     Returns:
         AI-generated analysis in markdown format.
     """
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+
     result = await api_post("/api/neural/chat", {
         "query": query,
         "symbol": symbol.upper(),
-        "include_positions": False,
+        "include_positions": bool(api_key),
         "session_id": "mcp-session",
         "user_id": "mcp-user",
-    })
+    }, auth_headers=auth_headers)
 
     if "error" in result:
         return f"Error: {result['error']}"
@@ -344,6 +401,7 @@ async def bastion_get_funding_rates() -> str:
 async def bastion_generate_report(
     report_type: str = "institutional_research",
     symbol: str = "BTC",
+    api_key: str = "",
 ) -> str:
     """Generate an AI-powered MCF Labs research report.
 
@@ -354,10 +412,14 @@ async def bastion_generate_report(
         report_type: Type of report — institutional_research (default), market_structure,
             whale_intelligence, options_flow, or cycle_position
         symbol: Symbol to analyze (default BTC)
+        api_key: Your BASTION API key (bst_...) for authenticated access
 
     Returns:
         Full report with bias, confidence, sections (thesis, key drivers, risks, scenarios).
     """
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
     valid_types = [
         "institutional_research", "market_structure",
         "whale_intelligence", "options_flow", "cycle_position"
@@ -369,7 +431,8 @@ async def bastion_generate_report(
 
     result = await api_post(
         f"/api/mcf/generate/{report_type}",
-        {"symbol": symbol.upper()}
+        {"symbol": symbol.upper()},
+        auth_headers=auth_headers,
     )
 
     if "error" in result:
@@ -395,6 +458,7 @@ async def bastion_get_reports(
     limit: int = 10,
     report_type: str = "",
     symbol: str = "",
+    api_key: str = "",
 ) -> str:
     """List existing MCF Labs research reports.
 
@@ -402,17 +466,22 @@ async def bastion_get_reports(
         limit: Number of reports to return (default 10)
         report_type: Filter by type (institutional_research, market_structure, etc.)
         symbol: Filter by symbol (btc, eth, sol)
+        api_key: Your BASTION API key (bst_...) for authenticated access
 
     Returns:
         List of reports with id, title, bias, type, timestamp, and tags.
     """
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+
     params = {"limit": min(limit, 50)}
     if report_type:
         params["type"] = report_type
     if symbol:
         params["symbol"] = symbol.lower()
 
-    result = await api_get("/api/mcf/reports", params)
+    result = await api_get("/api/mcf/reports", params, auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
@@ -426,6 +495,7 @@ async def bastion_calculate_position(
     leverage: float = 1.0,
     account_size: float = 10000.0,
     risk_percent: float = 2.0,
+    api_key: str = "",
 ) -> str:
     """Calculate optimal position size with Monte Carlo risk simulation.
 
@@ -441,11 +511,15 @@ async def bastion_calculate_position(
         leverage: Position leverage (default 1.0)
         account_size: Account size in USD (default 10000)
         risk_percent: Max risk per trade as % of account (default 2.0)
+        api_key: Your BASTION API key (bst_...) for authenticated access
 
     Returns:
         Position size, risk/reward ratio, TP probability, SL probability,
         expected value, and trade quality score.
     """
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
     result = await api_post("/api/pre-trade-calculator", {
         "symbol": symbol.upper(),
         "direction": direction.upper(),
@@ -455,7 +529,7 @@ async def bastion_calculate_position(
         "leverage": leverage,
         "account_size": account_size,
         "risk_percent": risk_percent,
-    })
+    }, auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
@@ -791,70 +865,100 @@ async def bastion_get_polymarket(limit: int = 15) -> str:
 
 
 @mcp.tool()
-async def bastion_get_positions() -> str:
+async def bastion_get_positions(api_key: str = "") -> str:
     """Get all open positions across connected exchanges.
 
     Returns current positions with entry price, current price,
     unrealized PnL, leverage, and other details.
 
+    Args:
+        api_key: Your BASTION API key (bst_...) to access YOUR positions
+
     Returns:
         All open futures positions across Binance, Bybit, Bitunix, etc.
     """
-    result = await api_get("/api/positions/all")
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_get("/api/positions/all", auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
 @mcp.tool()
-async def bastion_get_balance() -> str:
+async def bastion_get_balance(api_key: str = "") -> str:
     """Get total portfolio balance across all connected exchanges.
 
     Returns aggregated balance with per-exchange breakdown.
 
+    Args:
+        api_key: Your BASTION API key (bst_...) to access YOUR balance
+
     Returns:
         Total balance, available margin, and exchange breakdown.
     """
-    result = await api_get("/api/balance/total")
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_get("/api/balance/total", auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
 @mcp.tool()
-async def bastion_get_exchanges() -> str:
+async def bastion_get_exchanges(api_key: str = "") -> str:
     """List all connected exchanges.
 
     Shows which exchanges are linked to BASTION with connection status.
 
+    Args:
+        api_key: Your BASTION API key (bst_...) to see YOUR exchanges
+
     Returns:
         Connected exchanges with status information.
     """
-    result = await api_get("/api/exchange/list")
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_get("/api/exchange/list", auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
 @mcp.tool()
-async def bastion_evaluate_all_positions() -> str:
+async def bastion_evaluate_all_positions(api_key: str = "") -> str:
     """Run AI risk evaluation on ALL open positions simultaneously.
 
     Sends every open position through the 72B model for evaluation.
     Returns a risk assessment for each position with recommended actions.
 
+    Args:
+        api_key: Your BASTION API key (bst_...) to evaluate YOUR positions
+
     Returns:
         Risk evaluation results for every open position.
     """
-    result = await api_post("/api/risk/evaluate-all")
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/risk/evaluate-all", auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
 @mcp.tool()
-async def bastion_scan_signals() -> str:
+async def bastion_scan_signals(api_key: str = "") -> str:
     """Scan for trading signals across all supported pairs.
 
     Uses the AI engine to identify potential trade setups based on
     current market conditions, structure, and flow data.
 
+    Args:
+        api_key: Your BASTION API key (bst_...) for authenticated access
+
     Returns:
         Active trading signals with confidence scores and reasoning.
     """
-    result = await api_post("/api/signals/scan")
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/signals/scan", auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
@@ -864,21 +968,27 @@ async def bastion_scan_signals() -> str:
 
 
 @mcp.tool()
-async def bastion_engine_status() -> str:
+async def bastion_engine_status(api_key: str = "") -> str:
     """Get the autonomous trading engine status.
 
     Shows whether the engine is running, armed, and its current configuration
     including safety parameters and execution history.
 
+    Args:
+        api_key: Your BASTION API key (bst_...) for authenticated access
+
     Returns:
         Engine state, armed status, configuration, and recent execution stats.
     """
-    result = await api_get("/api/engine/status")
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_get("/api/engine/status", auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
 @mcp.tool()
-async def bastion_engine_history(limit: int = 20) -> str:
+async def bastion_engine_history(limit: int = 20, api_key: str = "") -> str:
     """Get trading engine execution history.
 
     Shows recent actions taken by the autonomous engine — which positions
@@ -886,11 +996,15 @@ async def bastion_engine_history(limit: int = 20) -> str:
 
     Args:
         limit: Number of history entries to return (default 20)
+        api_key: Your BASTION API key (bst_...) for authenticated access
 
     Returns:
         Recent engine execution events with timestamps and details.
     """
-    result = await api_get("/api/engine/execution-history", {"limit": min(limit, 100)})
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_get("/api/engine/execution-history", {"limit": min(limit, 100)}, auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
@@ -900,16 +1014,22 @@ async def bastion_engine_history(limit: int = 20) -> str:
 
 
 @mcp.tool()
-async def bastion_get_alerts() -> str:
+async def bastion_get_alerts(api_key: str = "") -> str:
     """Get active alerts and notifications.
 
     Returns risk alerts, liquidation warnings, whale movement alerts,
     and user-configured price alerts.
 
+    Args:
+        api_key: Your BASTION API key (bst_...) for authenticated access
+
     Returns:
         Active alerts with severity, type, and details.
     """
-    result = await api_get("/api/alerts")
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_get("/api/alerts", auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 
@@ -954,16 +1074,255 @@ async def bastion_get_options(symbol: str = "BTC") -> str:
 
 
 @mcp.tool()
-async def bastion_get_session_stats() -> str:
+async def bastion_get_session_stats(api_key: str = "") -> str:
     """Get current trading session statistics.
 
     Shows performance metrics for the current trading session including
     win rate, PnL, number of trades, and risk metrics.
 
+    Args:
+        api_key: Your BASTION API key (bst_...) for authenticated access
+
     Returns:
         Session statistics with performance breakdown.
     """
-    result = await api_get("/api/session/stats")
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_get("/api/session/stats", auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# TRADING TOOLS (require 'trade' scope)
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_emergency_exit(api_key: str) -> str:
+    """EMERGENCY: Close ALL open positions across all exchanges immediately.
+
+    This is a destructive action — it market-closes every open position.
+    Use only in emergencies (flash crash, black swan, risk limit breached).
+
+    Args:
+        api_key: Your BASTION API key (bst_...) with 'trade' scope — REQUIRED
+
+    Returns:
+        Number of positions closed and any errors.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "trade")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/actions/emergency-exit", {}, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_partial_close(
+    symbol: str,
+    exit_pct: int = 50,
+    api_key: str = "",
+) -> str:
+    """Close a percentage of a specific position.
+
+    Use this for scaling out of positions — e.g. take 50% off at TP1,
+    then let the rest run with a trailing stop.
+
+    Args:
+        symbol: Trading pair to close (e.g. BTC, BTCUSDT)
+        exit_pct: Percentage to close (1-100, default 50)
+        api_key: Your BASTION API key (bst_...) with 'trade' scope — REQUIRED
+
+    Returns:
+        Confirmation with closed quantity and remaining position.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "trade")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/actions/partial-close", {
+        "symbol": symbol.upper(),
+        "exit_pct": max(1, min(100, exit_pct)),
+    }, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_set_take_profit(
+    symbol: str,
+    tp_price: float,
+    exit_pct: int = 0,
+    api_key: str = "",
+) -> str:
+    """Set or update take-profit for a position.
+
+    Optionally set a partial TP (e.g. close 30% at $70k).
+
+    Args:
+        symbol: Trading pair (e.g. BTC, BTCUSDT)
+        tp_price: Take profit price target
+        exit_pct: Percentage to close at TP (0 = full position, 1-100 = partial)
+        api_key: Your BASTION API key (bst_...) with 'trade' scope — REQUIRED
+
+    Returns:
+        Confirmation with TP details.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "trade")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    payload = {"symbol": symbol.upper(), "tp_price": tp_price}
+    if exit_pct > 0:
+        payload["exit_pct"] = max(1, min(100, exit_pct))
+    result = await api_post("/api/actions/set-take-profit", payload, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_set_stop_loss(
+    symbol: str,
+    sl_price: float,
+    api_key: str = "",
+) -> str:
+    """Set or update stop-loss for a position.
+
+    Args:
+        symbol: Trading pair (e.g. BTC, BTCUSDT)
+        sl_price: Stop loss price
+        api_key: Your BASTION API key (bst_...) with 'trade' scope — REQUIRED
+
+    Returns:
+        Confirmation with SL details.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "trade")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/actions/set-stop-loss", {
+        "symbol": symbol.upper(),
+        "sl_price": sl_price,
+    }, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_move_to_breakeven(
+    symbol: str = "",
+    api_key: str = "",
+) -> str:
+    """Move stop loss to entry price (breakeven) for profitable positions.
+
+    Only moves stops for positions that are currently in profit.
+    If no symbol specified, moves all profitable positions to breakeven.
+
+    Args:
+        symbol: Specific trading pair (empty = all profitable positions)
+        api_key: Your BASTION API key (bst_...) with 'trade' scope — REQUIRED
+
+    Returns:
+        Number of positions moved to breakeven.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "trade")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    payload = {}
+    if symbol:
+        payload["symbol"] = symbol.upper()
+    result = await api_post("/api/actions/move-to-breakeven", payload, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_flatten_winners(api_key: str = "") -> str:
+    """Close all winning positions (positions currently in profit).
+
+    Leaves losing positions untouched — useful for locking in gains
+    when you expect a reversal.
+
+    Args:
+        api_key: Your BASTION API key (bst_...) with 'trade' scope — REQUIRED
+
+    Returns:
+        Number of winning positions closed and total profit locked.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "trade")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/actions/flatten-winners", {}, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# ENGINE TOOLS (require 'engine' scope)
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_engine_start(api_key: str = "") -> str:
+    """Start the BASTION autonomous risk engine.
+
+    The engine monitors your positions in real-time and evaluates them
+    using the 72B AI model on a continuous loop. Does NOT auto-execute
+    trades until you arm it.
+
+    Args:
+        api_key: Your BASTION API key (bst_...) with 'engine' scope — REQUIRED
+
+    Returns:
+        Engine start confirmation with status details.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "engine")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/engine/start", {}, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_engine_arm(
+    confidence_threshold: float = 0.7,
+    daily_loss_limit_usd: float = 5000.0,
+    api_key: str = "",
+) -> str:
+    """Arm the engine for autonomous trade execution.
+
+    CRITICAL: This enables the engine to execute trades on your behalf.
+    Your exchange must be connected with WRITE-enabled API keys.
+
+    Args:
+        confidence_threshold: Minimum AI confidence to execute (0.0-1.0, default 0.7)
+        daily_loss_limit_usd: Max daily loss before engine pauses (default $5000)
+        api_key: Your BASTION API key (bst_...) with 'engine' scope — REQUIRED
+
+    Returns:
+        Arm confirmation with safety parameters.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "engine")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/engine/arm", {
+        "auto_execute": True,
+        "confidence_threshold": max(0.0, min(1.0, confidence_threshold)),
+        "daily_loss_limit_usd": daily_loss_limit_usd,
+    }, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_engine_disarm(api_key: str = "") -> str:
+    """Disarm the engine — stop autonomous trade execution.
+
+    The engine continues monitoring but will NOT execute trades.
+    Positions remain open; you'll need to manage them manually.
+
+    Args:
+        api_key: Your BASTION API key (bst_...) with 'engine' scope — REQUIRED
+
+    Returns:
+        Disarm confirmation.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "engine")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/engine/disarm", {}, auth_headers=auth_headers)
     return json.dumps(result, indent=2)
 
 

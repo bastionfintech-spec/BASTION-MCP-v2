@@ -2,6 +2,7 @@
 BASTION MCP Server — Configuration
 """
 import os
+import secrets
 
 # ── API Connection ──────────────────────────────────────────────
 # The MCP server calls the BASTION API internally
@@ -19,6 +20,11 @@ MCP_MASTER_KEY = os.getenv("MCP_MASTER_KEY", "")  # Admin key with no rate limit
 # ── Rate Limiting ───────────────────────────────────────────────
 MCP_RATE_LIMIT = int(os.getenv("MCP_RATE_LIMIT", "100"))  # requests per minute
 MCP_RATE_WINDOW = int(os.getenv("MCP_RATE_WINDOW", "60"))  # seconds
+
+# ── Internal Auth (MCP ↔ Backend) ─────────────────────────────
+# Shared secret for MCP server to pass authenticated user_id to backend
+# Since MCP runs in the same process, this just prevents external spoofing
+MCP_INTERNAL_SECRET = os.getenv("MCP_INTERNAL_SECRET", secrets.token_urlsafe(32))
 
 # ── Server Info ─────────────────────────────────────────────────
 MCP_SERVER_NAME = "bastion-risk-intelligence"

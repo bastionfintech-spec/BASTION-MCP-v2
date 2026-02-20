@@ -321,6 +321,16 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"[AUDIT] Could not wire audit persistence: {e}")
 
+    # Wire Supabase client to MCP auth layer for API key validation
+    try:
+        from mcp_server.auth import set_supabase_client as _mcp_set_sb
+        if user_service and user_service.client:
+            _mcp_set_sb(user_service.client)
+        else:
+            _mcp_set_sb(None)
+    except Exception as e:
+        logger.warning(f"[MCP Auth] Failed to wire Supabase client: {e}")
+
     # Load persisted stats from Supabase BEFORE any requests can fire
     try:
         await load_bastion_stats()
@@ -832,26 +842,111 @@ def get_user_id_from_token(token: Optional[str]) -> str:
     return token[:16]  # Use first 16 chars as identifier for quick lookup
 
 
-async def get_user_scope(token: Optional[str] = None, session_id: Optional[str] = None) -> tuple:
-    """Get user scope ID and context. Returns (scope_id, user_context, user_exchanges_dict)."""
+async def get_user_scope(token: Optional[str] = None, session_id: Optional[str] = None, mcp_user_id: Optional[str] = None) -> tuple:
+    """
+    Get user scope ID and context. Returns (scope_id, user_context, user_exchanges_dict).
+
+    Priority:
+        1. mcp_user_id  (from MCP auth bridge — already validated bst_ key)
+        2. token         (from web dashboard session)
+        3. guest         (fallback)
+    """
     user_id = None
-    if token and user_service:
+
+    # Priority 1: MCP-resolved user ID
+    if mcp_user_id:
+        user_id = mcp_user_id
+    # Priority 2: Session token
+    elif token and user_service:
         try:
             user = await user_service.validate_session(token)
             if user:
                 user_id = user.id
         except:
             pass
-    
+
     scope_id = user_id or f"guest_{session_id or 'default'}"
-    
+
     # Initialize if needed
     if scope_id not in user_exchanges:
         user_exchanges[scope_id] = {}
     if scope_id not in user_contexts:
         user_contexts[scope_id] = UserContext()
-    
+
     return scope_id, user_contexts[scope_id], user_exchanges[scope_id]
+
+
+def _extract_mcp_user_id(request) -> Optional[str]:
+    """
+    Extract user_id from MCP internal auth headers.
+    The MCP server sets these after validating a bst_ API key.
+    Only trusts the header if the shared internal secret matches.
+    """
+    from mcp_server.config import MCP_INTERNAL_SECRET
+    internal_secret = request.headers.get("x-bastion-internal", "")
+    if not internal_secret or internal_secret != MCP_INTERNAL_SECRET:
+        return None
+    return request.headers.get("x-bastion-user-id")
+
+
+# Track which users have already had their exchanges auto-loaded
+_exchanges_loaded_users: set = set()
+
+
+async def ensure_user_exchanges_loaded(user_id: str) -> bool:
+    """
+    Auto-load a user's exchange connections from Supabase on first MCP call.
+    Returns True if exchanges were loaded (or already loaded), False on failure.
+    """
+    if user_id in _exchanges_loaded_users:
+        return True
+
+    if not user_service:
+        return False
+
+    try:
+        # Initialize user scope
+        if user_id not in user_exchanges:
+            user_exchanges[user_id] = {}
+        if user_id not in user_contexts:
+            user_contexts[user_id] = UserContext()
+
+        ctx = user_contexts[user_id]
+
+        # Get saved exchanges from Supabase
+        exchange_names = await user_service.get_user_exchanges(user_id)
+        if not exchange_names:
+            _exchanges_loaded_users.add(user_id)
+            return True
+
+        for exchange_name in exchange_names:
+            try:
+                keys = await user_service.get_exchange_keys(user_id, exchange_name)
+                if keys:
+                    success = await ctx.connect_exchange(
+                        exchange=exchange_name,
+                        api_key=keys["api_key"],
+                        api_secret=keys["api_secret"],
+                        passphrase=keys.get("passphrase"),
+                        read_only=True,
+                    )
+                    user_exchanges[user_id][exchange_name] = {
+                        "exchange": exchange_name,
+                        "api_key": keys["api_key"][:8] + "...",
+                        "read_only": True,
+                        "connected_at": datetime.now().isoformat(),
+                        "status": "active" if success else "demo",
+                        "from_cloud": True,
+                    }
+                    logger.info(f"[MCP] Auto-loaded {exchange_name} for user {user_id[:8]}...")
+            except Exception as e:
+                logger.error(f"[MCP] Failed to auto-load {exchange_name} for {user_id[:8]}: {e}")
+
+        _exchanges_loaded_users.add(user_id)
+        return True
+    except Exception as e:
+        logger.error(f"[MCP] ensure_user_exchanges_loaded failed: {e}")
+        return False
 
 
 @app.post("/api/exchange/connect")
@@ -1762,6 +1857,160 @@ async def delete_user_exchange_keys(exchange: str, token: str):
     
     success = await user_service.delete_exchange_keys(user.id, exchange)
     return {"success": success}
+
+
+# =============================================================================
+# MCP API KEY MANAGEMENT
+# =============================================================================
+# Users generate bst_ keys to authenticate their Claude agents against BASTION
+
+import hashlib as _hashlib
+
+@app.post("/api/auth/keys/generate")
+async def generate_api_key(data: dict):
+    """
+    Generate a new BASTION API key (bst_...) for MCP agent access.
+    Requires an active session token from the web dashboard.
+    """
+    token = data.get("token", "")
+    key_name = data.get("name", "Default")
+    scopes = data.get("scopes", ["read"])
+
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+
+    user = await user_service.validate_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Validate scopes
+    valid_scopes = {"read", "trade", "engine"}
+    scopes = [s for s in scopes if s in valid_scopes]
+    if not scopes:
+        scopes = ["read"]
+
+    # Generate key: bst_ + 40 random chars
+    raw_key = "bst_" + secrets.token_urlsafe(30)
+    key_hash = _hashlib.sha256(raw_key.encode()).hexdigest()
+    key_prefix = raw_key[:12]  # "bst_XXXXXXXX" for display
+
+    # Check if Supabase is available
+    if not (user_service.client and hasattr(user_service.client, 'table')):
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    try:
+        user_service.client.table("bastion_api_keys").insert({
+            "user_id": user.id,
+            "key_hash": key_hash,
+            "key_prefix": key_prefix,
+            "name": key_name,
+            "scopes": scopes,
+        }).execute()
+
+        logger.info(f"[API KEYS] Generated key {key_prefix}... for user {user.id[:8]}... scopes={scopes}")
+
+        return {
+            "success": True,
+            "key": raw_key,  # Shown ONCE — never stored or retrievable again
+            "prefix": key_prefix,
+            "name": key_name,
+            "scopes": scopes,
+            "message": "Save this key now — it cannot be retrieved after this."
+        }
+    except Exception as e:
+        logger.error(f"[API KEYS] Generation failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate API key")
+
+
+@app.get("/api/auth/keys")
+async def list_api_keys(token: str):
+    """
+    List user's API keys (prefix only, never full key).
+    """
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+
+    user = await user_service.validate_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    if not (user_service.client and hasattr(user_service.client, 'table')):
+        return {"success": True, "keys": []}
+
+    try:
+        result = (
+            user_service.client.table("bastion_api_keys")
+            .select("id, key_prefix, name, scopes, created_at, last_used_at, revoked")
+            .eq("user_id", user.id)
+            .eq("revoked", False)
+            .order("created_at", desc=True)
+            .execute()
+        )
+
+        keys = []
+        for row in (result.data or []):
+            keys.append({
+                "id": row["id"],
+                "prefix": row["key_prefix"],
+                "name": row["name"],
+                "scopes": row.get("scopes", ["read"]),
+                "created_at": row["created_at"],
+                "last_used_at": row.get("last_used_at"),
+            })
+
+        return {"success": True, "keys": keys}
+    except Exception as e:
+        logger.error(f"[API KEYS] List failed: {e}")
+        return {"success": True, "keys": []}
+
+
+@app.delete("/api/auth/keys/{key_id}")
+async def revoke_api_key(key_id: str, token: str):
+    """
+    Revoke an API key. Soft-delete (sets revoked=True).
+    """
+    if not user_service:
+        raise HTTPException(status_code=503, detail="User service unavailable")
+
+    user = await user_service.validate_session(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    if not (user_service.client and hasattr(user_service.client, 'table')):
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    try:
+        # Verify ownership first
+        result = (
+            user_service.client.table("bastion_api_keys")
+            .select("id, key_hash")
+            .eq("id", key_id)
+            .eq("user_id", user.id)
+            .execute()
+        )
+
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Key not found")
+
+        # Revoke
+        user_service.client.table("bastion_api_keys").update(
+            {"revoked": True}
+        ).eq("id", key_id).execute()
+
+        # Invalidate auth cache for this key
+        try:
+            from mcp_server.auth import invalidate_cache
+            invalidate_cache(result.data[0].get("key_hash"))
+        except Exception:
+            pass
+
+        logger.info(f"[API KEYS] Revoked key {key_id} for user {user.id[:8]}...")
+        return {"success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[API KEYS] Revoke failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to revoke key")
 
 
 # =============================================================================
@@ -5369,13 +5618,36 @@ DECISION REQUIRED: Evaluate this {direction} position using MCF exit hierarchy a
 
 
 @app.post("/api/risk/evaluate-all")
-async def risk_evaluate_all():
+async def risk_evaluate_all(request: Request, data: dict = None):
     """
     Evaluate ALL open positions using BASTION Risk Intelligence.
     Fetches positions from connected exchanges and evaluates each.
+    Supports MCP auth (X-Bastion-User-Id) and session tokens.
     """
     try:
-        positions = await user_context.get_all_positions()
+        # Resolve user scope — MCP auth, session token, or guest
+        mcp_uid = _extract_mcp_user_id(request)
+        token = None
+        session_id = None
+        if data:
+            token = data.get("token")
+            session_id = data.get("session_id")
+        if not token:
+            auth_header = request.headers.get("authorization", "")
+            if auth_header.startswith("Bearer "):
+                token = auth_header[7:]
+
+        scope_id, ctx, exchanges = await get_user_scope(
+            token=token, session_id=session_id, mcp_user_id=mcp_uid
+        )
+
+        # Auto-load exchanges for MCP users on first call
+        if mcp_uid:
+            await ensure_user_exchanges_loaded(mcp_uid)
+            # Re-fetch context after loading
+            ctx = user_contexts.get(mcp_uid, ctx)
+
+        positions = await ctx.get_all_positions()
         if not positions:
             return {
                 "success": True,

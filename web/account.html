@@ -177,7 +177,12 @@
                 <iconify-icon icon="solar:lock-password-bold"></iconify-icon>
                 Security
               </button>
-              
+
+              <button class="sidebar-btn w-full text-left px-3 py-2 rounded text-[11px] text-zinc-400 hover:bg-zinc-800/50 hover:text-white transition-colors mb-1 flex items-center gap-2" data-tab="api-keys">
+                <iconify-icon icon="solar:key-bold"></iconify-icon>
+                API Keys
+              </button>
+
               <button class="w-full text-left px-3 py-2 rounded text-[11px] text-crimson-400 hover:bg-crimson-900/30 transition-colors mb-1 flex items-center gap-2 mt-4" onclick="signOut()">
                 <iconify-icon icon="solar:logout-2-bold"></iconify-icon>
                 Sign Out
@@ -1392,8 +1397,122 @@
                 </div>
               </div>
             </div>
-            
-            
+
+            <!-- ==================== API KEYS TAB ==================== -->
+            <div id="tab-api-keys" class="tab-content hidden">
+              <div class="max-w-4xl">
+                <div class="mb-6">
+                  <h1 class="text-xl text-white font-bold mb-1">API Keys</h1>
+                  <p class="text-[11px] text-zinc-500">Generate API keys to connect Claude agents and external tools to BASTION via MCP.</p>
+                </div>
+
+                <!-- Generate New Key -->
+                <div class="bg-zinc-900/60 border border-zinc-800 rounded-lg p-5 mb-6">
+                  <h3 class="text-[13px] text-white font-bold mb-4 flex items-center gap-2">
+                    <iconify-icon icon="solar:add-circle-bold" class="text-crimson-500"></iconify-icon>
+                    Generate New Key
+                  </h3>
+                  <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label class="block text-[10px] text-zinc-500 uppercase mb-1">Key Name</label>
+                      <input type="text" id="api-key-name" placeholder="e.g. My Claude Agent" maxlength="50" class="w-full bg-zinc-800/50 border border-zinc-700/50 rounded px-3 py-2 text-[12px] text-white focus:outline-none focus:border-crimson-600/50" value="Default">
+                    </div>
+                    <div>
+                      <label class="block text-[10px] text-zinc-500 uppercase mb-1">Scopes</label>
+                      <div class="flex items-center gap-3 mt-1">
+                        <label class="flex items-center gap-1.5 text-[11px] text-zinc-300 cursor-pointer">
+                          <input type="checkbox" id="scope-read" checked disabled class="accent-crimson-600">
+                          <span>Read</span>
+                          <span class="text-[9px] text-zinc-600">(always on)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-[11px] text-zinc-300 cursor-pointer">
+                          <input type="checkbox" id="scope-trade" class="accent-crimson-600">
+                          <span>Trade</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-[11px] text-zinc-300 cursor-pointer">
+                          <input type="checkbox" id="scope-engine" class="accent-crimson-600">
+                          <span>Engine</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <button onclick="generateApiKey()" class="px-5 py-2 bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-bold rounded transition-colors">
+                    <iconify-icon icon="solar:key-bold" class="mr-1"></iconify-icon>
+                    GENERATE KEY
+                  </button>
+                </div>
+
+                <!-- New Key Display (hidden until generated) -->
+                <div id="new-key-display" class="bg-green-900/20 border border-green-700/40 rounded-lg p-5 mb-6 hidden">
+                  <div class="flex items-center gap-2 mb-3">
+                    <iconify-icon icon="solar:check-circle-bold" class="text-green-400 text-lg"></iconify-icon>
+                    <span class="text-[13px] text-green-300 font-bold">Key Generated — Copy it now!</span>
+                  </div>
+                  <p class="text-[10px] text-green-400/70 mb-3">This key will NOT be shown again. Save it somewhere safe.</p>
+                  <div class="flex items-center gap-2">
+                    <code id="new-key-value" class="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2.5 text-[12px] text-green-300 font-mono select-all break-all"></code>
+                    <button onclick="copyNewKey()" class="px-3 py-2.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded text-[11px] text-white transition-colors flex items-center gap-1">
+                      <iconify-icon icon="solar:copy-bold"></iconify-icon>
+                      COPY
+                    </button>
+                  </div>
+                  <div class="mt-3 text-[10px] text-zinc-500">
+                    <p class="mb-1">Add to your Claude config:</p>
+                    <pre id="new-key-config" class="bg-zinc-900/80 border border-zinc-800 rounded p-3 text-[10px] text-zinc-300 font-mono overflow-x-auto"></pre>
+                  </div>
+                </div>
+
+                <!-- Existing Keys Table -->
+                <div class="bg-zinc-900/60 border border-zinc-800 rounded-lg p-5">
+                  <h3 class="text-[13px] text-white font-bold mb-4 flex items-center gap-2">
+                    <iconify-icon icon="solar:key-bold" class="text-zinc-400"></iconify-icon>
+                    Your API Keys
+                  </h3>
+                  <div id="api-keys-list">
+                    <div id="api-keys-empty" class="text-center py-8 text-zinc-600 text-[11px]">
+                      <iconify-icon icon="solar:key-bold" class="text-3xl mb-2 block"></iconify-icon>
+                      No API keys yet. Generate one above to connect your Claude agent.
+                    </div>
+                    <table id="api-keys-table" class="w-full text-[11px] hidden">
+                      <thead>
+                        <tr class="text-[9px] text-zinc-500 uppercase border-b border-zinc-800">
+                          <th class="text-left py-2 px-2">Name</th>
+                          <th class="text-left py-2 px-2">Key</th>
+                          <th class="text-left py-2 px-2">Scopes</th>
+                          <th class="text-left py-2 px-2">Created</th>
+                          <th class="text-left py-2 px-2">Last Used</th>
+                          <th class="text-right py-2 px-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody id="api-keys-tbody"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- MCP Setup Guide -->
+                <div class="mt-6 bg-zinc-900/40 border border-zinc-800 rounded-lg p-5">
+                  <h3 class="text-[13px] text-white font-bold mb-3 flex items-center gap-2">
+                    <iconify-icon icon="solar:document-text-bold" class="text-zinc-400"></iconify-icon>
+                    Quick Setup
+                  </h3>
+                  <div class="text-[11px] text-zinc-400 space-y-2">
+                    <p><span class="text-crimson-400 font-bold">1.</span> Generate an API key above</p>
+                    <p><span class="text-crimson-400 font-bold">2.</span> Add BASTION to your Claude config (Settings → Developer → MCP Servers):</p>
+                    <pre class="bg-zinc-900/80 border border-zinc-800 rounded p-3 text-[10px] text-zinc-300 font-mono overflow-x-auto mt-2">{
+  "mcpServers": {
+    "bastion": {
+      "url": "https://bastionfi.tech/mcp/sse"
+    }
+  }
+}</pre>
+                    <p><span class="text-crimson-400 font-bold">3.</span> Tell Claude: <span class="text-zinc-300">"Check my BTC positions using BASTION"</span> and pass your api_key in the tool call</p>
+                    <p class="text-zinc-600 mt-3">See the full guide at <a href="/agents" class="text-crimson-400 hover:text-crimson-300 underline">bastionfi.tech/agents</a></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
           </div>
         </div>
       </div>
@@ -3304,10 +3423,137 @@
         }
       }
 
+      // ==================== API KEY MANAGEMENT ====================
+
+      async function generateApiKey() {
+        const token = getAuthToken();
+        if (!token) {
+          showToast('Sign in to generate API keys', 'error');
+          return;
+        }
+        const name = document.getElementById('api-key-name')?.value?.trim() || 'Default';
+        const scopes = ['read'];
+        if (document.getElementById('scope-trade')?.checked) scopes.push('trade');
+        if (document.getElementById('scope-engine')?.checked) scopes.push('engine');
+
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/keys/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, name, scopes })
+          });
+          const data = await res.json();
+          if (data.success && data.key) {
+            // Show the key
+            const display = document.getElementById('new-key-display');
+            document.getElementById('new-key-value').textContent = data.key;
+            document.getElementById('new-key-config').textContent =
+`{
+  "mcpServers": {
+    "bastion": {
+      "url": "https://bastionfi.tech/mcp/sse"
+    }
+  }
+}
+
+// Pass api_key="${data.key}" in each tool call`;
+            display.classList.remove('hidden');
+            display.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            showToast('API key generated — copy it now!', 'success');
+            loadApiKeys(); // Refresh table
+          } else {
+            showToast(data.detail || data.error || 'Failed to generate key', 'error');
+          }
+        } catch (e) {
+          showToast('Failed to generate API key', 'error');
+        }
+      }
+
+      function copyNewKey() {
+        const key = document.getElementById('new-key-value')?.textContent;
+        if (key) {
+          navigator.clipboard.writeText(key);
+          showToast('API key copied to clipboard', 'success');
+        }
+      }
+
+      async function loadApiKeys() {
+        const token = getAuthToken();
+        if (!token) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/keys?token=${encodeURIComponent(token)}`);
+          const data = await res.json();
+          const keys = data.keys || [];
+          const tbody = document.getElementById('api-keys-tbody');
+          const table = document.getElementById('api-keys-table');
+          const empty = document.getElementById('api-keys-empty');
+
+          if (!tbody) return;
+          tbody.innerHTML = '';
+
+          if (keys.length === 0) {
+            table?.classList.add('hidden');
+            empty?.classList.remove('hidden');
+            return;
+          }
+
+          table?.classList.remove('hidden');
+          empty?.classList.add('hidden');
+
+          keys.forEach(k => {
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-zinc-800/50 hover:bg-zinc-800/20';
+            const created = k.created_at ? new Date(k.created_at).toLocaleDateString() : '—';
+            const lastUsed = k.last_used_at ? new Date(k.last_used_at).toLocaleDateString() : 'Never';
+            const scopeBadges = (k.scopes || ['read']).map(s => {
+              const colors = { read: 'text-blue-400 bg-blue-900/30', trade: 'text-yellow-400 bg-yellow-900/30', engine: 'text-crimson-400 bg-crimson-900/30' };
+              return `<span class="px-1.5 py-0.5 rounded text-[9px] ${colors[s] || 'text-zinc-400 bg-zinc-800'}">${s}</span>`;
+            }).join(' ');
+
+            tr.innerHTML = `
+              <td class="py-2.5 px-2 text-zinc-300">${k.name}</td>
+              <td class="py-2.5 px-2 font-mono text-zinc-500">${k.prefix}...</td>
+              <td class="py-2.5 px-2">${scopeBadges}</td>
+              <td class="py-2.5 px-2 text-zinc-500">${created}</td>
+              <td class="py-2.5 px-2 text-zinc-500">${lastUsed}</td>
+              <td class="py-2.5 px-2 text-right">
+                <button onclick="revokeApiKey('${k.id}')" class="text-[10px] text-crimson-400 hover:text-crimson-300 transition-colors">Revoke</button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          console.log('[API KEYS] Failed to load keys');
+        }
+      }
+
+      async function revokeApiKey(keyId) {
+        if (!confirm('Revoke this API key? Any agents using it will lose access.')) return;
+        const token = getAuthToken();
+        if (!token) return;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/keys/${keyId}?token=${encodeURIComponent(token)}`, {
+            method: 'DELETE'
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('API key revoked', 'success');
+            loadApiKeys();
+          } else {
+            showToast(data.detail || 'Failed to revoke key', 'error');
+          }
+        } catch (e) {
+          showToast('Failed to revoke key', 'error');
+        }
+      }
+
       // Initialize
       loadSavedData();
       loadConnectedExchanges();  // This will auto-connect saved exchanges
       checkTelegramStatus();
+      loadApiKeys();  // Load API keys on page load
     </script>
 </body>
 </html>
