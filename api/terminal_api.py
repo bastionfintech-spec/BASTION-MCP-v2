@@ -950,7 +950,7 @@ async def _send_reset_email(email: str, token: str):
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"}, json={
-                "from": "BASTION <noreply@bastionfi.tech>",
+                "from": os.getenv("RESEND_FROM_EMAIL", "BASTION <onboarding@resend.dev>"),
                 "to": [email],
                 "subject": "BASTION — Password Reset",
                 "html": f"""<div style="font-family:monospace;background:#000;color:#fff;padding:40px;max-width:500px;margin:0 auto;">
