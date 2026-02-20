@@ -341,20 +341,26 @@
               <div class="flex-1 flex items-center justify-center relative terminal-grid-bg overflow-hidden">
                 <div class="bastion-scanline"></div>
                 <!--
-                  Bastion Shield SVG: Geometric fortress with inverted-Y channel.
-                  4 red blocks separated by white space. Matches bastion-logo.png.
-                  The logo is a shield wider at top, tapering at bottom.
-                  Deep V-notch at top center, vertical channel down center.
+                  Bastion Logo SVG — Faithful recreation of bastion-logo.png
+                  The logo is an isometric 3D fortress/shield shape.
+                  An upward chevron (^) at the top, Y-junction in the middle,
+                  two large pillar blocks at the bottom.
+                  The white Y-channel is the negative space between the 4 red paths.
+                  ViewBox 0 0 200 240 — centered.
                 -->
-                <svg class="bastion-breathing-svg" width="130" height="168" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Top-left block: flat top, angled inner edge forming the V -->
-                  <path d="M4 2 L43 2 L43 14 L28 38 L4 38 Z" fill="#DC2626"/>
-                  <!-- Top-right block: mirror of top-left -->
-                  <path d="M57 2 L96 2 L96 38 L72 38 L57 14 Z" fill="#DC2626"/>
-                  <!-- Bottom-left block: below V-junction, tapers at bottom -->
-                  <path d="M4 46 L28 46 L43 68 L43 104 L34 118 C31 123 27 126 22 126 L8 126 C4 126 4 122 4 118 Z" fill="#DC2626"/>
-                  <!-- Bottom-right block: mirror of bottom-left -->
-                  <path d="M72 46 L96 46 L96 118 C96 122 96 126 92 126 L78 126 C73 126 69 123 66 118 L57 104 L57 68 Z" fill="#DC2626"/>
+                <svg class="bastion-breathing-svg" width="140" height="168" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+                  <!-- TOP-LEFT: Left arm of upward chevron.
+                       Outer-left edge is vertical, top edge angles up to center peak,
+                       inner edge angles back down to the Y-junction -->
+                  <path d="M10 88 L10 38 L85 2 L93 12 L55 52 L40 72 L25 88 Z" fill="#DC2626"/>
+                  <!-- TOP-RIGHT: Right arm of upward chevron (mirror) -->
+                  <path d="M190 88 L175 88 L160 72 L145 52 L107 12 L115 2 L190 38 Z" fill="#DC2626"/>
+                  <!-- BOTTOM-LEFT: Large pillar block below Y-junction.
+                       Top has angled inner edge from Y-junction,
+                       outer edge is vertical, bottom tapers inward -->
+                  <path d="M10 100 L40 82 L55 62 L90 100 L90 195 L76 215 L60 230 L10 230 Z" fill="#DC2626"/>
+                  <!-- BOTTOM-RIGHT: Mirror of bottom-left -->
+                  <path d="M190 100 L190 230 L140 230 L124 215 L110 195 L110 100 L145 62 L160 82 Z" fill="#DC2626"/>
                 </svg>
               </div>
               <!-- Terminal status bar -->
