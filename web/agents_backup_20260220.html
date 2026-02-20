@@ -19,13 +19,15 @@
       pre:hover .copy-btn, .code-block:hover .copy-btn { opacity: 1; }
       /* Floating nav */
       .floating-nav {
-        position: fixed; top: 0; left: 0; right: 0;
-        z-index: 50; width: 100%;
-        padding: 0.5rem 1.5rem 0.5rem 1rem;
-        background: rgba(0,0,0,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+        z-index: 50; width: 100%; max-width: 1200px;
+        margin-top: 1rem; padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255,255,255,0.06);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
         display: flex; align-items: center; justify-content: space-between;
       }
+      @media (max-width: 1248px) { .floating-nav { margin-left: 1rem; margin-right: 1rem; width: calc(100% - 2rem); left: 0; transform: none; } }
       /* Nav link glow underline */
       .nav-glow-link { position: relative; padding: 0.25rem 0; }
       .nav-glow-link::after {
