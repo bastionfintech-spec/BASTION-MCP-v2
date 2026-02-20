@@ -341,65 +341,19 @@
               <div class="flex-1 flex items-center justify-center relative terminal-grid-bg overflow-hidden">
                 <div class="bastion-scanline"></div>
                 <!--
-                  Bastion Logo SVG — Precise recreation of bastion-logo.png
-                  4 red shapes separated by white Y-channel negative space.
-                  Top: Two chevron arms forming upward V (^)
-                  Bottom: Two isometric 3D pillar/box shapes with tapered base
-                  The white gap = inverted Y splitting the 4 pieces.
+                  Bastion Logo SVG — Pixel-traced from bastion-logo.png
+                  3 shapes: left half, right half, top bridge triangle.
+                  Each half = arm+pillar connected, with 2 notch indentations.
+                  Traced via contour detection on the actual PNG.
                   ViewBox 0 0 200 260
                 -->
                 <svg class="bastion-breathing-svg" width="140" height="182" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
-                  <!-- TOP-LEFT ARM: Chevron left wing
-                       Starts at outer-left edge, angles up-right to center peak,
-                       inner edge comes back down-left to the Y-fork -->
-                  <path d="
-                    M 8 92
-                    L 8 52
-                    L 88 4
-                    L 100 16
-                    L 60 44
-                    L 40 62
-                    L 24 80
-                    Z
-                  " fill="#DC2626"/>
-                  <!-- TOP-RIGHT ARM: Chevron right wing (mirror) -->
-                  <path d="
-                    M 192 92
-                    L 192 52
-                    L 112 4
-                    L 100 16
-                    L 140 44
-                    L 160 62
-                    L 176 80
-                    Z
-                  " fill="#DC2626"/>
-                  <!-- BOTTOM-LEFT BLOCK: Isometric 3D pillar
-                       Top connects from Y-fork diagonal,
-                       left edge vertical, bottom angles inward (shield taper),
-                       inner edge is vertical stem of Y -->
-                  <path d="
-                    M 8 104
-                    L 8 232
-                    L 56 256
-                    L 72 240
-                    L 88 224
-                    L 88 112
-                    L 56 72
-                    L 38 88
-                    Z
-                  " fill="#DC2626"/>
-                  <!-- BOTTOM-RIGHT BLOCK: Mirror of bottom-left -->
-                  <path d="
-                    M 192 104
-                    L 192 232
-                    L 144 256
-                    L 128 240
-                    L 112 224
-                    L 112 112
-                    L 144 72
-                    L 162 88
-                    Z
-                  " fill="#DC2626"/>
+                  <!-- RIGHT HALF: upper-right arm + lower-right pillar (11 vertices) -->
+                  <path d="M 199 15 L 111 66 L 111 142 L 147 122 L 169 134 L 111 169 L 111 244 L 199 194 L 199 118 L 177 106 L 199 91 Z" fill="#DC2626"/>
+                  <!-- LEFT HALF: upper-left arm + lower-left pillar (11 vertices, mirror) -->
+                  <path d="M 0 15 L 0 92 L 22 105 L 0 118 L 0 194 L 88 244 L 88 169 L 30 134 L 53 122 L 88 142 L 88 65 Z" fill="#DC2626"/>
+                  <!-- TOP BRIDGE: triangle connecting the two arms at peak -->
+                  <path d="M 46 16 L 101 46 L 152 16 Z" fill="#DC2626"/>
                 </svg>
               </div>
               <!-- Terminal status bar -->
