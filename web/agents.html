@@ -19,11 +19,25 @@
         background-image: linear-gradient(to right, #27272a 1px, transparent 1px),
         linear-gradient(to bottom, #27272a 1px, transparent 1px);
       }
+      .bg-scanline {
+        background: linear-gradient(to bottom, rgba(220, 38, 38, 0), rgba(220, 38, 38, 0) 50%, rgba(0, 0, 0, 0.15) 50%, rgba(0, 0, 0, 0.15));
+        background-size: 100% 4px;
+        pointer-events: none;
+      }
+      .bg-noise {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+      }
       @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.5); opacity: 0; } }
       .animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+      @keyframes scanline-drift { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
+      .scanline-sweep { animation: scanline-drift 8s linear infinite; }
+      @keyframes flicker { 0%, 100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: 0.8; } 94% { opacity: 1; } 97% { opacity: 0.9; } 98% { opacity: 1; } }
+      .animate-flicker { animation: flicker 4s ease-in-out infinite; }
       pre { tab-size: 2; }
       .copy-btn { opacity: 0; transition: opacity 0.2s; }
       pre:hover .copy-btn, .code-block:hover .copy-btn { opacity: 1; }
+      .glow-red { box-shadow: 0 0 40px rgba(220, 38, 38, 0.15), 0 0 80px rgba(220, 38, 38, 0.05); }
+      .border-glow { border-color: rgba(220, 38, 38, 0.2); box-shadow: 0 0 15px rgba(220, 38, 38, 0.08); }
     </style>
     <style>
       @media (prefers-reduced-motion: no-preference) {
@@ -55,6 +69,20 @@
 <body class="text-zinc-400 min-h-screen flex flex-col selection:bg-red-600 selection:text-white bg-[#050505]">
     <!-- Fixed Grid Background -->
     <div class="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-grid" style="filter: sepia(1) hue-rotate(320deg) saturate(2);"></div>
+
+    <!-- Film Grain -->
+    <div class="fixed inset-0 pointer-events-none z-[1] bg-noise opacity-40 mix-blend-overlay"></div>
+
+    <!-- Scanline Overlay -->
+    <div class="fixed inset-0 pointer-events-none z-[2] bg-scanline opacity-20 mix-blend-overlay"></div>
+
+    <!-- Drifting Scanline Sweep -->
+    <div class="fixed inset-0 pointer-events-none z-[3] overflow-hidden">
+      <div class="scanline-sweep w-full h-px bg-gradient-to-r from-transparent via-red-600/20 to-transparent"></div>
+    </div>
+
+    <!-- Ambient Red Glow — top center -->
+    <div class="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-red-900/[0.07] rounded-full blur-[200px] pointer-events-none z-0"></div>
 
     <!-- Header -->
     <header class="relative z-50 h-16 border-b border-zinc-800 bg-[#050505]/95 backdrop-blur-sm flex items-center justify-between sticky top-0">
@@ -116,10 +144,18 @@
       <!-- ═════════════════════════════════════════════════ -->
       <!-- HERO — Your Agent + BASTION Intelligence -->
       <!-- ═════════════════════════════════════════════════ -->
-      <div class="relative w-full min-h-[70vh] flex items-center overflow-hidden bg-[#050505]">
+      <div class="relative w-full min-h-[80vh] flex items-center overflow-hidden bg-[#050505]">
         <div class="absolute inset-0 z-0 pointer-events-none">
-          <div class="absolute top-1/3 left-1/4 w-[600px] h-[400px] bg-red-900/[0.06] rounded-full blur-[150px]"></div>
-          <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[300px] bg-red-900/[0.04] rounded-full blur-[120px]"></div>
+          <!-- Primary glow -->
+          <div class="absolute top-1/4 left-1/3 w-[700px] h-[500px] bg-red-900/[0.08] rounded-full blur-[180px] animate-pulse" style="animation-duration: 6s;"></div>
+          <!-- Secondary glow -->
+          <div class="absolute bottom-1/3 right-1/4 w-[500px] h-[400px] bg-red-800/[0.05] rounded-full blur-[150px] animate-pulse" style="animation-duration: 8s; animation-delay: 2s;"></div>
+          <!-- Accent corner glow -->
+          <div class="absolute top-0 right-0 w-[300px] h-[300px] bg-red-600/[0.03] rounded-full blur-[100px]"></div>
+          <!-- Radial gradient from center -->
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,rgba(127,29,29,0.12)_0%,transparent_60%)]"></div>
+          <!-- Bottom fade -->
+          <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#050505] to-transparent"></div>
         </div>
 
         <div class="container mx-auto px-6 md:px-12 py-16 md:py-24 relative z-10">
@@ -174,9 +210,10 @@
       <!-- ═════════════════════════════════════════════════ -->
       <!-- HOW IT WORKS — Architecture -->
       <!-- ═════════════════════════════════════════════════ -->
-      <section class="relative bg-[#050505] border-y border-zinc-800 overflow-hidden">
+      <section class="relative bg-[#030303] border-y border-zinc-800 overflow-hidden">
         <div class="absolute inset-0 pointer-events-none">
-          <div class="absolute top-1/3 right-1/4 w-[400px] h-[300px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
+          <div class="absolute top-1/3 right-1/4 w-[500px] h-[400px] bg-red-900/[0.06] rounded-full blur-[150px]"></div>
+          <div class="absolute bottom-0 left-1/3 w-[400px] h-[300px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
         </div>
 
         <div class="relative z-10 px-6 md:px-12 pt-10 pb-6">
@@ -244,9 +281,11 @@
       <!-- ═════════════════════════════════════════════════ -->
       <!-- QUICKSTART — 30-Second Setup -->
       <!-- ═════════════════════════════════════════════════ -->
-      <section id="quickstart" class="relative bg-[#050505] border-b border-zinc-800 overflow-hidden py-12 md:py-16">
+      <section id="quickstart" class="relative bg-[#040404] border-b border-zinc-800 overflow-hidden py-12 md:py-16">
         <div class="absolute inset-0 pointer-events-none">
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-red-900/[0.04] rounded-full blur-[150px]"></div>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-red-900/[0.07] rounded-full blur-[180px]"></div>
+          <div class="absolute top-0 left-0 w-[300px] h-[200px] bg-red-800/[0.04] rounded-full blur-[100px]"></div>
+          <div class="absolute bottom-0 right-0 w-[400px] h-[300px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
         </div>
 
         <div class="relative z-10 px-6 md:px-12 max-w-4xl mx-auto">
@@ -385,13 +424,14 @@
       <!-- ═════════════════════════════════════════════════ -->
       <section class="relative bg-[#050505] border-b border-zinc-800 overflow-hidden">
         <div class="absolute inset-0 pointer-events-none">
-          <div class="absolute bottom-1/4 left-1/3 w-[500px] h-[300px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
+          <div class="absolute bottom-1/4 left-1/3 w-[600px] h-[400px] bg-red-900/[0.06] rounded-full blur-[150px]"></div>
+          <div class="absolute top-1/4 right-1/4 w-[400px] h-[300px] bg-red-800/[0.04] rounded-full blur-[130px]"></div>
         </div>
 
         <div class="relative z-10 px-6 md:px-12 pt-10 pb-6">
           <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
             <span class="w-4 h-px bg-red-600"></span>
-            // 40_MCP_TOOLS
+            // 49_MCP_TOOLS
           </div>
           <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-2 sys-reveal sys-rise">
             what your agent <span class="text-red-600">can do</span>
@@ -473,9 +513,11 @@
       <!-- ═════════════════════════════════════════════════ -->
       <!-- EXAMPLE WORKFLOWS — What Agents Actually Do -->
       <!-- ═════════════════════════════════════════════════ -->
-      <section class="relative bg-[#050505] border-b border-zinc-800 overflow-hidden py-12 md:py-16">
+      <section class="relative bg-[#030303] border-b border-zinc-800 overflow-hidden py-12 md:py-16">
         <div class="absolute inset-0 pointer-events-none">
-          <div class="absolute top-1/4 right-1/3 w-[500px] h-[400px] bg-red-900/[0.03] rounded-full blur-[120px]"></div>
+          <div class="absolute top-1/4 right-1/3 w-[600px] h-[500px] bg-red-900/[0.06] rounded-full blur-[160px]"></div>
+          <div class="absolute bottom-0 left-1/4 w-[400px] h-[300px] bg-red-800/[0.04] rounded-full blur-[120px]"></div>
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_30%,rgba(127,29,29,0.06)_0%,transparent_50%)]"></div>
         </div>
 
         <div class="relative z-10 px-6 md:px-12">
@@ -572,23 +614,26 @@
       <!-- WHY BASTION — Value Props -->
       <!-- ═════════════════════════════════════════════════ -->
       <section class="relative bg-[#050505] border-b border-zinc-800 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-red-900/[0.05] rounded-full blur-[180px]"></div>
+        </div>
         <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800 border-t border-zinc-800">
-          <div class="bg-[#050505] p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-100">
+          <div class="bg-[#050505] p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-100 hover:bg-zinc-900/30 transition-colors">
             <iconify-icon icon="solar:lock-bold" class="text-green-500 text-3xl mb-4"></iconify-icon>
             <div class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Zero Custody</div>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed">BASTION never holds funds. Your agent uses YOUR exchange API keys. We provide intelligence, not custody.</p>
           </div>
-          <div class="bg-[#050505] p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-200">
+          <div class="bg-[#050505] p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-200 hover:bg-zinc-900/30 transition-colors">
             <iconify-icon icon="solar:server-bold" class="text-red-500 text-3xl mb-4"></iconify-icon>
             <div class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Your Compute</div>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed">Your agent runs on YOUR Claude API. You control the compute budget, the frequency, and the trading logic.</p>
           </div>
-          <div class="bg-[#050505] p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-300">
+          <div class="bg-[#050505] p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-300 hover:bg-zinc-900/30 transition-colors">
             <iconify-icon icon="solar:bolt-bold" class="text-amber-400 text-3xl mb-4"></iconify-icon>
             <div class="text-white font-semibold text-sm uppercase tracking-tight mb-2">Native MCP</div>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed">No SDK. No wrapper. No boilerplate. Claude agents speak MCP natively. Add 3 lines of config and go.</p>
           </div>
-          <div class="bg-[#050505] p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-400">
+          <div class="bg-[#050505] p-8 flex flex-col items-center text-center sys-reveal sys-rise sys-delay-400 hover:bg-zinc-900/30 transition-colors">
             <iconify-icon icon="solar:scaling-bold" class="text-cyan-400 text-3xl mb-4"></iconify-icon>
             <div class="text-white font-semibold text-sm uppercase tracking-tight mb-2">560+ Signals</div>
             <p class="text-[10px] font-mono text-zinc-500 leading-relaxed">Derivatives, on-chain, whale tracking, market structure, macro — institutional-grade data your agent can't get anywhere else.</p>
@@ -599,9 +644,18 @@
       <!-- ═════════════════════════════════════════════════ -->
       <!-- CTA — Final -->
       <!-- ═════════════════════════════════════════════════ -->
-      <section class="relative bg-[#050505] py-16 md:py-24 border-b border-zinc-800 overflow-hidden">
+      <section class="relative bg-[#030303] py-16 md:py-24 border-b border-zinc-800 overflow-hidden">
         <div class="absolute inset-0 pointer-events-none">
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-red-900/[0.05] rounded-full blur-[150px]"></div>
+          <!-- Central pulsing glow -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-red-900/[0.1] rounded-full blur-[200px] animate-pulse" style="animation-duration: 5s;"></div>
+          <!-- Secondary accent -->
+          <div class="absolute top-0 left-1/4 w-[400px] h-[300px] bg-red-800/[0.06] rounded-full blur-[150px] animate-pulse" style="animation-duration: 7s; animation-delay: 1.5s;"></div>
+          <!-- Bottom accent -->
+          <div class="absolute bottom-0 right-1/3 w-[500px] h-[350px] bg-red-900/[0.04] rounded-full blur-[180px]"></div>
+          <!-- Radial vignette -->
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(127,29,29,0.08)_0%,transparent_70%)]"></div>
+          <!-- Top border glow -->
+          <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-600/30 to-transparent"></div>
         </div>
 
         <div class="relative z-10 px-6 md:px-12 max-w-2xl mx-auto text-center">
@@ -635,7 +689,7 @@
       </section>
 
       <!-- Footer -->
-      <footer class="border-t border-zinc-800 bg-[#080808] relative z-20">
+      <footer class="border-t border-zinc-800 bg-[#060606] relative z-20">
         <div class="border-b border-zinc-800/50 px-6 md:px-8 py-3">
           <p class="text-[8px] font-mono text-zinc-600 leading-relaxed text-center max-w-4xl mx-auto">BASTION provides market intelligence via the Model Context Protocol (MCP). BASTION does not execute trades, hold funds, or provide financial advice. All trading decisions are made by the user's autonomous agent using the user's own exchange API keys. Cryptocurrency trading involves substantial risk of loss.</p>
         </div>
