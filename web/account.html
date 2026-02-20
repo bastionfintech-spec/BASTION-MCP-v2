@@ -1554,24 +1554,64 @@
       let connectedExchanges = [];
 
       // ==================== TAB NAVIGATION ====================
-      document.querySelectorAll('[data-tab]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const tabId = btn.dataset.tab;
-          
-          // Update active button
-          document.querySelectorAll('.sidebar-btn').forEach(b => {
-            b.classList.remove('bg-crimson-600/20', 'text-crimson-400', 'border', 'border-crimson-600/30');
-            b.classList.add('text-zinc-400');
-          });
-          btn.classList.add('bg-crimson-600/20', 'text-crimson-400', 'border', 'border-crimson-600/30');
-          btn.classList.remove('text-zinc-400');
-          
-          // Show content
-          document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-          const tabContent = document.getElementById(`tab-${tabId}`);
-          if (tabContent) tabContent.classList.remove('hidden');
+      function switchToTab(tabId) {
+        document.querySelectorAll('.sidebar-btn').forEach(b => {
+          b.classList.remove('bg-crimson-600/20', 'text-crimson-400', 'border', 'border-crimson-600/30');
+          b.classList.add('text-zinc-400');
         });
+        const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+        if (activeBtn) {
+          activeBtn.classList.add('bg-crimson-600/20', 'text-crimson-400', 'border', 'border-crimson-600/30');
+          activeBtn.classList.remove('text-zinc-400');
+        }
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        const tabContent = document.getElementById(`tab-${tabId}`);
+        if (tabContent) tabContent.classList.remove('hidden');
+      }
+
+      document.querySelectorAll('[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => switchToTab(btn.dataset.tab));
       });
+
+      // Handle URL params: ?tab=api-keys&onboarding=1
+      (function handleUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        const onboarding = params.get('onboarding');
+        if (tab) switchToTab(tab);
+        if (onboarding === '1') {
+          // Inject onboarding banner above the API keys form
+          const apiKeysTab = document.getElementById('tab-api-keys');
+          if (apiKeysTab) {
+            const banner = document.createElement('div');
+            banner.id = 'onboarding-banner';
+            banner.className = 'bg-gradient-to-r from-red-950/40 via-red-900/20 to-transparent border border-red-800/40 rounded-lg p-5 mb-6 relative';
+            banner.innerHTML = `
+              <button onclick="this.parentElement.remove()" class="absolute top-3 right-3 text-zinc-500 hover:text-white text-lg">×</button>
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 bg-red-600/20 border border-red-600/30 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <iconify-icon icon="solar:rocket-bold" class="text-red-400 text-xl"></iconify-icon>
+                </div>
+                <div>
+                  <h2 class="text-white font-bold text-sm mb-1">Welcome to BASTION! Let's connect your agent.</h2>
+                  <div class="text-[11px] text-zinc-400 space-y-2">
+                    <p class="flex items-center gap-2"><span class="w-5 h-5 bg-red-600 text-white text-[10px] font-bold rounded flex items-center justify-center">1</span> Generate an API key below — give it a name like "My Claude Agent"</p>
+                    <p class="flex items-center gap-2"><span class="w-5 h-5 bg-zinc-700 text-white text-[10px] font-bold rounded flex items-center justify-center">2</span> Copy the key (it's shown once!) and add it to your Claude MCP config</p>
+                    <p class="flex items-center gap-2"><span class="w-5 h-5 bg-zinc-700 text-white text-[10px] font-bold rounded flex items-center justify-center">3</span> Ask Claude: <code class="text-red-400 bg-zinc-900 px-1.5 py-0.5 rounded text-[10px]">"What's the current BTC price?"</code> — it works!</p>
+                  </div>
+                  <div class="flex items-center gap-3 mt-3">
+                    <a href="/agents" class="text-[10px] font-mono text-red-400 hover:text-white uppercase tracking-wider border border-red-800/50 hover:border-red-600 px-3 py-1.5 transition-all">Full Setup Guide →</a>
+                    <a href="/playground" class="text-[10px] font-mono text-zinc-500 hover:text-white uppercase tracking-wider border border-zinc-800 hover:border-zinc-600 px-3 py-1.5 transition-all">Test Tools in Browser</a>
+                  </div>
+                </div>
+              </div>
+            `;
+            apiKeysTab.querySelector('.max-w-4xl').insertBefore(banner, apiKeysTab.querySelector('.max-w-4xl').firstChild.nextSibling);
+          }
+          // Clean URL without reload
+          window.history.replaceState({}, '', '/account?tab=api-keys');
+        }
+      })();
 
       // ==================== TOGGLE BUTTONS ====================
       document.querySelectorAll('.toggle-btn').forEach(btn => {

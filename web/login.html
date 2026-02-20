@@ -621,10 +621,10 @@
             localStorage.setItem('bastion_token', data.token);
             localStorage.setItem('bastion_user', JSON.stringify(data.user));
             
-            showStatus('register-status', 'Account created. Redirecting...', false);
-            
+            showStatus('register-status', 'Account created! Setting up your agent...', false);
+
             setTimeout(() => {
-              window.location.href = '/frontend';
+              window.location.href = '/account?tab=api-keys&onboarding=1';
             }, 1000);
           } else {
             showStatus('register-status', data.detail || 'Registration failed', true);
