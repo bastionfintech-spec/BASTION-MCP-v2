@@ -338,6 +338,54 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"[STATS] Stats load at startup failed (will retry on first access): {e}")
 
+    # Ensure new tables/columns exist for webhooks, workflows, and API key labels
+    if user_service and user_service.is_db_available:
+        try:
+            _db = user_service.client
+            # Add label column to bastion_api_keys if missing (safe — Supabase ignores if exists via RPC or we catch)
+            try:
+                _db.rpc("exec_sql", {"query": "ALTER TABLE bastion_api_keys ADD COLUMN IF NOT EXISTS label TEXT DEFAULT ''"}).execute()
+                logger.info("[DB] bastion_api_keys.label column ensured")
+            except Exception:
+                logger.debug("[DB] label column may already exist or RPC unavailable — OK")
+            # Create bastion_webhooks table if not exists
+            try:
+                _db.rpc("exec_sql", {"query": """
+                    CREATE TABLE IF NOT EXISTS bastion_webhooks (
+                        id TEXT PRIMARY KEY,
+                        user_id UUID REFERENCES bastion_users(id) ON DELETE CASCADE,
+                        name TEXT DEFAULT 'Webhook',
+                        url TEXT NOT NULL,
+                        events JSONB DEFAULT '[]',
+                        active BOOLEAN DEFAULT true,
+                        created_at TIMESTAMPTZ DEFAULT now(),
+                        last_triggered TIMESTAMPTZ,
+                        trigger_count INTEGER DEFAULT 0
+                    )
+                """}).execute()
+                logger.info("[DB] bastion_webhooks table ensured")
+            except Exception:
+                logger.debug("[DB] bastion_webhooks table creation via RPC unavailable — OK (create manually)")
+            # Create bastion_workflows table if not exists
+            try:
+                _db.rpc("exec_sql", {"query": """
+                    CREATE TABLE IF NOT EXISTS bastion_workflows (
+                        id TEXT PRIMARY KEY,
+                        user_id UUID REFERENCES bastion_users(id) ON DELETE CASCADE,
+                        name TEXT NOT NULL,
+                        description TEXT DEFAULT '',
+                        steps JSONB DEFAULT '[]',
+                        created_at TIMESTAMPTZ DEFAULT now(),
+                        last_run TIMESTAMPTZ,
+                        run_count INTEGER DEFAULT 0
+                    )
+                """}).execute()
+                logger.info("[DB] bastion_workflows table ensured")
+            except Exception:
+                logger.debug("[DB] bastion_workflows table creation via RPC unavailable — OK (create manually)")
+        except Exception as e:
+            logger.warning(f"[DB] Table setup failed (non-critical, features fall back to in-memory): {e}")
+
     logger.info("BASTION Terminal API LIVE")
     yield
 
@@ -812,8 +860,16 @@ async def list_mcp_tools():
     return {"tools": tools, "total": 49, "listed": len(tools)}
 
 @app.post("/api/mcp/playground/execute")
-async def execute_playground_tool(data: dict):
+async def playground_execute(request: Request, data: dict):
     """Execute an MCP tool from the playground."""
+    # Resolve user for usage tracking
+    token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    user = await user_service.validate_session(token) if user_service and token else None
+    data["_user_id"] = user.id if user else "_anonymous"
+    return await execute_playground_tool(data)
+
+async def execute_playground_tool(data: dict):
+    """Internal: Execute an MCP tool."""
     raw_tool = data.get("tool", "")
     # Normalize: accept both "get_price" and "bastion_get_price"
     tool_name = raw_tool if raw_tool.startswith("bastion_") else f"bastion_{raw_tool}"
@@ -860,7 +916,9 @@ async def execute_playground_tool(data: dict):
                 else:
                     body = params
                 resp = await client.post(post_tools[tool_name], json=body)
-                return {"result": resp.json(), "latency_ms": round((time.time() - t0) * 1000), "status": resp.status_code}
+                latency = round((time.time() - t0) * 1000)
+                _track_usage(data.get("_user_id", "_anonymous"), tool_name, latency, resp.status_code < 400)
+                return {"result": resp.json(), "latency_ms": latency, "status": resp.status_code}
         elif tool_name in tool_map:
             method, path_template = tool_map[tool_name]
             symbol = params.get("symbol", "BTC")
@@ -868,14 +926,55 @@ async def execute_playground_tool(data: dict):
             query_params = {k: v for k, v in params.items() if k not in ("symbol", "api_key") and v}
             async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=60.0) as client:
                 resp = await client.get(path, params=query_params)
-                return {"result": resp.json(), "latency_ms": round((time.time() - t0) * 1000), "status": resp.status_code}
+                latency = round((time.time() - t0) * 1000)
+                _track_usage(data.get("_user_id", "_anonymous"), tool_name, latency, resp.status_code < 400)
+                return {"result": resp.json(), "latency_ms": latency, "status": resp.status_code}
         else:
             return {"error": f"Unknown tool: {tool_name}"}
     except Exception as e:
-        return {"error": str(e), "latency_ms": round((time.time() - t0) * 1000)}
+        latency = round((time.time() - t0) * 1000)
+        _track_usage(data.get("_user_id", "_anonymous"), tool_name, latency, False)
+        return {"error": str(e), "latency_ms": latency}
 
 # ── Password Reset ────────────────────────────────────────────
 _reset_tokens: dict = {}
+
+async def _send_reset_email(email: str, token: str):
+    """Send password reset email via Resend (or log token if no key configured)."""
+    resend_key = os.getenv("RESEND_API_KEY", "")
+    base_url = os.getenv("BASE_URL", "https://bastionfi.tech")
+    if not resend_key:
+        logger.info(f"[AUTH] No RESEND_API_KEY — reset token for {email}: {token[:16]}...")
+        return False
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"}, json={
+                "from": "BASTION <noreply@bastionfi.tech>",
+                "to": [email],
+                "subject": "BASTION — Password Reset",
+                "html": f"""<div style="font-family:monospace;background:#000;color:#fff;padding:40px;max-width:500px;margin:0 auto;">
+                    <div style="text-align:center;margin-bottom:30px;">
+                        <h1 style="color:#DC2626;font-size:24px;margin:0;">BASTION</h1>
+                        <p style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:3px;">Password Reset</p>
+                    </div>
+                    <p style="color:#ccc;font-size:13px;">Your reset code:</p>
+                    <div style="background:#111;border:1px solid #333;padding:16px;text-align:center;margin:20px 0;">
+                        <code style="color:#DC2626;font-size:16px;letter-spacing:2px;">{token}</code>
+                    </div>
+                    <p style="color:#666;font-size:11px;">Or click: <a href="{base_url}/login?reset={token}" style="color:#DC2626;">{base_url}/login?reset={token}</a></p>
+                    <p style="color:#555;font-size:10px;margin-top:30px;">This code expires in 1 hour. If you didn't request this, ignore this email.</p>
+                </div>"""
+            })
+            if resp.status_code in (200, 201):
+                logger.info(f"[AUTH] Reset email sent to {email}")
+                return True
+            else:
+                logger.warning(f"[AUTH] Resend API error: {resp.status_code} {resp.text}")
+                return False
+    except Exception as e:
+        logger.warning(f"[AUTH] Failed to send reset email: {e}")
+        return False
 
 @app.post("/api/auth/forgot-password")
 async def forgot_password(data: dict):
@@ -890,7 +989,14 @@ async def forgot_password(data: dict):
     token = secrets.token_urlsafe(32)
     _reset_tokens[token] = {"email": email, "user_id": user.id, "expires": time.time() + 3600}
     logger.info(f"[AUTH] Password reset token for: {email}")
-    return {"success": True, "message": "If an account exists, a reset link has been sent.", "reset_token": token, "expires_in": 3600}
+    # Send email (async, non-blocking)
+    email_sent = await _send_reset_email(email, token)
+    response = {"success": True, "message": "If an account exists, a reset link has been sent."}
+    # If no email service, still return token for dev/testing
+    if not email_sent:
+        response["reset_token"] = token
+        response["expires_in"] = 3600
+    return response
 
 @app.post("/api/auth/reset-password")
 async def reset_password(data: dict):
@@ -919,6 +1025,38 @@ async def reset_password(data: dict):
 
 # ── Usage Tracking ────────────────────────────────────────────
 _usage_data: dict = {}
+
+# Tracked API prefixes for usage middleware
+_TRACKED_API_PATHS = {
+    "/api/risk/", "/api/neural/", "/api/signals/", "/api/price/", "/api/market/",
+    "/api/klines/", "/api/volatility/", "/api/funding", "/api/oi", "/api/fear-greed",
+    "/api/whales", "/api/heatmap/", "/api/cvd/", "/api/liquidations/", "/api/options/",
+    "/api/taker-ratio/", "/api/exchange-flow/", "/api/etf-flows", "/api/top-traders/",
+    "/api/onchain", "/api/orderflow/", "/api/macro", "/api/kelly", "/api/monte-carlo",
+    "/api/mcf/generate/", "/api/mcf/reports", "/api/positions", "/api/balance",
+    "/api/engine/", "/api/actions/", "/api/mcp/playground/",
+}
+
+@app.middleware("http")
+async def usage_tracking_middleware(request: Request, call_next):
+    path = request.url.path
+    # Only track API calls, not static/page serves
+    if not any(path.startswith(p) for p in _TRACKED_API_PATHS):
+        return await call_next(request)
+    t0 = time.time()
+    response = await call_next(request)
+    latency_ms = round((time.time() - t0) * 1000)
+    # Resolve user from session cookie or auth header
+    try:
+        token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+        user = await user_service.validate_session(token) if user_service and token else None
+        user_id = user.id if user else "_anonymous"
+    except Exception:
+        user_id = "_anonymous"
+    # Derive tool name from path
+    tool_name = path.replace("/api/", "").replace("/", "_").strip("_")
+    _track_usage(user_id, tool_name, latency_ms, response.status_code < 400)
+    return response
 
 def _track_usage(user_id: str, tool_name: str, latency_ms: int = 0, success: bool = True):
     if not user_id:
@@ -970,12 +1108,23 @@ async def get_recent_calls(request: Request, limit: int = 50):
 # ── Webhooks ──────────────────────────────────────────────────
 _webhook_configs: dict = {}
 
+def _get_db():
+    """Helper to get Supabase client or None."""
+    return user_service.client if user_service and user_service.is_db_available else None
+
 @app.get("/api/webhooks")
 async def get_webhooks(request: Request):
     token = request.cookies.get("session_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
     user = await user_service.validate_session(token) if user_service and token else None
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required")
+    db = _get_db()
+    if db:
+        try:
+            result = db.table("bastion_webhooks").select("*").eq("user_id", user.id).execute()
+            return {"webhooks": result.data or []}
+        except Exception:
+            pass
     return {"webhooks": _webhook_configs.get(user.id, [])}
 
 @app.post("/api/webhooks")
@@ -987,7 +1136,20 @@ async def create_webhook(request: Request, data: dict):
     url = data.get("url", "").strip()
     if not url or not url.startswith("http"):
         raise HTTPException(status_code=400, detail="Valid webhook URL required")
-    webhook = {"id": secrets.token_urlsafe(8), "name": data.get("name", "Webhook"), "url": url, "events": data.get("events", []), "active": True, "created_at": datetime.utcnow().isoformat(), "last_triggered": None, "trigger_count": 0}
+    webhook = {"id": secrets.token_urlsafe(8), "user_id": user.id, "name": data.get("name", "Webhook"), "url": url, "events": data.get("events", []), "active": True, "created_at": datetime.utcnow().isoformat(), "last_triggered": None, "trigger_count": 0}
+    db = _get_db()
+    if db:
+        try:
+            existing = db.table("bastion_webhooks").select("id").eq("user_id", user.id).execute()
+            if len(existing.data or []) >= 10:
+                raise HTTPException(status_code=400, detail="Max 10 webhooks")
+            db.table("bastion_webhooks").insert(webhook).execute()
+            return {"success": True, "webhook": webhook}
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"[WEBHOOKS] DB insert failed, falling back to memory: {e}")
+    # Fallback to in-memory
     if user.id not in _webhook_configs:
         _webhook_configs[user.id] = []
     if len(_webhook_configs[user.id]) >= 10:
@@ -1001,6 +1163,13 @@ async def delete_webhook(request: Request, webhook_id: str):
     user = await user_service.validate_session(token) if user_service and token else None
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required")
+    db = _get_db()
+    if db:
+        try:
+            db.table("bastion_webhooks").delete().eq("id", webhook_id).eq("user_id", user.id).execute()
+            return {"success": True}
+        except Exception:
+            pass
     hooks = _webhook_configs.get(user.id, [])
     _webhook_configs[user.id] = [h for h in hooks if h["id"] != webhook_id]
     return {"success": True}
@@ -1011,8 +1180,18 @@ async def test_webhook(request: Request, webhook_id: str):
     user = await user_service.validate_session(token) if user_service and token else None
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required")
-    hooks = _webhook_configs.get(user.id, [])
-    hook = next((h for h in hooks if h["id"] == webhook_id), None)
+    # Try DB first, fallback to memory
+    hook = None
+    db = _get_db()
+    if db:
+        try:
+            result = db.table("bastion_webhooks").select("*").eq("id", webhook_id).eq("user_id", user.id).execute()
+            hook = (result.data or [None])[0]
+        except Exception:
+            pass
+    if not hook:
+        hooks = _webhook_configs.get(user.id, [])
+        hook = next((h for h in hooks if h["id"] == webhook_id), None)
     if not hook:
         raise HTTPException(status_code=404, detail="Webhook not found")
     import httpx
@@ -1040,7 +1219,7 @@ async def list_webhook_events():
     ]}
 
 # ── Workflows / Tool Chains ──────────────────────────────────
-_workflows: dict = {}
+_workflows: dict = {}  # In-memory fallback
 
 @app.get("/api/workflows")
 async def get_workflows(request: Request):
@@ -1048,6 +1227,20 @@ async def get_workflows(request: Request):
     user = await user_service.validate_session(token) if user_service and token else None
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required")
+    db = _get_db()
+    if db:
+        try:
+            result = db.table("bastion_workflows").select("*").eq("user_id", user.id).execute()
+            # Parse steps from JSON string if stored as text
+            wfs = []
+            for w in (result.data or []):
+                if isinstance(w.get("steps"), str):
+                    import json as _json
+                    w["steps"] = _json.loads(w["steps"])
+                wfs.append(w)
+            return {"workflows": wfs}
+        except Exception:
+            pass
     return {"workflows": _workflows.get(user.id, [])}
 
 @app.post("/api/workflows")
@@ -1062,7 +1255,23 @@ async def create_workflow(request: Request, data: dict):
         raise HTTPException(status_code=400, detail="Workflow name required")
     if not steps or len(steps) < 2:
         raise HTTPException(status_code=400, detail="Need at least 2 steps")
-    workflow = {"id": secrets.token_urlsafe(8), "name": name, "description": data.get("description", ""), "steps": steps[:10], "created_at": datetime.utcnow().isoformat(), "last_run": None, "run_count": 0}
+    import json as _json
+    workflow = {"id": secrets.token_urlsafe(8), "user_id": user.id, "name": name, "description": data.get("description", ""), "steps": _json.dumps(steps[:10]), "created_at": datetime.utcnow().isoformat(), "last_run": None, "run_count": 0}
+    db = _get_db()
+    if db:
+        try:
+            existing = db.table("bastion_workflows").select("id").eq("user_id", user.id).execute()
+            if len(existing.data or []) >= 20:
+                raise HTTPException(status_code=400, detail="Max 20 workflows")
+            db.table("bastion_workflows").insert(workflow).execute()
+            workflow["steps"] = steps[:10]  # Return parsed for frontend
+            return {"success": True, "workflow": workflow}
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"[WORKFLOWS] DB insert failed, falling back to memory: {e}")
+    # Fallback to memory
+    workflow["steps"] = steps[:10]
     if user.id not in _workflows:
         _workflows[user.id] = []
     if len(_workflows[user.id]) >= 20:
@@ -1076,8 +1285,21 @@ async def run_workflow(request: Request, workflow_id: str):
     user = await user_service.validate_session(token) if user_service and token else None
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required")
-    workflows = _workflows.get(user.id, [])
-    workflow = next((w for w in workflows if w["id"] == workflow_id), None)
+    # Load workflow from DB or memory
+    workflow = None
+    db = _get_db()
+    if db:
+        try:
+            result = db.table("bastion_workflows").select("*").eq("id", workflow_id).eq("user_id", user.id).execute()
+            workflow = (result.data or [None])[0]
+            if workflow and isinstance(workflow.get("steps"), str):
+                import json as _json
+                workflow["steps"] = _json.loads(workflow["steps"])
+        except Exception:
+            pass
+    if not workflow:
+        workflows = _workflows.get(user.id, [])
+        workflow = next((w for w in workflows if w["id"] == workflow_id), None)
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
     results = []
@@ -1085,12 +1307,19 @@ async def run_workflow(request: Request, workflow_id: str):
     for i, step in enumerate(workflow["steps"]):
         t0 = time.time()
         try:
-            step_result = await execute_playground_tool({"tool": step.get("tool", ""), "params": step.get("params", {})})
+            step_result = await execute_playground_tool({"tool": step.get("tool", ""), "params": step.get("params", {}), "_user_id": user.id})
             results.append({"step": i + 1, "tool": step.get("tool"), "label": step.get("label", f"Step {i+1}"), "result": step_result, "latency_ms": round((time.time() - t0) * 1000), "success": "error" not in step_result})
         except Exception as e:
             results.append({"step": i + 1, "tool": step.get("tool"), "error": str(e), "success": False})
-    workflow["last_run"] = datetime.utcnow().isoformat()
-    workflow["run_count"] += 1
+    # Update run stats
+    if db:
+        try:
+            db.table("bastion_workflows").update({"last_run": datetime.utcnow().isoformat(), "run_count": (workflow.get("run_count", 0) or 0) + 1}).eq("id", workflow_id).execute()
+        except Exception:
+            pass
+    else:
+        workflow["last_run"] = datetime.utcnow().isoformat()
+        workflow["run_count"] = (workflow.get("run_count", 0) or 0) + 1
     return {"workflow_id": workflow_id, "name": workflow["name"], "results": results, "total_latency_ms": round((time.time() - total_start) * 1000)}
 
 @app.delete("/api/workflows/{workflow_id}")
@@ -1099,6 +1328,13 @@ async def delete_workflow(request: Request, workflow_id: str):
     user = await user_service.validate_session(token) if user_service and token else None
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required")
+    db = _get_db()
+    if db:
+        try:
+            db.table("bastion_workflows").delete().eq("id", workflow_id).eq("user_id", user.id).execute()
+            return {"success": True}
+        except Exception:
+            pass
     wfs = _workflows.get(user.id, [])
     _workflows[user.id] = [w for w in wfs if w["id"] != workflow_id]
     return {"success": True}
