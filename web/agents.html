@@ -1295,18 +1295,6 @@
         }, { threshold: 0.5 });
         countEls.forEach(el => countObserver.observe(el));
 
-        // Latency pill green pulse every 3 seconds
-        const latencyPill = document.querySelector('.latency-pill');
-        if (latencyPill) {
-          setInterval(() => {
-            latencyPill.style.borderColor = 'rgba(34,197,94,0.5)';
-            latencyPill.style.boxShadow = '0 0 12px rgba(34,197,94,0.3)';
-            setTimeout(() => {
-              latencyPill.style.borderColor = '';
-              latencyPill.style.boxShadow = '';
-            }, 600);
-          }, 3000);
-        }
       });
 
       // Tab switching
