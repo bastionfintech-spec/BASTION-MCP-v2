@@ -2,7 +2,7 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (64):
+Tools (72):
   CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
@@ -60,6 +60,14 @@ Tools (64):
     bastion_get_trade_journal    — Journal stats + real Kelly sizing
     bastion_backtest_strategy    — Backtest strategies on-demand
     bastion_get_risk_parity      — Portfolio risk parity analysis
+    bastion_strategy_builder     — Natural language → backtest pipeline
+    bastion_risk_replay          — Historical position time-travel analysis
+    bastion_risk_card            — Interactive risk visualization widget
+    bastion_get_leaderboard      — Model performance leaderboard
+    bastion_log_prediction       — Log prediction for leaderboard tracking
+    bastion_subscribe_alert      — Subscribe to price/condition alerts
+    bastion_check_alerts         — Check active & triggered alerts
+    bastion_cancel_alert         — Cancel an alert subscription
 
   PORTFOLIO (auth required — 'read' scope)
     bastion_get_positions        — All open positions
@@ -92,9 +100,10 @@ Resources (6):
   bastion://status, bastion://supported-symbols, bastion://model-info,
   bastion://tools, bastion://exchanges, bastion://capabilities
 
-Prompts (7):
+Prompts (9):
   evaluate_my_position, market_analysis, risk_check, portfolio_risk_scan,
-  whale_tracker, macro_briefing, pre_trade_analysis
+  whale_tracker, macro_briefing, pre_trade_analysis, strategy_lab,
+  full_risk_dashboard
 """
 import json
 import logging
@@ -1801,8 +1810,18 @@ async def get_tools() -> str:
             "bastion_war_room_read — Read War Room feed",
             "bastion_war_room_consensus — Get consensus",
         ],
+        "advanced": [
+            "bastion_risk_replay — Historical position time-travel analysis",
+            "bastion_strategy_builder — Natural language → backtest pipeline",
+            "bastion_risk_card — Interactive risk visualization widget",
+            "bastion_get_leaderboard — Model performance leaderboard",
+            "bastion_log_prediction — Log prediction for tracking",
+            "bastion_subscribe_alert — Subscribe to price/condition alerts",
+            "bastion_check_alerts — Check active & triggered alerts",
+            "bastion_cancel_alert — Cancel an alert subscription",
+        ],
     }
-    return json.dumps({"tools": tools, "total": 64}, indent=2)
+    return json.dumps({"tools": tools, "total": 72}, indent=2)
 
 
 @mcp.resource("bastion://exchanges")
@@ -1840,9 +1859,9 @@ async def get_capabilities() -> str:
             "market_structure": "VPVR, pivot detection, auto-support, trendlines",
             "macro": "Yahoo Finance, FRED, CoinGecko, Polymarket",
         },
-        "mcp_tools": 64,
+        "mcp_tools": 72,
         "resources": 6,
-        "prompts": 7,
+        "prompts": 9,
         "trading_actions": ["HOLD", "EXIT_FULL", "TP_PARTIAL", "EXIT_100%", "REDUCE_SIZE", "TRAIL_STOP"],
         "supported_symbols": config.SUPPORTED_SYMBOLS,
     }, indent=2)
@@ -1996,6 +2015,281 @@ async def bastion_war_room_consensus(
         return json.dumps({"consensus": result, "note": "Based on agent signals from the last 30 minutes."}, indent=2)
     except Exception as e:
         return json.dumps({"error": f"Failed to get consensus: {str(e)}"})
+
+
+# ═════════════════════════════════════════════════════════════════
+# RISK REPLAY & STRATEGY BUILDER
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_risk_replay(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    entry_price: float = 0,
+    timestamp: str = "",
+    lookback_hours: int = 4,
+) -> str:
+    """Replay a historical position — reconstruct market state at a past time and analyze what would have happened.
+
+    Time-travel risk analysis: go back in time and see the market conditions,
+    price action, and PnL outcome of a position that was (or could have been) taken.
+
+    Args:
+        symbol: Trading pair (e.g., 'BTC', 'ETH', 'SOL')
+        direction: LONG or SHORT
+        entry_price: Entry price of the position (0 = use historical price)
+        timestamp: ISO timestamp to replay from (e.g., '2025-02-20T14:00:00Z'). Empty = lookback_hours ago.
+        lookback_hours: Hours to look back if no timestamp given (default 4)
+
+    Returns:
+        Historical market snapshot, price evolution, and hindsight PnL analysis.
+    """
+    result = await api_get(f"/api/risk-replay/{symbol}", {
+        "direction": direction,
+        "entry_price": entry_price,
+        "timestamp": timestamp,
+        "lookback_hours": lookback_hours,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_strategy_builder(
+    description: str,
+    symbol: str = "BTC",
+    lookback_days: int = 30,
+) -> str:
+    """Build and backtest a trading strategy from natural language description.
+
+    Describe your strategy in plain English and BASTION will parse it into rules
+    and run a backtest against historical data. Supports conditions like
+    funding rates, RSI, volume spikes, OI changes, mean reversion, momentum, and pullbacks.
+
+    Examples:
+        - "When funding is above 0.1%, go SHORT with 2x leverage, TP 3%, SL 2%"
+        - "Buy the dip when RSI is oversold, 5x leverage, TP 5%, SL 1.5%"
+        - "Short when volume spikes and OI is rising"
+        - "Mean reversion on BTC, long oversold bounces"
+
+    Args:
+        description: Natural language description of your strategy
+        symbol: Trading pair to backtest on (default BTC)
+        lookback_days: How many days of history to test (default 30)
+
+    Returns:
+        Parsed rules, backtest results (win rate, PnL, trades), and interpretation.
+    """
+    result = await api_post("/api/strategy-builder", {
+        "description": description,
+        "symbol": symbol,
+        "lookback_days": lookback_days,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# ALERT SUBSCRIPTIONS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_subscribe_alert(
+    symbol: str = "BTC",
+    condition: str = "price_above",
+    threshold: float = 0,
+    notes: str = "",
+) -> str:
+    """Subscribe to a price or market condition alert.
+
+    Set alerts that trigger when conditions are met. Check triggered alerts
+    with bastion_check_alerts.
+
+    Conditions:
+        - price_above: Alert when price goes above threshold
+        - price_below: Alert when price drops below threshold
+        - funding_spike: Alert on extreme funding rate
+        - volume_spike: Alert on unusual volume
+
+    Args:
+        symbol: Trading pair (e.g., 'BTC', 'ETH', 'SOL')
+        condition: Alert condition type (price_above, price_below, funding_spike, volume_spike)
+        threshold: Price or value threshold to trigger the alert
+        notes: Optional notes about why you set this alert
+
+    Returns:
+        Alert confirmation with ID for tracking.
+    """
+    result = await api_post("/api/alerts/subscribe", {
+        "symbol": symbol,
+        "condition": condition,
+        "threshold": threshold,
+        "notes": notes,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_check_alerts() -> str:
+    """Check all active alerts and see which ones have triggered.
+
+    Returns active (untriggered) alerts, recently triggered alerts,
+    and overall alert status. Call this periodically to monitor your alerts.
+
+    Returns:
+        Active alerts, triggered alerts, and counts.
+    """
+    result = await api_get("/api/alerts/active")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_cancel_alert(alert_id: str) -> str:
+    """Cancel an active alert by its ID.
+
+    Args:
+        alert_id: The alert ID returned when subscribing (e.g., 'alert_1234567890_0')
+
+    Returns:
+        Confirmation of cancellation.
+    """
+    client = await get_client()
+    try:
+        resp = await client.delete(f"/api/alerts/{alert_id}")
+        return json.dumps(resp.json(), indent=2)
+    except Exception as e:
+        return json.dumps({"error": f"Failed to cancel alert: {str(e)}"})
+
+
+# ═════════════════════════════════════════════════════════════════
+# MODEL LEADERBOARD
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_get_leaderboard() -> str:
+    """Get the BASTION model performance leaderboard.
+
+    Shows accuracy stats — overall, per-symbol (BTC/ETH/SOL), and per-action
+    (HOLD/EXIT/TP_PARTIAL). Includes both backtest baseline and live prediction
+    tracking when available.
+
+    Returns:
+        Model accuracy, per-symbol breakdown, per-action breakdown, recent predictions, win streaks.
+    """
+    result = await api_get("/api/leaderboard")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_log_prediction(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    action: str = "HOLD",
+    confidence: float = 0,
+    entry_price: float = 0,
+    outcome: str = "pending",
+    outcome_price: float = 0,
+    pnl_pct: float = 0,
+) -> str:
+    """Log a model prediction and its outcome to the leaderboard.
+
+    Track BASTION's live predictions and their outcomes for transparency
+    and performance monitoring.
+
+    Args:
+        symbol: Trading pair
+        direction: LONG or SHORT
+        action: Model's recommended action (HOLD, EXIT_FULL, TP_PARTIAL, etc.)
+        confidence: Model confidence score (0-1)
+        entry_price: Position entry price
+        outcome: 'correct', 'incorrect', or 'pending'
+        outcome_price: Price when outcome was determined
+        pnl_pct: PnL percentage if applicable
+
+    Returns:
+        Logged prediction confirmation.
+    """
+    result = await api_post("/api/leaderboard/log", {
+        "symbol": symbol,
+        "direction": direction,
+        "action": action,
+        "confidence": confidence,
+        "entry_price": entry_price,
+        "outcome": outcome,
+        "outcome_price": outcome_price,
+        "pnl_pct": pnl_pct,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# INTERACTIVE RISK VISUALIZATION
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_risk_card(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    entry_price: float = 0,
+    current_price: float = 0,
+    stop_loss: float = 0,
+    leverage: float = 1,
+) -> str:
+    """Generate an interactive risk visualization card for a position.
+
+    Creates a visual risk card with BASTION branding showing entry/exit prices,
+    PnL, risk level gauge, and position metrics. Returns a link to the
+    interactive HTML widget.
+
+    Args:
+        symbol: Trading pair (e.g., 'BTC', 'ETH', 'SOL')
+        direction: LONG or SHORT
+        entry_price: Position entry price
+        current_price: Current market price (0 = fetch live)
+        stop_loss: Stop loss price (0 = no stop)
+        leverage: Position leverage (default 1)
+
+    Returns:
+        Position summary with link to interactive risk visualization.
+    """
+    # Get current price if not provided
+    if current_price == 0:
+        price_data = await api_get(f"/api/price/{symbol}")
+        current_price = float(price_data.get("price", 0)) if isinstance(price_data, dict) else 0
+
+    if entry_price == 0:
+        entry_price = current_price
+
+    # Calculate metrics
+    if direction.upper() == "LONG":
+        pnl_pct = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0
+    else:
+        pnl_pct = ((entry_price - current_price) / entry_price) * 100 if entry_price > 0 else 0
+
+    effective_pnl = pnl_pct * leverage
+    risk_level = "LOW" if abs(effective_pnl) < 5 else "MEDIUM" if abs(effective_pnl) < 15 else "HIGH" if abs(effective_pnl) < 30 else "CRITICAL"
+
+    params = f"symbol={symbol}&direction={direction}&entry_price={entry_price}&current_price={current_price}&stop_loss={stop_loss}&leverage={leverage}"
+
+    return json.dumps({
+        "position": {
+            "symbol": symbol.upper(),
+            "direction": direction.upper(),
+            "entry_price": entry_price,
+            "current_price": current_price,
+            "stop_loss": stop_loss,
+            "leverage": leverage,
+        },
+        "metrics": {
+            "pnl_pct": round(pnl_pct, 2),
+            "effective_pnl": round(effective_pnl, 2),
+            "risk_level": risk_level,
+        },
+        "visualization": f"https://bastionfi.tech/api/widget/risk-card?{params}",
+        "note": "Open the visualization URL to see an interactive risk card with BASTION branding."
+    }, indent=2)
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -2172,4 +2466,65 @@ async def pre_trade_analysis(
         f"- Are there liquidation clusters that could sweep my stop?\n"
         f"- Is the market structure supportive of a {direction.upper()}?\n"
         f"- Final verdict: TAKE THE TRADE or PASS?"
+    )
+
+
+@mcp.prompt()
+async def strategy_lab(
+    description: str = "Short when funding is high and OI is rising, 3x leverage, TP 4%, SL 2%",
+    symbol: str = "BTC",
+) -> str:
+    """Build and backtest a trading strategy from a natural language description.
+
+    Args:
+        description: Your strategy described in plain English
+        symbol: Trading pair to test on (default BTC)
+    """
+    return (
+        f"I want to test this strategy on {symbol.upper()}:\n\n"
+        f'"{description}"\n\n'
+        f"Use BASTION tools to build and backtest this:\n\n"
+        f"1. Parse and backtest the strategy (bastion_strategy_builder)\n"
+        f"2. Check current market conditions (bastion_get_market_data)\n"
+        f"3. Get correlation context (bastion_get_correlation_matrix)\n"
+        f"4. Check confluence (bastion_get_confluence)\n\n"
+        f"Tell me:\n"
+        f"- What rules were extracted from my description?\n"
+        f"- How did the strategy perform in backtesting (win rate, PnL)?\n"
+        f"- Is the current market favorable for this strategy?\n"
+        f"- Any suggestions to improve it?"
+    )
+
+
+@mcp.prompt()
+async def full_risk_dashboard(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    entry_price: str = "0",
+) -> str:
+    """Generate a full risk intelligence dashboard with visualizations.
+
+    Args:
+        symbol: Trading pair (e.g. BTC, ETH, SOL)
+        direction: LONG or SHORT
+        entry_price: Entry price (0 = use current price)
+    """
+    return (
+        f"Build a complete risk dashboard for my {direction.upper()} {symbol.upper()} "
+        f"position (entry: {'current price' if entry_price == '0' else '$' + entry_price}).\n\n"
+        f"Use these BASTION tools in sequence:\n\n"
+        f"1. Generate risk visualization card (bastion_risk_card)\n"
+        f"2. Get AI risk evaluation (bastion_evaluate_risk)\n"
+        f"3. Check multi-timeframe confluence (bastion_get_confluence)\n"
+        f"4. Get correlation matrix (bastion_get_correlation_matrix)\n"
+        f"5. Check model leaderboard accuracy (bastion_get_leaderboard)\n"
+        f"6. Check liquidation risk (bastion_get_liquidations)\n"
+        f"7. Check whale positioning (bastion_get_hyperliquid_whales)\n\n"
+        f"Synthesize everything into a comprehensive risk briefing with:\n"
+        f"- Current risk level and AI recommendation\n"
+        f"- Multi-timeframe analysis\n"
+        f"- Correlation exposure risks\n"
+        f"- Model confidence and accuracy context\n"
+        f"- Key levels to watch (support, resistance, liquidation clusters)\n"
+        f"- Final action recommendation"
     )

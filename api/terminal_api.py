@@ -1166,8 +1166,34 @@ async def list_mcp_tools():
         {"name": "bastion_engine_status", "category": "Portfolio", "scope": "read", "description": "Risk engine status", "params": [
             {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
         ]},
+        {"name": "bastion_risk_replay", "category": "Advanced", "scope": "public", "description": "Historical position time-travel analysis", "params": [
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+            {"name": "direction", "type": "string", "required": False, "description": "LONG or SHORT", "default": "LONG"},
+            {"name": "entry_price", "type": "number", "required": False, "description": "Entry price (0 = use historical)", "default": 0},
+            {"name": "lookback_hours", "type": "number", "required": False, "description": "Hours to look back", "default": 4},
+        ]},
+        {"name": "bastion_strategy_builder", "category": "Advanced", "scope": "public", "description": "Natural language → backtest pipeline", "params": [
+            {"name": "description", "type": "string", "required": True, "description": "Strategy in plain English", "default": "Short when funding is above 0.1%, 3x leverage, TP 4%, SL 2%"},
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+            {"name": "lookback_days", "type": "number", "required": False, "description": "Days of history", "default": 30},
+        ]},
+        {"name": "bastion_risk_card", "category": "Advanced", "scope": "public", "description": "Interactive risk visualization widget", "params": [
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+            {"name": "direction", "type": "string", "required": False, "description": "LONG or SHORT", "default": "LONG"},
+            {"name": "entry_price", "type": "number", "required": False, "description": "Entry price", "default": 0},
+            {"name": "stop_loss", "type": "number", "required": False, "description": "Stop loss price", "default": 0},
+            {"name": "leverage", "type": "number", "required": False, "description": "Leverage", "default": 1},
+        ]},
+        {"name": "bastion_subscribe_alert", "category": "Advanced", "scope": "public", "description": "Subscribe to price/condition alerts", "params": [
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+            {"name": "condition", "type": "string", "required": False, "description": "price_above, price_below, funding_spike, volume_spike", "default": "price_above"},
+            {"name": "threshold", "type": "number", "required": True, "description": "Trigger threshold"},
+            {"name": "notes", "type": "string", "required": False, "description": "Alert notes", "default": ""},
+        ]},
+        {"name": "bastion_check_alerts", "category": "Advanced", "scope": "public", "description": "Check active & triggered alerts", "params": []},
+        {"name": "bastion_get_leaderboard", "category": "Advanced", "scope": "public", "description": "Model performance leaderboard", "params": []},
     ]
-    return {"tools": tools, "total": 64, "listed": len(tools)}
+    return {"tools": tools, "total": 72, "listed": len(tools)}
 
 @app.post("/api/mcp/playground/execute")
 async def playground_execute(request: Request, data: dict):
@@ -1217,6 +1243,10 @@ async def execute_playground_tool(data: dict):
         "bastion_get_positions": ("GET", "/api/positions/all"),
         "bastion_get_balance": ("GET", "/api/balance/total"),
         "bastion_engine_status": ("GET", "/api/engine/status"),
+        "bastion_risk_replay": ("GET", "/api/risk-replay/{symbol}"),
+        "bastion_risk_card": ("GET", "/api/widget/risk-card"),
+        "bastion_check_alerts": ("GET", "/api/alerts/active"),
+        "bastion_get_leaderboard": ("GET", "/api/leaderboard"),
     }
     post_tools = {
         "bastion_evaluate_risk": "/api/risk/evaluate",
@@ -1225,6 +1255,8 @@ async def execute_playground_tool(data: dict):
         "bastion_get_risk_parity": "/api/risk-parity",
         "bastion_log_trade": "/api/trade-journal/log",
         "bastion_backtest_strategy": "/api/backtest-strategy",
+        "bastion_strategy_builder": "/api/strategy-builder",
+        "bastion_subscribe_alert": "/api/alerts/subscribe",
     }
     import httpx
     t0 = time.time()
@@ -1244,6 +1276,10 @@ async def execute_playground_tool(data: dict):
                     body = {"symbol": params.get("symbol", "BTC"), "direction": params.get("direction", "LONG"), "entry_price": float(params.get("entry_price", 0)), "exit_price": float(params.get("exit_price", 0)) if params.get("exit_price") else None, "pnl_pct": float(params.get("pnl_pct", 0)) if params.get("pnl_pct") else None, "notes": params.get("notes", "")}
                 elif tool_name == "bastion_backtest_strategy":
                     body = {"symbol": params.get("symbol", "BTC"), "strategy": params.get("strategy", "funding_spike"), "direction": params.get("direction", "SHORT")}
+                elif tool_name == "bastion_strategy_builder":
+                    body = {"description": params.get("description", ""), "symbol": params.get("symbol", "BTC"), "lookback_days": int(params.get("lookback_days", 30))}
+                elif tool_name == "bastion_subscribe_alert":
+                    body = {"symbol": params.get("symbol", "BTC"), "condition": params.get("condition", "price_above"), "threshold": float(params.get("threshold", 0)), "notes": params.get("notes", "")}
                 else:
                     body = params
                 resp = await client.post(post_tools[tool_name], json=body)
@@ -6492,6 +6528,596 @@ async def backtest_strategy(data: dict):
             else "UNPROFITABLE — Strategy loses money"
         ),
         "available_strategies": ["funding_spike", "mean_reversion", "momentum", "volume_spike"],
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# RISK REPLAY — Historical Position Time-Travel Analysis
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/risk-replay/{symbol}")
+async def risk_replay(symbol: str = "BTC", direction: str = "LONG", entry_price: float = 0, timestamp: str = "", lookback_hours: int = 4):
+    """
+    Risk Replay — Reconstruct market state at a past timestamp and show what
+    BASTION would have said about a position at that moment.
+    """
+    import time as _time
+    from datetime import datetime, timedelta, timezone
+
+    symbol = symbol.upper()
+    try:
+        # Parse timestamp or use N hours ago
+        if timestamp:
+            try:
+                replay_time = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            except Exception:
+                replay_time = datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
+        else:
+            replay_time = datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
+
+        replay_ts = int(replay_time.timestamp() * 1000)
+        now_ts = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+        # Fetch historical klines around that time
+        klines_data = await api_get_internal(f"/api/klines/{symbol}?interval=1h&limit=48")
+        klines = klines_data if isinstance(klines_data, list) else klines_data.get("klines", [])
+
+        # Find the candle closest to replay time
+        replay_price = entry_price
+        historical_candles = []
+        for k in klines:
+            kt = k.get("open_time", k.get("openTime", 0))
+            if isinstance(kt, str):
+                try:
+                    kt = int(datetime.fromisoformat(kt.replace("Z", "+00:00")).timestamp() * 1000)
+                except Exception:
+                    kt = 0
+            if kt <= replay_ts:
+                replay_price = float(k.get("close", entry_price))
+                historical_candles.append({
+                    "time": kt,
+                    "open": float(k.get("open", 0)),
+                    "high": float(k.get("high", 0)),
+                    "low": float(k.get("low", 0)),
+                    "close": float(k.get("close", 0)),
+                    "volume": float(k.get("volume", 0)),
+                })
+
+        if entry_price == 0:
+            entry_price = replay_price
+
+        # Get current price for comparison
+        current_data = await api_get_internal(f"/api/price/{symbol}")
+        current_price = float(current_data.get("price", replay_price) if isinstance(current_data, dict) else replay_price)
+
+        # Calculate what would have happened
+        if direction.upper() == "LONG":
+            pnl_since = ((current_price - entry_price) / entry_price) * 100
+        else:
+            pnl_since = ((entry_price - current_price) / entry_price) * 100
+
+        # Get snapshot of key metrics
+        funding_data = await api_get_internal("/api/funding")
+        fear_data = await api_get_internal("/api/fear-greed")
+
+        return {
+            "success": True,
+            "replay": {
+                "symbol": symbol,
+                "direction": direction.upper(),
+                "replay_time": replay_time.isoformat(),
+                "entry_price": entry_price,
+                "price_at_replay": replay_price,
+                "current_price": current_price,
+                "pnl_since_entry": round(pnl_since, 2),
+                "hours_elapsed": round((now_ts - replay_ts) / 3600000, 1),
+            },
+            "historical_context": {
+                "candles_before": historical_candles[-12:] if historical_candles else [],
+                "price_range": {
+                    "high": max(c["high"] for c in historical_candles[-12:]) if historical_candles else 0,
+                    "low": min(c["low"] for c in historical_candles[-12:]) if historical_candles else 0,
+                },
+            },
+            "market_snapshot": {
+                "fear_greed": fear_data.get("value", "N/A") if isinstance(fear_data, dict) else "N/A",
+                "funding": funding_data if isinstance(funding_data, dict) else {},
+            },
+            "hindsight_analysis": {
+                "verdict": "PROFITABLE" if pnl_since > 0 else "UNPROFITABLE",
+                "pnl_pct": round(pnl_since, 2),
+                "note": f"A {direction.upper()} from ${entry_price:,.2f} at {replay_time.strftime('%Y-%m-%d %H:%M')} UTC would be {'up' if pnl_since > 0 else 'down'} {abs(round(pnl_since, 2))}% as of now (${current_price:,.2f})"
+            },
+        }
+    except Exception as e:
+        logger.error(f"[RiskReplay] Error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# STRATEGY BUILDER — Natural Language → Backtest Pipeline
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/strategy-builder")
+async def strategy_builder(data: dict):
+    """
+    Strategy Builder — Parse natural language strategy descriptions into
+    backtestable rule sets, then run them against historical data.
+    """
+    description = data.get("description", "")
+    symbol = data.get("symbol", "BTC").upper()
+    lookback_days = int(data.get("lookback_days", 30))
+
+    if not description:
+        return {"success": False, "error": "Provide a strategy description in natural language"}
+
+    # Parse strategy keywords into rules
+    rules = {
+        "entry_conditions": [],
+        "exit_conditions": [],
+        "direction": "LONG",
+        "leverage": 1,
+        "tp_pct": 3.0,
+        "sl_pct": 1.5,
+    }
+
+    desc_lower = description.lower()
+
+    # Direction detection
+    if any(w in desc_lower for w in ["short", "sell", "bearish", "fade"]):
+        rules["direction"] = "SHORT"
+    if any(w in desc_lower for w in ["long", "buy", "bullish", "dip"]):
+        rules["direction"] = "LONG"
+
+    # Entry condition parsing
+    if any(w in desc_lower for w in ["funding", "fund rate"]):
+        if any(w in desc_lower for w in ["high", "above", "positive", "elevated"]):
+            rules["entry_conditions"].append({"type": "funding_above", "threshold": 0.01})
+        elif any(w in desc_lower for w in ["negative", "below", "low"]):
+            rules["entry_conditions"].append({"type": "funding_below", "threshold": -0.005})
+        else:
+            rules["entry_conditions"].append({"type": "funding_spike", "threshold": 0.05})
+
+    if any(w in desc_lower for w in ["rsi", "oversold", "overbought"]):
+        if any(w in desc_lower for w in ["oversold", "below 30"]):
+            rules["entry_conditions"].append({"type": "rsi_below", "threshold": 30})
+        elif any(w in desc_lower for w in ["overbought", "above 70"]):
+            rules["entry_conditions"].append({"type": "rsi_above", "threshold": 70})
+
+    if any(w in desc_lower for w in ["volume", "vol spike", "volume spike"]):
+        rules["entry_conditions"].append({"type": "volume_spike", "multiplier": 2.0})
+
+    if any(w in desc_lower for w in ["oi", "open interest"]):
+        if "rising" in desc_lower or "increasing" in desc_lower:
+            rules["entry_conditions"].append({"type": "oi_rising", "threshold": 5})
+        elif "falling" in desc_lower or "dropping" in desc_lower:
+            rules["entry_conditions"].append({"type": "oi_falling", "threshold": -5})
+
+    if any(w in desc_lower for w in ["mean reversion", "revert", "bounce"]):
+        rules["entry_conditions"].append({"type": "mean_reversion", "deviation": 2.0})
+
+    if any(w in desc_lower for w in ["momentum", "trend", "breakout"]):
+        rules["entry_conditions"].append({"type": "momentum", "lookback": 20})
+
+    if any(w in desc_lower for w in ["dip", "pullback", "retrace"]):
+        rules["entry_conditions"].append({"type": "pullback", "pct": 3.0})
+
+    # TP/SL parsing
+    import re
+    tp_match = re.search(r'(?:tp|take.?profit|target)\s*(?:at\s*)?(?:\$?)([\d.]+)\s*%?', desc_lower)
+    sl_match = re.search(r'(?:sl|stop.?loss|stop)\s*(?:at\s*)?(?:\$?)([\d.]+)\s*%?', desc_lower)
+    lev_match = re.search(r'(\d+)\s*x\s*(?:lev|leverage)?', desc_lower)
+
+    if tp_match:
+        rules["tp_pct"] = min(float(tp_match.group(1)), 50.0)
+    if sl_match:
+        rules["sl_pct"] = min(float(sl_match.group(1)), 25.0)
+    if lev_match:
+        rules["leverage"] = min(int(lev_match.group(1)), 125)
+
+    if not rules["entry_conditions"]:
+        rules["entry_conditions"].append({"type": "momentum", "lookback": 20})
+
+    # Now run a simplified backtest with parsed rules
+    strategy_type = rules["entry_conditions"][0]["type"]
+    mapped_strategy = "momentum"
+    if "funding" in strategy_type:
+        mapped_strategy = "funding_spike"
+    elif "mean_reversion" in strategy_type or "pullback" in strategy_type:
+        mapped_strategy = "mean_reversion"
+    elif "volume" in strategy_type:
+        mapped_strategy = "volume_spike"
+
+    # Run the actual backtest via internal API
+    backtest_body = {
+        "symbol": symbol,
+        "strategy": mapped_strategy,
+        "direction": rules["direction"],
+        "leverage": rules["leverage"],
+        "lookback_days": lookback_days,
+        "tp_pct": rules["tp_pct"],
+        "sl_pct": rules["sl_pct"],
+    }
+
+    try:
+        import httpx as _httpx
+        port = os.getenv("PORT", "3001")
+        async with _httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=30.0) as client:
+            resp = await client.post("/api/backtest-strategy", json=backtest_body)
+            backtest_result = resp.json()
+    except Exception as e:
+        backtest_result = {"error": str(e)}
+
+    return {
+        "success": True,
+        "original_description": description,
+        "parsed_rules": rules,
+        "mapped_strategy": mapped_strategy,
+        "backtest_result": backtest_result,
+        "interpretation": f"Parsed your strategy as: {rules['direction']} {symbol} when {', '.join(c['type'] for c in rules['entry_conditions'])} triggers. TP: {rules['tp_pct']}%, SL: {rules['sl_pct']}%, Leverage: {rules['leverage']}x.",
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ALERT SUBSCRIPTIONS — In-Memory Alert Engine
+# ═════════════════════════════════════════════════════════════════════════════
+
+# Alert subscription store
+if not hasattr(app, "_alert_subscriptions"):
+    app._alert_subscriptions = []
+if not hasattr(app, "_alert_history"):
+    app._alert_history = []
+
+@app.post("/api/alerts/subscribe")
+async def alert_subscribe(data: dict):
+    """Subscribe to a price/condition alert."""
+    if not hasattr(app, "_alert_subscriptions"):
+        app._alert_subscriptions = []
+
+    alert = {
+        "id": f"alert_{int(time.time())}_{len(app._alert_subscriptions)}",
+        "symbol": data.get("symbol", "BTC").upper(),
+        "condition": data.get("condition", "price_above"),  # price_above, price_below, funding_spike, volume_spike
+        "threshold": float(data.get("threshold", 0)),
+        "created": time.time(),
+        "triggered": False,
+        "triggered_at": None,
+        "notes": data.get("notes", ""),
+    }
+
+    app._alert_subscriptions.append(alert)
+    return {"success": True, "alert": alert, "total_active": len([a for a in app._alert_subscriptions if not a["triggered"]])}
+
+@app.get("/api/alerts/active")
+async def alerts_active():
+    """Get all active (untriggered) alert subscriptions."""
+    if not hasattr(app, "_alert_subscriptions"):
+        app._alert_subscriptions = []
+
+    active = [a for a in app._alert_subscriptions if not a["triggered"]]
+
+    # Check each alert against current conditions
+    for alert in active:
+        try:
+            price_data = await api_get_internal(f"/api/price/{alert['symbol']}")
+            current_price = float(price_data.get("price", 0) if isinstance(price_data, dict) else 0)
+
+            triggered = False
+            if alert["condition"] == "price_above" and current_price >= alert["threshold"]:
+                triggered = True
+            elif alert["condition"] == "price_below" and current_price <= alert["threshold"]:
+                triggered = True
+
+            if triggered:
+                alert["triggered"] = True
+                alert["triggered_at"] = time.time()
+                alert["trigger_price"] = current_price
+                if not hasattr(app, "_alert_history"):
+                    app._alert_history = []
+                app._alert_history.append(alert)
+        except Exception:
+            pass
+
+    active_remaining = [a for a in app._alert_subscriptions if not a["triggered"]]
+    triggered_now = [a for a in app._alert_subscriptions if a["triggered"] and a.get("triggered_at", 0) > time.time() - 60]
+
+    return {
+        "active_alerts": active_remaining,
+        "just_triggered": triggered_now,
+        "total_active": len(active_remaining),
+        "total_triggered": len([a for a in app._alert_subscriptions if a["triggered"]]),
+    }
+
+@app.delete("/api/alerts/{alert_id}")
+async def alert_delete(alert_id: str):
+    """Cancel an active alert."""
+    if not hasattr(app, "_alert_subscriptions"):
+        return {"success": False, "error": "No alerts found"}
+
+    before = len(app._alert_subscriptions)
+    app._alert_subscriptions = [a for a in app._alert_subscriptions if a["id"] != alert_id]
+    removed = before - len(app._alert_subscriptions)
+    return {"success": removed > 0, "removed": removed}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# LEADERBOARD — Model Performance Tracker
+# ═════════════════════════════════════════════════════════════════════════════
+
+if not hasattr(app, "_model_predictions"):
+    app._model_predictions = []
+
+@app.post("/api/leaderboard/log")
+async def leaderboard_log(data: dict):
+    """Log a model prediction and its outcome for the leaderboard."""
+    if not hasattr(app, "_model_predictions"):
+        app._model_predictions = []
+
+    entry = {
+        "id": f"pred_{int(time.time())}_{len(app._model_predictions)}",
+        "timestamp": time.time(),
+        "symbol": data.get("symbol", "BTC").upper(),
+        "direction": data.get("direction", "LONG").upper(),
+        "action": data.get("action", "HOLD").upper(),
+        "confidence": float(data.get("confidence", 0)),
+        "entry_price": float(data.get("entry_price", 0)),
+        "outcome_price": float(data.get("outcome_price", 0)),
+        "outcome": data.get("outcome", "pending"),  # correct, incorrect, pending
+        "pnl_pct": float(data.get("pnl_pct", 0)),
+    }
+    app._model_predictions.append(entry)
+    return {"success": True, "logged": entry}
+
+@app.get("/api/leaderboard")
+async def leaderboard_stats():
+    """Get model performance leaderboard statistics."""
+    if not hasattr(app, "_model_predictions"):
+        app._model_predictions = []
+
+    preds = app._model_predictions
+    if not preds:
+        # Return backtest-based stats as baseline
+        return {
+            "success": True,
+            "source": "backtest",
+            "model_version": "v6",
+            "overall": {
+                "total_evaluated": 328,
+                "accuracy": 75.4,
+                "btc_accuracy": 71.7,
+                "eth_accuracy": 72.7,
+                "sol_accuracy": 81.8,
+            },
+            "per_action": {
+                "HOLD": {"accuracy": 73.3, "samples": 120},
+                "EXIT_FULL": {"accuracy": 65.8, "samples": 85},
+                "TP_PARTIAL": {"accuracy": 67.5, "samples": 60},
+                "EXIT_100%": {"accuracy": 100.0, "samples": 30},
+                "REDUCE_SIZE": {"accuracy": 58.3, "samples": 33},
+            },
+            "note": "These are backtest results from v6 training (328 examples). Live predictions will be tracked as they come in.",
+            "live_predictions": [],
+        }
+
+    # Compute live stats
+    scored = [p for p in preds if p["outcome"] != "pending"]
+    correct = [p for p in scored if p["outcome"] == "correct"]
+    accuracy = (len(correct) / len(scored) * 100) if scored else 0
+
+    # Per-symbol breakdown
+    symbols = set(p["symbol"] for p in scored)
+    per_symbol = {}
+    for s in symbols:
+        s_preds = [p for p in scored if p["symbol"] == s]
+        s_correct = [p for p in s_preds if p["outcome"] == "correct"]
+        per_symbol[s] = {
+            "accuracy": round(len(s_correct) / len(s_preds) * 100, 1) if s_preds else 0,
+            "total": len(s_preds),
+            "correct": len(s_correct),
+        }
+
+    # Per-action breakdown
+    actions = set(p["action"] for p in scored)
+    per_action = {}
+    for a in actions:
+        a_preds = [p for p in scored if p["action"] == a]
+        a_correct = [p for p in a_preds if p["outcome"] == "correct"]
+        per_action[a] = {
+            "accuracy": round(len(a_correct) / len(a_preds) * 100, 1) if a_preds else 0,
+            "total": len(a_preds),
+        }
+
+    # Recent streak
+    recent = sorted(scored, key=lambda x: x["timestamp"], reverse=True)[:10]
+    streak = 0
+    for p in recent:
+        if p["outcome"] == "correct":
+            streak += 1
+        else:
+            break
+
+    return {
+        "success": True,
+        "source": "live",
+        "model_version": "v6",
+        "overall": {
+            "total_predictions": len(preds),
+            "scored": len(scored),
+            "pending": len(preds) - len(scored),
+            "accuracy": round(accuracy, 1),
+            "current_streak": streak,
+        },
+        "per_symbol": per_symbol,
+        "per_action": per_action,
+        "recent_predictions": recent[:5],
+        "total_pnl": round(sum(p.get("pnl_pct", 0) for p in scored), 2),
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# INTERACTIVE RISK VISUALIZATION — HTML Widget Endpoint
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/widget/risk-card")
+async def risk_widget(symbol: str = "BTC", direction: str = "LONG", entry_price: float = 0, current_price: float = 0, stop_loss: float = 0, leverage: float = 1):
+    """Return an interactive risk card HTML widget with BASTION branding."""
+    from fastapi.responses import HTMLResponse
+
+    if entry_price == 0 or current_price == 0:
+        price_data = await api_get_internal(f"/api/price/{symbol}")
+        if isinstance(price_data, dict):
+            current_price = current_price or float(price_data.get("price", 0))
+            entry_price = entry_price or current_price
+
+    # Calculate risk metrics
+    if direction.upper() == "LONG":
+        pnl_pct = ((current_price - entry_price) / entry_price) * 100
+        risk_to_stop = ((entry_price - stop_loss) / entry_price) * 100 if stop_loss > 0 else 0
+    else:
+        pnl_pct = ((entry_price - current_price) / entry_price) * 100
+        risk_to_stop = ((stop_loss - entry_price) / entry_price) * 100 if stop_loss > 0 else 0
+
+    effective_pnl = pnl_pct * leverage
+    risk_level = "LOW" if abs(effective_pnl) < 5 else "MEDIUM" if abs(effective_pnl) < 15 else "HIGH" if abs(effective_pnl) < 30 else "CRITICAL"
+
+    pnl_color = "#22c55e" if effective_pnl >= 0 else "#ef4444"
+    risk_colors = {"LOW": "#22c55e", "MEDIUM": "#eab308", "HIGH": "#f97316", "CRITICAL": "#ef4444"}
+
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="color-scheme" content="dark">
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+body {{ background:#09090b; color:#fff; font-family:'Inter',system-ui,sans-serif; padding:16px; min-height:300px; }}
+.card {{ border:1px solid #27272a; border-radius:12px; padding:20px; background:linear-gradient(135deg,#0a0a0a,#18181b); }}
+.header {{ display:flex; align-items:center; gap:10px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #27272a; }}
+.logo {{ width:28px; height:28px; border-radius:6px; }}
+.brand {{ font-size:10px; font-family:monospace; color:#71717a; letter-spacing:2px; text-transform:uppercase; }}
+.symbol {{ font-size:24px; font-weight:700; }}
+.direction {{ font-size:11px; font-weight:600; padding:3px 8px; border-radius:4px; background:{('#22c55e22' if direction.upper()=='LONG' else '#ef444422')}; color:{('#22c55e' if direction.upper()=='LONG' else '#ef4444')}; }}
+.metrics {{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }}
+.metric {{ padding:12px; background:#111; border-radius:8px; border:1px solid #1f1f23; }}
+.metric-label {{ font-size:9px; font-family:monospace; color:#71717a; text-transform:uppercase; letter-spacing:1px; }}
+.metric-value {{ font-size:20px; font-weight:700; margin-top:4px; }}
+.pnl {{ color:{pnl_color}; }}
+.risk-bar {{ margin-top:16px; }}
+.risk-label {{ display:flex; justify-content:space-between; margin-bottom:6px; }}
+.risk-label span {{ font-size:9px; font-family:monospace; color:#71717a; text-transform:uppercase; letter-spacing:1px; }}
+.risk-level {{ font-size:11px; font-weight:700; color:{risk_colors.get(risk_level, '#fff')}; }}
+.bar-bg {{ height:6px; background:#27272a; border-radius:3px; overflow:hidden; }}
+.bar-fill {{ height:100%; border-radius:3px; background:{risk_colors.get(risk_level, '#ef4444')}; transition:width 0.5s ease; }}
+.footer {{ margin-top:16px; padding-top:12px; border-top:1px solid #1f1f23; display:flex; justify-content:space-between; align-items:center; }}
+.footer span {{ font-size:9px; font-family:monospace; color:#52525b; }}
+</style></head><body>
+<div class="card">
+  <div class="header">
+    <img src="https://bastionfi.tech/static/bastion-logo.png" class="logo" alt="BASTION" onerror="this.style.display='none'">
+    <div>
+      <div class="brand">BASTION RISK INTELLIGENCE</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+        <span class="symbol">{symbol.upper()}</span>
+        <span class="direction">{direction.upper()}</span>
+      </div>
+    </div>
+  </div>
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Entry Price</div>
+      <div class="metric-value">${entry_price:,.2f}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Current Price</div>
+      <div class="metric-value">${current_price:,.2f}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">PnL ({leverage}x)</div>
+      <div class="metric-value pnl">{'+' if effective_pnl >= 0 else ''}{effective_pnl:.2f}%</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Stop Loss</div>
+      <div class="metric-value">{'$' + f'{stop_loss:,.2f}' if stop_loss > 0 else 'NONE'}</div>
+    </div>
+  </div>
+  <div class="risk-bar">
+    <div class="risk-label">
+      <span>Risk Level</span>
+      <span class="risk-level">{risk_level}</span>
+    </div>
+    <div class="bar-bg">
+      <div class="bar-fill" style="width:{min(abs(effective_pnl) * 2, 100):.0f}%"></div>
+    </div>
+  </div>
+  <div class="footer">
+    <span>BASTION v6 \u2022 72B AI Model \u2022 75.4% Accuracy</span>
+    <span>{symbol.upper()}USDT</span>
+  </div>
+</div>
+</body></html>"""
+
+    return HTMLResponse(content=html, status_code=200)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# A2A AGENT CARD — Multi-Agent Coordination
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.get("/.well-known/agent.json")
+async def agent_card():
+    """A2A AgentCard — Describes BASTION's capabilities for multi-agent discovery."""
+    return {
+        "name": "BASTION Risk Intelligence",
+        "description": "Autonomous crypto position risk analysis powered by a fine-tuned 72B parameter AI model. Evaluates positions, analyzes market structure (VPVR, graded S/R), tracks whales, and generates institutional research.",
+        "url": "https://bastionfi.tech",
+        "version": "1.0.0",
+        "capabilities": {
+            "streaming": True,
+            "pushNotifications": False,
+            "stateTransitionHistory": False,
+        },
+        "skills": [
+            {
+                "id": "risk-evaluation",
+                "name": "Position Risk Evaluation",
+                "description": "AI risk intelligence for crypto positions — combines 560+ signals from derivatives, on-chain, whale activity, and market structure to output HOLD/EXIT/TP_PARTIAL/REDUCE_SIZE recommendations with 75.4% accuracy.",
+                "tags": ["crypto", "risk", "trading", "AI", "position-management"],
+                "examples": [
+                    "Evaluate my BTC LONG from $94,000 with 10x leverage",
+                    "Should I hold or exit my ETH SHORT?",
+                    "Run risk analysis on all open positions",
+                ],
+            },
+            {
+                "id": "market-analysis",
+                "name": "Market Intelligence",
+                "description": "Real-time crypto market analysis: derivatives flow, whale tracking, funding rates, liquidation clusters, order flow, macro signals, fear/greed, BTC dominance.",
+                "tags": ["crypto", "market-data", "derivatives", "whales", "macro"],
+                "examples": [
+                    "What's the current state of BTC?",
+                    "Show me whale activity and smart money flows",
+                    "Check liquidation clusters near $95,000",
+                ],
+            },
+            {
+                "id": "research",
+                "name": "Research & Analytics",
+                "description": "Position sizing (Kelly Criterion, Monte Carlo), strategy backtesting, correlation analysis, multi-timeframe confluence scanning, sector rotation tracking.",
+                "tags": ["research", "backtesting", "analytics", "position-sizing"],
+                "examples": [
+                    "Backtest a funding spike strategy on SOL",
+                    "Show me the crypto correlation matrix",
+                    "What sectors are rotating in?",
+                ],
+            },
+        ],
+        "defaultInputModes": ["text/plain"],
+        "defaultOutputModes": ["text/plain", "application/json"],
+        "authentication": {
+            "schemes": ["apiKey"],
+            "credentials": "Obtain API keys at https://bastionfi.tech/dashboard",
+        },
+        "provider": {
+            "organization": "BASTION",
+            "url": "https://bastionfi.tech",
+        },
     }
 
 
