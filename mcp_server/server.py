@@ -2,7 +2,7 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (58):
+Tools (64):
   CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
@@ -16,6 +16,9 @@ Tools (58):
     bastion_get_volatility       — Volatility metrics + regime detection
     bastion_get_volatility_regime — Volatility regime classification
     bastion_get_btc_dominance    — BTC dominance + altseason score
+    bastion_get_correlation_matrix — Cross-asset correlation matrix
+    bastion_get_confluence       — Multi-timeframe confluence scanner
+    bastion_get_sector_rotation  — Sector rotation tracker
 
   DERIVATIVES & ORDER FLOW (public)
     bastion_get_open_interest    — Open interest across exchanges
@@ -53,6 +56,10 @@ Tools (58):
     bastion_get_reports          — List existing reports
     bastion_calculate_position   — Position sizing + Monte Carlo
     bastion_get_kelly_sizing     — Kelly Criterion optimal sizing
+    bastion_log_trade            — Log trade to performance journal
+    bastion_get_trade_journal    — Journal stats + real Kelly sizing
+    bastion_backtest_strategy    — Backtest strategies on-demand
+    bastion_get_risk_parity      — Portfolio risk parity analysis
 
   PORTFOLIO (auth required — 'read' scope)
     bastion_get_positions        — All open positions
@@ -1445,6 +1452,206 @@ async def bastion_get_btc_dominance() -> str:
     return json.dumps(result, indent=2)
 
 
+@mcp.tool()
+async def bastion_get_correlation_matrix(
+    symbols: str = "BTC,ETH,SOL,AVAX,DOGE",
+    period: str = "30d",
+) -> str:
+    """Get a real-time correlation matrix across crypto assets and macro indicators.
+
+    Shows how different assets move together. High correlation (>0.85) means
+    you're effectively doubling your exposure. Negative correlation means
+    natural hedge. Essential for portfolio risk management.
+
+    Args:
+        symbols: Comma-separated symbols (crypto + macro). Crypto: BTC,ETH,SOL,AVAX,DOGE.
+            Macro: DXY,SPX,GOLD,VIX. Max 10 symbols. (default: BTC,ETH,SOL,AVAX,DOGE)
+        period: Lookback period — 7d, 14d, 30d, or 90d (default: 30d)
+
+    Returns:
+        Full correlation matrix, highest/lowest correlated pairs, and risk warnings
+        for dangerously correlated positions.
+    """
+    result = await api_get("/api/correlation-matrix", {"symbols": symbols, "period": period})
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_confluence(symbol: str = "BTC") -> str:
+    """Get multi-timeframe confluence analysis for a cryptocurrency.
+
+    Checks if 15m, 1h, 4h, and 1D timeframes are aligned on direction.
+    Analyzes trend, VWAP, momentum, and market structure on each timeframe.
+    High confluence (3-4 timeframes aligned) = high conviction setup.
+
+    Args:
+        symbol: Crypto symbol (e.g. BTC, ETH, SOL)
+
+    Returns:
+        Per-timeframe bias, overall confluence score, alignment count,
+        and recommendation (trade or wait).
+    """
+    result = await api_get(f"/api/confluence/{symbol.upper()}")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_sector_rotation() -> str:
+    """Track capital rotation across crypto sectors.
+
+    Compares 7-day performance of L1s, L2s, DeFi, AI, Memes, and Gaming sectors.
+    Identifies where money is flowing in and out — critical for catching
+    sector rotations early (e.g. money leaving memes, flowing into AI tokens).
+
+    Returns:
+        Sector rankings by 7d performance, capital inflow/outflow detection,
+        best/worst tokens per sector, and rotation signal.
+    """
+    result = await api_get("/api/sector-rotation")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_risk_parity(api_key: str = "") -> str:
+    """Analyze portfolio risk parity across all open positions.
+
+    Calculates concentration risk (HHI index), correlation-adjusted exposure,
+    effective leverage, directional bias, and maximum drawdown estimate.
+    Tells you if you're accidentally 10x exposed to the same trade.
+
+    Args:
+        api_key: Your BASTION API key (bst_...) for authenticated access
+
+    Returns:
+        Risk level, concentration analysis, drawdown estimate, directional exposure,
+        correlation warnings, and actionable recommendations.
+    """
+    auth_headers, auth_error = await resolve_auth(api_key, "read")
+    if auth_error:
+        return json.dumps({"error": auth_error})
+    result = await api_post("/api/risk-parity", {}, auth_headers=auth_headers)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_log_trade(
+    symbol: str,
+    direction: str,
+    entry_price: float,
+    exit_price: float,
+    pnl_usd: float,
+    size_usd: float = 1000.0,
+    leverage: float = 1.0,
+    ai_recommendation: str = "",
+    ai_followed: bool = True,
+    notes: str = "",
+) -> str:
+    """Log a completed trade to your performance journal.
+
+    Builds your real trading track record over time. The journal feeds
+    into Kelly Criterion calculations and win rate statistics, replacing
+    simulated data with YOUR actual performance.
+
+    Args:
+        symbol: Trading pair (e.g. BTC, ETH, SOL)
+        direction: LONG or SHORT
+        entry_price: Price at entry
+        exit_price: Price at exit
+        pnl_usd: Realized PnL in USD (positive = profit, negative = loss)
+        size_usd: Position size in USD (default 1000)
+        leverage: Leverage used (default 1.0)
+        ai_recommendation: What did BASTION AI recommend? (HOLD, EXIT_FULL, etc.)
+        ai_followed: Did you follow the AI recommendation? (default true)
+        notes: Any notes about the trade
+
+    Returns:
+        Confirmation with trade ID.
+    """
+    pnl_pct = ((exit_price - entry_price) / entry_price * 100) if direction.upper() == "LONG" \
+        else ((entry_price - exit_price) / entry_price * 100)
+    result = await api_post("/api/trade-journal/log", {
+        "symbol": symbol.upper(),
+        "direction": direction.upper(),
+        "entry_price": entry_price,
+        "exit_price": exit_price,
+        "pnl_usd": pnl_usd,
+        "pnl_pct": pnl_pct * leverage,
+        "size_usd": size_usd,
+        "leverage": leverage,
+        "ai_recommendation": ai_recommendation,
+        "ai_followed": ai_followed,
+        "notes": notes,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_trade_journal(symbol: str = "", last_n: int = 0) -> str:
+    """Get your trade journal performance statistics.
+
+    Shows real win rate, average R-ratio, expectancy per trade, Kelly sizing
+    from actual performance data, win/loss streaks, AI accuracy, and
+    per-symbol breakdown. Replaces simulated Kelly data with reality.
+
+    Args:
+        symbol: Filter by symbol (empty = all symbols)
+        last_n: Only analyze last N trades (0 = all trades)
+
+    Returns:
+        Win rate, R-ratio, Kelly sizing (real), expectancy, streaks,
+        AI accuracy, and per-symbol performance breakdown.
+    """
+    params = {}
+    if symbol:
+        params["symbol"] = symbol.upper()
+    if last_n > 0:
+        params["last_n"] = last_n
+    result = await api_get("/api/trade-journal/stats", params)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_backtest_strategy(
+    symbol: str = "BTC",
+    strategy: str = "funding_spike",
+    direction: str = "SHORT",
+    leverage: float = 1.0,
+    lookback_days: int = 30,
+    tp_pct: float = 2.0,
+    sl_pct: float = 1.0,
+) -> str:
+    """Backtest a trading strategy against historical data.
+
+    Test if a strategy would have been profitable over the past N days.
+    Supports multiple strategy types with configurable TP/SL and leverage.
+
+    Args:
+        symbol: Crypto symbol (default BTC)
+        strategy: Strategy type — 'funding_spike' (mean reversion on price deviations),
+            'mean_reversion' (Bollinger band reversal), 'momentum' (breakout following),
+            'volume_spike' (enter on volume anomalies)
+        direction: Trade direction — LONG or SHORT (default SHORT)
+        leverage: Leverage multiplier (default 1.0)
+        lookback_days: How many days to backtest (default 30, max 20)
+        tp_pct: Take profit percentage (default 2.0)
+        sl_pct: Stop loss percentage (default 1.0)
+
+    Returns:
+        Total trades, win rate, total PnL, best/worst trades, and verdict
+        (PROFITABLE, MARGINAL, or UNPROFITABLE).
+    """
+    result = await api_post("/api/backtest-strategy", {
+        "symbol": symbol.upper(),
+        "strategy": strategy,
+        "direction": direction.upper(),
+        "leverage": leverage,
+        "lookback_days": min(lookback_days, 20),
+        "tp_pct": tp_pct,
+        "sl_pct": sl_pct,
+    })
+    return json.dumps(result, indent=2)
+
+
 # ═════════════════════════════════════════════════════════════════
 # RESOURCES
 # ═════════════════════════════════════════════════════════════════
@@ -1507,7 +1714,7 @@ async def get_model_info() -> str:
 
 @mcp.resource("bastion://tools")
 async def get_tools() -> str:
-    """Complete list of all 58 BASTION MCP tools with descriptions."""
+    """Complete list of all 64 BASTION MCP tools with descriptions."""
     tools = {
         "core_ai": [
             "bastion_evaluate_risk — AI risk evaluation for a position",
@@ -1522,6 +1729,9 @@ async def get_tools() -> str:
             "bastion_get_volatility — Volatility metrics + regime",
             "bastion_get_volatility_regime — Volatility regime classification",
             "bastion_get_btc_dominance — BTC dominance + altseason score",
+            "bastion_get_correlation_matrix — Cross-asset correlation matrix",
+            "bastion_get_confluence — Multi-timeframe confluence scanner",
+            "bastion_get_sector_rotation — Sector rotation tracker",
         ],
         "derivatives_orderflow": [
             "bastion_get_open_interest — OI across exchanges",
@@ -1559,6 +1769,10 @@ async def get_tools() -> str:
             "bastion_get_reports — List existing reports",
             "bastion_calculate_position — Position sizing + Monte Carlo",
             "bastion_get_kelly_sizing — Kelly Criterion optimal sizing",
+            "bastion_log_trade — Log trade to performance journal",
+            "bastion_get_trade_journal — Journal stats + real Kelly",
+            "bastion_backtest_strategy — Backtest strategies on-demand",
+            "bastion_get_risk_parity — Portfolio risk parity analysis",
         ],
         "portfolio": [
             "bastion_get_positions — All open positions",
@@ -1588,7 +1802,7 @@ async def get_tools() -> str:
             "bastion_war_room_consensus — Get consensus",
         ],
     }
-    return json.dumps({"tools": tools, "total": 58}, indent=2)
+    return json.dumps({"tools": tools, "total": 64}, indent=2)
 
 
 @mcp.resource("bastion://exchanges")
@@ -1626,7 +1840,7 @@ async def get_capabilities() -> str:
             "market_structure": "VPVR, pivot detection, auto-support, trendlines",
             "macro": "Yahoo Finance, FRED, CoinGecko, Polymarket",
         },
-        "mcp_tools": 58,
+        "mcp_tools": 64,
         "resources": 6,
         "prompts": 7,
         "trading_actions": ["HOLD", "EXIT_FULL", "TP_PARTIAL", "EXIT_100%", "REDUCE_SIZE", "TRAIL_STOP"],

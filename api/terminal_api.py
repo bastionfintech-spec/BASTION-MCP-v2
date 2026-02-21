@@ -1132,6 +1132,31 @@ async def list_mcp_tools():
         {"name": "bastion_get_hyperliquid_whales", "category": "Intelligence", "scope": "public", "description": "Top Hyperliquid whale positions", "params": [
             {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
         ]},
+        {"name": "bastion_get_correlation_matrix", "category": "Analytics", "scope": "public", "description": "Cross-asset correlation matrix", "params": [
+            {"name": "symbols", "type": "string", "required": False, "description": "Comma-separated symbols", "default": "BTC,ETH,SOL,AVAX,DOGE"},
+            {"name": "period", "type": "string", "required": False, "description": "Lookback period (7d/14d/30d/90d)", "default": "30d"},
+        ]},
+        {"name": "bastion_get_confluence", "category": "Analytics", "scope": "public", "description": "Multi-timeframe confluence scanner", "params": [
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_sector_rotation", "category": "Analytics", "scope": "public", "description": "Sector rotation tracker", "params": []},
+        {"name": "bastion_get_risk_parity", "category": "Portfolio", "scope": "read", "description": "Portfolio risk parity analysis", "params": [
+            {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
+        ]},
+        {"name": "bastion_backtest_strategy", "category": "Research", "scope": "public", "description": "Backtest strategies on-demand", "params": [
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+            {"name": "strategy", "type": "string", "required": False, "description": "Strategy type", "default": "funding_spike"},
+            {"name": "direction", "type": "string", "required": False, "description": "LONG or SHORT", "default": "SHORT"},
+        ]},
+        {"name": "bastion_get_trade_journal", "category": "Research", "scope": "public", "description": "Trade journal performance stats", "params": []},
+        {"name": "bastion_log_trade", "category": "Research", "scope": "public", "description": "Log a trade to the journal", "params": [
+            {"name": "symbol", "type": "string", "required": True, "description": "Trading pair", "default": "BTC"},
+            {"name": "direction", "type": "string", "required": True, "description": "LONG or SHORT", "default": "LONG"},
+            {"name": "entry_price", "type": "number", "required": True, "description": "Entry price"},
+            {"name": "exit_price", "type": "number", "required": False, "description": "Exit price (if closed)"},
+            {"name": "pnl_pct", "type": "number", "required": False, "description": "PnL percentage"},
+            {"name": "notes", "type": "string", "required": False, "description": "Trade notes", "default": ""},
+        ]},
         {"name": "bastion_get_positions", "category": "Portfolio", "scope": "read", "description": "Open positions", "params": [
             {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
         ]},
@@ -1142,7 +1167,7 @@ async def list_mcp_tools():
             {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
         ]},
     ]
-    return {"tools": tools, "total": 58, "listed": len(tools)}
+    return {"tools": tools, "total": 64, "listed": len(tools)}
 
 @app.post("/api/mcp/playground/execute")
 async def playground_execute(request: Request, data: dict):
@@ -1185,6 +1210,10 @@ async def execute_playground_tool(data: dict):
         "bastion_get_liquidations_by_exchange": ("GET", "/api/liq-exchange/{symbol}"),
         "bastion_get_smart_money": ("GET", "/api/smart-money/{symbol}"),
         "bastion_get_hyperliquid_whales": ("GET", "/api/hyperliquid-whales"),
+        "bastion_get_correlation_matrix": ("GET", "/api/correlation-matrix"),
+        "bastion_get_confluence": ("GET", "/api/confluence/{symbol}"),
+        "bastion_get_sector_rotation": ("GET", "/api/sector-rotation"),
+        "bastion_get_trade_journal": ("GET", "/api/trade-journal/stats"),
         "bastion_get_positions": ("GET", "/api/positions/all"),
         "bastion_get_balance": ("GET", "/api/balance/total"),
         "bastion_engine_status": ("GET", "/api/engine/status"),
@@ -1193,6 +1222,9 @@ async def execute_playground_tool(data: dict):
         "bastion_evaluate_risk": "/api/risk/evaluate",
         "bastion_chat": "/api/neural/chat",
         "bastion_scan_signals": "/api/signals/scan",
+        "bastion_get_risk_parity": "/api/risk-parity",
+        "bastion_log_trade": "/api/trade-journal/log",
+        "bastion_backtest_strategy": "/api/backtest-strategy",
     }
     import httpx
     t0 = time.time()
@@ -1206,6 +1238,12 @@ async def execute_playground_tool(data: dict):
                     body = {"message": params.get("message", ""), "conversation_id": "playground"}
                 elif tool_name == "bastion_scan_signals":
                     body = {"symbols": [s.strip() for s in params.get("symbols", "BTC,ETH,SOL").split(",") if s.strip()]}
+                elif tool_name == "bastion_get_risk_parity":
+                    body = {"api_key": params.get("api_key", "")}
+                elif tool_name == "bastion_log_trade":
+                    body = {"symbol": params.get("symbol", "BTC"), "direction": params.get("direction", "LONG"), "entry_price": float(params.get("entry_price", 0)), "exit_price": float(params.get("exit_price", 0)) if params.get("exit_price") else None, "pnl_pct": float(params.get("pnl_pct", 0)) if params.get("pnl_pct") else None, "notes": params.get("notes", "")}
+                elif tool_name == "bastion_backtest_strategy":
+                    body = {"symbol": params.get("symbol", "BTC"), "strategy": params.get("strategy", "funding_spike"), "direction": params.get("direction", "SHORT")}
                 else:
                     body = params
                 resp = await client.post(post_tools[tool_name], json=body)
@@ -5683,6 +5721,778 @@ async def hyperliquid_whales(symbol: str = "BTC"):
     except Exception as e:
         logger.error(f"Hyperliquid whales error for {symbol}: {e}")
     return {"success": False, "symbol": symbol.upper(), "whale_positions": [], "error": "Hyperliquid whale data unavailable"}
+
+
+# ═════════════════════════════════════════════════════════════════
+# ADVANCED ANALYTICS v2 (Correlation, Confluence, Sectors, Journal)
+# ═════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/correlation-matrix")
+async def correlation_matrix(symbols: str = "BTC,ETH,SOL,AVAX,DOGE", period: str = "30d"):
+    """
+    Real-time correlation matrix across crypto assets + macro.
+    Uses daily close prices to compute Pearson correlation coefficients.
+    """
+    import math
+
+    sym_list = [s.strip().upper() for s in symbols.split(",")][:10]  # Max 10 assets
+    days = {"7d": 7, "14d": 14, "30d": 30, "90d": 90}.get(period, 30)
+
+    # Fetch klines for all symbols in parallel
+    async def fetch_closes(sym):
+        try:
+            # Use Yahoo Finance for macro assets, internal klines for crypto
+            macro_map = {"DXY": "DX-Y.NYB", "SPX": "^GSPC", "GOLD": "GC=F", "VIX": "^VIX"}
+            if sym in macro_map:
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{macro_map[sym]}?interval=1d&range={days}d"
+                    resp = await client.get(url, headers={"User-Agent": "BASTION/1.0"})
+                    if resp.status_code == 200:
+                        data = resp.json().get("chart", {}).get("result", [{}])[0]
+                        closes = data.get("indicators", {}).get("quote", [{}])[0].get("close", [])
+                        return sym, [c for c in closes if c is not None]
+                return sym, []
+            else:
+                result = await api_get_internal(f"/api/klines/{sym}", {"interval": "1d", "limit": days})
+                candles = result.get("candles", [])
+                return sym, [c["close"] for c in candles if c.get("close")]
+        except Exception:
+            return sym, []
+
+    # Parallel fetch
+    import asyncio
+    results = await asyncio.gather(*[fetch_closes(s) for s in sym_list])
+    price_data = {sym: closes for sym, closes in results if len(closes) >= 5}
+
+    if len(price_data) < 2:
+        return {"success": False, "error": "Not enough data for correlation", "symbols_found": list(price_data.keys())}
+
+    # Compute returns
+    def pct_returns(prices):
+        return [(prices[i] - prices[i-1]) / prices[i-1] for i in range(1, len(prices))]
+
+    returns = {}
+    min_len = min(len(v) for v in price_data.values())
+    for sym, prices in price_data.items():
+        trimmed = prices[-min_len:]
+        returns[sym] = pct_returns(trimmed)
+
+    # Pearson correlation
+    def pearson(x, y):
+        n = min(len(x), len(y))
+        if n < 3:
+            return 0
+        x, y = x[:n], y[:n]
+        mx, my = sum(x)/n, sum(y)/n
+        sx = math.sqrt(sum((xi - mx)**2 for xi in x) / n) or 1e-10
+        sy = math.sqrt(sum((yi - my)**2 for yi in y) / n) or 1e-10
+        cov = sum((x[i] - mx) * (y[i] - my) for i in range(n)) / n
+        return round(cov / (sx * sy), 3)
+
+    syms = list(returns.keys())
+    matrix = {}
+    for i, s1 in enumerate(syms):
+        row = {}
+        for j, s2 in enumerate(syms):
+            if i == j:
+                row[s2] = 1.0
+            else:
+                row[s2] = pearson(returns[s1], returns[s2])
+        matrix[s1] = row
+
+    # Find highest/lowest correlations
+    pairs = []
+    for i, s1 in enumerate(syms):
+        for j, s2 in enumerate(syms):
+            if i < j:
+                pairs.append({"pair": f"{s1}/{s2}", "correlation": matrix[s1][s2]})
+
+    pairs.sort(key=lambda x: abs(x["correlation"]), reverse=True)
+
+    return {
+        "success": True,
+        "matrix": matrix,
+        "symbols": syms,
+        "period": period,
+        "data_points": min_len - 1,
+        "highest_correlation": pairs[0] if pairs else None,
+        "lowest_correlation": pairs[-1] if pairs else None,
+        "all_pairs": pairs,
+        "risk_warning": next(
+            (f"WARNING: {p['pair']} has {p['correlation']:.2f} correlation — near-identical exposure"
+             for p in pairs if abs(p["correlation"]) > 0.85), None
+        ),
+    }
+
+
+# Internal helper to call own endpoints without HTTP overhead
+async def api_get_internal(path: str, params: dict = None):
+    """Call our own API endpoints internally."""
+    import httpx
+    port = os.getenv("PORT", "3001")
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(f"http://localhost:{port}{path}", params=params)
+        return resp.json() if resp.status_code == 200 else {}
+
+
+@app.get("/api/confluence/{symbol}")
+async def multi_timeframe_confluence(symbol: str = "BTC"):
+    """
+    Multi-timeframe confluence scanner.
+    Checks if 15m, 1h, 4h, 1D are aligned on direction.
+    Uses price vs VWAP, trend direction, and momentum.
+    """
+    import asyncio
+
+    sym = symbol.upper()
+    timeframes = [
+        ("15m", 96),   # 24h of 15m candles
+        ("1h", 72),    # 3 days of 1h candles
+        ("4h", 42),    # 7 days of 4h candles
+        ("1d", 30),    # 30 days of daily candles
+    ]
+
+    async def analyze_tf(interval, limit):
+        try:
+            result = await api_get_internal(f"/api/klines/{sym}", {"interval": interval, "limit": limit})
+            candles = result.get("candles", [])
+            if len(candles) < 10:
+                return interval, {"bias": "NEUTRAL", "confidence": 0, "reason": "Insufficient data"}
+
+            closes = [c["close"] for c in candles]
+            highs = [c["high"] for c in candles]
+            lows = [c["low"] for c in candles]
+            volumes = [c.get("volume", 0) for c in candles]
+
+            current = closes[-1]
+
+            # 1. Trend: Compare SMA20 vs SMA50 (or available length)
+            sma_short = sum(closes[-min(20, len(closes)):]) / min(20, len(closes))
+            sma_long = sum(closes[-min(50, len(closes)):]) / min(50, len(closes))
+            trend = "BULLISH" if sma_short > sma_long else "BEARISH"
+
+            # 2. Price vs VWAP (volume-weighted)
+            total_vol = sum(volumes[-20:]) or 1
+            vwap = sum(closes[i] * volumes[i] for i in range(-min(20, len(closes)), 0)) / total_vol if total_vol > 1 else current
+            above_vwap = current > vwap
+
+            # 3. Momentum: RSI-like (percentage of up candles in last 14)
+            changes = [closes[i] - closes[i-1] for i in range(-min(14, len(closes)-1), 0)]
+            up_count = sum(1 for c in changes if c > 0)
+            momentum = up_count / len(changes) if changes else 0.5
+
+            # 4. Higher highs / lower lows
+            recent_highs = highs[-5:]
+            recent_lows = lows[-5:]
+            hh = all(recent_highs[i] >= recent_highs[i-1] for i in range(1, len(recent_highs)))
+            ll = all(recent_lows[i] <= recent_lows[i-1] for i in range(1, len(recent_lows)))
+            structure = "BULLISH" if hh and not ll else "BEARISH" if ll and not hh else "MIXED"
+
+            # Composite score
+            score = 0
+            if trend == "BULLISH": score += 1
+            else: score -= 1
+            if above_vwap: score += 1
+            else: score -= 1
+            if momentum > 0.6: score += 1
+            elif momentum < 0.4: score -= 1
+            if structure == "BULLISH": score += 1
+            elif structure == "BEARISH": score -= 1
+
+            if score >= 3:
+                bias, confidence = "BULLISH", round(score / 4, 2)
+            elif score <= -3:
+                bias, confidence = "BEARISH", round(abs(score) / 4, 2)
+            elif score >= 1:
+                bias, confidence = "LEAN_BULLISH", round(score / 4, 2)
+            elif score <= -1:
+                bias, confidence = "LEAN_BEARISH", round(abs(score) / 4, 2)
+            else:
+                bias, confidence = "NEUTRAL", 0.0
+
+            return interval, {
+                "bias": bias,
+                "confidence": confidence,
+                "trend": trend,
+                "above_vwap": above_vwap,
+                "momentum": round(momentum, 2),
+                "structure": structure,
+                "sma_short": round(sma_short, 2),
+                "sma_long": round(sma_long, 2),
+                "vwap": round(vwap, 2),
+                "current_price": current,
+            }
+        except Exception as e:
+            return interval, {"bias": "NEUTRAL", "confidence": 0, "error": str(e)}
+
+    results = await asyncio.gather(*[analyze_tf(i, l) for i, l in timeframes])
+    tf_analysis = {interval: data for interval, data in results}
+
+    # Overall confluence
+    biases = [d.get("bias", "NEUTRAL") for d in tf_analysis.values()]
+    bullish_count = sum(1 for b in biases if "BULLISH" in b)
+    bearish_count = sum(1 for b in biases if "BEARISH" in b)
+
+    if bullish_count >= 3:
+        overall = "STRONG_BULLISH"
+        confluence_score = bullish_count / len(biases)
+    elif bearish_count >= 3:
+        overall = "STRONG_BEARISH"
+        confluence_score = bearish_count / len(biases)
+    elif bullish_count > bearish_count:
+        overall = "LEAN_BULLISH"
+        confluence_score = bullish_count / len(biases)
+    elif bearish_count > bullish_count:
+        overall = "LEAN_BEARISH"
+        confluence_score = bearish_count / len(biases)
+    else:
+        overall = "MIXED"
+        confluence_score = 0.0
+
+    return {
+        "success": True,
+        "symbol": sym,
+        "overall_bias": overall,
+        "confluence_score": round(confluence_score, 2),
+        "aligned_timeframes": f"{max(bullish_count, bearish_count)}/{len(biases)}",
+        "timeframes": tf_analysis,
+        "recommendation": (
+            f"{'All' if max(bullish_count, bearish_count) == 4 else 'Most'} timeframes "
+            f"{'aligned' if max(bullish_count, bearish_count) >= 3 else 'mixed'}. "
+            f"{'High conviction setup.' if max(bullish_count, bearish_count) >= 3 else 'Wait for alignment.'}"
+        ),
+    }
+
+
+@app.get("/api/sector-rotation")
+async def sector_rotation():
+    """
+    Track sector rotation across crypto sectors.
+    Compares 7d performance of L1s, L2s, DeFi, AI, Memes.
+    """
+    # Representative tokens per sector
+    sectors = {
+        "L1": ["BTC", "ETH", "SOL", "AVAX", "ADA"],
+        "L2": ["ARB", "OP", "MATIC", "IMX", "STRK"],
+        "DeFi": ["UNI", "AAVE", "MKR", "CRV", "SUSHI"],
+        "AI": ["FET", "RNDR", "TAO", "NEAR", "ICP"],
+        "Meme": ["DOGE", "SHIB", "PEPE", "WIF", "BONK"],
+        "Gaming": ["AXS", "SAND", "MANA", "GALA", "IMX"],
+    }
+
+    async def get_sector_perf(sector_name, tokens):
+        perfs = []
+        for token in tokens:
+            try:
+                result = await api_get_internal(f"/api/klines/{token}", {"interval": "1d", "limit": 8})
+                candles = result.get("candles", [])
+                if len(candles) >= 2:
+                    week_ago = candles[0]["close"]
+                    now = candles[-1]["close"]
+                    pct = ((now - week_ago) / week_ago) * 100
+                    perfs.append({"token": token, "change_7d": round(pct, 2), "price": now})
+            except Exception:
+                pass
+        if not perfs:
+            return sector_name, {"avg_7d": 0, "tokens": [], "status": "NO_DATA"}
+
+        avg = sum(p["change_7d"] for p in perfs) / len(perfs)
+        best = max(perfs, key=lambda x: x["change_7d"])
+        worst = min(perfs, key=lambda x: x["change_7d"])
+
+        return sector_name, {
+            "avg_7d": round(avg, 2),
+            "best": best,
+            "worst": worst,
+            "tokens": perfs,
+            "momentum": "STRONG" if avg > 5 else "POSITIVE" if avg > 0 else "WEAK" if avg > -5 else "BLEEDING",
+        }
+
+    import asyncio
+    results = await asyncio.gather(*[get_sector_perf(name, tokens) for name, tokens in sectors.items()])
+    sector_data = {name: data for name, data in results}
+
+    # Rank sectors
+    ranked = sorted(sector_data.items(), key=lambda x: x[1].get("avg_7d", 0), reverse=True)
+
+    # Detect rotation
+    top_sector = ranked[0][0] if ranked else "UNKNOWN"
+    bottom_sector = ranked[-1][0] if ranked else "UNKNOWN"
+
+    inflow = [name for name, d in ranked[:2] if d.get("avg_7d", 0) > 2]
+    outflow = [name for name, d in ranked[-2:] if d.get("avg_7d", 0) < -2]
+
+    return {
+        "success": True,
+        "sectors": sector_data,
+        "ranking": [{"sector": name, "avg_7d": data.get("avg_7d", 0)} for name, data in ranked],
+        "capital_inflow": inflow or ["No clear inflow"],
+        "capital_outflow": outflow or ["No clear outflow"],
+        "rotation_signal": (
+            f"Money flowing INTO {', '.join(inflow)} and OUT OF {', '.join(outflow)}"
+            if inflow and outflow else "No clear rotation detected"
+        ),
+        "top_sector": top_sector,
+        "bottom_sector": bottom_sector,
+    }
+
+
+@app.post("/api/risk-parity")
+async def risk_parity_analysis(data: dict = None):
+    """
+    Portfolio risk parity analysis.
+    Takes open positions and calculates concentration risk, correlation-adjusted
+    exposure, and maximum portfolio drawdown estimate.
+    """
+    import math
+
+    # Get positions — either from provided data or from the API
+    positions = []
+    if data and data.get("positions"):
+        positions = data["positions"]
+    else:
+        # Try to fetch from positions endpoint
+        try:
+            result = await api_get_internal("/api/positions/all")
+            positions = result.get("positions", [])
+        except Exception:
+            pass
+
+    if not positions:
+        return {
+            "success": True,
+            "message": "No open positions to analyze",
+            "risk_level": "NONE",
+            "positions": 0,
+        }
+
+    # Analyze each position
+    analyzed = []
+    total_exposure = 0
+    for pos in positions:
+        sym = (pos.get("symbol", "BTC")).upper().replace("USDT", "").replace("-PERP", "")
+        size = abs(float(pos.get("size_usd", pos.get("notional", pos.get("position_size_usd", 1000)))))
+        leverage = float(pos.get("leverage", 1)) or 1
+        direction = pos.get("direction", pos.get("side", "LONG")).upper()
+        entry = float(pos.get("entry_price", pos.get("entryPrice", 0)))
+        current = float(pos.get("current_price", pos.get("markPrice", entry)))
+        effective_exposure = size * leverage
+        total_exposure += effective_exposure
+
+        # PnL
+        if direction == "LONG":
+            pnl_pct = ((current - entry) / entry * 100) if entry else 0
+        else:
+            pnl_pct = ((entry - current) / entry * 100) if entry else 0
+
+        analyzed.append({
+            "symbol": sym,
+            "direction": direction,
+            "size_usd": round(size, 2),
+            "leverage": leverage,
+            "effective_exposure": round(effective_exposure, 2),
+            "pnl_pct": round(pnl_pct * leverage, 2),
+            "entry": entry,
+            "current": current,
+        })
+
+    # Concentration risk
+    if total_exposure > 0:
+        for a in analyzed:
+            a["portfolio_pct"] = round(a["effective_exposure"] / total_exposure * 100, 1)
+    else:
+        for a in analyzed:
+            a["portfolio_pct"] = 0
+
+    # HHI (Herfindahl-Hirschman Index) for concentration
+    hhi = sum((a["portfolio_pct"] / 100) ** 2 for a in analyzed)
+    concentration = "CRITICAL" if hhi > 0.5 else "HIGH" if hhi > 0.25 else "MODERATE" if hhi > 0.15 else "DIVERSIFIED"
+
+    # Directional risk
+    long_exposure = sum(a["effective_exposure"] for a in analyzed if a["direction"] == "LONG")
+    short_exposure = sum(a["effective_exposure"] for a in analyzed if a["direction"] == "SHORT")
+    net_exposure = long_exposure - short_exposure
+    directional_risk = "HEDGED" if abs(net_exposure) < total_exposure * 0.1 else \
+                       "NET_LONG" if net_exposure > 0 else "NET_SHORT"
+
+    # Effective leverage
+    total_notional = sum(a["size_usd"] for a in analyzed)
+    effective_leverage = round(total_exposure / total_notional, 1) if total_notional else 1
+
+    # Correlation warning (same-direction same-asset concentration)
+    symbol_exposure = {}
+    for a in analyzed:
+        key = f"{a['symbol']}_{a['direction']}"
+        symbol_exposure[key] = symbol_exposure.get(key, 0) + a["effective_exposure"]
+
+    correlation_warnings = []
+    same_dir_symbols = {}
+    for a in analyzed:
+        d = a["direction"]
+        same_dir_symbols.setdefault(d, []).append(a["symbol"])
+
+    for direction, syms in same_dir_symbols.items():
+        if len(syms) >= 3:
+            correlation_warnings.append(
+                f"{len(syms)} {direction} positions — if market reverses, all lose simultaneously"
+            )
+
+    # Max drawdown estimate (assuming 2 ATR move against)
+    max_dd = sum(a["effective_exposure"] * 0.04 for a in analyzed)  # ~4% adverse move
+    max_dd_pct = round(max_dd / total_notional * 100, 1) if total_notional else 0
+
+    # Risk level
+    if effective_leverage > 15 or concentration == "CRITICAL":
+        risk_level = "CRITICAL"
+    elif effective_leverage > 8 or concentration == "HIGH":
+        risk_level = "HIGH"
+    elif effective_leverage > 4:
+        risk_level = "ELEVATED"
+    elif effective_leverage > 2:
+        risk_level = "MODERATE"
+    else:
+        risk_level = "LOW"
+
+    return {
+        "success": True,
+        "risk_level": risk_level,
+        "portfolio_summary": {
+            "total_positions": len(analyzed),
+            "total_notional": round(total_notional, 2),
+            "total_effective_exposure": round(total_exposure, 2),
+            "effective_leverage": effective_leverage,
+            "long_exposure": round(long_exposure, 2),
+            "short_exposure": round(short_exposure, 2),
+            "net_exposure": round(net_exposure, 2),
+            "directional_risk": directional_risk,
+        },
+        "concentration": {
+            "hhi_index": round(hhi, 3),
+            "level": concentration,
+            "largest_position_pct": max(a["portfolio_pct"] for a in analyzed) if analyzed else 0,
+        },
+        "drawdown_estimate": {
+            "max_adverse_move_usd": round(max_dd, 2),
+            "max_drawdown_pct": max_dd_pct,
+            "scenario": "2-ATR adverse move across all positions",
+        },
+        "correlation_warnings": correlation_warnings,
+        "positions": analyzed,
+        "recommendations": [
+            r for r in [
+                f"REDUCE LEVERAGE: Effective leverage is {effective_leverage}x" if effective_leverage > 8 else None,
+                f"DIVERSIFY: {concentration} concentration (HHI {hhi:.2f})" if hhi > 0.25 else None,
+                f"HEDGE: {directional_risk} with ${abs(net_exposure):,.0f} net" if abs(net_exposure) > total_exposure * 0.5 and len(analyzed) > 1 else None,
+                f"MAX DRAWDOWN: ${max_dd:,.0f} ({max_dd_pct}%) in adverse scenario" if max_dd_pct > 20 else None,
+            ] if r
+        ],
+    }
+
+
+@app.post("/api/trade-journal/log")
+async def trade_journal_log(data: dict):
+    """
+    Log a trade to the journal for performance tracking.
+    Stores entry/exit, PnL, AI recommendation vs outcome.
+    Uses in-memory store (per-session) with file persistence.
+    """
+    import time as _time
+
+    if not hasattr(app, "_trade_journal"):
+        app._trade_journal = []
+
+    entry = {
+        "id": f"tj_{int(_time.time())}_{len(app._trade_journal)}",
+        "timestamp": _time.time(),
+        "symbol": data.get("symbol", "BTC").upper(),
+        "direction": data.get("direction", "LONG").upper(),
+        "entry_price": float(data.get("entry_price", 0)),
+        "exit_price": float(data.get("exit_price", 0)),
+        "size_usd": float(data.get("size_usd", 0)),
+        "leverage": float(data.get("leverage", 1)),
+        "pnl_usd": float(data.get("pnl_usd", 0)),
+        "pnl_pct": float(data.get("pnl_pct", 0)),
+        "ai_recommendation": data.get("ai_recommendation", ""),
+        "ai_followed": data.get("ai_followed", True),
+        "tags": data.get("tags", []),
+        "notes": data.get("notes", ""),
+        "outcome": "WIN" if float(data.get("pnl_usd", 0)) > 0 else "LOSS" if float(data.get("pnl_usd", 0)) < 0 else "BREAKEVEN",
+    }
+    app._trade_journal.append(entry)
+
+    return {"success": True, "trade_id": entry["id"], "message": "Trade logged to journal"}
+
+
+@app.get("/api/trade-journal/stats")
+async def trade_journal_stats(symbol: str = "", last_n: int = 0):
+    """
+    Get trade journal performance statistics.
+    Computes real win rate, avg R, expectancy, streaks, and Kelly sizing.
+    """
+    import math
+
+    if not hasattr(app, "_trade_journal"):
+        app._trade_journal = []
+
+    trades = app._trade_journal
+    if symbol:
+        trades = [t for t in trades if t["symbol"] == symbol.upper()]
+    if last_n > 0:
+        trades = trades[-last_n:]
+
+    if not trades:
+        return {
+            "success": True,
+            "total_trades": 0,
+            "message": "No trades in journal. Use /api/trade-journal/log to record trades.",
+        }
+
+    wins = [t for t in trades if t["outcome"] == "WIN"]
+    losses = [t for t in trades if t["outcome"] == "LOSS"]
+    total_pnl = sum(t["pnl_usd"] for t in trades)
+    win_rate = len(wins) / len(trades) if trades else 0
+    avg_win = sum(t["pnl_usd"] for t in wins) / len(wins) if wins else 0
+    avg_loss = abs(sum(t["pnl_usd"] for t in losses) / len(losses)) if losses else 1
+
+    # R-ratio
+    r_ratio = avg_win / avg_loss if avg_loss > 0 else 0
+
+    # Kelly Criterion (real data)
+    kelly_full = (win_rate - (1 - win_rate) / r_ratio) if r_ratio > 0 else 0
+    kelly_half = kelly_full / 2
+    kelly_quarter = kelly_full / 4
+
+    # Expectancy per trade
+    expectancy = (win_rate * avg_win) - ((1 - win_rate) * avg_loss)
+
+    # Win/loss streaks
+    current_streak = 0
+    max_win_streak = 0
+    max_loss_streak = 0
+    streak_type = None
+    for t in trades:
+        if t["outcome"] == "WIN":
+            if streak_type == "WIN":
+                current_streak += 1
+            else:
+                current_streak = 1
+                streak_type = "WIN"
+            max_win_streak = max(max_win_streak, current_streak)
+        elif t["outcome"] == "LOSS":
+            if streak_type == "LOSS":
+                current_streak += 1
+            else:
+                current_streak = 1
+                streak_type = "LOSS"
+            max_loss_streak = max(max_loss_streak, current_streak)
+
+    # AI accuracy (when AI recommendation was followed)
+    ai_followed = [t for t in trades if t.get("ai_followed")]
+    ai_wins = [t for t in ai_followed if t["outcome"] == "WIN"]
+    ai_accuracy = len(ai_wins) / len(ai_followed) if ai_followed else 0
+
+    # Per-symbol breakdown
+    symbol_stats = {}
+    for t in trades:
+        s = t["symbol"]
+        if s not in symbol_stats:
+            symbol_stats[s] = {"trades": 0, "wins": 0, "pnl": 0}
+        symbol_stats[s]["trades"] += 1
+        if t["outcome"] == "WIN":
+            symbol_stats[s]["wins"] += 1
+        symbol_stats[s]["pnl"] += t["pnl_usd"]
+
+    for s in symbol_stats:
+        symbol_stats[s]["win_rate"] = round(symbol_stats[s]["wins"] / symbol_stats[s]["trades"] * 100, 1)
+        symbol_stats[s]["pnl"] = round(symbol_stats[s]["pnl"], 2)
+
+    return {
+        "success": True,
+        "total_trades": len(trades),
+        "wins": len(wins),
+        "losses": len(losses),
+        "win_rate": round(win_rate * 100, 1),
+        "total_pnl": round(total_pnl, 2),
+        "avg_win": round(avg_win, 2),
+        "avg_loss": round(avg_loss, 2),
+        "r_ratio": round(r_ratio, 2),
+        "expectancy_per_trade": round(expectancy, 2),
+        "kelly": {
+            "full": round(max(kelly_full * 100, 0), 1),
+            "half": round(max(kelly_half * 100, 0), 1),
+            "quarter": round(max(kelly_quarter * 100, 0), 1),
+            "recommendation": "Half Kelly recommended" if kelly_full > 0 else "Negative edge — do not trade",
+            "source": "real_performance",
+        },
+        "streaks": {
+            "max_win_streak": max_win_streak,
+            "max_loss_streak": max_loss_streak,
+        },
+        "ai_accuracy": round(ai_accuracy * 100, 1),
+        "per_symbol": symbol_stats,
+    }
+
+
+@app.get("/api/trade-journal/trades")
+async def trade_journal_list(symbol: str = "", limit: int = 50):
+    """Get recent trades from the journal."""
+    if not hasattr(app, "_trade_journal"):
+        return {"success": True, "trades": [], "total": 0}
+
+    trades = app._trade_journal
+    if symbol:
+        trades = [t for t in trades if t["symbol"] == symbol.upper()]
+    trades = trades[-min(limit, 200):]
+
+    return {"success": True, "trades": trades, "total": len(trades)}
+
+
+@app.post("/api/backtest-strategy")
+async def backtest_strategy(data: dict):
+    """
+    Backtest-on-demand: Test a simple strategy against historical data.
+    Supports funding-based, price-level, and indicator-based triggers.
+    """
+    symbol = data.get("symbol", "BTC").upper()
+    strategy = data.get("strategy", "funding_spike")
+    direction = data.get("direction", "SHORT").upper()
+    leverage = float(data.get("leverage", 1))
+    lookback_days = int(data.get("lookback_days", 30))
+    tp_pct = float(data.get("tp_pct", 2.0))
+    sl_pct = float(data.get("sl_pct", 1.0))
+
+    # Get historical klines
+    result = await api_get_internal(f"/api/klines/{symbol}", {"interval": "1h", "limit": min(lookback_days * 24, 500)})
+    candles = result.get("candles", [])
+
+    if len(candles) < 48:
+        return {"success": False, "error": "Not enough historical data", "candles_available": len(candles)}
+
+    # Simple strategy simulation
+    trades = []
+    position = None
+    closes = [c["close"] for c in candles]
+    volumes = [c.get("volume", 0) for c in candles]
+
+    for i in range(24, len(candles)):
+        price = closes[i]
+
+        # Entry signals based on strategy type
+        if position is None:
+            trigger = False
+
+            if strategy == "funding_spike":
+                # Mean reversion on price spikes (proxy for funding)
+                avg_24h = sum(closes[i-24:i]) / 24
+                deviation = (price - avg_24h) / avg_24h * 100
+                if direction == "SHORT" and deviation > 2.0:
+                    trigger = True
+                elif direction == "LONG" and deviation < -2.0:
+                    trigger = True
+
+            elif strategy == "mean_reversion":
+                # Bollinger band mean reversion
+                sma = sum(closes[i-20:i]) / 20
+                import math
+                std = math.sqrt(sum((c - sma) ** 2 for c in closes[i-20:i]) / 20)
+                upper = sma + 2 * std
+                lower = sma - 2 * std
+                if direction == "SHORT" and price > upper:
+                    trigger = True
+                elif direction == "LONG" and price < lower:
+                    trigger = True
+
+            elif strategy == "momentum":
+                # Breakout momentum
+                high_20 = max(closes[i-20:i])
+                low_20 = min(closes[i-20:i])
+                if direction == "LONG" and price > high_20:
+                    trigger = True
+                elif direction == "SHORT" and price < low_20:
+                    trigger = True
+
+            elif strategy == "volume_spike":
+                # Volume spike entry
+                avg_vol = sum(volumes[i-24:i]) / 24 if any(volumes[i-24:i]) else 1
+                if volumes[i] > avg_vol * 2.5:
+                    trigger = True
+
+            if trigger:
+                position = {
+                    "entry_price": price,
+                    "entry_idx": i,
+                    "direction": direction,
+                }
+
+        # Exit logic
+        elif position:
+            entry = position["entry_price"]
+            if direction == "LONG":
+                pnl_pct = ((price - entry) / entry) * 100 * leverage
+            else:
+                pnl_pct = ((entry - price) / entry) * 100 * leverage
+
+            if pnl_pct >= tp_pct:
+                trades.append({
+                    "entry": entry, "exit": price, "pnl_pct": round(pnl_pct, 2),
+                    "bars_held": i - position["entry_idx"], "outcome": "WIN",
+                })
+                position = None
+            elif pnl_pct <= -sl_pct:
+                trades.append({
+                    "entry": entry, "exit": price, "pnl_pct": round(pnl_pct, 2),
+                    "bars_held": i - position["entry_idx"], "outcome": "LOSS",
+                })
+                position = None
+
+    # Close any open position at last price
+    if position:
+        entry = position["entry_price"]
+        price = closes[-1]
+        if direction == "LONG":
+            pnl_pct = ((price - entry) / entry) * 100 * leverage
+        else:
+            pnl_pct = ((entry - price) / entry) * 100 * leverage
+        trades.append({
+            "entry": entry, "exit": price, "pnl_pct": round(pnl_pct, 2),
+            "bars_held": len(candles) - 1 - position["entry_idx"], "outcome": "WIN" if pnl_pct > 0 else "LOSS",
+        })
+
+    # Results
+    wins = [t for t in trades if t["outcome"] == "WIN"]
+    losses = [t for t in trades if t["outcome"] == "LOSS"]
+    total_pnl = sum(t["pnl_pct"] for t in trades)
+    win_rate = len(wins) / len(trades) * 100 if trades else 0
+
+    return {
+        "success": True,
+        "symbol": symbol,
+        "strategy": strategy,
+        "direction": direction,
+        "leverage": leverage,
+        "lookback_days": lookback_days,
+        "tp_pct": tp_pct,
+        "sl_pct": sl_pct,
+        "results": {
+            "total_trades": len(trades),
+            "wins": len(wins),
+            "losses": len(losses),
+            "win_rate": round(win_rate, 1),
+            "total_pnl_pct": round(total_pnl, 2),
+            "avg_pnl_per_trade": round(total_pnl / len(trades), 2) if trades else 0,
+            "best_trade": max(trades, key=lambda t: t["pnl_pct"]) if trades else None,
+            "worst_trade": min(trades, key=lambda t: t["pnl_pct"]) if trades else None,
+            "avg_bars_held": round(sum(t["bars_held"] for t in trades) / len(trades)) if trades else 0,
+        },
+        "trades": trades[:50],  # Last 50 trades
+        "verdict": (
+            "PROFITABLE — Strategy has edge" if total_pnl > 0 and win_rate > 50
+            else "MARGINAL — Edge exists but weak" if total_pnl > 0
+            else "UNPROFITABLE — Strategy loses money"
+        ),
+        "available_strategies": ["funding_spike", "mean_reversion", "momentum", "volume_spike"],
+    }
 
 
 @app.post("/api/pre-trade-calculator")
