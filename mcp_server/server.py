@@ -2,7 +2,7 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (72):
+Tools (80):
   CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
@@ -68,6 +68,14 @@ Tools (72):
     bastion_subscribe_alert      — Subscribe to price/condition alerts
     bastion_check_alerts         — Check active & triggered alerts
     bastion_cancel_alert         — Cancel an alert subscription
+    bastion_create_risk_card     — Shareable risk score card with unique URL
+    bastion_get_performance      — Equity curve + Sharpe + drawdown analytics
+    bastion_record_equity        — Record equity snapshot for tracking
+    bastion_add_webhook          — Register Discord/Telegram/URL webhook
+    bastion_list_webhooks        — List notification webhooks
+    bastion_send_notification    — Push notification to webhooks
+    bastion_get_agent_analytics  — Agent usage + latency dashboard
+    bastion_format_risk          — Beautiful terminal-style risk output
 
   PORTFOLIO (auth required — 'read' scope)
     bastion_get_positions        — All open positions
@@ -1819,9 +1827,17 @@ async def get_tools() -> str:
             "bastion_subscribe_alert — Subscribe to price/condition alerts",
             "bastion_check_alerts — Check active & triggered alerts",
             "bastion_cancel_alert — Cancel an alert subscription",
+            "bastion_create_risk_card — Shareable risk score card",
+            "bastion_get_performance — Portfolio performance analytics",
+            "bastion_record_equity — Record equity snapshot",
+            "bastion_add_webhook — Register notification webhook",
+            "bastion_list_webhooks — List all webhooks",
+            "bastion_send_notification — Push notification to webhooks",
+            "bastion_get_agent_analytics — Agent usage analytics",
+            "bastion_format_risk — Beautiful terminal output formatter",
         ],
     }
-    return json.dumps({"tools": tools, "total": 72}, indent=2)
+    return json.dumps({"tools": tools, "total": 80}, indent=2)
 
 
 @mcp.resource("bastion://exchanges")
@@ -1859,7 +1875,7 @@ async def get_capabilities() -> str:
             "market_structure": "VPVR, pivot detection, auto-support, trendlines",
             "macro": "Yahoo Finance, FRED, CoinGecko, Polymarket",
         },
-        "mcp_tools": 72,
+        "mcp_tools": 80,
         "resources": 6,
         "prompts": 9,
         "trading_actions": ["HOLD", "EXIT_FULL", "TP_PARTIAL", "EXIT_100%", "REDUCE_SIZE", "TRAIL_STOP"],
@@ -2290,6 +2306,247 @@ async def bastion_risk_card(
         "visualization": f"https://bastionfi.tech/api/widget/risk-card?{params}",
         "note": "Open the visualization URL to see an interactive risk card with BASTION branding."
     }, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# SHAREABLE RISK CARDS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_create_risk_card(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    entry_price: float = 0,
+    current_price: float = 0,
+    stop_loss: float = 0,
+    leverage: float = 1,
+    action: str = "HOLD",
+    risk_score: int = 50,
+    reasoning: str = "",
+    confidence: float = 0.75,
+) -> str:
+    """Create a shareable risk score card with a unique URL.
+
+    Generates a beautiful branded card (like Spotify Wrapped for trades) that can be
+    shared on Twitter/X, Discord, and any platform with OG meta tag support. Each card
+    gets a unique URL with full embed previews.
+
+    Args:
+        symbol: Trading pair (e.g., 'BTC', 'ETH', 'SOL')
+        direction: LONG or SHORT
+        entry_price: Position entry price
+        current_price: Current market price
+        stop_loss: Stop loss price (0 = no stop)
+        leverage: Position leverage
+        action: AI recommendation (HOLD, EXIT_FULL, TP_PARTIAL, etc.)
+        risk_score: Risk score 0-100 (higher = more dangerous)
+        reasoning: Brief reasoning for the recommendation
+        confidence: Model confidence 0-1
+
+    Returns:
+        Shareable card URL, embed URL, and card data.
+    """
+    result = await api_post("/api/risk-card/create", {
+        "symbol": symbol, "direction": direction,
+        "entry_price": entry_price, "current_price": current_price,
+        "stop_loss": stop_loss, "leverage": leverage,
+        "action": action, "risk_score": risk_score,
+        "reasoning": reasoning, "confidence": confidence,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# PERFORMANCE ANALYTICS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_get_performance(
+    period: str = "7d",
+) -> str:
+    """Get portfolio performance analytics: equity curve, win rate, Sharpe ratio, max drawdown.
+
+    Comprehensive performance metrics calculated from trade journal entries and
+    equity snapshots. Includes per-symbol breakdown, profit factor, streak analysis,
+    and risk-adjusted returns.
+
+    Args:
+        period: Time period — '1d', '7d', '30d', '90d', or 'all' (default '7d')
+
+    Returns:
+        Win rate, Sharpe ratio, max drawdown, equity curve, per-symbol stats, profit factor.
+    """
+    result = await api_get("/api/analytics/performance", {"period": period})
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_record_equity(
+    equity_usd: float,
+    open_positions: int = 0,
+    daily_pnl: float = 0,
+    win_count: int = 0,
+    loss_count: int = 0,
+    total_trades: int = 0,
+) -> str:
+    """Record an equity snapshot for performance tracking over time.
+
+    Call this periodically to build an equity curve. Snapshots are used to
+    calculate max drawdown, Sharpe ratio, and other time-series metrics.
+
+    Args:
+        equity_usd: Current portfolio equity in USD
+        open_positions: Number of open positions
+        daily_pnl: PnL for today in USD
+        win_count: Total wins to date
+        loss_count: Total losses to date
+        total_trades: Total trades to date
+
+    Returns:
+        Snapshot confirmation.
+    """
+    result = await api_post("/api/analytics/snapshot", {
+        "equity_usd": equity_usd, "open_positions": open_positions,
+        "daily_pnl": daily_pnl, "win_count": win_count,
+        "loss_count": loss_count, "total_trades": total_trades,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# WEBHOOK NOTIFICATIONS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_add_webhook(
+    url: str,
+    webhook_type: str = "custom",
+    events: str = "risk_alert,price_alert,whale_alert",
+) -> str:
+    """Register a webhook for push notifications to Discord, Telegram, or any URL.
+
+    When alerts trigger or risk conditions change, BASTION will POST to your
+    webhook URL with the event details.
+
+    Args:
+        url: Webhook URL (Discord webhook URL, Telegram bot URL, or any HTTPS endpoint)
+        webhook_type: Type — 'discord', 'telegram', or 'custom' (default 'custom')
+        events: Comma-separated events to subscribe to: risk_alert, price_alert, whale_alert, trade_alert
+
+    Returns:
+        Webhook registration confirmation with ID.
+    """
+    event_list = [e.strip() for e in events.split(",") if e.strip()]
+    result = await api_post("/api/notifications/webhook", {
+        "type": webhook_type, "url": url, "events": event_list,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_list_webhooks() -> str:
+    """List all registered notification webhooks.
+
+    Returns:
+        All webhooks with their status, event subscriptions, and fire counts.
+    """
+    result = await api_get("/api/notifications/webhooks")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_send_notification(
+    event: str = "risk_alert",
+    message: str = "",
+) -> str:
+    """Send a notification to all matching webhooks.
+
+    Triggers a push notification to all webhooks subscribed to the given event type.
+    Useful for sending custom alerts from your agent to Discord/Telegram.
+
+    Args:
+        event: Event type — risk_alert, price_alert, whale_alert, trade_alert
+        message: Human-readable alert message
+
+    Returns:
+        Number of webhooks notified.
+    """
+    result = await api_post("/api/notifications/send", {
+        "event": event, "message": message, "payload": {},
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# AGENT ANALYTICS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_get_agent_analytics() -> str:
+    """Get agent performance analytics — tool usage, latency, error rates.
+
+    Shows which MCP tools are called most often, average response times,
+    error rates, P95 latency, and connected agent counts. Like Stripe's
+    dashboard but for MCP usage.
+
+    Returns:
+        Tool usage stats, latency metrics, error rates, connected agents.
+    """
+    result = await api_get("/api/analytics/agents")
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# TERMINAL OUTPUT FORMATTER
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_format_risk(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    action: str = "HOLD",
+    risk_score: int = 50,
+    pnl_pct: float = 0,
+    leverage: float = 1,
+    entry_price: float = 0,
+    current_price: float = 0,
+    reasoning: str = "",
+    confidence: float = 0.75,
+) -> str:
+    """Format a risk evaluation as beautiful terminal-style output.
+
+    Creates a clean, screenshot-worthy ASCII box with risk meter, PnL indicator,
+    and action recommendation. Perfect for sharing in terminal screenshots.
+
+    Args:
+        symbol: Trading pair
+        direction: LONG or SHORT
+        action: AI recommendation
+        risk_score: Risk score 0-100
+        pnl_pct: PnL percentage
+        leverage: Position leverage
+        entry_price: Entry price
+        current_price: Current price
+        reasoning: Brief reasoning
+        confidence: Model confidence 0-1
+
+    Returns:
+        Beautifully formatted terminal output string.
+    """
+    result = await api_post("/api/format/risk", {
+        "symbol": symbol, "direction": direction, "action": action,
+        "risk_score": risk_score, "pnl_pct": pnl_pct, "leverage": leverage,
+        "entry_price": entry_price, "current_price": current_price,
+        "reasoning": reasoning, "confidence": confidence,
+    })
+    if isinstance(result, dict) and "formatted" in result:
+        return result["formatted"]
+    return json.dumps(result, indent=2)
 
 
 # ═════════════════════════════════════════════════════════════════
