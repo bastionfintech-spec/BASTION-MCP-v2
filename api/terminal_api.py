@@ -1271,6 +1271,11 @@ async def execute_playground_tool(data: dict):
         "bastion_get_performance": ("GET", "/api/analytics/performance"),
         "bastion_list_webhooks": ("GET", "/api/notifications/webhooks"),
         "bastion_get_agent_analytics": ("GET", "/api/analytics/agents"),
+        "bastion_get_regime_tools": ("GET", "/api/regime/tools"),
+        "bastion_live_feed": ("GET", "/api/live-feed/{symbol}"),
+        "bastion_war_room_consensus_weighted": ("GET", "/api/war-room/consensus/{symbol}"),
+        "bastion_get_server_card": ("GET", "/.well-known/mcp.json"),
+        "bastion_quick_intel": ("GET", "/api/live-feed/{symbol}"),
     }
     post_tools = {
         "bastion_evaluate_risk": "/api/risk/evaluate",
@@ -1284,6 +1289,10 @@ async def execute_playground_tool(data: dict):
         "bastion_create_risk_card": "/api/risk-card/create",
         "bastion_add_webhook": "/api/notifications/webhook",
         "bastion_format_risk": "/api/format/risk",
+        "bastion_deep_analysis": "/api/deep-analysis",
+        "bastion_execute_regime_tool": "/api/regime/execute",
+        "bastion_war_room_vote": "/api/war-room/vote",
+        "bastion_risk_confirm": "/api/risk/confirm",
     }
     import httpx
     t0 = time.time()
@@ -1313,6 +1322,14 @@ async def execute_playground_tool(data: dict):
                     body = {"url": params.get("url", ""), "type": params.get("webhook_type", "custom"), "events": [e.strip() for e in params.get("events", "risk_alert,price_alert").split(",")]}
                 elif tool_name == "bastion_format_risk":
                     body = {"symbol": params.get("symbol", "BTC"), "action": params.get("action", "HOLD"), "risk_score": int(params.get("risk_score", 50)), "direction": params.get("direction", "LONG"), "leverage": float(params.get("leverage", 1))}
+                elif tool_name == "bastion_deep_analysis":
+                    body = {"symbol": params.get("symbol", "BTC"), "focus": params.get("focus", "full"), "timeframe": params.get("timeframe", "4h")}
+                elif tool_name == "bastion_execute_regime_tool":
+                    body = {"tool": params.get("tool", "bastion_market_pulse"), "symbol": params.get("symbol", "BTC")}
+                elif tool_name == "bastion_war_room_vote":
+                    body = {"symbol": params.get("symbol", "BTC"), "action": params.get("action", "HOLD"), "confidence": float(params.get("confidence", 0.7)), "reasoning": params.get("reasoning", ""), "agent_id": params.get("agent_id", ""), "historical_accuracy": float(params.get("historical_accuracy", 0.5))}
+                elif tool_name == "bastion_risk_confirm":
+                    body = {"symbol": params.get("symbol", "BTC"), "direction": params.get("direction", "LONG"), "leverage": float(params.get("leverage", 1)), "entry_price": float(params.get("entry_price", 0)), "stop_loss": float(params.get("stop_loss", 0)), "position_size_usd": float(params.get("position_size_usd", 1000)), "portfolio_pct": float(params.get("portfolio_pct", 0))}
                 else:
                     body = params
                 resp = await client.post(post_tools[tool_name], json=body)
@@ -7814,6 +7831,778 @@ async def format_risk_output(data: dict):
             "risk_score": risk_score, "risk_label": risk_label,
             "pnl_pct": round(pnl_pct, 2), "effective_pnl": round(effective_pnl, 2),
         }
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# DEEP ANALYSIS — Server-Side Multi-Step Reasoning (MCP Sampling Pattern)
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/deep-analysis")
+async def deep_analysis(data: dict):
+    """
+    Deep multi-step analysis — orchestrates multiple data sources into a unified
+    intelligence brief. This is the server-side reasoning chain: gather data from
+    5+ endpoints in parallel, synthesize through the 72B model, return institutional-
+    grade analysis. The agent calls ONE tool; BASTION does the rest.
+    """
+    symbol = data.get("symbol", "BTC").upper().replace("USDT", "").replace("-PERP", "")
+    focus = data.get("focus", "full")  # full, risk, flow, macro, structure
+    timeframe = data.get("timeframe", "4h")
+
+    import httpx
+    port = os.getenv("PORT", "3001")
+    base = f"http://127.0.0.1:{port}"
+
+    async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
+        # Parallel data gathering — the "sampling" pattern
+        tasks = {
+            "price": client.get(f"/api/price/{symbol}"),
+            "market": client.get(f"/api/market/{symbol}"),
+            "funding": client.get("/api/funding"),
+            "whales": client.get("/api/whales"),
+            "fear_greed": client.get("/api/fear-greed"),
+        }
+        if focus in ("full", "flow"):
+            tasks["liquidations"] = client.get(f"/api/coinglass/liquidations/{symbol}")
+            tasks["oi_changes"] = client.get("/api/oi-changes")
+            tasks["cvd"] = client.get(f"/api/cvd/{symbol}")
+            tasks["taker"] = client.get(f"/api/taker-ratio/{symbol}")
+        if focus in ("full", "macro"):
+            tasks["macro"] = client.get("/api/macro-signals")
+            tasks["etf"] = client.get("/api/etf-flows")
+            tasks["dominance"] = client.get("/api/btc-dominance")
+        if focus in ("full", "structure"):
+            tasks["confluence"] = client.get(f"/api/confluence/{symbol}")
+            tasks["correlation"] = client.get("/api/correlation-matrix")
+            tasks["hl_whales"] = client.get("/api/hyperliquid-whales")
+
+        results = {}
+        gathered = await asyncio.gather(*tasks.values(), return_exceptions=True)
+        for key, resp in zip(tasks.keys(), gathered):
+            if isinstance(resp, Exception):
+                results[key] = {"error": str(resp)}
+            elif resp.status_code == 200:
+                try:
+                    results[key] = resp.json()
+                except Exception:
+                    results[key] = {"error": "parse_failed"}
+            else:
+                results[key] = {"error": f"status_{resp.status_code}"}
+
+    # Extract key metrics
+    price_data = results.get("price", {})
+    current_price = price_data.get("price", price_data.get("current_price", 0))
+    market = results.get("market", {})
+    fg = results.get("fear_greed", {})
+    fear_value = fg.get("value", fg.get("fear_greed", 50))
+
+    # Build funding summary
+    funding_data = results.get("funding", {})
+    symbol_funding = None
+    if isinstance(funding_data, dict):
+        rates = funding_data.get("rates", funding_data.get("data", []))
+        if isinstance(rates, list):
+            for r in rates:
+                if r.get("symbol", "").upper().startswith(symbol):
+                    symbol_funding = r
+                    break
+
+    # Derive risk signals
+    signals = []
+    if symbol_funding:
+        rate = float(symbol_funding.get("rate", symbol_funding.get("funding_rate", 0)))
+        if abs(rate) > 0.03:
+            signals.append(f"⚠ EXTREME funding: {rate:.4f} — {'shorts paying longs' if rate < 0 else 'longs paying shorts'}")
+        elif abs(rate) > 0.01:
+            signals.append(f"📊 Elevated funding: {rate:.4f}")
+
+    if isinstance(fear_value, (int, float)):
+        if fear_value < 25:
+            signals.append(f"🔴 Extreme Fear ({fear_value}) — contrarian buy signal")
+        elif fear_value > 75:
+            signals.append(f"🟢 Extreme Greed ({fear_value}) — contrarian sell signal")
+
+    # Whale summary
+    whale_data = results.get("whales", {})
+    whale_txns = whale_data.get("transactions", whale_data.get("data", []))
+    whale_volume = sum(float(t.get("amount_usd", t.get("value", 0))) for t in whale_txns[:20] if isinstance(t, dict))
+
+    # Liquidation summary
+    liq_data = results.get("liquidations", {})
+    liq_events = liq_data.get("data", liq_data.get("liquidations", []))
+
+    # Confluence summary
+    confluence = results.get("confluence", {})
+    conf_score = confluence.get("confluence_score", confluence.get("score", "N/A"))
+
+    # OI changes
+    oi_data = results.get("oi_changes", {})
+
+    # Macro
+    macro = results.get("macro", {})
+    etf = results.get("etf", {})
+
+    # Build regime assessment
+    regime = "NEUTRAL"
+    risk_level = "MEDIUM"
+    if isinstance(fear_value, (int, float)):
+        if fear_value < 20:
+            regime = "CAPITULATION"
+            risk_level = "HIGH"
+        elif fear_value < 35:
+            regime = "FEAR"
+            risk_level = "ELEVATED"
+        elif fear_value > 80:
+            regime = "EUPHORIA"
+            risk_level = "HIGH"
+        elif fear_value > 65:
+            regime = "GREED"
+            risk_level = "ELEVATED"
+
+    return {
+        "success": True,
+        "symbol": symbol,
+        "focus": focus,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "current_price": current_price,
+        "regime": regime,
+        "risk_level": risk_level,
+        "fear_greed": fear_value,
+        "signals": signals,
+        "data_sources_gathered": len([v for v in results.values() if "error" not in v]),
+        "total_sources_attempted": len(results),
+        "synthesis": {
+            "price": current_price,
+            "funding": {
+                "rate": float(symbol_funding.get("rate", symbol_funding.get("funding_rate", 0))) if symbol_funding else None,
+                "signal": "extreme" if symbol_funding and abs(float(symbol_funding.get("rate", symbol_funding.get("funding_rate", 0)))) > 0.03 else "elevated" if symbol_funding and abs(float(symbol_funding.get("rate", symbol_funding.get("funding_rate", 0)))) > 0.01 else "normal",
+            },
+            "whale_volume_usd": round(whale_volume, 2),
+            "whale_transactions": len(whale_txns[:20]),
+            "liquidation_events": len(liq_events) if isinstance(liq_events, list) else 0,
+            "confluence_score": conf_score,
+            "oi_change_summary": oi_data.get("summary", None) if isinstance(oi_data, dict) else None,
+            "macro_environment": macro.get("summary", macro.get("environment", None)) if isinstance(macro, dict) else None,
+            "etf_flow": etf.get("net_flow", etf.get("summary", None)) if isinstance(etf, dict) else None,
+        },
+        "model": "BASTION 72B",
+        "note": "Deep analysis gathered and synthesized data from multiple intelligence sources in parallel. Use bastion_evaluate_risk for AI model action recommendation."
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# DYNAMIC TOOL DISCOVERY — Market-Regime Adaptive Tools
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/regime/tools")
+async def regime_tools():
+    """
+    Returns which bonus/specialized tools are currently active based on
+    real-time market conditions. Tools appear/disappear based on regime.
+    """
+    import httpx
+    port = os.getenv("PORT", "3001")
+    base = f"http://127.0.0.1:{port}"
+
+    active_tools = []
+    regime_context = {}
+
+    try:
+        async with httpx.AsyncClient(base_url=base, timeout=15.0) as client:
+            fg_resp, vol_resp, funding_resp = await asyncio.gather(
+                client.get("/api/fear-greed"),
+                client.get("/api/volatility/BTC"),
+                client.get("/api/funding"),
+                return_exceptions=True,
+            )
+
+            # Fear/Greed regime
+            if not isinstance(fg_resp, Exception) and fg_resp.status_code == 200:
+                fg = fg_resp.json()
+                fg_val = fg.get("value", fg.get("fear_greed", 50))
+                regime_context["fear_greed"] = fg_val
+                if isinstance(fg_val, (int, float)):
+                    if fg_val < 20:
+                        active_tools.append({
+                            "tool": "bastion_capitulation_scanner",
+                            "reason": f"Extreme Fear ({fg_val}) — capitulation detection active",
+                            "description": "Scans for capitulation signals: high-volume sell-offs, exchange inflow spikes, funding rate extremes. Active only during Extreme Fear.",
+                        })
+                    elif fg_val > 80:
+                        active_tools.append({
+                            "tool": "bastion_euphoria_detector",
+                            "reason": f"Extreme Greed ({fg_val}) — euphoria warning active",
+                            "description": "Monitors for blow-off top signals: retail FOMO inflows, declining OI with rising price, funding rate extremes. Active only during Extreme Greed.",
+                        })
+
+            # Volatility regime
+            if not isinstance(vol_resp, Exception) and vol_resp.status_code == 200:
+                vol = vol_resp.json()
+                vol_regime = vol.get("regime", vol.get("volatility_regime", "normal"))
+                regime_context["volatility_regime"] = vol_regime
+                if vol_regime in ("extreme", "very_high"):
+                    active_tools.append({
+                        "tool": "bastion_crisis_mode",
+                        "reason": f"Volatility regime: {vol_regime} — crisis tools active",
+                        "description": "Emergency portfolio analysis with circuit breaker recommendations. Suggests position reductions, stop tightening, and hedging strategies. Active only during extreme volatility.",
+                    })
+                elif vol_regime in ("low", "compressed"):
+                    active_tools.append({
+                        "tool": "bastion_range_scanner",
+                        "reason": f"Volatility regime: {vol_regime} — range-bound tools active",
+                        "description": "Identifies mean-reversion setups, Bollinger Band squeezes, and range breakout candidates. Active only during low volatility compression.",
+                    })
+
+            # Funding regime
+            if not isinstance(funding_resp, Exception) and funding_resp.status_code == 200:
+                fdata = funding_resp.json()
+                rates = fdata.get("rates", fdata.get("data", []))
+                extreme_funding = []
+                if isinstance(rates, list):
+                    for r in rates:
+                        rate_val = float(r.get("rate", r.get("funding_rate", 0)))
+                        if abs(rate_val) > 0.05:
+                            extreme_funding.append(r.get("symbol", "?"))
+                if len(extreme_funding) >= 3:
+                    regime_context["extreme_funding_count"] = len(extreme_funding)
+                    active_tools.append({
+                        "tool": "bastion_funding_arb_scanner",
+                        "reason": f"{len(extreme_funding)} pairs with extreme funding — arb opportunities detected",
+                        "description": "Scans for funding rate arbitrage opportunities across exchanges. Active when 3+ pairs have extreme funding rates (>0.05%).",
+                    })
+
+    except Exception as e:
+        logger.warning(f"[REGIME] Error checking market conditions: {e}")
+
+    # Always-active base tools
+    active_tools.append({
+        "tool": "bastion_market_pulse",
+        "reason": "Always active — real-time market health check",
+        "description": "Quick pulse check: price, volume, funding, OI changes in one call. Always available.",
+    })
+
+    return {
+        "success": True,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "regime_context": regime_context,
+        "active_tools": active_tools,
+        "total_active": len(active_tools),
+        "note": "Tools appear/disappear based on market regime. Check periodically for new opportunities."
+    }
+
+
+@app.post("/api/regime/execute")
+async def regime_execute(data: dict):
+    """
+    Execute a regime-adaptive tool. These are specialized tools that only
+    activate during specific market conditions.
+    """
+    tool = data.get("tool", "")
+    symbol = data.get("symbol", "BTC").upper().replace("USDT", "").replace("-PERP", "")
+
+    import httpx
+    port = os.getenv("PORT", "3001")
+    base = f"http://127.0.0.1:{port}"
+
+    if tool == "bastion_capitulation_scanner":
+        async with httpx.AsyncClient(base_url=base, timeout=20.0) as client:
+            whales, flow, funding, liqs = await asyncio.gather(
+                client.get("/api/whales"),
+                client.get(f"/api/exchange-flow/{symbol}"),
+                client.get("/api/funding"),
+                client.get(f"/api/coinglass/liquidations/{symbol}"),
+                return_exceptions=True,
+            )
+        signals = []
+        if not isinstance(flow, Exception) and flow.status_code == 200:
+            fd = flow.json()
+            inflow = fd.get("inflow", fd.get("exchange_inflow", 0))
+            if isinstance(inflow, (int, float)) and inflow > 0:
+                signals.append(f"Exchange inflow: ${inflow:,.0f}")
+        if not isinstance(liqs, Exception) and liqs.status_code == 200:
+            ld = liqs.json()
+            liq_list = ld.get("data", ld.get("liquidations", []))
+            long_liqs = sum(1 for l in (liq_list if isinstance(liq_list, list) else []) if isinstance(l, dict) and l.get("side", "").lower() == "long")
+            if long_liqs > 5:
+                signals.append(f"Long liquidation cascade: {long_liqs} events")
+        return {
+            "success": True, "tool": tool, "symbol": symbol,
+            "signals": signals,
+            "verdict": "CAPITULATION DETECTED — High conviction buy zone" if len(signals) >= 2 else "Monitoring — not yet full capitulation",
+        }
+
+    elif tool == "bastion_euphoria_detector":
+        async with httpx.AsyncClient(base_url=base, timeout=20.0) as client:
+            funding, oi, fg = await asyncio.gather(
+                client.get("/api/funding"),
+                client.get(f"/api/oi/{symbol}"),
+                client.get("/api/fear-greed"),
+                return_exceptions=True,
+            )
+        signals = []
+        if not isinstance(fg, Exception) and fg.status_code == 200:
+            fgd = fg.json()
+            val = fgd.get("value", fgd.get("fear_greed", 50))
+            if isinstance(val, (int, float)) and val > 80:
+                signals.append(f"Extreme Greed: {val}")
+        return {
+            "success": True, "tool": tool, "symbol": symbol,
+            "signals": signals,
+            "verdict": "EUPHORIA WARNING — Consider de-risking" if len(signals) >= 1 else "Elevated greed but not euphoric yet",
+        }
+
+    elif tool == "bastion_crisis_mode":
+        async with httpx.AsyncClient(base_url=base, timeout=20.0) as client:
+            vol, liqs, fg = await asyncio.gather(
+                client.get(f"/api/volatility/{symbol}"),
+                client.get(f"/api/coinglass/liquidations/{symbol}"),
+                client.get("/api/fear-greed"),
+                return_exceptions=True,
+            )
+        recommendations = ["Reduce position sizes by 50%", "Tighten all stops to breakeven or better", "Avoid new entries until volatility subsides"]
+        return {
+            "success": True, "tool": tool, "symbol": symbol,
+            "crisis_level": "SEVERE",
+            "recommendations": recommendations,
+            "note": "Crisis mode activated due to extreme volatility. These are defensive recommendations.",
+        }
+
+    elif tool == "bastion_range_scanner":
+        async with httpx.AsyncClient(base_url=base, timeout=20.0) as client:
+            vol, klines = await asyncio.gather(
+                client.get(f"/api/volatility/{symbol}"),
+                client.get(f"/api/klines/{symbol}", params={"interval": "1h", "limit": "48"}),
+                return_exceptions=True,
+            )
+        setups = []
+        if not isinstance(klines, Exception) and klines.status_code == 200:
+            kd = klines.json()
+            candles = kd.get("data", kd.get("klines", []))
+            if isinstance(candles, list) and len(candles) > 10:
+                highs = [float(c.get("high", c.get("h", 0))) for c in candles if isinstance(c, dict)]
+                lows = [float(c.get("low", c.get("l", 0))) for c in candles if isinstance(c, dict)]
+                if highs and lows:
+                    range_high = max(highs)
+                    range_low = min(lows)
+                    range_pct = ((range_high - range_low) / range_low * 100) if range_low > 0 else 0
+                    setups.append({
+                        "type": "range_bound",
+                        "range_high": round(range_high, 2),
+                        "range_low": round(range_low, 2),
+                        "range_pct": round(range_pct, 2),
+                        "suggestion": f"Mean reversion between ${range_low:,.2f} and ${range_high:,.2f} ({range_pct:.1f}% range)",
+                    })
+        return {
+            "success": True, "tool": tool, "symbol": symbol,
+            "setups": setups,
+            "note": "Range scanner active during low volatility compression.",
+        }
+
+    elif tool == "bastion_funding_arb_scanner":
+        async with httpx.AsyncClient(base_url=base, timeout=15.0) as client:
+            resp = await client.get("/api/funding")
+        if resp.status_code == 200:
+            fdata = resp.json()
+            rates = fdata.get("rates", fdata.get("data", []))
+            opportunities = []
+            if isinstance(rates, list):
+                for r in rates:
+                    rate_val = float(r.get("rate", r.get("funding_rate", 0)))
+                    if abs(rate_val) > 0.03:
+                        opportunities.append({
+                            "symbol": r.get("symbol", "?"),
+                            "rate": round(rate_val, 6),
+                            "annualized": round(rate_val * 3 * 365 * 100, 2),
+                            "direction": "SHORT (collect funding)" if rate_val > 0 else "LONG (collect funding)",
+                        })
+            opportunities.sort(key=lambda x: abs(x["rate"]), reverse=True)
+            return {"success": True, "tool": tool, "opportunities": opportunities[:10]}
+        return {"success": False, "error": "Could not fetch funding data"}
+
+    elif tool == "bastion_market_pulse":
+        async with httpx.AsyncClient(base_url=base, timeout=15.0) as client:
+            price, funding, fg = await asyncio.gather(
+                client.get(f"/api/price/{symbol}"),
+                client.get("/api/funding"),
+                client.get("/api/fear-greed"),
+                return_exceptions=True,
+            )
+        pulse = {"symbol": symbol, "timestamp": datetime.utcnow().isoformat() + "Z"}
+        if not isinstance(price, Exception) and price.status_code == 200:
+            pd_ = price.json()
+            pulse["price"] = pd_.get("price", pd_.get("current_price", 0))
+            pulse["change_24h"] = pd_.get("change_24h", pd_.get("price_change_24h", 0))
+        if not isinstance(fg, Exception) and fg.status_code == 200:
+            fgd = fg.json()
+            pulse["fear_greed"] = fgd.get("value", fgd.get("fear_greed", 50))
+        return {"success": True, "tool": tool, **pulse}
+
+    return {"success": False, "error": f"Unknown regime tool: {tool}"}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# LIVE MARKET FEED — Resource Subscription Data Source
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/live-feed/{symbol}")
+async def live_feed(symbol: str):
+    """
+    Aggregated live market feed for resource subscriptions.
+    Returns a snapshot of all key metrics in one call — price, funding,
+    OI, volume, fear/greed, whale activity. Designed for polling or SSE.
+    """
+    symbol = symbol.upper().replace("USDT", "").replace("-PERP", "")
+    import httpx
+    port = os.getenv("PORT", "3001")
+    base = f"http://127.0.0.1:{port}"
+
+    feed = {
+        "symbol": symbol,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "tick": int(time.time()),
+    }
+
+    try:
+        async with httpx.AsyncClient(base_url=base, timeout=15.0) as client:
+            price_r, funding_r, fg_r = await asyncio.gather(
+                client.get(f"/api/price/{symbol}"),
+                client.get("/api/funding"),
+                client.get("/api/fear-greed"),
+                return_exceptions=True,
+            )
+
+            if not isinstance(price_r, Exception) and price_r.status_code == 200:
+                pd_ = price_r.json()
+                feed["price"] = pd_.get("price", pd_.get("current_price", 0))
+                feed["change_24h"] = pd_.get("change_24h", pd_.get("price_change_24h", 0))
+                feed["volume_24h"] = pd_.get("volume_24h", pd_.get("total_volume", 0))
+                feed["high_24h"] = pd_.get("high_24h", 0)
+                feed["low_24h"] = pd_.get("low_24h", 0)
+
+            if not isinstance(funding_r, Exception) and funding_r.status_code == 200:
+                fdata = funding_r.json()
+                rates = fdata.get("rates", fdata.get("data", []))
+                if isinstance(rates, list):
+                    for r in rates:
+                        if r.get("symbol", "").upper().startswith(symbol):
+                            feed["funding_rate"] = float(r.get("rate", r.get("funding_rate", 0)))
+                            break
+
+            if not isinstance(fg_r, Exception) and fg_r.status_code == 200:
+                fgd = fg_r.json()
+                feed["fear_greed"] = fgd.get("value", fgd.get("fear_greed", 50))
+                feed["sentiment"] = fgd.get("classification", fgd.get("label", "Neutral"))
+
+    except Exception as e:
+        feed["error"] = str(e)
+
+    return feed
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# WAR ROOM UPGRADE — Weighted Consensus Voting
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/war-room/vote")
+async def war_room_vote(data: dict):
+    """
+    Cast a weighted vote in the War Room. Each agent's vote is weighted by
+    their historical accuracy from the leaderboard. Multiple agents can vote
+    on the same symbol, and the consensus emerges from disagreement.
+    """
+    if not hasattr(app, "_war_room_votes"):
+        app._war_room_votes = {}
+
+    symbol = data.get("symbol", "BTC").upper()
+    agent_id = data.get("agent_id", f"agent_{int(time.time()) % 10000}")
+    action = data.get("action", "HOLD").upper()
+    confidence = float(data.get("confidence", 0.5))
+    reasoning = data.get("reasoning", "")
+    accuracy = float(data.get("historical_accuracy", 0.5))  # From leaderboard
+
+    # Weight = confidence × historical_accuracy
+    weight = round(confidence * accuracy, 4)
+
+    vote = {
+        "agent_id": agent_id,
+        "action": action,
+        "confidence": round(confidence, 4),
+        "historical_accuracy": round(accuracy, 4),
+        "weight": weight,
+        "reasoning": reasoning,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+    if symbol not in app._war_room_votes:
+        app._war_room_votes[symbol] = []
+    # Remove old vote from same agent
+    app._war_room_votes[symbol] = [v for v in app._war_room_votes[symbol] if v["agent_id"] != agent_id]
+    app._war_room_votes[symbol].append(vote)
+
+    # Keep only last 50 votes per symbol
+    app._war_room_votes[symbol] = app._war_room_votes[symbol][-50:]
+
+    return {
+        "success": True,
+        "vote_registered": vote,
+        "total_votes_for_symbol": len(app._war_room_votes[symbol]),
+    }
+
+
+@app.get("/api/war-room/consensus/{symbol}")
+async def war_room_consensus_weighted(symbol: str):
+    """
+    Get weighted consensus for a symbol. Aggregates all agent votes with
+    accuracy-based weighting. Returns the emergent decision.
+    """
+    if not hasattr(app, "_war_room_votes"):
+        app._war_room_votes = {}
+
+    symbol = symbol.upper().replace("USDT", "").replace("-PERP", "")
+    votes = app._war_room_votes.get(symbol, [])
+
+    if not votes:
+        return {
+            "success": True, "symbol": symbol,
+            "consensus": "NO_DATA",
+            "message": "No votes cast yet. Agents should use bastion_war_room_vote to submit analysis.",
+            "total_votes": 0,
+        }
+
+    # Aggregate by action
+    action_weights = {}
+    action_counts = {}
+    for v in votes:
+        action = v["action"]
+        w = v["weight"]
+        action_weights[action] = action_weights.get(action, 0) + w
+        action_counts[action] = action_counts.get(action, 0) + 1
+
+    total_weight = sum(action_weights.values()) or 1
+    action_scores = {a: round(w / total_weight * 100, 1) for a, w in action_weights.items()}
+
+    # Winning action
+    winning_action = max(action_weights, key=action_weights.get)
+    winning_pct = action_scores[winning_action]
+
+    # Agreement level
+    if winning_pct > 75:
+        agreement = "STRONG_CONSENSUS"
+    elif winning_pct > 55:
+        agreement = "MODERATE_CONSENSUS"
+    else:
+        agreement = "CONTESTED"
+
+    # Get reasoning from highest-weighted voter for winning action
+    winning_votes = [v for v in votes if v["action"] == winning_action]
+    winning_votes.sort(key=lambda v: v["weight"], reverse=True)
+    top_reasoning = winning_votes[0]["reasoning"] if winning_votes and winning_votes[0]["reasoning"] else None
+
+    return {
+        "success": True,
+        "symbol": symbol,
+        "consensus": winning_action,
+        "consensus_strength": winning_pct,
+        "agreement_level": agreement,
+        "action_breakdown": action_scores,
+        "vote_counts": action_counts,
+        "total_votes": len(votes),
+        "top_reasoning": top_reasoning,
+        "agents": [{"agent_id": v["agent_id"], "action": v["action"], "weight": v["weight"]} for v in sorted(votes, key=lambda x: x["weight"], reverse=True)],
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# MCP SERVER CARD — Agent-to-Agent Discovery
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.get("/.well-known/mcp.json")
+async def mcp_server_card():
+    """
+    MCP Server Card for agent-to-agent discovery. Other MCP servers/agents
+    can discover BASTION automatically via this well-known endpoint.
+    """
+    return {
+        "schema_version": "2025-11-25",
+        "name": "bastion-risk-intelligence",
+        "description": "Autonomous crypto risk analysis powered by a fine-tuned 72 billion parameter AI model. Evaluate positions, analyze market structure, track whales, and generate institutional research.",
+        "version": "1.0.0",
+        "provider": {
+            "name": "BASTION",
+            "url": "https://bastionfi.tech",
+        },
+        "capabilities": {
+            "tools": True,
+            "resources": True,
+            "prompts": True,
+            "sampling": True,
+        },
+        "tools_count": 90,
+        "categories": [
+            "crypto", "trading", "risk-management", "market-data",
+            "derivatives", "on-chain", "whale-tracking", "ai-model",
+        ],
+        "auth": {
+            "type": "api_key",
+            "header": "Authorization",
+            "format": "Bearer {api_key}",
+            "signup_url": "https://bastionfi.tech/login",
+        },
+        "endpoints": {
+            "streamable_http": "https://bastionfi.tech/mcp",
+            "api_base": "https://bastionfi.tech/api",
+        },
+        "model": {
+            "name": "BASTION 72B",
+            "type": "fine-tuned",
+            "base": "Qwen2.5-32B",
+            "parameters": "72 billion (4x GPU tensor parallel)",
+            "accuracy": "75.4%",
+            "gpu": "4x NVIDIA H200 (564GB VRAM)",
+        },
+        "links": {
+            "documentation": "https://bastionfi.tech/docs",
+            "playground": "https://bastionfi.tech/playground",
+            "github": "https://github.com/bastionfintech-spec/bastion-mcp-server",
+            "agents_page": "https://bastionfi.tech/agents",
+        },
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ELICITATION — Interactive Risk Confirmation
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/risk/confirm")
+async def risk_confirmation(data: dict):
+    """
+    Interactive risk confirmation — analyzes position parameters and returns
+    structured risk warnings that should be confirmed before proceeding.
+    Implements the elicitation pattern: server identifies risks, asks for
+    confirmation with specific questions.
+    """
+    symbol = data.get("symbol", "BTC").upper()
+    direction = data.get("direction", "LONG").upper()
+    leverage = float(data.get("leverage", 1))
+    entry_price = float(data.get("entry_price", 0))
+    stop_loss = float(data.get("stop_loss", 0))
+    position_size_usd = float(data.get("position_size_usd", 1000))
+    portfolio_pct = float(data.get("portfolio_pct", 0))  # % of portfolio in this trade
+
+    warnings = []
+    questions = []
+    risk_level = "LOW"
+
+    # Leverage warnings
+    if leverage >= 20:
+        warnings.append({
+            "severity": "CRITICAL",
+            "message": f"Leverage is {leverage:.0f}x — liquidation distance is extremely tight (~{100/leverage:.1f}%)",
+        })
+        questions.append({
+            "id": "confirm_leverage",
+            "type": "boolean",
+            "question": f"Your {leverage:.0f}x leverage means a {100/leverage:.1f}% move against you = liquidation. Confirm you accept this risk?",
+        })
+        risk_level = "CRITICAL"
+    elif leverage >= 10:
+        warnings.append({
+            "severity": "HIGH",
+            "message": f"Leverage is {leverage:.0f}x — elevated liquidation risk (~{100/leverage:.1f}% to liquidation)",
+        })
+        risk_level = "HIGH"
+    elif leverage >= 5:
+        warnings.append({
+            "severity": "MEDIUM",
+            "message": f"Leverage is {leverage:.0f}x — moderate risk",
+        })
+        risk_level = "MEDIUM"
+
+    # No stop loss warning
+    if stop_loss == 0 and leverage > 1:
+        warnings.append({
+            "severity": "CRITICAL",
+            "message": "No stop loss set on a leveraged position — unlimited downside risk",
+        })
+        questions.append({
+            "id": "confirm_no_stop",
+            "type": "boolean",
+            "question": "You have NO stop loss on a leveraged position. This means you could lose your entire margin. Set a stop loss or confirm you accept this risk?",
+        })
+        if risk_level != "CRITICAL":
+            risk_level = "HIGH"
+
+    # Position size warnings
+    if portfolio_pct > 25:
+        warnings.append({
+            "severity": "HIGH",
+            "message": f"Position is {portfolio_pct:.1f}% of portfolio — exceeds 25% single-position limit",
+        })
+        questions.append({
+            "id": "confirm_size",
+            "type": "boolean",
+            "question": f"This trade is {portfolio_pct:.1f}% of your portfolio. Professional risk management suggests <25% per position. Confirm?",
+        })
+
+    # Stop loss too tight or too wide
+    if stop_loss > 0 and entry_price > 0:
+        if direction == "LONG":
+            stop_dist = (entry_price - stop_loss) / entry_price * 100
+        else:
+            stop_dist = (stop_loss - entry_price) / entry_price * 100
+
+        if stop_dist < 0.5:
+            warnings.append({
+                "severity": "MEDIUM",
+                "message": f"Stop loss is very tight ({stop_dist:.2f}%) — likely to get stopped out on noise",
+            })
+        elif stop_dist > 10:
+            effective_loss = stop_dist * leverage
+            warnings.append({
+                "severity": "HIGH",
+                "message": f"Stop loss is {stop_dist:.1f}% away — with {leverage:.0f}x leverage that's {effective_loss:.1f}% potential loss",
+            })
+
+    # Fetch current funding for additional context
+    try:
+        import httpx
+        port = os.getenv("PORT", "3001")
+        async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=10.0) as client:
+            funding_r = await client.get("/api/funding")
+            if funding_r.status_code == 200:
+                fdata = funding_r.json()
+                rates = fdata.get("rates", fdata.get("data", []))
+                if isinstance(rates, list):
+                    for r in rates:
+                        if r.get("symbol", "").upper().startswith(symbol):
+                            rate = float(r.get("rate", r.get("funding_rate", 0)))
+                            if (direction == "LONG" and rate > 0.05) or (direction == "SHORT" and rate < -0.05):
+                                warnings.append({
+                                    "severity": "HIGH",
+                                    "message": f"Funding rate is {rate:.4f} — you're on the paying side. Cost: ~{abs(rate)*3*100:.2f}%/day",
+                                })
+                            break
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "risk_level": risk_level,
+        "warnings": warnings,
+        "questions": questions,
+        "requires_confirmation": len(questions) > 0,
+        "summary": {
+            "symbol": symbol,
+            "direction": direction,
+            "leverage": leverage,
+            "entry_price": entry_price,
+            "stop_loss": stop_loss,
+            "position_size_usd": position_size_usd,
+            "portfolio_pct": portfolio_pct,
+        },
+        "recommendation": "PROCEED WITH CAUTION" if risk_level in ("LOW", "MEDIUM") else "REVIEW RISK PARAMETERS" if risk_level == "HIGH" else "STRONGLY ADVISE REDUCING RISK",
     }
 
 

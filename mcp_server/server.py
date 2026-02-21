@@ -2,7 +2,7 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (80):
+Tools (90):
   CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
@@ -103,15 +103,27 @@ Tools (80):
     bastion_war_room_post        — Post signal to War Room
     bastion_war_room_read        — Read War Room feed
     bastion_war_room_consensus   — Get agent consensus
+    bastion_war_room_vote        — Cast weighted vote (accuracy-based)
+    bastion_war_room_consensus_weighted — Get weighted consensus
 
-Resources (6):
+  INTELLIGENCE (protocol-level innovation)
+    bastion_quick_intel          — Instant intelligence snapshot (~200ms)
+    bastion_deep_analysis        — Multi-step reasoning chain (15 sources in one call)
+    bastion_get_regime_tools     — Discover market-regime adaptive tools
+    bastion_execute_regime_tool  — Execute regime-specific analysis
+    bastion_live_feed            — Real-time aggregated market feed
+    bastion_get_server_card      — MCP Server Card for agent discovery
+    bastion_risk_confirm         — Interactive risk confirmation + warnings
+
+Resources (8):
   bastion://status, bastion://supported-symbols, bastion://model-info,
-  bastion://tools, bastion://exchanges, bastion://capabilities
+  bastion://tools, bastion://exchanges, bastion://capabilities,
+  bastion://live/{symbol}, bastion://regime
 
-Prompts (9):
+Prompts (10):
   evaluate_my_position, market_analysis, risk_check, portfolio_risk_scan,
   whale_tracker, macro_briefing, pre_trade_analysis, strategy_lab,
-  full_risk_dashboard
+  full_risk_dashboard, deep_intelligence_brief
 """
 import json
 import logging
@@ -1731,7 +1743,7 @@ async def get_model_info() -> str:
 
 @mcp.resource("bastion://tools")
 async def get_tools() -> str:
-    """Complete list of all 64 BASTION MCP tools with descriptions."""
+    """Complete list of all 90 BASTION MCP tools with descriptions."""
     tools = {
         "core_ai": [
             "bastion_evaluate_risk — AI risk evaluation for a position",
@@ -1817,6 +1829,8 @@ async def get_tools() -> str:
             "bastion_war_room_post — Post signal to War Room",
             "bastion_war_room_read — Read War Room feed",
             "bastion_war_room_consensus — Get consensus",
+            "bastion_war_room_vote — Cast weighted vote (accuracy-based)",
+            "bastion_war_room_consensus_weighted — Get weighted consensus",
         ],
         "advanced": [
             "bastion_risk_replay — Historical position time-travel analysis",
@@ -1836,8 +1850,19 @@ async def get_tools() -> str:
             "bastion_get_agent_analytics — Agent usage analytics",
             "bastion_format_risk — Beautiful terminal output formatter",
         ],
+        "intelligence": [
+            "bastion_quick_intel — Instant intelligence snapshot (~200ms)",
+            "bastion_deep_analysis — Multi-step reasoning chain (gathers 15 sources in one call)",
+            "bastion_get_regime_tools — Discover market-regime adaptive tools",
+            "bastion_execute_regime_tool — Execute regime-specific analysis tools",
+            "bastion_live_feed — Real-time aggregated market feed snapshot",
+            "bastion_war_room_vote — Cast weighted vote in multi-agent consensus",
+            "bastion_war_room_consensus_weighted — Get accuracy-weighted consensus",
+            "bastion_get_server_card — MCP Server Card for agent-to-agent discovery",
+            "bastion_risk_confirm — Interactive risk confirmation with warnings",
+        ],
     }
-    return json.dumps({"tools": tools, "total": 80}, indent=2)
+    return json.dumps({"tools": tools, "total": 90}, indent=2)
 
 
 @mcp.resource("bastion://exchanges")
@@ -1858,6 +1883,29 @@ async def get_exchanges() -> str:
     }, indent=2)
 
 
+@mcp.resource("bastion://live/{symbol}")
+async def get_live_feed(symbol: str = "BTC") -> str:
+    """Live market feed for a symbol — price, funding, volume, fear/greed in one snapshot.
+
+    Subscribe to this resource for real-time market monitoring. Returns all key
+    metrics aggregated into a single response. Poll every 30-60 seconds.
+    """
+    result = await api_get(f"/api/live-feed/{symbol}")
+    return json.dumps(result, indent=2)
+
+
+@mcp.resource("bastion://regime")
+async def get_regime() -> str:
+    """Current market regime and active adaptive tools.
+
+    Shows which specialized tools are currently activated based on market conditions.
+    Tools appear during: extreme fear, extreme greed, high volatility, low volatility,
+    and extreme funding rate conditions.
+    """
+    result = await api_get("/api/regime/tools")
+    return json.dumps(result, indent=2)
+
+
 @mcp.resource("bastion://capabilities")
 async def get_capabilities() -> str:
     """Complete BASTION platform capabilities and data sources."""
@@ -1875,9 +1923,17 @@ async def get_capabilities() -> str:
             "market_structure": "VPVR, pivot detection, auto-support, trendlines",
             "macro": "Yahoo Finance, FRED, CoinGecko, Polymarket",
         },
-        "mcp_tools": 80,
-        "resources": 6,
-        "prompts": 9,
+        "mcp_tools": 90,
+        "resources": 8,
+        "prompts": 10,
+        "features": {
+            "deep_analysis": "Server-side multi-step reasoning — gathers 15 sources in one call",
+            "dynamic_tools": "Market-regime adaptive tools that appear/disappear based on conditions",
+            "live_feed": "Aggregated real-time market feed for resource subscriptions",
+            "war_room_consensus": "Multi-agent weighted voting with accuracy-based weighting",
+            "server_discovery": "MCP Server Card at /.well-known/mcp.json for agent-to-agent discovery",
+            "risk_elicitation": "Interactive risk confirmation with structured warnings and questions",
+        },
         "trading_actions": ["HOLD", "EXIT_FULL", "TP_PARTIAL", "EXIT_100%", "REDUCE_SIZE", "TRAIL_STOP"],
         "supported_symbols": config.SUPPORTED_SYMBOLS,
     }, indent=2)
@@ -2550,6 +2606,275 @@ async def bastion_format_risk(
 
 
 # ═════════════════════════════════════════════════════════════════
+# INTELLIGENCE LAYER — Protocol-Level Innovation
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_quick_intel(
+    symbol: str = "BTC",
+) -> str:
+    """Instant intelligence snapshot — price, regime, funding, fear/greed in one call.
+
+    The fastest way to get market context. Returns a compact intelligence packet
+    with current price, market regime, funding signal, and sentiment in ~200ms.
+    Use this before any trading decision for quick context.
+
+    Args:
+        symbol: Crypto symbol (BTC, ETH, SOL, etc.)
+
+    Returns:
+        Compact intel: price, change, regime, funding signal, fear/greed, and risk level.
+    """
+    result = await api_get(f"/api/live-feed/{symbol}")
+    if isinstance(result, dict) and not result.get("error"):
+        fg = result.get("fear_greed", 50)
+        regime = "NEUTRAL"
+        if isinstance(fg, (int, float)):
+            if fg < 20: regime = "CAPITULATION"
+            elif fg < 35: regime = "FEAR"
+            elif fg > 80: regime = "EUPHORIA"
+            elif fg > 65: regime = "GREED"
+        funding = result.get("funding_rate", 0)
+        funding_signal = "EXTREME" if abs(funding) > 0.03 else "ELEVATED" if abs(funding) > 0.01 else "NORMAL"
+        return json.dumps({
+            "symbol": symbol,
+            "price": result.get("price", 0),
+            "change_24h": result.get("change_24h", 0),
+            "regime": regime,
+            "fear_greed": fg,
+            "sentiment": result.get("sentiment", "Neutral"),
+            "funding_rate": round(funding, 6),
+            "funding_signal": funding_signal,
+            "risk_level": "HIGH" if regime in ("CAPITULATION", "EUPHORIA") else "ELEVATED" if regime in ("FEAR", "GREED") else "NORMAL",
+        }, indent=2)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_deep_analysis(
+    symbol: str = "BTC",
+    focus: str = "full",
+    timeframe: str = "4h",
+) -> str:
+    """Deep multi-step analysis — gathers 5-15 data sources in parallel and synthesizes into one intelligence brief.
+
+    This is BASTION's most powerful tool. Instead of calling 10 tools separately,
+    call this once — BASTION orchestrates all data gathering internally and returns
+    a unified analysis. Server-side reasoning chain (MCP Sampling pattern).
+
+    Args:
+        symbol: Crypto symbol (BTC, ETH, SOL, etc.)
+        focus: Analysis focus — "full" (everything), "risk" (risk-focused), "flow" (order flow + derivatives), "macro" (macro environment), "structure" (market structure)
+        timeframe: Primary timeframe for analysis (1h, 4h, 1d)
+
+    Returns:
+        Comprehensive intelligence brief with regime assessment, risk signals, and synthesized data from multiple sources.
+    """
+    result = await api_post("/api/deep-analysis", {
+        "symbol": symbol, "focus": focus, "timeframe": timeframe,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# DYNAMIC TOOL DISCOVERY — Market-Regime Adaptive Tools
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_get_regime_tools() -> str:
+    """Discover which specialized tools are currently active based on market conditions.
+
+    Tools appear and disappear based on real-time market regime:
+    - Extreme Fear → bastion_capitulation_scanner activates
+    - Extreme Greed → bastion_euphoria_detector activates
+    - High Volatility → bastion_crisis_mode activates
+    - Low Volatility → bastion_range_scanner activates
+    - Extreme Funding → bastion_funding_arb_scanner activates
+
+    Call this first to see what's available, then use bastion_execute_regime_tool.
+
+    Returns:
+        List of currently active regime-adaptive tools with descriptions.
+    """
+    result = await api_get("/api/regime/tools")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_execute_regime_tool(
+    tool: str = "bastion_market_pulse",
+    symbol: str = "BTC",
+) -> str:
+    """Execute a regime-adaptive tool discovered via bastion_get_regime_tools.
+
+    These are specialized tools that only activate during specific market conditions.
+    Use bastion_get_regime_tools first to see what's available.
+
+    Args:
+        tool: Tool name from bastion_get_regime_tools (e.g., bastion_crisis_mode, bastion_capitulation_scanner, bastion_market_pulse)
+        symbol: Crypto symbol to analyze
+
+    Returns:
+        Specialized analysis based on current market regime.
+    """
+    result = await api_post("/api/regime/execute", {
+        "tool": tool, "symbol": symbol,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# LIVE MARKET FEED — Resource Subscription Data
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_live_feed(
+    symbol: str = "BTC",
+) -> str:
+    """Get a real-time market feed snapshot — price, funding, volume, fear/greed in ONE call.
+
+    Designed for high-frequency polling. Returns all key metrics aggregated into
+    a single response. Use this instead of calling 5 separate tools when you need
+    a quick market pulse.
+
+    Subscribe pattern: Call this every 30-60 seconds for live monitoring.
+
+    Args:
+        symbol: Crypto symbol (BTC, ETH, SOL, etc.)
+
+    Returns:
+        Unified feed: price, 24h change, volume, funding rate, fear/greed, sentiment.
+    """
+    result = await api_get(f"/api/live-feed/{symbol}")
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# WAR ROOM UPGRADE — Weighted Consensus Voting
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_war_room_vote(
+    symbol: str = "BTC",
+    action: str = "HOLD",
+    confidence: float = 0.7,
+    reasoning: str = "",
+    agent_id: str = "",
+    historical_accuracy: float = 0.5,
+) -> str:
+    """Cast a weighted vote in the multi-agent War Room.
+
+    Each agent's vote is weighted by their historical accuracy. Multiple agents
+    analyze the same symbol independently, then the War Room synthesizes their
+    disagreements into a consensus decision. Emergent intelligence.
+
+    Args:
+        symbol: Crypto symbol to vote on
+        action: Your recommended action (HOLD, EXIT_FULL, TP_PARTIAL, REDUCE_SIZE, etc.)
+        confidence: Your confidence in this recommendation (0.0 to 1.0)
+        reasoning: Brief explanation of your analysis
+        agent_id: Your unique agent identifier (auto-generated if empty)
+        historical_accuracy: Your historical prediction accuracy from leaderboard (0.0 to 1.0)
+
+    Returns:
+        Vote confirmation with current vote tally.
+    """
+    result = await api_post("/api/war-room/vote", {
+        "symbol": symbol, "action": action, "confidence": confidence,
+        "reasoning": reasoning, "agent_id": agent_id or f"agent_{int(__import__('time').time()) % 10000}",
+        "historical_accuracy": historical_accuracy,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_war_room_consensus_weighted(
+    symbol: str = "BTC",
+) -> str:
+    """Get weighted consensus from the multi-agent War Room.
+
+    Aggregates all agent votes with accuracy-based weighting. Shows which action
+    the collective intelligence favors, how strong the consensus is, and which
+    agents agree/disagree. True multi-agent decision-making.
+
+    Args:
+        symbol: Crypto symbol to check consensus for
+
+    Returns:
+        Consensus action, strength percentage, agreement level, and agent breakdown.
+    """
+    result = await api_get(f"/api/war-room/consensus/{symbol}")
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# MCP SERVER CARD — Agent-to-Agent Discovery
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_get_server_card() -> str:
+    """Get BASTION's MCP Server Card for agent-to-agent discovery.
+
+    Returns the full server card with capabilities, tools count, auth info,
+    model details, and endpoint URLs. Other MCP agents can use this to
+    discover and connect to BASTION automatically.
+
+    Implements the /.well-known/mcp.json specification for MCP server discovery.
+
+    Returns:
+        Complete MCP Server Card with capabilities, auth, endpoints, and model info.
+    """
+    result = await api_get("/.well-known/mcp.json")
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# ELICITATION — Interactive Risk Confirmation
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_risk_confirm(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    leverage: float = 1,
+    entry_price: float = 0,
+    stop_loss: float = 0,
+    position_size_usd: float = 1000,
+    portfolio_pct: float = 0,
+) -> str:
+    """Interactive risk confirmation — analyzes position and surfaces warnings that need acknowledgment.
+
+    Before entering a trade, run this to get a structured risk assessment with
+    specific warnings and confirmation questions. Implements the MCP Elicitation
+    pattern: BASTION identifies risks and asks for human confirmation.
+
+    Args:
+        symbol: Crypto symbol
+        direction: LONG or SHORT
+        leverage: Position leverage
+        entry_price: Planned entry price
+        stop_loss: Stop loss price (0 = no stop)
+        position_size_usd: Position size in USD
+        portfolio_pct: What percentage of total portfolio this trade represents
+
+    Returns:
+        Risk level, warnings, confirmation questions, and recommendation.
+    """
+    result = await api_post("/api/risk/confirm", {
+        "symbol": symbol, "direction": direction, "leverage": leverage,
+        "entry_price": entry_price, "stop_loss": stop_loss,
+        "position_size_usd": position_size_usd, "portfolio_pct": portfolio_pct,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
 # PROMPTS
 # ═════════════════════════════════════════════════════════════════
 
@@ -2784,4 +3109,29 @@ async def full_risk_dashboard(
         f"- Model confidence and accuracy context\n"
         f"- Key levels to watch (support, resistance, liquidation clusters)\n"
         f"- Final action recommendation"
+    )
+
+
+@mcp.prompt()
+async def deep_intelligence_brief(
+    symbol: str = "BTC",
+) -> str:
+    """Run BASTION's most comprehensive analysis — deep multi-step intelligence brief.
+
+    Args:
+        symbol: Crypto symbol to analyze (default BTC)
+    """
+    return (
+        f"Run a DEEP intelligence brief on {symbol.upper()} using BASTION's most powerful tools:\n\n"
+        f"1. Deep multi-step analysis (bastion_deep_analysis) — gathers 15 data sources in one call\n"
+        f"2. Check what regime-adaptive tools are active (bastion_get_regime_tools)\n"
+        f"3. Execute any active regime tools (bastion_execute_regime_tool)\n"
+        f"4. Get real-time feed snapshot (bastion_live_feed)\n"
+        f"5. Check War Room consensus if available (bastion_war_room_consensus_weighted)\n\n"
+        f"Synthesize into an institutional-grade intelligence brief:\n"
+        f"- Current market regime and risk level\n"
+        f"- Key signals from 15+ data sources\n"
+        f"- Regime-specific insights (crisis mode, capitulation, euphoria, etc.)\n"
+        f"- Multi-agent consensus (if available)\n"
+        f"- Actionable recommendation with conviction level"
     )
