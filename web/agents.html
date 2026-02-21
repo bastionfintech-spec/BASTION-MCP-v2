@@ -666,6 +666,16 @@
       <span class="text-red-400">"url"</span>: <span class="text-green-400">"https://bastionfi.tech/mcp/sse"</span>
     }
   }
+}
+
+<span class="text-zinc-600">// ─── OR use Streamable HTTP (newer protocol) ───</span>
+{
+  <span class="text-red-400">"mcpServers"</span>: {
+    <span class="text-red-400">"bastion"</span>: {
+      <span class="text-red-400">"type"</span>: <span class="text-green-400">"streamable-http"</span>,
+      <span class="text-red-400">"url"</span>: <span class="text-green-400">"https://bastionfi.tech/mcp/stream"</span>
+    }
+  }
 }</code></pre>
             </div>
             <div class="mt-4 space-y-2">
@@ -712,6 +722,16 @@
     <span class="text-red-400">"bastion"</span>: {
       <span class="text-red-400">"type"</span>: <span class="text-green-400">"sse"</span>,
       <span class="text-red-400">"url"</span>: <span class="text-green-400">"https://bastionfi.tech/mcp/sse"</span>
+    }
+  }
+}
+
+<span class="text-zinc-600">// ─── OR use Streamable HTTP (newer protocol) ───</span>
+{
+  <span class="text-red-400">"mcpServers"</span>: {
+    <span class="text-red-400">"bastion"</span>: {
+      <span class="text-red-400">"type"</span>: <span class="text-green-400">"streamable-http"</span>,
+      <span class="text-red-400">"url"</span>: <span class="text-green-400">"https://bastionfi.tech/mcp/stream"</span>
     }
   }
 }</code></pre>
@@ -764,8 +784,11 @@
                 </div>
                 <button onclick="copyCode('code-api')" class="copy-btn text-[9px] font-mono text-zinc-500 hover:text-white px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-all">COPY</button>
               </div>
-              <pre class="p-5 text-[12px] font-mono leading-relaxed overflow-x-auto"><code id="code-api" class="text-zinc-300"><span class="text-zinc-500">// MCP SSE Endpoint</span>
+              <pre class="p-5 text-[12px] font-mono leading-relaxed overflow-x-auto"><code id="code-api" class="text-zinc-300"><span class="text-zinc-500">// MCP SSE Endpoint (legacy)</span>
 <span class="text-red-400">GET</span> https://bastionfi.tech/mcp/sse
+
+<span class="text-zinc-500">// MCP Streamable HTTP (recommended)</span>
+<span class="text-red-400">POST</span> https://bastionfi.tech/mcp/stream
 
 <span class="text-zinc-500">// REST API (for non-MCP clients)</span>
 <span class="text-red-400">POST</span> https://bastionfi.tech/api/risk/evaluate
@@ -918,7 +941,7 @@
         <div class="relative z-10 px-6 md:px-12 pt-10 pb-6">
           <div class="text-[10px] font-mono text-red-600 uppercase tracking-widest flex items-center gap-2 mb-3">
             <span class="w-4 h-px bg-red-600"></span>
-            // 49_MCP_TOOLS
+            // 52_MCP_TOOLS
           </div>
           <h2 class="text-2xl md:text-4xl font-semibold text-white uppercase tracking-tight leading-[0.9] mb-2 sys-reveal sys-rise">
             what your agent <span class="text-red-600">can do</span>
@@ -1229,7 +1252,7 @@
           <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 mb-2 md:mb-0">
             <span class="cursor-default font-mono">&copy; 2026 BASTION SYSTEMS.</span>
             <span class="hidden md:inline w-px h-3 bg-zinc-800"></span>
-            <div class="flex gap-6 font-mono"><a href="/" class="hover:text-white transition-colors">Home</a><a href="/docs" class="hover:text-white transition-colors">MCP Docs</a><a href="/api/swagger" class="hover:text-white transition-colors">API Reference</a></div>
+            <div class="flex gap-6 font-mono"><a href="/" class="hover:text-white transition-colors">Home</a><a href="/warroom" class="hover:text-white transition-colors">War Room</a><a href="/protocol" class="hover:text-white transition-colors">Developers</a><a href="/docs" class="hover:text-white transition-colors">MCP Docs</a></div>
           </div>
           <div class="flex items-center gap-6 font-mono">
             <a href="https://github.com/bastionfintech-spec/bastion-mcp-server" target="_blank" rel="noopener" class="flex items-center gap-1.5 hover:text-white transition-colors" title="Open Source on GitHub"><iconify-icon icon="mdi:github" width="14"></iconify-icon><span class="hidden md:inline">GitHub</span></a>
