@@ -1327,6 +1327,29 @@ async def bastion_engine_disarm(api_key: str = "") -> str:
 
 
 # ═════════════════════════════════════════════════════════════════
+# ADVANCED ANALYTICS TOOLS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_get_volatility_regime(symbol: str = "BTC") -> str:
+    """Get the current volatility regime classification for a symbol.
+
+    Classifies the market into HIGH_VOL, LOW_VOL, or NORMAL based on
+    realized volatility, ATR, and Bollinger band width. Critical for
+    position sizing and stop placement.
+
+    Args:
+        symbol: Crypto symbol (default BTC)
+
+    Returns:
+        Volatility regime with confidence, current vol metrics, and regime history.
+    """
+    result = await api_get(f"/api/volatility-regime/{symbol.upper()}")
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
 # RESOURCES
 # ═════════════════════════════════════════════════════════════════
 

@@ -1114,6 +1114,13 @@ async def list_mcp_tools():
         {"name": "bastion_get_fear_greed", "category": "Sentiment", "scope": "public", "description": "Fear & Greed Index", "params": []},
         {"name": "bastion_get_etf_flows", "category": "Macro", "scope": "public", "description": "ETF flow data", "params": []},
         {"name": "bastion_get_macro_signals", "category": "Macro", "scope": "public", "description": "Macro signals", "params": []},
+        {"name": "bastion_get_stablecoin_markets", "category": "Macro", "scope": "public", "description": "Stablecoin supply & flows", "params": []},
+        {"name": "bastion_get_economic_data", "category": "Macro", "scope": "public", "description": "FRED economic data", "params": [
+            {"name": "series_id", "type": "string", "required": False, "description": "FRED series ID", "default": "DFF"},
+        ]},
+        {"name": "bastion_get_polymarket", "category": "Macro", "scope": "public", "description": "Prediction market data", "params": [
+            {"name": "limit", "type": "number", "required": False, "description": "Number of markets", "default": 15},
+        ]},
         {"name": "bastion_get_positions", "category": "Portfolio", "scope": "read", "description": "Open positions", "params": [
             {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
         ]},
@@ -1124,7 +1131,7 @@ async def list_mcp_tools():
             {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
         ]},
     ]
-    return {"tools": tools, "total": 49, "listed": len(tools)}
+    return {"tools": tools, "total": 53, "listed": len(tools)}
 
 @app.post("/api/mcp/playground/execute")
 async def playground_execute(request: Request, data: dict):
@@ -1158,7 +1165,10 @@ async def execute_playground_tool(data: dict):
         "bastion_get_exchange_flow": ("GET", "/api/exchange-flow/{symbol}"),
         "bastion_get_fear_greed": ("GET", "/api/fear-greed"),
         "bastion_get_etf_flows": ("GET", "/api/etf-flows"),
-        "bastion_get_macro_signals": ("GET", "/api/market-pulse"),
+        "bastion_get_macro_signals": ("GET", "/api/macro-signals"),
+        "bastion_get_stablecoin_markets": ("GET", "/api/stablecoin-markets"),
+        "bastion_get_economic_data": ("GET", "/api/fred-data"),
+        "bastion_get_polymarket": ("GET", "/api/polymarket"),
         "bastion_get_positions": ("GET", "/api/positions/all"),
         "bastion_get_balance": ("GET", "/api/balance/total"),
         "bastion_engine_status": ("GET", "/api/engine/status"),
@@ -5181,6 +5191,362 @@ async def get_usdt_dominance():
         "dominance": 0,
         "error": "Data temporarily unavailable"
     }
+
+
+# =============================================================================
+# PULSE / MONITOR PROXY ENDPOINTS
+# =============================================================================
+
+@app.get("/api/yahoo-finance")
+async def yahoo_finance_proxy(symbol: str = "^GSPC"):
+    """Proxy Yahoo Finance data for the Pulse/Monitor page."""
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            # Use Yahoo Finance v8 quote endpoint
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=2d"
+            headers = {"User-Agent": "Mozilla/5.0"}
+            resp = await client.get(url, headers=headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                result = data.get("chart", {}).get("result", [{}])[0]
+                meta = result.get("meta", {})
+                price = meta.get("regularMarketPrice", 0)
+                prev_close = meta.get("chartPreviousClose", meta.get("previousClose", price))
+                change = price - prev_close if prev_close else 0
+                change_pct = (change / prev_close * 100) if prev_close else 0
+                return {
+                    "symbol": symbol,
+                    "price": round(price, 2),
+                    "change": round(change, 2),
+                    "change_pct": round(change_pct, 2),
+                    "previous_close": round(prev_close, 2),
+                    "currency": meta.get("currency", "USD"),
+                    "name": meta.get("shortName", symbol),
+                    "exchange": meta.get("exchangeName", ""),
+                    "source": "yahoo"
+                }
+            else:
+                logger.warning(f"Yahoo Finance returned {resp.status_code} for {symbol}")
+    except Exception as e:
+        logger.error(f"Yahoo Finance proxy error for {symbol}: {e}")
+
+    return {"symbol": symbol, "price": 0, "change": 0, "change_pct": 0, "error": "Data unavailable"}
+
+
+@app.get("/api/coingecko")
+async def coingecko_proxy(request: Request):
+    """Proxy CoinGecko API for the Pulse/Monitor page."""
+    params = dict(request.query_params)
+    endpoint = params.pop("endpoint", "markets")
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            url = f"https://api.coingecko.com/api/v3/coins/{endpoint}"
+            resp = await client.get(url, params=params)
+            if resp.status_code == 200:
+                return resp.json()
+            elif resp.status_code == 429:
+                logger.warning("CoinGecko rate limited")
+                return {"error": "Rate limited", "retry_after": 60}
+            else:
+                logger.warning(f"CoinGecko returned {resp.status_code}")
+    except Exception as e:
+        logger.error(f"CoinGecko proxy error: {e}")
+
+    return {"error": "CoinGecko data unavailable"}
+
+
+@app.get("/api/rss-proxy")
+async def rss_proxy(url: str = ""):
+    """Proxy RSS feeds for the Pulse/Monitor page (bypass CORS)."""
+    if not url:
+        return {"error": "No URL provided"}
+
+    # Whitelist allowed domains for RSS
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    allowed_domains = [
+        "feeds.content.dowjones.com", "rss.nytimes.com", "feeds.reuters.com",
+        "seekingalpha.com", "feeds.marketwatch.com", "finance.yahoo.com",
+        "www.cnbc.com", "rss.cnn.com", "feeds.bloomberg.com", "feeds.bbci.co.uk",
+        "www.coindesk.com", "cointelegraph.com", "cryptonews.com",
+        "decrypt.co", "theblock.co", "bitcoinmagazine.com",
+    ]
+    if parsed.hostname not in allowed_domains:
+        return {"error": f"Domain not allowed: {parsed.hostname}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 BASTION-RSS/1.0"})
+            if resp.status_code == 200:
+                content_type = resp.headers.get("content-type", "")
+                if "xml" in content_type or "rss" in content_type or resp.text.strip().startswith("<?xml"):
+                    # Parse XML to JSON
+                    import xml.etree.ElementTree as ET
+                    root = ET.fromstring(resp.text)
+                    items = []
+                    for item in root.iter("item"):
+                        items.append({
+                            "title": (item.find("title").text or "") if item.find("title") is not None else "",
+                            "link": (item.find("link").text or "") if item.find("link") is not None else "",
+                            "pubDate": (item.find("pubDate").text or "") if item.find("pubDate") is not None else "",
+                            "description": (item.find("description").text or "")[:200] if item.find("description") is not None else "",
+                        })
+                    return {"success": True, "items": items[:20], "source": parsed.hostname}
+                else:
+                    return {"success": True, "raw": resp.text[:5000]}
+    except Exception as e:
+        logger.error(f"RSS proxy error for {url}: {e}")
+
+    return {"error": "RSS feed unavailable", "url": url}
+
+
+@app.get("/api/polymarket")
+async def polymarket_proxy(
+    closed: str = "false",
+    order: str = "volume",
+    ascending: str = "false",
+    limit: int = 15,
+):
+    """Proxy Polymarket prediction markets for the Pulse/Monitor page."""
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            params = {
+                "closed": closed,
+                "order": order,
+                "ascending": ascending,
+                "limit": min(limit, 50),
+            }
+            resp = await client.get(
+                "https://gamma-api.polymarket.com/markets",
+                params=params,
+            )
+            if resp.status_code == 200:
+                markets = resp.json()
+                results = []
+                for m in markets[:limit]:
+                    results.append({
+                        "question": m.get("question", ""),
+                        "description": (m.get("description") or "")[:150],
+                        "outcomes": m.get("outcomes", ""),
+                        "outcomePrices": m.get("outcomePrices", ""),
+                        "volume": float(m.get("volume", 0) or 0),
+                        "liquidity": float(m.get("liquidity", 0) or 0),
+                        "endDate": m.get("endDate", ""),
+                        "active": m.get("active", True),
+                        "image": m.get("image", ""),
+                    })
+                return {"success": True, "markets": results, "count": len(results)}
+    except Exception as e:
+        logger.error(f"Polymarket proxy error: {e}")
+
+    return {"success": False, "markets": [], "error": "Polymarket data unavailable"}
+
+
+@app.get("/api/fred-data")
+async def fred_data_proxy(series_id: str = "DFF"):
+    """Proxy Federal Reserve FRED data for the Pulse/Monitor page."""
+    fred_key = os.environ.get("FRED_API_KEY", "")
+    if not fred_key:
+        # Return simulated data if no FRED key
+        import datetime
+        series_defaults = {
+            "DFF": ("Federal Funds Rate", 4.33, "%"),
+            "CPIAUCSL": ("Consumer Price Index", 314.5, "Index"),
+            "T10Y2Y": ("10Y-2Y Spread", 0.28, "%"),
+            "UNRATE": ("Unemployment Rate", 4.1, "%"),
+            "DGS10": ("10Y Treasury", 4.52, "%"),
+            "DGS2": ("2Y Treasury", 4.24, "%"),
+            "DEXUSEU": ("EUR/USD", 1.046, "Rate"),
+            "VIXCLS": ("VIX Close", 18.5, "Index"),
+        }
+        name, val, units = series_defaults.get(series_id, (series_id, 0, "N/A"))
+        return {
+            "success": True,
+            "series_id": series_id,
+            "title": name,
+            "value": val,
+            "units": units,
+            "date": datetime.datetime.utcnow().strftime("%Y-%m-%d"),
+            "source": "fallback"
+        }
+
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(
+                "https://api.stlouisfed.org/fred/series/observations",
+                params={
+                    "series_id": series_id,
+                    "api_key": fred_key,
+                    "file_type": "json",
+                    "sort_order": "desc",
+                    "limit": 5,
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                observations = data.get("observations", [])
+                if observations:
+                    latest = observations[0]
+                    return {
+                        "success": True,
+                        "series_id": series_id,
+                        "value": float(latest["value"]) if latest["value"] != "." else None,
+                        "date": latest["date"],
+                        "source": "fred"
+                    }
+    except Exception as e:
+        logger.error(f"FRED data error for {series_id}: {e}")
+
+    return {"success": False, "series_id": series_id, "error": "FRED data unavailable"}
+
+
+@app.get("/api/macro-signals")
+async def macro_signals():
+    """Aggregated macro signals for Pulse/Monitor and MCP tools."""
+    signals = {}
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            # DXY from Yahoo Finance
+            try:
+                dxy_resp = await client.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=5d",
+                    headers={"User-Agent": "Mozilla/5.0"},
+                )
+                if dxy_resp.status_code == 200:
+                    dxy_data = dxy_resp.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
+                    dxy_price = dxy_data.get("regularMarketPrice", 0)
+                    dxy_prev = dxy_data.get("chartPreviousClose", dxy_price)
+                    dxy_chg = ((dxy_price - dxy_prev) / dxy_prev * 100) if dxy_prev else 0
+                    signals["dxy"] = {"value": round(dxy_price, 2), "change_pct": round(dxy_chg, 2)}
+            except Exception:
+                pass
+
+            # 10Y Treasury
+            try:
+                t10_resp = await client.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?interval=1d&range=5d",
+                    headers={"User-Agent": "Mozilla/5.0"},
+                )
+                if t10_resp.status_code == 200:
+                    t10_data = t10_resp.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
+                    signals["treasury_10y"] = {"value": round(t10_data.get("regularMarketPrice", 0), 3)}
+            except Exception:
+                pass
+
+            # VIX
+            try:
+                vix_resp = await client.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=5d",
+                    headers={"User-Agent": "Mozilla/5.0"},
+                )
+                if vix_resp.status_code == 200:
+                    vix_data = vix_resp.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
+                    vix_val = vix_data.get("regularMarketPrice", 0)
+                    signals["vix"] = {"value": round(vix_val, 2), "regime": "HIGH_VOL" if vix_val > 25 else "LOW_VOL" if vix_val < 15 else "NORMAL"}
+            except Exception:
+                pass
+
+            # S&P 500
+            try:
+                spx_resp = await client.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1d&range=5d",
+                    headers={"User-Agent": "Mozilla/5.0"},
+                )
+                if spx_resp.status_code == 200:
+                    spx_data = spx_resp.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
+                    spx_price = spx_data.get("regularMarketPrice", 0)
+                    spx_prev = spx_data.get("chartPreviousClose", spx_price)
+                    spx_chg = ((spx_price - spx_prev) / spx_prev * 100) if spx_prev else 0
+                    signals["sp500"] = {"value": round(spx_price, 2), "change_pct": round(spx_chg, 2)}
+            except Exception:
+                pass
+
+            # Gold
+            try:
+                gold_resp = await client.get(
+                    "https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=5d",
+                    headers={"User-Agent": "Mozilla/5.0"},
+                )
+                if gold_resp.status_code == 200:
+                    gold_data = gold_resp.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
+                    signals["gold"] = {"value": round(gold_data.get("regularMarketPrice", 0), 2)}
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.error(f"Macro signals fetch error: {e}")
+
+    # Fear & Greed (reuse existing)
+    try:
+        fg = await get_fear_greed()
+        signals["fear_greed"] = {"value": fg.get("value", 50), "label": fg.get("label", "NEUTRAL")}
+    except Exception:
+        signals["fear_greed"] = {"value": 50, "label": "NEUTRAL"}
+
+    # Derive overall signal
+    dxy_val = signals.get("dxy", {}).get("value", 100)
+    vix_val = signals.get("vix", {}).get("value", 20)
+    fg_val = signals.get("fear_greed", {}).get("value", 50)
+
+    if fg_val < 20 and vix_val > 25:
+        verdict = "EXTREME_FEAR"
+    elif fg_val > 75 and vix_val < 15:
+        verdict = "EXTREME_GREED"
+    elif dxy_val > 105 and vix_val > 20:
+        verdict = "RISK_OFF"
+    elif dxy_val < 100 and vix_val < 18:
+        verdict = "RISK_ON"
+    else:
+        verdict = "NEUTRAL"
+
+    return {
+        "success": True,
+        "signals": signals,
+        "verdict": verdict,
+        "source": "yahoo+alternative.me"
+    }
+
+
+@app.get("/api/stablecoin-markets")
+async def stablecoin_markets():
+    """Stablecoin market data for Pulse/Monitor and MCP tools."""
+    stablecoins = []
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(
+                "https://api.coingecko.com/api/v3/coins/markets",
+                params={
+                    "vs_currency": "usd",
+                    "ids": "tether,usd-coin,dai,first-digital-usd,ethena-usde",
+                    "order": "market_cap_desc",
+                    "sparkline": "false",
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                for coin in data:
+                    price = coin.get("current_price", 1.0)
+                    peg_deviation = abs(price - 1.0)
+                    stablecoins.append({
+                        "symbol": coin.get("symbol", "").upper(),
+                        "name": coin.get("name", ""),
+                        "price": price,
+                        "market_cap": coin.get("market_cap", 0),
+                        "volume_24h": coin.get("total_volume", 0),
+                        "change_24h": coin.get("price_change_percentage_24h", 0),
+                        "peg_status": "HEALTHY" if peg_deviation < 0.005 else "SLIGHT_DEPEG" if peg_deviation < 0.02 else "DEPEG",
+                        "peg_deviation": round(peg_deviation, 4),
+                    })
+                return {
+                    "success": True,
+                    "stablecoins": stablecoins,
+                    "total_market_cap": sum(s["market_cap"] for s in stablecoins),
+                    "source": "coingecko",
+                }
+    except Exception as e:
+        logger.error(f"Stablecoin markets error: {e}")
+
+    return {"success": False, "stablecoins": [], "error": "Stablecoin data unavailable"}
 
 
 @app.post("/api/pre-trade-calculator")
