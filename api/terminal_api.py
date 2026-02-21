@@ -800,6 +800,17 @@ async def serve_warroom():
         "BASTION War Room — Coming Soon</h1>"
     )
 
+@app.get("/protocol", response_class=HTMLResponse)
+async def serve_protocol():
+    """Serve the BASTION Developer Hub — directory of all developer resources."""
+    proto_path = bastion_path / "web" / "protocol.html"
+    if proto_path.exists():
+        return FileResponse(proto_path)
+    return HTMLResponse(
+        "<h1 style='color:#fff;background:#050505;font-family:monospace;padding:2em;'>"
+        "BASTION Developers — Coming Soon</h1>"
+    )
+
 
 # ── War Room In-Memory Store (fallback if DB unavailable) ──
 _warroom_messages: list = []  # Recent messages (capped at 500)
