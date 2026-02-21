@@ -2,7 +2,7 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (52):
+Tools (58):
   CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
@@ -14,6 +14,8 @@ Tools (52):
     bastion_get_market_data      — Aggregated market intelligence
     bastion_get_klines           — Candlestick OHLCV data
     bastion_get_volatility       — Volatility metrics + regime detection
+    bastion_get_volatility_regime — Volatility regime classification
+    bastion_get_btc_dominance    — BTC dominance + altseason score
 
   DERIVATIVES & ORDER FLOW (public)
     bastion_get_open_interest    — Open interest across exchanges
@@ -23,6 +25,7 @@ Tools (52):
     bastion_get_funding_rates    — Cross-exchange funding rates
     bastion_get_funding_arb      — Funding rate arbitrage
     bastion_get_liquidations     — Liquidation events + clusters
+    bastion_get_liquidations_by_exchange — Liquidations per exchange
     bastion_get_heatmap          — Liquidation heatmap
     bastion_get_taker_ratio      — Taker buy/sell ratio
     bastion_get_top_traders      — Top trader positioning
@@ -34,6 +37,8 @@ Tools (52):
     bastion_get_exchange_flow    — Exchange inflow/outflow
     bastion_get_onchain          — On-chain metrics
     bastion_get_news             — Aggregated crypto news
+    bastion_get_smart_money      — Smart money flow analysis
+    bastion_get_hyperliquid_whales — Top Hyperliquid whale positions
 
   MACRO & SENTIMENT (public)
     bastion_get_fear_greed       — Fear & Greed Index
@@ -47,6 +52,7 @@ Tools (52):
     bastion_generate_report      — Generate MCF Labs research report
     bastion_get_reports          — List existing reports
     bastion_calculate_position   — Position sizing + Monte Carlo
+    bastion_get_kelly_sizing     — Kelly Criterion optimal sizing
 
   PORTFOLIO (auth required — 'read' scope)
     bastion_get_positions        — All open positions
@@ -70,11 +76,18 @@ Tools (52):
     bastion_engine_arm           — Arm engine for auto-execution
     bastion_engine_disarm        — Disarm engine (advisory only)
 
-Resources:
-  bastion://status, bastion://supported-symbols, bastion://model-info
+  WAR ROOM (multi-agent intelligence hub)
+    bastion_war_room_post        — Post signal to War Room
+    bastion_war_room_read        — Read War Room feed
+    bastion_war_room_consensus   — Get agent consensus
 
-Prompts:
-  evaluate_my_position, market_analysis, risk_check
+Resources (6):
+  bastion://status, bastion://supported-symbols, bastion://model-info,
+  bastion://tools, bastion://exchanges, bastion://capabilities
+
+Prompts (7):
+  evaluate_my_position, market_analysis, risk_check, portfolio_risk_scan,
+  whale_tracker, macro_briefing, pre_trade_analysis
 """
 import json
 import logging
@@ -1349,6 +1362,89 @@ async def bastion_get_volatility_regime(symbol: str = "BTC") -> str:
     return json.dumps(result, indent=2)
 
 
+@mcp.tool()
+async def bastion_get_kelly_sizing() -> str:
+    """Get Kelly Criterion optimal position sizing based on your historical performance.
+
+    Calculates the mathematically optimal bet size using your win rate and
+    average win/loss ratio. Returns full Kelly, half Kelly (recommended),
+    and quarter Kelly sizing with risk-of-ruin analysis.
+
+    Returns:
+        Kelly percentages (full/half/quarter), win rate, R-ratio, and recommendation.
+    """
+    result = await api_get("/api/kelly")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_liquidations_by_exchange(symbol: str = "BTC") -> str:
+    """Get liquidation data broken down by exchange.
+
+    Shows which exchanges are seeing the most liquidations — useful for
+    identifying where leveraged positions are concentrated and getting wiped.
+
+    Args:
+        symbol: Crypto symbol (e.g. BTC, ETH, SOL)
+
+    Returns:
+        Liquidations per exchange with long/short breakdown and dominant side.
+    """
+    result = await api_get(f"/api/liq-exchange/{symbol.upper()}")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_smart_money(symbol: str = "BTC") -> str:
+    """Get smart money flow analysis for a cryptocurrency.
+
+    Tracks institutional and smart money flow direction using order flow
+    analysis, large trade clustering, and volume profile. Shows whether
+    smart money is accumulating or distributing.
+
+    Args:
+        symbol: Crypto symbol (e.g. BTC, ETH, SOL)
+
+    Returns:
+        Smart money bias (BULLISH/BEARISH/NEUTRAL), score, institutional flow, and divergence signals.
+    """
+    result = await api_get(f"/api/smart-money/{symbol.upper()}")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_hyperliquid_whales(symbol: str = "BTC") -> str:
+    """Get top whale positions on Hyperliquid DEX.
+
+    Shows the top 20 largest positions on Hyperliquid with their entry price,
+    leverage, and unrealized PnL. These whales often front-run major moves.
+
+    Args:
+        symbol: Crypto symbol (e.g. BTC, ETH, SOL)
+
+    Returns:
+        Top 20 whale positions with side, size, entry, leverage, PnL, and net bias.
+    """
+    result = await api_get(f"/api/hyperliquid-whales?symbol={symbol.upper()}")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_btc_dominance() -> str:
+    """Get Bitcoin dominance, altseason score, and total crypto market cap.
+
+    Tracks BTC's share of the total crypto market. Falling BTC dominance
+    often signals altseason (capital rotating into alts). Rising dominance
+    means flight to quality (BTC season).
+
+    Returns:
+        BTC/ETH/alt dominance percentages, total market cap, volume,
+        and altseason classification (STRONG_ALTSEASON to BTC_SEASON).
+    """
+    result = await api_get("/api/btc-dominance")
+    return json.dumps(result, indent=2)
+
+
 # ═════════════════════════════════════════════════════════════════
 # RESOURCES
 # ═════════════════════════════════════════════════════════════════
@@ -1406,6 +1502,135 @@ async def get_model_info() -> str:
             "Market structure service (VPVR, pivots, auto-support, trendlines)"
         ],
         "infrastructure": config.MODEL_GPU,
+    }, indent=2)
+
+
+@mcp.resource("bastion://tools")
+async def get_tools() -> str:
+    """Complete list of all 58 BASTION MCP tools with descriptions."""
+    tools = {
+        "core_ai": [
+            "bastion_evaluate_risk — AI risk evaluation for a position",
+            "bastion_chat — Ask anything about crypto markets",
+            "bastion_evaluate_all_positions — Evaluate all positions at once",
+            "bastion_scan_signals — Scan for trading signals",
+        ],
+        "market_data": [
+            "bastion_get_price — Live crypto price",
+            "bastion_get_market_data — Aggregated market intelligence",
+            "bastion_get_klines — Candlestick OHLCV data",
+            "bastion_get_volatility — Volatility metrics + regime",
+            "bastion_get_volatility_regime — Volatility regime classification",
+            "bastion_get_btc_dominance — BTC dominance + altseason score",
+        ],
+        "derivatives_orderflow": [
+            "bastion_get_open_interest — OI across exchanges",
+            "bastion_get_oi_changes — OI changes across all pairs",
+            "bastion_get_cvd — Cumulative Volume Delta",
+            "bastion_get_orderflow — Order flow analysis",
+            "bastion_get_funding_rates — Cross-exchange funding rates",
+            "bastion_get_funding_arb — Funding rate arbitrage",
+            "bastion_get_liquidations — Liquidation events + clusters",
+            "bastion_get_liquidations_by_exchange — Liquidations per exchange",
+            "bastion_get_heatmap — Liquidation heatmap",
+            "bastion_get_taker_ratio — Taker buy/sell ratio",
+            "bastion_get_top_traders — Top trader positioning",
+            "bastion_get_market_maker_magnet — MM gamma magnet levels",
+            "bastion_get_options — Options OI, P/C ratio, max pain",
+        ],
+        "onchain_intelligence": [
+            "bastion_get_whale_activity — Whale transactions (11 chains)",
+            "bastion_get_exchange_flow — Exchange inflow/outflow",
+            "bastion_get_onchain — On-chain metrics",
+            "bastion_get_news — Aggregated crypto news",
+            "bastion_get_smart_money — Smart money flow analysis",
+            "bastion_get_hyperliquid_whales — Top Hyperliquid whale positions",
+        ],
+        "macro_sentiment": [
+            "bastion_get_fear_greed — Fear & Greed Index",
+            "bastion_get_macro_signals — DXY, yields, equities, gold",
+            "bastion_get_etf_flows — BTC/ETH ETF flows",
+            "bastion_get_stablecoin_markets — Stablecoin supply + flows",
+            "bastion_get_economic_data — FRED economic data",
+            "bastion_get_polymarket — Prediction market data",
+        ],
+        "research": [
+            "bastion_generate_report — MCF Labs research report",
+            "bastion_get_reports — List existing reports",
+            "bastion_calculate_position — Position sizing + Monte Carlo",
+            "bastion_get_kelly_sizing — Kelly Criterion optimal sizing",
+        ],
+        "portfolio": [
+            "bastion_get_positions — All open positions",
+            "bastion_get_balance — Portfolio balance",
+            "bastion_get_exchanges — Connected exchanges",
+            "bastion_engine_status — Engine status",
+            "bastion_engine_history — Engine execution history",
+            "bastion_get_alerts — Active alerts",
+            "bastion_get_session_stats — Session statistics",
+        ],
+        "trading_actions": [
+            "bastion_emergency_exit — Close ALL positions",
+            "bastion_partial_close — Close % of a position",
+            "bastion_set_take_profit — Set/update TP",
+            "bastion_set_stop_loss — Set/update SL",
+            "bastion_move_to_breakeven — Move stops to entry",
+            "bastion_flatten_winners — Close all winning positions",
+        ],
+        "engine_control": [
+            "bastion_engine_start — Start risk engine",
+            "bastion_engine_arm — Arm for auto-execution",
+            "bastion_engine_disarm — Disarm engine",
+        ],
+        "war_room": [
+            "bastion_war_room_post — Post signal to War Room",
+            "bastion_war_room_read — Read War Room feed",
+            "bastion_war_room_consensus — Get consensus",
+        ],
+    }
+    return json.dumps({"tools": tools, "total": 58}, indent=2)
+
+
+@mcp.resource("bastion://exchanges")
+async def get_exchanges() -> str:
+    """List of supported exchanges for BASTION integration."""
+    return json.dumps({
+        "supported_exchanges": [
+            {"name": "Binance", "type": "CEX", "features": ["futures", "spot", "read", "write"]},
+            {"name": "Bybit", "type": "CEX", "features": ["futures", "spot", "read", "write"]},
+            {"name": "OKX", "type": "CEX", "features": ["futures", "spot", "read", "write"]},
+            {"name": "Bitunix", "type": "CEX", "features": ["futures", "read", "write"]},
+            {"name": "Hyperliquid", "type": "DEX", "features": ["futures", "read"]},
+            {"name": "Deribit", "type": "CEX", "features": ["options", "futures", "read"]},
+            {"name": "BloFin", "type": "CEX", "features": ["futures", "read", "write"]},
+        ],
+        "note": "Connect exchanges in the BASTION dashboard. Read-only for monitoring, "
+                "write-enabled for autonomous engine execution."
+    }, indent=2)
+
+
+@mcp.resource("bastion://capabilities")
+async def get_capabilities() -> str:
+    """Complete BASTION platform capabilities and data sources."""
+    return json.dumps({
+        "ai_engine": {
+            "model": "72B parameter fine-tuned Qwen",
+            "gpu_cluster": "4x RTX 5090 (128GB VRAM)",
+            "accuracy": "75.4% combined (BTC 71.7%, ETH 72.7%, SOL 81.8%)",
+            "signals_analyzed": "560+ per evaluation",
+        },
+        "data_sources": {
+            "helsinki_vm": "33 quantitative endpoints (derivatives, order flow, volatility)",
+            "coinglass": "13 premium endpoints (OI, liquidations, whale positions)",
+            "whale_alert": "11 blockchain whale tracking",
+            "market_structure": "VPVR, pivot detection, auto-support, trendlines",
+            "macro": "Yahoo Finance, FRED, CoinGecko, Polymarket",
+        },
+        "mcp_tools": 58,
+        "resources": 6,
+        "prompts": 7,
+        "trading_actions": ["HOLD", "EXIT_FULL", "TP_PARTIAL", "EXIT_100%", "REDUCE_SIZE", "TRAIL_STOP"],
+        "supported_symbols": config.SUPPORTED_SYMBOLS,
     }, indent=2)
 
 
@@ -1628,4 +1853,109 @@ async def risk_check(symbol: str = "BTC") -> str:
         f"3. Check funding rates (bastion_get_funding_rates)\n\n"
         f"Summarize: Is this a high-risk or low-risk environment right now? "
         f"What are the key threats?"
+    )
+
+
+@mcp.prompt()
+async def portfolio_risk_scan() -> str:
+    """Run a comprehensive risk scan on all open positions.
+
+    Evaluates every position, checks whale activity, funding rates,
+    liquidation risk, and macro conditions — returns a full risk briefing.
+    """
+    return (
+        "Run a comprehensive risk scan using BASTION tools:\n\n"
+        "1. Get all open positions (bastion_get_positions)\n"
+        "2. Run AI evaluation on ALL positions (bastion_evaluate_all_positions)\n"
+        "3. Check whale activity (bastion_get_whale_activity)\n"
+        "4. Check funding rates (bastion_get_funding_rates)\n"
+        "5. Check Fear & Greed Index (bastion_get_fear_greed)\n"
+        "6. Check macro signals (bastion_get_macro_signals)\n\n"
+        "Synthesize into a clear risk briefing:\n"
+        "- Which positions need immediate action?\n"
+        "- What's the overall portfolio risk level (LOW/MEDIUM/HIGH/CRITICAL)?\n"
+        "- Are there any macro headwinds or tailwinds?\n"
+        "- What's the recommended course of action?"
+    )
+
+
+@mcp.prompt()
+async def whale_tracker(symbol: str = "BTC") -> str:
+    """Track whale activity and smart money flows for a cryptocurrency.
+
+    Args:
+        symbol: Crypto symbol to track (default BTC)
+    """
+    return (
+        f"Track whale activity and smart money flows for {symbol.upper()}:\n\n"
+        f"1. Get whale transactions (bastion_get_whale_activity)\n"
+        f"2. Get exchange inflow/outflow (bastion_get_exchange_flow)\n"
+        f"3. Get Hyperliquid whale positions (bastion_get_hyperliquid_whales)\n"
+        f"4. Get smart money flow (bastion_get_smart_money)\n"
+        f"5. Get top trader positioning (bastion_get_top_traders)\n\n"
+        f"Summarize: Where is the smart money flowing? Are whales accumulating "
+        f"or distributing? What do Hyperliquid whale positions tell us about "
+        f"institutional conviction? Is there divergence between retail and smart money?"
+    )
+
+
+@mcp.prompt()
+async def macro_briefing() -> str:
+    """Get a complete macro + crypto market briefing.
+
+    Covers traditional markets, crypto sentiment, BTC dominance,
+    stablecoins, prediction markets, and risk environment.
+    """
+    return (
+        "Give me a complete macro + crypto market briefing using BASTION tools:\n\n"
+        "1. Get macro signals — DXY, VIX, yields, equities (bastion_get_macro_signals)\n"
+        "2. Get Fear & Greed Index (bastion_get_fear_greed)\n"
+        "3. Get BTC dominance and altseason score (bastion_get_btc_dominance)\n"
+        "4. Get ETF flows (bastion_get_etf_flows)\n"
+        "5. Get stablecoin markets (bastion_get_stablecoin_markets)\n"
+        "6. Get BTC volatility regime (bastion_get_volatility_regime)\n"
+        "7. Get prediction market sentiment (bastion_get_polymarket)\n\n"
+        "Synthesize into a clear briefing:\n"
+        "- Is it risk-on or risk-off in traditional markets?\n"
+        "- What's the crypto sentiment and where in the cycle are we?\n"
+        "- Is capital flowing into or out of crypto (ETFs + stablecoins)?\n"
+        "- Are we in altseason or BTC season?\n"
+        "- What are prediction markets pricing in?"
+    )
+
+
+@mcp.prompt()
+async def pre_trade_analysis(
+    symbol: str,
+    direction: str,
+    entry_price: str,
+    stop_loss: str,
+    take_profit: str,
+) -> str:
+    """Run a complete pre-trade analysis before entering a position.
+
+    Args:
+        symbol: Trading pair (e.g. BTC, ETH, SOL)
+        direction: LONG or SHORT
+        entry_price: Planned entry price
+        stop_loss: Stop loss price
+        take_profit: Take profit target
+    """
+    return (
+        f"I'm considering a {direction.upper()} on {symbol.upper()} "
+        f"with entry ${entry_price}, stop ${stop_loss}, TP ${take_profit}.\n\n"
+        f"Run a complete pre-trade analysis using BASTION tools:\n\n"
+        f"1. Calculate position sizing (bastion_calculate_position)\n"
+        f"2. Get Kelly Criterion sizing (bastion_get_kelly_sizing)\n"
+        f"3. Get current market data (bastion_get_market_data)\n"
+        f"4. Check liquidation clusters near entry/stop (bastion_get_liquidations)\n"
+        f"5. Check funding sentiment (bastion_get_funding_rates)\n"
+        f"6. Check whale positioning (bastion_get_hyperliquid_whales)\n"
+        f"7. Check volatility regime (bastion_get_volatility_regime)\n\n"
+        f"Tell me:\n"
+        f"- Is this a good entry? What's the probability of hitting TP vs SL?\n"
+        f"- What's the optimal position size?\n"
+        f"- Are there liquidation clusters that could sweep my stop?\n"
+        f"- Is the market structure supportive of a {direction.upper()}?\n"
+        f"- Final verdict: TAKE THE TRADE or PASS?"
     )

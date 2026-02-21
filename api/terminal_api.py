@@ -1121,6 +1121,17 @@ async def list_mcp_tools():
         {"name": "bastion_get_polymarket", "category": "Macro", "scope": "public", "description": "Prediction market data", "params": [
             {"name": "limit", "type": "number", "required": False, "description": "Number of markets", "default": 15},
         ]},
+        {"name": "bastion_get_btc_dominance", "category": "Macro", "scope": "public", "description": "BTC dominance + altseason score", "params": []},
+        {"name": "bastion_get_kelly_sizing", "category": "Research", "scope": "public", "description": "Kelly Criterion optimal sizing", "params": []},
+        {"name": "bastion_get_liquidations_by_exchange", "category": "Derivatives", "scope": "public", "description": "Liquidations per exchange", "params": [
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_smart_money", "category": "Intelligence", "scope": "public", "description": "Smart money flow analysis", "params": [
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+        ]},
+        {"name": "bastion_get_hyperliquid_whales", "category": "Intelligence", "scope": "public", "description": "Top Hyperliquid whale positions", "params": [
+            {"name": "symbol", "type": "string", "required": False, "description": "Crypto symbol", "default": "BTC"},
+        ]},
         {"name": "bastion_get_positions", "category": "Portfolio", "scope": "read", "description": "Open positions", "params": [
             {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
         ]},
@@ -1131,7 +1142,7 @@ async def list_mcp_tools():
             {"name": "api_key", "type": "string", "required": True, "description": "Your bst_ API key"},
         ]},
     ]
-    return {"tools": tools, "total": 53, "listed": len(tools)}
+    return {"tools": tools, "total": 58, "listed": len(tools)}
 
 @app.post("/api/mcp/playground/execute")
 async def playground_execute(request: Request, data: dict):
@@ -1169,6 +1180,11 @@ async def execute_playground_tool(data: dict):
         "bastion_get_stablecoin_markets": ("GET", "/api/stablecoin-markets"),
         "bastion_get_economic_data": ("GET", "/api/fred-data"),
         "bastion_get_polymarket": ("GET", "/api/polymarket"),
+        "bastion_get_btc_dominance": ("GET", "/api/btc-dominance"),
+        "bastion_get_kelly_sizing": ("GET", "/api/kelly"),
+        "bastion_get_liquidations_by_exchange": ("GET", "/api/liq-exchange/{symbol}"),
+        "bastion_get_smart_money": ("GET", "/api/smart-money/{symbol}"),
+        "bastion_get_hyperliquid_whales": ("GET", "/api/hyperliquid-whales"),
         "bastion_get_positions": ("GET", "/api/positions/all"),
         "bastion_get_balance": ("GET", "/api/balance/total"),
         "bastion_engine_status": ("GET", "/api/engine/status"),
@@ -5547,6 +5563,126 @@ async def stablecoin_markets():
         logger.error(f"Stablecoin markets error: {e}")
 
     return {"success": False, "stablecoins": [], "error": "Stablecoin data unavailable"}
+
+
+# ═════════════════════════════════════════════════════════════════
+# ADVANCED DATA ENDPOINTS (Smart Money, Dominance, Hyperliquid)
+# ═════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/smart-money/{symbol}")
+async def smart_money_flow(symbol: str = "BTC"):
+    """Get smart money flow analysis from Helsinki quant server."""
+    try:
+        result = await helsinki.fetch_endpoint(f"/quant/smart-money/{symbol.upper()}")
+        if result.success and result.data:
+            data = result.data
+            return {
+                "success": True,
+                "symbol": symbol.upper(),
+                "smart_money_bias": data.get("bias", "NEUTRAL"),
+                "smart_money_score": data.get("score", 0),
+                "institutional_flow": data.get("institutional_flow", {}),
+                "divergence": data.get("divergence", "NONE"),
+                "details": data,
+                "latency_ms": result.latency_ms,
+                "source": "helsinki",
+            }
+    except Exception as e:
+        logger.error(f"Smart money flow error for {symbol}: {e}")
+    return {"success": False, "symbol": symbol.upper(), "error": "Smart money data unavailable"}
+
+
+@app.get("/api/btc-dominance")
+async def btc_dominance():
+    """Get BTC dominance and altseason indicators."""
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            # CoinGecko global data (free, no key)
+            resp = await client.get(
+                "https://api.coingecko.com/api/v3/global",
+                headers={"User-Agent": "BASTION/1.0"},
+            )
+            if resp.status_code == 200:
+                data = resp.json().get("data", {})
+                btc_dom = data.get("market_cap_percentage", {}).get("btc", 0)
+                eth_dom = data.get("market_cap_percentage", {}).get("eth", 0)
+                total_mcap = data.get("total_market_cap", {}).get("usd", 0)
+                total_vol = data.get("total_volume", {}).get("usd", 0)
+                mcap_change = data.get("market_cap_change_percentage_24h_usd", 0)
+                active_coins = data.get("active_cryptocurrencies", 0)
+
+                # Altseason heuristic: BTC dom < 40% and dropping = altseason
+                if btc_dom < 38:
+                    alt_score = "STRONG_ALTSEASON"
+                elif btc_dom < 45:
+                    alt_score = "ALTSEASON"
+                elif btc_dom > 60:
+                    alt_score = "BTC_SEASON"
+                elif btc_dom > 55:
+                    alt_score = "BTC_LEANING"
+                else:
+                    alt_score = "NEUTRAL"
+
+                return {
+                    "success": True,
+                    "btc_dominance": round(btc_dom, 2),
+                    "eth_dominance": round(eth_dom, 2),
+                    "alt_dominance": round(100 - btc_dom - eth_dom, 2),
+                    "total_market_cap": total_mcap,
+                    "total_volume_24h": total_vol,
+                    "market_cap_change_24h": round(mcap_change, 2),
+                    "active_cryptocurrencies": active_coins,
+                    "altseason_score": alt_score,
+                    "source": "coingecko",
+                }
+    except Exception as e:
+        logger.error(f"BTC dominance error: {e}")
+    return {
+        "success": False,
+        "btc_dominance": 0,
+        "altseason_score": "UNKNOWN",
+        "error": "Dominance data unavailable",
+    }
+
+
+@app.get("/api/hyperliquid-whales")
+async def hyperliquid_whales(symbol: str = "BTC"):
+    """Get top Hyperliquid whale positions with entry, leverage, PnL."""
+    try:
+        result = await coinglass.get_hyperliquid_whale_positions(symbol.upper())
+        if result.success and result.data:
+            positions = result.data if isinstance(result.data, list) else result.data.get("data", [])
+            # Format top positions
+            formatted = []
+            for p in positions[:20]:
+                formatted.append({
+                    "account": p.get("account", "")[:10] + "...",
+                    "symbol": p.get("symbol", symbol.upper()),
+                    "side": "LONG" if float(p.get("positionSize", p.get("size", 0))) > 0 else "SHORT",
+                    "size_usd": abs(float(p.get("positionValue", p.get("notional", 0)))),
+                    "entry_price": float(p.get("entryPrice", p.get("entry_price", 0))),
+                    "leverage": float(p.get("leverage", 1)),
+                    "unrealized_pnl": float(p.get("unrealizedPnl", p.get("pnl", 0))),
+                    "margin_used": float(p.get("marginUsed", 0)),
+                })
+
+            total_long = sum(p["size_usd"] for p in formatted if p["side"] == "LONG")
+            total_short = sum(p["size_usd"] for p in formatted if p["side"] == "SHORT")
+
+            return {
+                "success": True,
+                "symbol": symbol.upper(),
+                "whale_positions": formatted,
+                "total_long_usd": round(total_long, 2),
+                "total_short_usd": round(total_short, 2),
+                "net_bias": "LONG" if total_long > total_short else "SHORT" if total_short > total_long else "NEUTRAL",
+                "whale_count": len(formatted),
+                "source": "coinglass+hyperliquid",
+            }
+    except Exception as e:
+        logger.error(f"Hyperliquid whales error for {symbol}: {e}")
+    return {"success": False, "symbol": symbol.upper(), "whale_positions": [], "error": "Hyperliquid whale data unavailable"}
 
 
 @app.post("/api/pre-trade-calculator")
