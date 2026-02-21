@@ -29,4 +29,4 @@ bcrypt>=4.0.0
 cryptography>=41.0.0
 
 # MCP (Model Context Protocol) — Claude agent integration
-mcp>=1.2.0
+mcp>=1.8.0

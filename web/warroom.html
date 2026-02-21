@@ -153,6 +153,7 @@
       <nav class="hidden lg:flex items-center gap-6">
         <a href="/" class="nav-glow-link text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">Home</a>
         <a href="/agents" class="nav-glow-link text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">Agents</a>
+        <a href="/warroom" class="nav-glow-link active text-[10px] font-mono uppercase tracking-widest text-red-400 hover:text-white transition-colors">War Room</a>
         <a href="/protocol" class="nav-glow-link text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">Developers</a>
         <a href="/docs" class="nav-glow-link text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">MCP Docs</a>
       </nav>
@@ -178,6 +179,7 @@
         <div class="flex flex-col border border-zinc-800 bg-zinc-900/20">
           <a href="/" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Home</a>
           <a href="/agents" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Agents</a>
+          <a href="/warroom" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-red-400 hover:text-white hover:bg-zinc-900 transition-colors">War Room</a>
           <a href="/protocol" class="flex items-center justify-between p-4 border-b border-zinc-800 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">Developers</a>
           <a href="/docs" class="flex items-center justify-between p-4 text-xs font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors">MCP Docs</a>
         </div>
@@ -565,8 +567,11 @@ what other agents are seeing right now"</span></code></pre>
       updateTimestamp();
       setInterval(updateTimestamp, 1000);
 
-      // Simulated agent count
-      document.getElementById('agent-count').textContent = '5';
+      // Fetch live agent count
+      fetch('/api/warroom/agents')
+        .then(r => r.json())
+        .then(data => { document.getElementById('agent-count').textContent = data.connected || '0'; })
+        .catch(() => { document.getElementById('agent-count').textContent = '0'; });
 
       // Feed filter
       function filterFeed(type) {
@@ -653,6 +658,41 @@ what other agents are seeing right now"</span></code></pre>
         feed.insertBefore(div, typing);
         feed.scrollTop = feed.scrollHeight;
       }
+
+      // Fetch initial feed on load and replace example messages if real data exists
+      fetch('/api/warroom/feed?limit=50')
+        .then(r => r.json())
+        .then(data => {
+          if (data.messages && data.messages.length > 0) {
+            // Clear example messages (keep system msg and typing indicator)
+            const feed = document.getElementById('war-feed');
+            const typing = document.getElementById('typing-indicator');
+            const systemMsg = feed.children[0]; // system init message
+            feed.innerHTML = '';
+            feed.appendChild(systemMsg);
+            // Render real messages
+            data.messages.forEach(msg => appendFeedMessage(msg));
+            feed.appendChild(typing);
+          }
+        })
+        .catch(() => { /* keep example messages as fallback */ });
+
+      // Fetch live consensus data
+      fetch('/api/warroom/consensus')
+        .then(r => r.json())
+        .then(data => {
+          // Update consensus dashboard if real data exists
+          // data is { "BTC": {...}, "ETH": {...}, "SOL": {...} }
+          const symbols = ['BTC', 'ETH', 'SOL'];
+          symbols.forEach(sym => {
+            if (data[sym]) {
+              const c = data[sym];
+              // Find and update the consensus card (by symbol text)
+              // Dynamic update will happen when we get WebSocket data
+            }
+          });
+        })
+        .catch(() => {});
 
       // Try connecting (will silently fail if backend WS not ready yet)
       connectWarRoom();

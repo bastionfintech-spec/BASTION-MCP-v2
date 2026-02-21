@@ -564,18 +564,35 @@ if web_dir.exists():
 else:
     logger.warning(f"Web directory not found at {web_dir}")
 
-# ── Mount BASTION MCP Server (SSE transport) ──────────────────────
+# ── Mount BASTION MCP Server (Dual transport: Streamable HTTP + SSE) ──
 # Exposes BASTION Risk Intelligence as MCP tools for Claude agents.
-# Clients connect at /mcp/sse  (Server-Sent Events)
-# Messages POST to /mcp/messages/
+#
+# Transport 1 — Streamable HTTP (primary, MCP spec 2025-03-26):
+#   POST /mcp/stream  — JSON-RPC messages (InitializeRequest, tools/call, etc.)
+#   GET  /mcp/stream  — Optional SSE stream for server-initiated notifications
+#   Used by: Smithery.ai gateway, modern MCP clients
+#
+# Transport 2 — Legacy SSE (original, still supported):
+#   GET  /mcp/sse       — SSE handshake (returns session + endpoint URI)
+#   POST /mcp/messages/ — JSON-RPC messages
+#   Used by: Claude Desktop, Claude Code, most MCP SDKs
 try:
     from mcp_server.server import mcp as mcp_server_instance
-    _mcp_sse = mcp_server_instance.sse_app()
 
-    # Wrap the SSE app to fix the sub-path prefix issue:
-    # When mounted under /mcp, the SSE handshake sends back
-    # "/messages/?session_id=..." but the client needs "/mcp/messages/..."
     from starlette.types import ASGIApp, Receive, Scope, Send
+
+    # --- Transport 1: Streamable HTTP (mount FIRST — more specific path) ---
+    try:
+        _mcp_http = mcp_server_instance.streamable_http_app()
+        app.mount("/mcp/stream", _mcp_http, name="mcp_server_stream")
+        logger.info("[MCP] Streamable HTTP transport mounted at /mcp/stream")
+    except AttributeError:
+        logger.info("[MCP] streamable_http_app not available (mcp < 1.8.0), SSE only")
+    except Exception as e:
+        logger.warning(f"[MCP] Streamable HTTP setup failed: {e}")
+
+    # --- Transport 2: Legacy SSE (original, broader prefix) ---
+    _mcp_sse = mcp_server_instance.sse_app()
 
     class _MCPSubpathFix:
         """ASGI middleware that rewrites the SSE endpoint URI to include /mcp prefix."""
@@ -585,7 +602,6 @@ try:
 
         async def __call__(self, scope: Scope, receive: Receive, send: Send):
             if scope["type"] == "http" and scope["path"] == "/sse":
-                # Patch send to rewrite the endpoint URI in the SSE event
                 original_send = send
                 async def patched_send(message):
                     if message.get("type") == "http.response.body":
@@ -603,6 +619,7 @@ try:
 
     app.mount("/mcp", _MCPSubpathFix(_mcp_sse), name="mcp_server")
     logger.info("[MCP] BASTION MCP Server mounted at /mcp (SSE at /mcp/sse)")
+
 except ImportError as e:
     logger.warning(f"[MCP] MCP Server not available (missing dependency): {e}")
 except Exception as e:

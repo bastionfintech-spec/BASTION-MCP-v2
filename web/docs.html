@@ -30,6 +30,7 @@
       .inst-section { border-left: 2px solid #27272a; padding-left: 1rem; }
       /* Code blocks */
       pre code { display: block; overflow-x: auto; padding: 14px 16px; font-size: 11.5px; line-height: 1.65; }
+      @media (max-width: 640px) { pre code { font-size: 12.5px; padding: 12px 14px; } }
       .code-block { position: relative; }
       .code-block .copy-btn { position: absolute; top: 6px; right: 6px; opacity: 0; transition: opacity 0.15s; }
       .code-block:hover .copy-btn { opacity: 1; }
@@ -88,15 +89,10 @@
 
   <!-- CENTER: Nav tabs (desktop) -->
   <nav class="hidden lg:flex items-center h-full border-x border-zinc-800/50">
-    <a href="/terminal" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">
-      <iconify-icon icon="solar:monitor-bold" class="text-xs"></iconify-icon>RISK ENGINE
-    </a>
-    <a href="/research" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">
-      <iconify-icon icon="solar:documents-bold" class="text-xs"></iconify-icon>RESEARCH
-    </a>
-    <a href="/monitor" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">
-      <iconify-icon icon="solar:eye-bold" class="text-xs"></iconify-icon>PULSE
-    </a>
+    <a href="/" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">Home</a>
+    <a href="/agents" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">Agents</a>
+    <a href="/warroom" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">War Room</a>
+    <a href="/protocol" class="flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-zinc-900/50 border-r border-zinc-800/50 transition-colors">Developers</a>
     <div class="relative flex items-center gap-1.5 px-5 h-full text-[10px] font-mono uppercase tracking-widest text-white bg-zinc-900/50 border-r border-zinc-800/50">
       <iconify-icon icon="solar:code-bold" class="text-xs text-red-500"></iconify-icon>MCP DOCS
       <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600"></div>
@@ -105,14 +101,14 @@
 
   <!-- RIGHT -->
   <div class="flex items-center h-full gap-2 px-4">
-    <a href="/lite" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-[9px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors">
-      <iconify-icon icon="solar:arrow-left-linear" class="text-xs"></iconify-icon>DASHBOARD
+    <a href="/" class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-[9px] font-mono uppercase tracking-widest text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors">
+      <iconify-icon icon="solar:arrow-left-linear" class="text-xs"></iconify-icon>HOME
     </a>
     <!-- Mobile nav -->
     <div class="flex lg:hidden items-center gap-3 text-[9px] font-mono uppercase tracking-widest">
-      <a href="/terminal" class="text-zinc-500 hover:text-white">Terminal</a>
-      <a href="/monitor" class="text-zinc-500 hover:text-white">Pulse</a>
-      <a href="/research" class="text-zinc-500 hover:text-white">Research</a>
+      <a href="/agents" class="text-zinc-500 hover:text-white">Agents</a>
+      <a href="/warroom" class="text-zinc-500 hover:text-white">War Room</a>
+      <a href="/protocol" class="text-zinc-500 hover:text-white">Developers</a>
     </div>
     <button id="mobile-menu-btn" class="lg:hidden p-1 text-zinc-400 hover:text-white ml-2">
       <iconify-icon icon="solar:hamburger-menu-linear" width="20"></iconify-icon>
