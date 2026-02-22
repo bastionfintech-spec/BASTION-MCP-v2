@@ -2,7 +2,7 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (108):
+Tools (118):
   CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
@@ -142,6 +142,26 @@ Tools (108):
     bastion_decision_provenance  — Record full decision reasoning chain
     bastion_get_provenance       — Query decision provenance
     bastion_tool_safety          — Get safety annotations for all tools
+
+  MONTE CARLO SIMULATION (institutional-grade)
+    bastion_simulate_portfolio   — Jump-diffusion Monte Carlo (VaR, CVaR, probability distributions)
+
+  AI TRADE JOURNAL (pattern mining)
+    bastion_journal_log          — Natural language trade logging
+    bastion_journal_analyze      — Pattern mining + win rate by setup
+    bastion_journal_bias_detect  — Cognitive bias detection
+
+  INSTITUTIONAL RISK REPORTS
+    bastion_risk_report          — VaR, CVaR, counterparty risk, risk grade
+
+  PROACTIVE MONITORING
+    bastion_monitor_position     — Register position for proactive alerts
+    bastion_check_monitor        — Check monitored position vs market
+    bastion_list_monitors        — List active monitors
+
+  AGENT-AS-A-SERVICE
+    bastion_service_evaluate     — Metered risk eval for external agents
+    bastion_service_stats        — Service usage statistics
 
 Resources (8):
   bastion://status, bastion://supported-symbols, bastion://model-info,
@@ -1771,7 +1791,7 @@ async def get_model_info() -> str:
 
 @mcp.resource("bastion://tools")
 async def get_tools() -> str:
-    """Complete list of all 108 BASTION MCP tools with descriptions."""
+    """Complete list of all 118 BASTION MCP tools with descriptions."""
     tools = {
         "core_ai": [
             "bastion_evaluate_risk — AI risk evaluation for a position",
@@ -1917,8 +1937,28 @@ async def get_tools() -> str:
             "bastion_get_provenance — Query decision provenance",
             "bastion_tool_safety — Get safety annotations for all tools",
         ],
+        "monte_carlo": [
+            "bastion_simulate_portfolio — Jump-diffusion Monte Carlo simulation (VaR, CVaR)",
+        ],
+        "ai_journal": [
+            "bastion_journal_log — Natural language trade logging with auto-parsing",
+            "bastion_journal_analyze — Pattern mining + win rate by setup/symbol/direction",
+            "bastion_journal_bias_detect — Cognitive bias detection (revenge, FOMO, loss aversion)",
+        ],
+        "institutional": [
+            "bastion_risk_report — VaR, CVaR, counterparty risk, risk grade (A-F)",
+        ],
+        "proactive_monitoring": [
+            "bastion_monitor_position — Register position for proactive alerts",
+            "bastion_check_monitor — Check monitored position vs live market",
+            "bastion_list_monitors — List active position monitors",
+        ],
+        "agent_service": [
+            "bastion_service_evaluate — Metered risk eval for external AI agents",
+            "bastion_service_stats — Agent-as-a-Service usage statistics",
+        ],
     }
-    return json.dumps({"tools": tools, "total": 108}, indent=2)
+    return json.dumps({"tools": tools, "total": 118}, indent=2)
 
 
 @mcp.resource("bastion://exchanges")
@@ -1979,7 +2019,7 @@ async def get_capabilities() -> str:
             "market_structure": "VPVR, pivot detection, auto-support, trendlines",
             "macro": "Yahoo Finance, FRED, CoinGecko, Polymarket",
         },
-        "mcp_tools": 108,
+        "mcp_tools": 118,
         "resources": 8,
         "prompts": 10,
         "features": {
@@ -3517,8 +3557,292 @@ async def bastion_tool_safety() -> str:
                 ],
             },
         },
-        "total_tools": 108,
+        "total_tools": 118,
     }, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# MONTE CARLO PORTFOLIO SIMULATION
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_simulate_portfolio(
+    positions: str = '[{"symbol":"BTC","direction":"LONG","entry_price":95000,"current_price":96000,"size_usd":5000,"leverage":3}]',
+    horizon_days: int = 7,
+    simulations: int = 10000,
+    confidence_level: float = 0.95,
+) -> str:
+    """Run Monte Carlo simulation on a portfolio — VaR, CVaR, probability distributions.
+
+    Institutional-grade risk quantification using jump-diffusion Monte Carlo (fat-tail aware).
+    Simulates 10,000 paths for each position, calculates Value at Risk, Conditional VaR,
+    probability of profit, probability of hitting TP/SL, and liquidation risk.
+
+    Args:
+        positions: JSON array of positions — [{symbol, direction, entry_price, current_price, size_usd, leverage, stop_loss, take_profit}]
+        horizon_days: Simulation horizon in days (1-90)
+        simulations: Number of Monte Carlo paths (max 50000)
+        confidence_level: VaR confidence level (0.90-0.99)
+
+    Returns:
+        Portfolio VaR, CVaR, per-position risk metrics, probability distributions, liquidation risk.
+    """
+    try:
+        pos_list = json.loads(positions) if isinstance(positions, str) else positions
+    except json.JSONDecodeError:
+        return json.dumps({"error": "Invalid positions JSON"})
+
+    result = await api_post("/api/simulate/portfolio", {
+        "positions": pos_list, "horizon_days": horizon_days,
+        "simulations": simulations, "confidence_level": confidence_level,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# AI TRADE JOURNAL — Pattern Mining + Bias Detection
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_journal_log(
+    description: str,
+    user_id: str = "_default",
+) -> str:
+    """Log a trade using natural language — BASTION auto-parses into structured data.
+
+    Describe your trade in plain English and BASTION extracts: symbol, direction,
+    entry/exit prices, leverage, PnL, setup tags (VPVR, breakout, funding play, etc.),
+    and detects emotional tags (FOMO, revenge trading).
+
+    Example: "Went long BTC at 95k because I saw a bullish engulfing at the VPVR POC
+    with positive funding flip. 5x leverage. Took profit at 97k for +2.1%"
+
+    Args:
+        description: Natural language description of the trade
+        user_id: User identifier for journal scoping
+
+    Returns:
+        Parsed trade entry with extracted fields and tags.
+    """
+    result = await api_post("/api/journal/smart-log", {
+        "description": description, "user_id": user_id,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_journal_analyze(
+    user_id: str = "_default",
+) -> str:
+    """Analyze your trade journal — find patterns, win rates by setup, and insights.
+
+    After logging trades, this tool mines your history for actionable patterns:
+    win rate by setup type (VPVR plays vs breakouts vs funding plays), performance
+    by symbol, by direction, streak analysis, and average PnL.
+
+    Args:
+        user_id: User identifier
+
+    Returns:
+        Pattern analysis: win rates by setup/symbol/direction, streaks, and insights.
+    """
+    result = await api_get("/api/journal/analyze", params={"user_id": user_id})
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_journal_bias_detect(
+    user_id: str = "_default",
+) -> str:
+    """Detect cognitive biases from your trading patterns.
+
+    Scans your trade journal for: revenge trading, FOMO entries, loss aversion
+    (cutting winners too early), recency bias (overtrading one symbol), tilt trading
+    (consecutive losses same day), and overleveraging.
+
+    Args:
+        user_id: User identifier
+
+    Returns:
+        Detected biases with severity, evidence, and recommendations.
+    """
+    result = await api_get("/api/journal/bias-detect", params={"user_id": user_id})
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# INSTITUTIONAL RISK REPORTS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_risk_report(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    entry_price: float = 0,
+    current_price: float = 0,
+    leverage: float = 1,
+    size_usd: float = 1000,
+    stop_loss: float = 0,
+    exchange: str = "Binance",
+) -> str:
+    """Generate an institutional-grade risk report — VaR, CVaR, counterparty risk.
+
+    Produces a comprehensive risk report with: parametric Value at Risk (95% and 99%),
+    Conditional VaR (expected shortfall), liquidation analysis, stop loss analysis,
+    exchange counterparty risk scoring, and an overall risk grade (A through F).
+
+    Args:
+        symbol: Crypto symbol
+        direction: LONG or SHORT
+        entry_price: Position entry price
+        current_price: Current market price
+        leverage: Position leverage
+        size_usd: Position size in USD
+        stop_loss: Stop loss price (0 = no stop)
+        exchange: Exchange name for counterparty risk scoring
+
+    Returns:
+        Institutional risk report with VaR, CVaR, risk grade, liquidation analysis, and counterparty risk.
+    """
+    result = await api_post("/api/risk-report/generate", {
+        "symbol": symbol, "direction": direction,
+        "entry_price": entry_price, "current_price": current_price,
+        "leverage": leverage, "size_usd": size_usd,
+        "stop_loss": stop_loss, "exchange": exchange,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# PROACTIVE RISK NOTIFICATIONS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_monitor_position(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    entry_price: float = 0,
+    stop_loss: float = 0,
+    take_profit: float = 0,
+    leverage: float = 1,
+    webhook_url: str = "",
+) -> str:
+    """Register a position for proactive risk monitoring.
+
+    BASTION monitors your position and pushes alerts BEFORE you ask:
+    stop breach warnings, TP proximity, funding rate danger, critical loss alerts.
+    Alerts are pushed to your webhook (Discord/Telegram/custom URL).
+
+    Args:
+        symbol: Crypto symbol
+        direction: LONG or SHORT
+        entry_price: Entry price
+        stop_loss: Stop loss price
+        take_profit: Take profit price
+        leverage: Position leverage
+        webhook_url: Discord/Telegram/custom webhook URL for push alerts
+
+    Returns:
+        Monitor ID and registration confirmation.
+    """
+    result = await api_post("/api/monitor/register", {
+        "symbol": symbol, "direction": direction,
+        "entry_price": entry_price, "stop_loss": stop_loss,
+        "take_profit": take_profit, "leverage": leverage,
+        "webhook_url": webhook_url,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_check_monitor(
+    monitor_id: str,
+) -> str:
+    """Check a monitored position against current market conditions.
+
+    Runs all registered alert conditions (stop breach, TP proximity, funding danger,
+    critical loss) against live market data and returns any triggered alerts.
+    Also pushes alerts to the registered webhook.
+
+    Args:
+        monitor_id: The monitor ID from bastion_monitor_position
+
+    Returns:
+        Current price, triggered alerts, and severity levels.
+    """
+    result = await api_post(f"/api/monitor/check/{monitor_id}", {})
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_list_monitors() -> str:
+    """List all active position monitors.
+
+    Returns:
+        All registered position monitors with their status and alert counts.
+    """
+    result = await api_get("/api/monitor/list")
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# AGENT-AS-A-SERVICE
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_service_evaluate(
+    symbol: str = "BTC",
+    direction: str = "LONG",
+    entry_price: float = 0,
+    current_price: float = 0,
+    leverage: float = 1,
+    stop_loss: float = 0,
+    agent_key: str = "",
+) -> str:
+    """Agent-as-a-Service — BASTION risk evaluation for external AI agents.
+
+    Other AI agents (ElizaOS, AutoGPT, CrewAI, etc.) call this to get BASTION's
+    72B model risk intelligence. Metered, structured for machine-to-machine consumption.
+    Returns the full risk evaluation plus usage metering data.
+
+    Args:
+        symbol: Crypto symbol
+        direction: LONG or SHORT
+        entry_price: Entry price
+        current_price: Current price
+        leverage: Leverage
+        stop_loss: Stop loss price
+        agent_key: Your agent API key for metering
+
+    Returns:
+        Full BASTION risk evaluation with service metering metadata.
+    """
+    result = await api_post("/api/service/evaluate", {
+        "symbol": symbol, "direction": direction,
+        "entry_price": entry_price, "current_price": current_price,
+        "leverage": leverage, "stop_loss": stop_loss,
+        "agent_key": agent_key,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_service_stats() -> str:
+    """Get Agent-as-a-Service usage statistics.
+
+    Shows total API calls, today's calls, unique agents connected,
+    and top agents by usage volume.
+
+    Returns:
+        Service usage stats, connected agents, and pricing info.
+    """
+    result = await api_get("/api/service/stats")
+    return json.dumps(result, indent=2)
 
 
 # ═════════════════════════════════════════════════════════════════

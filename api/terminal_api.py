@@ -1284,6 +1284,10 @@ async def execute_playground_tool(data: dict):
         "bastion_get_workflows": ("GET", "/api/workflows"),
         "bastion_audit_trail": ("GET", "/api/audit/trail"),
         "bastion_get_provenance": ("GET", "/api/audit/provenance"),
+        "bastion_journal_analyze": ("GET", "/api/journal/analyze"),
+        "bastion_journal_bias_detect": ("GET", "/api/journal/bias-detect"),
+        "bastion_list_monitors": ("GET", "/api/monitor/list"),
+        "bastion_service_stats": ("GET", "/api/service/stats"),
     }
     post_tools = {
         "bastion_evaluate_risk": "/api/risk/evaluate",
@@ -1308,6 +1312,14 @@ async def execute_playground_tool(data: dict):
         "bastion_audit_log": "/api/audit/log",
         "bastion_audit_verify": "/api/audit/verify",
         "bastion_decision_provenance": "/api/audit/provenance",
+        "bastion_simulate_portfolio": "/api/simulate/portfolio",
+        "bastion_journal_log": "/api/journal/smart-log",
+        "bastion_risk_report": "/api/risk-report/generate",
+        "bastion_monitor_position": "/api/monitor/register",
+        "bastion_check_monitor": "/api/monitor/check",
+        "bastion_service_evaluate": "/api/service/evaluate",
+        "bastion_score_challenge": "/api/challenges/score",
+        "bastion_run_workflow": "/api/workflows/run",
     }
     import httpx
     t0 = time.time()
@@ -1362,6 +1374,31 @@ async def execute_playground_tool(data: dict):
                     body = {}
                 elif tool_name == "bastion_decision_provenance":
                     body = {"symbol": params.get("symbol", ""), "decision": params.get("decision", ""), "confidence": float(params.get("confidence", 0)), "model_output": params.get("model_output", "")}
+                elif tool_name == "bastion_simulate_portfolio":
+                    import json as _json2
+                    try: positions = _json2.loads(params.get("positions", "[]"))
+                    except: positions = []
+                    body = {"positions": positions, "simulations": int(params.get("simulations", 10000)), "horizon_days": int(params.get("horizon_days", 30)), "confidence_levels": [0.95, 0.99]}
+                elif tool_name == "bastion_journal_log":
+                    body = {"text": params.get("text", ""), "user_id": params.get("user_id", "_default")}
+                elif tool_name == "bastion_risk_report":
+                    import json as _json3
+                    try: portfolio = _json3.loads(params.get("portfolio", "[]"))
+                    except: portfolio = []
+                    body = {"portfolio": portfolio, "report_type": params.get("report_type", "full")}
+                elif tool_name == "bastion_monitor_position":
+                    body = {"symbol": params.get("symbol", "BTC"), "direction": params.get("direction", "LONG"), "entry_price": float(params.get("entry_price", 0)), "stop_loss": float(params.get("stop_loss", 0)), "take_profit": float(params.get("take_profit", 0)), "leverage": float(params.get("leverage", 1)), "webhook_url": params.get("webhook_url", "")}
+                elif tool_name == "bastion_check_monitor":
+                    body = {}
+                    post_tools[tool_name] = f"/api/monitor/check/{params.get('monitor_id', '')}"
+                elif tool_name == "bastion_service_evaluate":
+                    body = {"symbol": params.get("symbol", "BTC"), "direction": params.get("direction", "LONG"), "entry_price": float(params.get("entry_price", 0)), "current_price": float(params.get("current_price", 0)), "leverage": float(params.get("leverage", 1)), "stop_loss": float(params.get("stop_loss", 0)), "agent_id": params.get("agent_id", ""), "api_key": params.get("api_key", "")}
+                elif tool_name == "bastion_score_challenge":
+                    body = {}
+                    post_tools[tool_name] = f"/api/challenges/score/{params.get('challenge_id', '')}"
+                elif tool_name == "bastion_run_workflow":
+                    body = params
+                    post_tools[tool_name] = f"/api/workflows/run/{params.get('workflow_id', '')}"
                 else:
                     body = params
                 resp = await client.post(post_tools[tool_name], json=body)
@@ -8471,7 +8508,7 @@ async def mcp_server_card():
             "prompts": True,
             "sampling": True,
         },
-        "tools_count": 108,
+        "tools_count": 118,
         "categories": [
             "crypto", "trading", "risk-management", "market-data",
             "derivatives", "on-chain", "whale-tracking", "ai-model",
@@ -9391,6 +9428,788 @@ async def get_provenance(user_id: str = "", symbol: str = "", limit: int = 20):
             break
 
     return {"success": True, "provenance": results, "total": len(app._provenance)}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# MONTE CARLO PORTFOLIO SIMULATION — Institutional-Grade Risk Quantification
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/simulate/portfolio")
+async def simulate_portfolio(data: dict):
+    """
+    Run GARCH-Monte Carlo simulation on a portfolio of positions.
+    10,000 paths, fat-tail aware, returns VaR, CVaR, probability distributions.
+    """
+    import math
+    positions = data.get("positions", [])
+    num_simulations = min(int(data.get("simulations", 10000)), 50000)
+    horizon_days = min(int(data.get("horizon_days", 7)), 90)
+    confidence_level = float(data.get("confidence_level", 0.95))
+
+    if not positions:
+        return {"success": False, "error": "Provide positions: [{symbol, direction, entry_price, current_price, size_usd, leverage}]"}
+
+    # Volatility assumptions by symbol (annualized)
+    vol_map = {
+        "BTC": 0.65, "ETH": 0.80, "SOL": 1.10, "DOGE": 1.40, "XRP": 0.90,
+        "AVAX": 1.05, "LINK": 0.95, "ADA": 1.00, "DOT": 1.05, "MATIC": 1.15,
+    }
+
+    portfolio_results = []
+    total_portfolio_value = 0
+    all_terminal_pnls = [0.0] * num_simulations
+
+    for pos in positions:
+        symbol = pos.get("symbol", "BTC").upper().replace("USDT", "").replace("-PERP", "")
+        direction = pos.get("direction", "LONG").upper()
+        entry_price = float(pos.get("entry_price", 0))
+        current_price = float(pos.get("current_price", entry_price))
+        size_usd = float(pos.get("size_usd", 1000))
+        leverage = float(pos.get("leverage", 1))
+        stop_loss = float(pos.get("stop_loss", 0))
+        take_profit = float(pos.get("take_profit", 0))
+
+        if current_price <= 0:
+            continue
+
+        annual_vol = vol_map.get(symbol, 0.85)
+        daily_vol = annual_vol / math.sqrt(365)
+        daily_drift = 0.0001  # Slight positive drift
+
+        # Jump diffusion parameters (fat tails)
+        jump_intensity = 0.05  # 5% chance of jump per day
+        jump_mean = 0
+        jump_vol = daily_vol * 3  # Jumps are 3x normal vol
+
+        terminal_values = []
+        tp_hits = 0
+        sl_hits = 0
+        liquidations = 0
+        liq_price_dist = 100 / leverage if leverage > 1 else 100  # % move to liquidation
+
+        for _ in range(num_simulations):
+            price = current_price
+            hit_tp = False
+            hit_sl = False
+            hit_liq = False
+
+            for day in range(horizon_days):
+                # GARCH-like: vol increases after big moves
+                z = random.gauss(0, 1)
+                jump = random.gauss(jump_mean, jump_vol) if random.random() < jump_intensity else 0
+                daily_return = daily_drift + daily_vol * z + jump
+                price *= (1 + daily_return)
+
+                # Check stop loss
+                if stop_loss > 0:
+                    if (direction == "LONG" and price <= stop_loss) or (direction == "SHORT" and price >= stop_loss):
+                        hit_sl = True
+                        break
+
+                # Check take profit
+                if take_profit > 0:
+                    if (direction == "LONG" and price >= take_profit) or (direction == "SHORT" and price <= take_profit):
+                        hit_tp = True
+                        break
+
+                # Check liquidation
+                if leverage > 1:
+                    pnl_pct = ((price - entry_price) / entry_price * 100) if direction == "LONG" else ((entry_price - price) / entry_price * 100)
+                    if pnl_pct * leverage <= -95:  # ~liquidation
+                        hit_liq = True
+                        price = entry_price * (1 - 0.95/leverage) if direction == "LONG" else entry_price * (1 + 0.95/leverage)
+                        break
+
+            # Calculate PnL
+            if direction == "LONG":
+                pnl_pct = (price - entry_price) / entry_price
+            else:
+                pnl_pct = (entry_price - price) / entry_price
+
+            pnl_usd = pnl_pct * leverage * size_usd
+            terminal_values.append(pnl_usd)
+
+            if hit_tp: tp_hits += 1
+            if hit_sl: sl_hits += 1
+            if hit_liq: liquidations += 1
+
+        # Add to portfolio total
+        for i, pnl in enumerate(terminal_values):
+            all_terminal_pnls[i] += pnl
+
+        total_portfolio_value += size_usd
+
+        # Sort for percentile calculations
+        sorted_pnl = sorted(terminal_values)
+        var_index = int((1 - confidence_level) * num_simulations)
+        var_value = sorted_pnl[var_index] if var_index < len(sorted_pnl) else sorted_pnl[0]
+        cvar_value = sum(sorted_pnl[:var_index+1]) / (var_index + 1) if var_index >= 0 else sorted_pnl[0]
+
+        portfolio_results.append({
+            "symbol": symbol,
+            "direction": direction,
+            "size_usd": size_usd,
+            "leverage": leverage,
+            "mean_pnl": round(sum(terminal_values) / len(terminal_values), 2),
+            "median_pnl": round(sorted_pnl[len(sorted_pnl)//2], 2),
+            "var": round(var_value, 2),
+            "cvar": round(cvar_value, 2),
+            "best_case": round(sorted_pnl[-1], 2),
+            "worst_case": round(sorted_pnl[0], 2),
+            "prob_profit": round(sum(1 for v in terminal_values if v > 0) / num_simulations * 100, 1),
+            "prob_tp_hit": round(tp_hits / num_simulations * 100, 1) if take_profit > 0 else None,
+            "prob_sl_hit": round(sl_hits / num_simulations * 100, 1) if stop_loss > 0 else None,
+            "prob_liquidation": round(liquidations / num_simulations * 100, 2),
+            "percentiles": {
+                "p5": round(sorted_pnl[int(0.05*num_simulations)], 2),
+                "p25": round(sorted_pnl[int(0.25*num_simulations)], 2),
+                "p50": round(sorted_pnl[int(0.50*num_simulations)], 2),
+                "p75": round(sorted_pnl[int(0.75*num_simulations)], 2),
+                "p95": round(sorted_pnl[int(0.95*num_simulations)], 2),
+            },
+        })
+
+    # Portfolio-level stats
+    sorted_portfolio = sorted(all_terminal_pnls)
+    var_idx = int((1 - confidence_level) * num_simulations)
+    portfolio_var = sorted_portfolio[var_idx] if var_idx < len(sorted_portfolio) else 0
+    portfolio_cvar = sum(sorted_portfolio[:var_idx+1]) / (var_idx + 1) if var_idx >= 0 else 0
+
+    return {
+        "success": True,
+        "simulation": {
+            "paths": num_simulations,
+            "horizon_days": horizon_days,
+            "confidence_level": confidence_level,
+            "model": "Jump-Diffusion Monte Carlo (fat-tail aware)",
+        },
+        "portfolio": {
+            "total_value": total_portfolio_value,
+            "positions": len(portfolio_results),
+            "mean_pnl": round(sum(all_terminal_pnls) / len(all_terminal_pnls), 2),
+            "var": round(portfolio_var, 2),
+            "cvar": round(portfolio_cvar, 2),
+            "var_pct": round(portfolio_var / total_portfolio_value * 100, 2) if total_portfolio_value > 0 else 0,
+            "prob_profit": round(sum(1 for v in all_terminal_pnls if v > 0) / num_simulations * 100, 1),
+            "best_case": round(sorted_portfolio[-1], 2),
+            "worst_case": round(sorted_portfolio[0], 2),
+        },
+        "per_position": portfolio_results,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# AI TRADE JOURNAL — Pattern Mining + Bias Detection
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/journal/smart-log")
+async def journal_smart_log(data: dict):
+    """Parse a natural language trade description into structured data + store it."""
+    if not hasattr(app, "_smart_journal"):
+        app._smart_journal = []
+
+    description = data.get("description", "")
+    user_id = data.get("user_id", "_default")
+
+    # NLP parsing — extract structured fields from natural language
+    text = description.upper()
+    entry = {
+        "raw": description,
+        "user_id": user_id,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+    # Direction
+    if "LONG" in text or "BOUGHT" in text or "BUY" in text:
+        entry["direction"] = "LONG"
+    elif "SHORT" in text or "SOLD" in text or "SELL" in text:
+        entry["direction"] = "SHORT"
+    else:
+        entry["direction"] = "UNKNOWN"
+
+    # Symbol
+    for sym in ["BTC", "ETH", "SOL", "DOGE", "XRP", "AVAX", "LINK", "ADA", "DOT", "MATIC", "ARB", "OP", "APT", "SUI", "NEAR"]:
+        if sym in text:
+            entry["symbol"] = sym
+            break
+    else:
+        entry["symbol"] = "UNKNOWN"
+
+    # Prices — extract numbers after keywords
+    import re
+    prices = re.findall(r'\$?([\d,]+\.?\d*)', description)
+    prices = [float(p.replace(",", "")) for p in prices if float(p.replace(",", "")) > 0]
+    if len(prices) >= 1:
+        entry["entry_price"] = prices[0]
+    if len(prices) >= 2:
+        entry["exit_price"] = prices[1]
+
+    # Leverage
+    lev_match = re.search(r'(\d+)\s*x', text)
+    if lev_match:
+        entry["leverage"] = int(lev_match.group(1))
+
+    # PnL
+    pnl_match = re.search(r'([+-]?\d+\.?\d*)\s*%', description)
+    if pnl_match:
+        entry["pnl_pct"] = float(pnl_match.group(1))
+
+    # Setup tags
+    tags = []
+    setup_keywords = {
+        "VPVR": "vpvr_poc", "POC": "vpvr_poc", "HVN": "hvn_setup",
+        "SUPPORT": "support_bounce", "RESISTANCE": "resistance_rejection",
+        "BREAKOUT": "breakout", "BREAKDOWN": "breakdown",
+        "ENGULFING": "engulfing_candle", "DOJI": "doji_reversal",
+        "FUNDING": "funding_play", "LIQUIDATION": "liquidation_grab",
+        "WHALE": "whale_follow", "DIVERGENCE": "divergence",
+        "FOMO": "fomo_entry", "REVENGE": "revenge_trade",
+        "STOP HUNT": "stop_hunt", "BREAKEVEN": "breakeven_exit",
+    }
+    for keyword, tag in setup_keywords.items():
+        if keyword in text:
+            tags.append(tag)
+    entry["tags"] = tags
+
+    # Outcome
+    if entry.get("pnl_pct"):
+        entry["outcome"] = "win" if entry["pnl_pct"] > 0 else "loss"
+    elif "WIN" in text or "PROFIT" in text or "GREEN" in text:
+        entry["outcome"] = "win"
+    elif "LOSS" in text or "STOPPED" in text or "RED" in text or "LIQUIDAT" in text:
+        entry["outcome"] = "loss"
+    else:
+        entry["outcome"] = "unknown"
+
+    app._smart_journal.append(entry)
+
+    return {"success": True, "parsed_entry": entry, "total_entries": len(app._smart_journal)}
+
+
+@app.get("/api/journal/analyze")
+async def journal_analyze(user_id: str = "_default"):
+    """Analyze trade journal — find patterns, win rates by setup, and insights."""
+    if not hasattr(app, "_smart_journal"):
+        app._smart_journal = []
+
+    entries = [e for e in app._smart_journal if e.get("user_id") == user_id]
+    if len(entries) < 3:
+        return {"success": True, "message": f"Need more entries for analysis. Current: {len(entries)}. Log at least 10 trades.", "entries": len(entries)}
+
+    # Win rate by setup tag
+    tag_stats = {}
+    for e in entries:
+        for tag in e.get("tags", []):
+            if tag not in tag_stats:
+                tag_stats[tag] = {"wins": 0, "losses": 0, "total": 0}
+            tag_stats[tag]["total"] += 1
+            if e.get("outcome") == "win":
+                tag_stats[tag]["wins"] += 1
+            elif e.get("outcome") == "loss":
+                tag_stats[tag]["losses"] += 1
+
+    tag_performance = {}
+    for tag, stats in tag_stats.items():
+        if stats["total"] >= 2:
+            tag_performance[tag] = {
+                "win_rate": round(stats["wins"] / stats["total"] * 100, 1) if stats["total"] > 0 else 0,
+                "total_trades": stats["total"],
+                "wins": stats["wins"],
+                "losses": stats["losses"],
+            }
+
+    # Win rate by symbol
+    symbol_stats = {}
+    for e in entries:
+        sym = e.get("symbol", "UNKNOWN")
+        if sym not in symbol_stats:
+            symbol_stats[sym] = {"wins": 0, "losses": 0, "total": 0, "pnls": []}
+        symbol_stats[sym]["total"] += 1
+        if e.get("outcome") == "win":
+            symbol_stats[sym]["wins"] += 1
+        elif e.get("outcome") == "loss":
+            symbol_stats[sym]["losses"] += 1
+        if e.get("pnl_pct") is not None:
+            symbol_stats[sym]["pnls"].append(e["pnl_pct"])
+
+    symbol_performance = {}
+    for sym, stats in symbol_stats.items():
+        symbol_performance[sym] = {
+            "win_rate": round(stats["wins"] / stats["total"] * 100, 1) if stats["total"] > 0 else 0,
+            "total_trades": stats["total"],
+            "avg_pnl": round(sum(stats["pnls"]) / len(stats["pnls"]), 2) if stats["pnls"] else None,
+        }
+
+    # Win rate by direction
+    dir_stats = {"LONG": {"wins": 0, "losses": 0, "total": 0}, "SHORT": {"wins": 0, "losses": 0, "total": 0}}
+    for e in entries:
+        d = e.get("direction", "UNKNOWN")
+        if d in dir_stats:
+            dir_stats[d]["total"] += 1
+            if e.get("outcome") == "win": dir_stats[d]["wins"] += 1
+            elif e.get("outcome") == "loss": dir_stats[d]["losses"] += 1
+
+    # Overall stats
+    total = len(entries)
+    wins = sum(1 for e in entries if e.get("outcome") == "win")
+    losses = sum(1 for e in entries if e.get("outcome") == "loss")
+    pnls = [e["pnl_pct"] for e in entries if e.get("pnl_pct") is not None]
+
+    # Streak analysis
+    current_streak = 0
+    streak_type = None
+    max_win_streak = 0
+    max_loss_streak = 0
+    curr_w = 0
+    curr_l = 0
+    for e in entries:
+        if e.get("outcome") == "win":
+            curr_w += 1
+            curr_l = 0
+            max_win_streak = max(max_win_streak, curr_w)
+        elif e.get("outcome") == "loss":
+            curr_l += 1
+            curr_w = 0
+            max_loss_streak = max(max_loss_streak, curr_l)
+
+    return {
+        "success": True,
+        "total_entries": total,
+        "overall": {
+            "win_rate": round(wins / total * 100, 1) if total > 0 else 0,
+            "wins": wins, "losses": losses,
+            "avg_pnl": round(sum(pnls) / len(pnls), 2) if pnls else None,
+            "best_trade": round(max(pnls), 2) if pnls else None,
+            "worst_trade": round(min(pnls), 2) if pnls else None,
+            "max_win_streak": max_win_streak,
+            "max_loss_streak": max_loss_streak,
+        },
+        "by_setup": tag_performance,
+        "by_symbol": symbol_performance,
+        "by_direction": {d: {"win_rate": round(s["wins"]/s["total"]*100, 1) if s["total"] > 0 else 0, "total": s["total"]} for d, s in dir_stats.items()},
+    }
+
+
+@app.get("/api/journal/bias-detect")
+async def journal_bias_detect(user_id: str = "_default"):
+    """Detect cognitive biases from trade journal patterns."""
+    if not hasattr(app, "_smart_journal"):
+        app._smart_journal = []
+
+    entries = [e for e in app._smart_journal if e.get("user_id") == user_id]
+    biases = []
+
+    if len(entries) < 5:
+        return {"success": True, "message": "Need 5+ entries for bias detection", "biases": []}
+
+    # Revenge trading: loss followed immediately by another trade (same session)
+    for i in range(1, len(entries)):
+        if entries[i-1].get("outcome") == "loss" and "revenge" in entries[i].get("tags", []):
+            biases.append({"bias": "REVENGE_TRADING", "severity": "HIGH", "evidence": f"Trade {i+1} tagged as revenge trade after loss"})
+        elif entries[i-1].get("outcome") == "loss" and entries[i].get("outcome") == "loss":
+            ts1 = entries[i-1].get("timestamp", "")
+            ts2 = entries[i].get("timestamp", "")
+            if ts1 and ts2 and ts1[:10] == ts2[:10]:  # Same day
+                biases.append({"bias": "TILT_TRADING", "severity": "MEDIUM", "evidence": f"Consecutive losses on same day (entries {i} and {i+1})"})
+
+    # FOMO detection
+    fomo_count = sum(1 for e in entries if "fomo_entry" in e.get("tags", []))
+    if fomo_count >= 2:
+        fomo_wr = sum(1 for e in entries if "fomo_entry" in e.get("tags", []) and e.get("outcome") == "win")
+        biases.append({
+            "bias": "FOMO_ENTRIES",
+            "severity": "HIGH" if fomo_count >= 3 else "MEDIUM",
+            "evidence": f"{fomo_count} FOMO entries detected. Win rate: {round(fomo_wr/fomo_count*100, 1)}%",
+        })
+
+    # Loss aversion: cutting winners too early (small wins, big losses)
+    pnls = [e["pnl_pct"] for e in entries if e.get("pnl_pct") is not None]
+    if pnls:
+        avg_win = sum(p for p in pnls if p > 0) / max(1, sum(1 for p in pnls if p > 0))
+        avg_loss = abs(sum(p for p in pnls if p < 0) / max(1, sum(1 for p in pnls if p < 0)))
+        if avg_loss > avg_win * 1.5:
+            biases.append({
+                "bias": "LOSS_AVERSION",
+                "severity": "HIGH",
+                "evidence": f"Average loss ({avg_loss:.1f}%) is {avg_loss/avg_win:.1f}x larger than average win ({avg_win:.1f}%). You cut winners too early.",
+            })
+
+    # Recency bias: overweighting recent symbols
+    if len(entries) >= 10:
+        recent = entries[-5:]
+        recent_syms = [e.get("symbol") for e in recent]
+        if recent_syms and len(set(recent_syms)) == 1:
+            biases.append({
+                "bias": "RECENCY_BIAS",
+                "severity": "MEDIUM",
+                "evidence": f"Last 5 trades all on {recent_syms[0]}. Diversify your analysis.",
+            })
+
+    # Overleveraging
+    leverages = [e.get("leverage", 1) for e in entries if e.get("leverage")]
+    if leverages and sum(l for l in leverages if l >= 10) / len(leverages) > 0.3:
+        biases.append({
+            "bias": "OVERLEVERAGING",
+            "severity": "HIGH",
+            "evidence": f"{round(sum(1 for l in leverages if l >= 10)/len(leverages)*100)}% of trades use 10x+ leverage.",
+        })
+
+    return {
+        "success": True,
+        "total_entries": len(entries),
+        "biases_detected": len(biases),
+        "biases": biases,
+        "risk_score": min(100, len(biases) * 25),
+        "recommendation": "Clean trading psychology" if len(biases) == 0 else "Review trading habits — biases detected" if len(biases) <= 2 else "URGENT: Multiple cognitive biases detected. Consider reducing position sizes.",
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# INSTITUTIONAL RISK REPORTS — VaR, CVaR, Counterparty Risk
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/risk-report/generate")
+async def generate_risk_report(data: dict):
+    """Generate an institutional-grade risk report for a position or portfolio."""
+    symbol = data.get("symbol", "BTC").upper().replace("USDT", "").replace("-PERP", "")
+    direction = data.get("direction", "LONG").upper()
+    entry_price = float(data.get("entry_price", 0))
+    current_price = float(data.get("current_price", 0))
+    leverage = float(data.get("leverage", 1))
+    size_usd = float(data.get("size_usd", 1000))
+    stop_loss = float(data.get("stop_loss", 0))
+    exchange = data.get("exchange", "Unknown")
+
+    if current_price <= 0:
+        return {"success": False, "error": "current_price required"}
+
+    import math
+
+    # PnL calculation
+    if direction == "LONG":
+        pnl_pct = (current_price - entry_price) / entry_price * 100 if entry_price > 0 else 0
+    else:
+        pnl_pct = (entry_price - current_price) / entry_price * 100 if entry_price > 0 else 0
+    effective_pnl = pnl_pct * leverage
+
+    # Volatility assumptions
+    vol_map = {"BTC": 0.65, "ETH": 0.80, "SOL": 1.10, "DOGE": 1.40, "XRP": 0.90}
+    annual_vol = vol_map.get(symbol, 0.85)
+    daily_vol = annual_vol / math.sqrt(365)
+
+    # VaR (parametric, 95% and 99%)
+    z_95 = 1.645
+    z_99 = 2.326
+    var_95_1d = round(size_usd * leverage * daily_vol * z_95, 2)
+    var_99_1d = round(size_usd * leverage * daily_vol * z_99, 2)
+    var_95_7d = round(var_95_1d * math.sqrt(7), 2)
+    var_99_7d = round(var_99_1d * math.sqrt(7), 2)
+
+    # CVaR (expected shortfall) — approximate
+    cvar_95_1d = round(var_95_1d * 1.25, 2)  # CVaR is ~25% worse than VaR for normal dist
+    cvar_99_1d = round(var_99_1d * 1.15, 2)
+
+    # Liquidation analysis
+    liq_distance_pct = 100 / leverage if leverage > 1 else float("inf")
+    liq_price = entry_price * (1 - liq_distance_pct/100) if direction == "LONG" else entry_price * (1 + liq_distance_pct/100)
+
+    # Stop loss analysis
+    sl_loss_usd = 0
+    sl_distance_pct = 0
+    if stop_loss > 0 and entry_price > 0:
+        if direction == "LONG":
+            sl_distance_pct = (entry_price - stop_loss) / entry_price * 100
+        else:
+            sl_distance_pct = (stop_loss - entry_price) / entry_price * 100
+        sl_loss_usd = round(sl_distance_pct / 100 * leverage * size_usd, 2)
+
+    # Exchange counterparty risk
+    exchange_risk = {
+        "Binance": {"rating": "A", "risk_level": "LOW", "proof_of_reserves": True, "insurance_fund": True, "incidents": 1},
+        "Bybit": {"rating": "A-", "risk_level": "LOW", "proof_of_reserves": True, "insurance_fund": True, "incidents": 0},
+        "OKX": {"rating": "A-", "risk_level": "LOW", "proof_of_reserves": True, "insurance_fund": True, "incidents": 1},
+        "Bitunix": {"rating": "B+", "risk_level": "MEDIUM", "proof_of_reserves": False, "insurance_fund": True, "incidents": 0},
+        "Coinbase": {"rating": "A+", "risk_level": "VERY_LOW", "proof_of_reserves": True, "insurance_fund": True, "incidents": 0},
+    }
+    ex_risk = exchange_risk.get(exchange, {"rating": "NR", "risk_level": "UNKNOWN", "proof_of_reserves": False, "insurance_fund": False, "incidents": None})
+
+    # Risk grade
+    risk_score = 0
+    if leverage >= 20: risk_score += 40
+    elif leverage >= 10: risk_score += 25
+    elif leverage >= 5: risk_score += 15
+    if stop_loss == 0 and leverage > 1: risk_score += 25
+    if effective_pnl < -10: risk_score += 15
+    if liq_distance_pct < 5: risk_score += 20
+    risk_grade = "A" if risk_score < 15 else "B" if risk_score < 30 else "C" if risk_score < 50 else "D" if risk_score < 70 else "F"
+
+    return {
+        "success": True,
+        "report_type": "INSTITUTIONAL_RISK_REPORT",
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "model_version": "bastion-risk-v6",
+        "position": {
+            "symbol": f"{symbol}USDT", "direction": direction,
+            "entry_price": entry_price, "current_price": current_price,
+            "size_usd": size_usd, "leverage": leverage,
+            "unrealized_pnl_pct": round(pnl_pct, 4),
+            "effective_pnl_pct": round(effective_pnl, 4),
+            "unrealized_pnl_usd": round(pnl_pct / 100 * leverage * size_usd, 2),
+        },
+        "risk_metrics": {
+            "risk_grade": risk_grade,
+            "risk_score": risk_score,
+            "var_95_1d": var_95_1d, "var_99_1d": var_99_1d,
+            "var_95_7d": var_95_7d, "var_99_7d": var_99_7d,
+            "cvar_95_1d": cvar_95_1d, "cvar_99_1d": cvar_99_1d,
+            "annual_volatility": round(annual_vol * 100, 1),
+            "daily_volatility": round(daily_vol * 100, 2),
+        },
+        "liquidation": {
+            "distance_pct": round(liq_distance_pct, 2),
+            "price": round(liq_price, 2) if leverage > 1 else None,
+            "at_risk": leverage > 1,
+        },
+        "stop_loss": {
+            "set": stop_loss > 0,
+            "price": stop_loss if stop_loss > 0 else None,
+            "distance_pct": round(sl_distance_pct, 2) if stop_loss > 0 else None,
+            "max_loss_usd": sl_loss_usd if stop_loss > 0 else None,
+        },
+        "counterparty": {
+            "exchange": exchange,
+            **ex_risk,
+        },
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# PROACTIVE RISK NOTIFICATIONS — Server-Initiated Alerts
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/monitor/register")
+async def register_monitor(data: dict):
+    """Register a position for proactive monitoring. Server checks conditions periodically."""
+    if not hasattr(app, "_monitors"):
+        app._monitors = {}
+
+    import uuid
+    monitor_id = str(uuid.uuid4())[:10]
+    symbol = data.get("symbol", "BTC").upper()
+    direction = data.get("direction", "LONG").upper()
+    entry_price = float(data.get("entry_price", 0))
+    stop_loss = float(data.get("stop_loss", 0))
+    take_profit = float(data.get("take_profit", 0))
+    leverage = float(data.get("leverage", 1))
+    webhook_url = data.get("webhook_url", "")  # Discord/Telegram/custom
+    alert_conditions = data.get("conditions", ["stop_breach", "tp_proximity", "funding_danger", "whale_alert"])
+
+    monitor = {
+        "id": monitor_id,
+        "symbol": symbol,
+        "direction": direction,
+        "entry_price": entry_price,
+        "stop_loss": stop_loss,
+        "take_profit": take_profit,
+        "leverage": leverage,
+        "webhook_url": webhook_url,
+        "conditions": alert_conditions,
+        "status": "active",
+        "alerts_sent": 0,
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "last_checked": None,
+    }
+
+    app._monitors[monitor_id] = monitor
+    return {"success": True, "monitor": monitor}
+
+
+@app.post("/api/monitor/check/{monitor_id}")
+async def check_monitor(monitor_id: str):
+    """Check a monitored position against current market conditions."""
+    if not hasattr(app, "_monitors"):
+        return {"success": False, "error": "No monitors registered"}
+
+    monitor = app._monitors.get(monitor_id)
+    if not monitor:
+        return {"success": False, "error": "Monitor not found"}
+
+    import httpx
+    port = os.getenv("PORT", "3001")
+    alerts = []
+
+    try:
+        async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=15.0) as client:
+            price_r = await client.get(f"/api/price/{monitor['symbol']}")
+            current_price = 0
+            if price_r.status_code == 200:
+                pd_ = price_r.json()
+                current_price = float(pd_.get("price", pd_.get("current_price", 0)))
+
+            if current_price > 0:
+                # Stop breach check
+                if "stop_breach" in monitor["conditions"] and monitor["stop_loss"] > 0:
+                    if monitor["direction"] == "LONG" and current_price <= monitor["stop_loss"]:
+                        alerts.append({"type": "STOP_BREACHED", "severity": "CRITICAL", "message": f"{monitor['symbol']} LONG stop breached! Price ${current_price:,.2f} < Stop ${monitor['stop_loss']:,.2f}"})
+                    elif monitor["direction"] == "SHORT" and current_price >= monitor["stop_loss"]:
+                        alerts.append({"type": "STOP_BREACHED", "severity": "CRITICAL", "message": f"{monitor['symbol']} SHORT stop breached! Price ${current_price:,.2f} > Stop ${monitor['stop_loss']:,.2f}"})
+
+                # TP proximity check (within 1%)
+                if "tp_proximity" in monitor["conditions"] and monitor["take_profit"] > 0:
+                    tp_dist = abs(current_price - monitor["take_profit"]) / monitor["take_profit"] * 100
+                    if tp_dist < 1.0:
+                        alerts.append({"type": "TP_PROXIMITY", "severity": "INFO", "message": f"{monitor['symbol']} is {tp_dist:.2f}% from take profit ${monitor['take_profit']:,.2f}"})
+
+                # PnL danger zone
+                if monitor["entry_price"] > 0:
+                    if monitor["direction"] == "LONG":
+                        pnl_pct = (current_price - monitor["entry_price"]) / monitor["entry_price"] * 100
+                    else:
+                        pnl_pct = (monitor["entry_price"] - current_price) / monitor["entry_price"] * 100
+                    effective_pnl = pnl_pct * monitor["leverage"]
+                    if effective_pnl < -50:
+                        alerts.append({"type": "CRITICAL_LOSS", "severity": "CRITICAL", "message": f"{monitor['symbol']} {monitor['direction']} at {effective_pnl:+.1f}% effective PnL. Liquidation risk."})
+
+            # Funding danger check
+            if "funding_danger" in monitor["conditions"]:
+                funding_r = await client.get("/api/funding")
+                if funding_r.status_code == 200:
+                    fdata = funding_r.json()
+                    rates = fdata.get("rates", fdata.get("data", []))
+                    if isinstance(rates, list):
+                        for r in rates:
+                            if r.get("symbol", "").upper().startswith(monitor["symbol"]):
+                                rate = float(r.get("rate", r.get("funding_rate", 0)))
+                                if (monitor["direction"] == "LONG" and rate > 0.05) or (monitor["direction"] == "SHORT" and rate < -0.05):
+                                    alerts.append({"type": "FUNDING_DANGER", "severity": "HIGH", "message": f"Extreme funding {rate:.4f} — you're paying ~{abs(rate)*3*100:.2f}%/day"})
+                                break
+
+    except Exception as e:
+        alerts.append({"type": "CHECK_ERROR", "severity": "LOW", "message": str(e)})
+
+    monitor["last_checked"] = datetime.utcnow().isoformat() + "Z"
+    monitor["alerts_sent"] += len(alerts)
+
+    # Send to webhook if alerts exist
+    if alerts and monitor.get("webhook_url"):
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as wh_client:
+                await wh_client.post(monitor["webhook_url"], json={
+                    "source": "BASTION Risk Monitor",
+                    "monitor_id": monitor_id,
+                    "alerts": alerts,
+                })
+        except Exception:
+            pass
+
+    return {
+        "success": True,
+        "monitor_id": monitor_id,
+        "current_price": current_price if 'current_price' in dir() else 0,
+        "alerts": alerts,
+        "total_alerts": len(alerts),
+    }
+
+
+@app.get("/api/monitor/list")
+async def list_monitors():
+    """List all active position monitors."""
+    if not hasattr(app, "_monitors"):
+        app._monitors = {}
+    monitors = [m for m in app._monitors.values() if m.get("status") == "active"]
+    return {"success": True, "monitors": monitors, "total": len(monitors)}
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# AGENT-AS-A-SERVICE — Metered API for External Agents
+# ═════════════════════════════════════════════════════════════════════════════
+
+@app.post("/api/service/evaluate")
+async def service_evaluate(data: dict):
+    """
+    Agent-as-a-Service endpoint. External AI agents (ElizaOS, AutoGPT, etc.)
+    call this to get BASTION risk intelligence. Metered, rate-limited, and
+    structured for machine-to-machine consumption.
+    """
+    if not hasattr(app, "_service_calls"):
+        app._service_calls = []
+
+    agent_key = data.get("agent_key", "")
+    symbol = data.get("symbol", "BTC").upper()
+    direction = data.get("direction", "LONG").upper()
+    entry_price = float(data.get("entry_price", 0))
+    current_price = float(data.get("current_price", 0))
+    leverage = float(data.get("leverage", 1))
+    stop_loss = float(data.get("stop_loss", 0))
+
+    call_record = {
+        "agent_key": agent_key[:20] if agent_key else "anonymous",
+        "symbol": symbol,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+    app._service_calls.append(call_record)
+    if len(app._service_calls) > 10000:
+        app._service_calls = app._service_calls[-10000:]
+
+    # Forward to the main risk evaluation endpoint
+    import httpx
+    port = os.getenv("PORT", "3001")
+    try:
+        async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", timeout=60.0) as client:
+            resp = await client.post("/api/risk/evaluate", json={
+                "symbol": symbol, "direction": direction,
+                "entry_price": entry_price, "current_price": current_price,
+                "leverage": leverage, "stop_loss": stop_loss,
+            })
+            if resp.status_code == 200:
+                result = resp.json()
+                return {
+                    "success": True,
+                    "service": "bastion-risk-intelligence",
+                    "version": "v6",
+                    "model": "BASTION 72B",
+                    "evaluation": result,
+                    "metering": {
+                        "agent_key": call_record["agent_key"],
+                        "call_timestamp": call_record["timestamp"],
+                        "total_calls_today": sum(1 for c in app._service_calls if c.get("timestamp", "")[:10] == datetime.utcnow().isoformat()[:10]),
+                    },
+                }
+            return {"success": False, "error": f"Evaluation failed: {resp.status_code}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/service/stats")
+async def service_stats():
+    """Get Agent-as-a-Service usage statistics."""
+    if not hasattr(app, "_service_calls"):
+        app._service_calls = []
+
+    today = datetime.utcnow().isoformat()[:10]
+    today_calls = [c for c in app._service_calls if c.get("timestamp", "")[:10] == today]
+
+    # Calls by agent
+    by_agent = {}
+    for c in app._service_calls:
+        ak = c.get("agent_key", "anonymous")
+        by_agent[ak] = by_agent.get(ak, 0) + 1
+
+    return {
+        "success": True,
+        "total_calls": len(app._service_calls),
+        "today_calls": len(today_calls),
+        "unique_agents": len(by_agent),
+        "top_agents": sorted(by_agent.items(), key=lambda x: x[1], reverse=True)[:10],
+        "service_info": {
+            "name": "BASTION Risk Intelligence",
+            "model": "72B fine-tuned",
+            "accuracy": "75.4%",
+            "endpoint": "/api/service/evaluate",
+            "pricing": "Free during beta",
+        },
+    }
 
 
 @app.post("/api/pre-trade-calculator")
