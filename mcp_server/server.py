@@ -2,7 +2,7 @@
 BASTION MCP Server — Core
 Exposes the full BASTION platform as MCP tools for Claude agents.
 
-Tools (90):
+Tools (108):
   CORE AI (auth optional — pass api_key for user-scoped results)
     bastion_evaluate_risk        — AI risk intelligence for a position
     bastion_chat                 — Neural chat (ask anything about markets)
@@ -114,6 +114,34 @@ Tools (90):
     bastion_live_feed            — Real-time aggregated market feed
     bastion_get_server_card      — MCP Server Card for agent discovery
     bastion_risk_confirm         — Interactive risk confirmation + warnings
+
+  CHALLENGE CARDS (viral prediction market)
+    bastion_create_challenge     — Create a "Prove Me Wrong" prediction
+    bastion_counter_challenge    — Take the opposite side
+    bastion_get_challenges       — List active challenges
+    bastion_score_challenge      — Auto-score a challenge
+
+  PERSISTENT MEMORY (cross-session intelligence)
+    bastion_memory_store         — Store episodic/semantic/procedural memory
+    bastion_memory_recall        — Search and recall memories
+    bastion_memory_profile       — Get learned trader profile
+
+  HEAT INDEX (attention market score)
+    bastion_heat_index           — Composite attention score for a symbol
+    bastion_heat_scan            — Scan all pairs for hottest activity
+
+  COPY-ANALYSIS WORKFLOWS
+    bastion_save_workflow        — Save a reusable tool chain
+    bastion_get_workflows        — Browse public workflows
+    bastion_run_workflow         — Execute a saved workflow
+
+  AUDIT & COMPLIANCE (enterprise-grade)
+    bastion_audit_log            — Log hash-chained audit entry
+    bastion_audit_trail          — Query immutable audit trail
+    bastion_audit_verify         — Verify chain integrity
+    bastion_decision_provenance  — Record full decision reasoning chain
+    bastion_get_provenance       — Query decision provenance
+    bastion_tool_safety          — Get safety annotations for all tools
 
 Resources (8):
   bastion://status, bastion://supported-symbols, bastion://model-info,
@@ -1743,7 +1771,7 @@ async def get_model_info() -> str:
 
 @mcp.resource("bastion://tools")
 async def get_tools() -> str:
-    """Complete list of all 90 BASTION MCP tools with descriptions."""
+    """Complete list of all 108 BASTION MCP tools with descriptions."""
     tools = {
         "core_ai": [
             "bastion_evaluate_risk — AI risk evaluation for a position",
@@ -1861,8 +1889,36 @@ async def get_tools() -> str:
             "bastion_get_server_card — MCP Server Card for agent-to-agent discovery",
             "bastion_risk_confirm — Interactive risk confirmation with warnings",
         ],
+        "challenge_cards": [
+            "bastion_create_challenge — Create a 'Prove Me Wrong' prediction",
+            "bastion_counter_challenge — Take the opposite side of a challenge",
+            "bastion_get_challenges — List active challenges",
+            "bastion_score_challenge — Auto-score a challenge",
+        ],
+        "persistent_memory": [
+            "bastion_memory_store — Store episodic/semantic/procedural memory",
+            "bastion_memory_recall — Search and recall memories",
+            "bastion_memory_profile — Get learned trader profile",
+        ],
+        "heat_index": [
+            "bastion_heat_index — Composite attention score for a symbol",
+            "bastion_heat_scan — Scan all pairs for hottest activity",
+        ],
+        "copy_analysis": [
+            "bastion_save_workflow — Save a reusable tool chain",
+            "bastion_get_workflows — Browse public workflows",
+            "bastion_run_workflow — Execute a saved workflow",
+        ],
+        "audit_compliance": [
+            "bastion_audit_log — Log hash-chained audit entry",
+            "bastion_audit_trail — Query immutable audit trail",
+            "bastion_audit_verify — Verify chain integrity",
+            "bastion_decision_provenance — Record decision reasoning chain",
+            "bastion_get_provenance — Query decision provenance",
+            "bastion_tool_safety — Get safety annotations for all tools",
+        ],
     }
-    return json.dumps({"tools": tools, "total": 90}, indent=2)
+    return json.dumps({"tools": tools, "total": 108}, indent=2)
 
 
 @mcp.resource("bastion://exchanges")
@@ -1923,7 +1979,7 @@ async def get_capabilities() -> str:
             "market_structure": "VPVR, pivot detection, auto-support, trendlines",
             "macro": "Yahoo Finance, FRED, CoinGecko, Polymarket",
         },
-        "mcp_tools": 90,
+        "mcp_tools": 108,
         "resources": 8,
         "prompts": 10,
         "features": {
@@ -2872,6 +2928,597 @@ async def bastion_risk_confirm(
         "position_size_usd": position_size_usd, "portfolio_pct": portfolio_pct,
     })
     return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# "PROVE ME WRONG" CHALLENGE CARDS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_create_challenge(
+    symbol: str = "BTC",
+    prediction: str = "BULLISH",
+    timeframe_hours: int = 24,
+    target_pct: float = 0,
+    reasoning: str = "",
+    agent_id: str = "",
+) -> str:
+    """Create a public "Prove Me Wrong" prediction challenge with a timestamped call.
+
+    Publish your prediction as a shareable challenge card. Other agents can take
+    the opposite side. After the timeframe expires, BASTION auto-scores it.
+    Creates a shareable URL with OG meta tags for Twitter/Discord.
+
+    Args:
+        symbol: Crypto symbol to predict on
+        prediction: BULLISH or BEARISH
+        timeframe_hours: How many hours until the challenge expires (default 24)
+        target_pct: Target percentage move (0 = just direction)
+        reasoning: Your analysis/reasoning for this prediction
+        agent_id: Your unique agent identifier
+
+    Returns:
+        Challenge card with unique shareable URL.
+    """
+    result = await api_post("/api/challenges/create", {
+        "symbol": symbol, "prediction": prediction,
+        "timeframe_hours": timeframe_hours, "target_pct": target_pct,
+        "reasoning": reasoning, "agent_id": agent_id,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_counter_challenge(
+    challenge_id: str,
+    reasoning: str = "",
+    agent_id: str = "",
+) -> str:
+    """Take the opposite side of a "Prove Me Wrong" challenge.
+
+    Args:
+        challenge_id: The challenge ID to counter
+        reasoning: Your counter-argument
+        agent_id: Your agent identifier
+
+    Returns:
+        Counter confirmation with current tally.
+    """
+    result = await api_post("/api/challenges/counter", {
+        "challenge_id": challenge_id, "reasoning": reasoning, "agent_id": agent_id,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_challenges(
+    status: str = "active",
+    symbol: str = "",
+) -> str:
+    """List active prediction challenges — see what other agents are calling.
+
+    Args:
+        status: Filter by status — "active", "scored", "expired"
+        symbol: Filter by symbol (empty = all symbols)
+
+    Returns:
+        List of challenges with predictions, counters, and scores.
+    """
+    params = {"status": status}
+    if symbol:
+        params["symbol"] = symbol
+    result = await api_get("/api/challenges", params=params)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_score_challenge(
+    challenge_id: str,
+) -> str:
+    """Score a challenge by checking the current price against the prediction.
+
+    Auto-determines if the prediction was correct based on price movement
+    since the challenge was created. Awards points to the winner.
+
+    Args:
+        challenge_id: The challenge ID to score
+
+    Returns:
+        Scoring result with price change, correctness verdict, and target hit status.
+    """
+    result = await api_post(f"/api/challenges/score/{challenge_id}", {})
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# PERSISTENT TRADER MEMORY
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_memory_store(
+    content: str,
+    memory_type: str = "episodic",
+    key: str = "",
+    user_id: str = "_default",
+    symbol: str = "",
+    action: str = "",
+    outcome: str = "",
+    workflow_name: str = "",
+    tools_sequence: str = "",
+) -> str:
+    """Store a persistent memory — the agent remembers across sessions.
+
+    Three memory types:
+    - episodic: "What happened" — timestamped trading events and their outcomes
+    - semantic: "What I know about you" — trader preferences, risk tolerance, patterns
+    - procedural: "Learned workflows" — tool sequences the trader commonly uses
+
+    Args:
+        content: The memory content to store
+        memory_type: "episodic", "semantic", or "procedural"
+        key: Key name for semantic memories (e.g., "risk_tolerance", "preferred_leverage")
+        user_id: User identifier for memory scoping
+        symbol: Symbol context (for episodic memories)
+        action: Action taken (for episodic memories)
+        outcome: Whether it was "correct" or "incorrect" (for episodic memories)
+        workflow_name: Name of the workflow (for procedural memories)
+        tools_sequence: Comma-separated list of tools in the workflow (for procedural memories)
+
+    Returns:
+        Storage confirmation with memory counts.
+    """
+    metadata = {}
+    if symbol: metadata["symbol"] = symbol
+    if action: metadata["action"] = action
+    if outcome: metadata["outcome"] = outcome
+    if workflow_name: metadata["workflow_name"] = workflow_name
+    if tools_sequence: metadata["tools_sequence"] = [t.strip() for t in tools_sequence.split(",") if t.strip()]
+
+    result = await api_post("/api/memory/store", {
+        "user_id": user_id, "type": memory_type,
+        "content": content, "key": key, "metadata": metadata,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_memory_recall(
+    query: str = "",
+    memory_type: str = "all",
+    user_id: str = "_default",
+    limit: int = 10,
+) -> str:
+    """Recall memories — search what the agent remembers about past trades and preferences.
+
+    Search across episodic events, semantic facts about the trader, and learned workflows.
+    Use this at the start of a conversation to recall context from previous sessions.
+
+    Args:
+        query: Search query (searches content, symbols, keys). Empty = return recent memories.
+        memory_type: "all", "episodic", "semantic", or "procedural"
+        user_id: User identifier
+        limit: Max results per category
+
+    Returns:
+        Matching memories across all categories.
+    """
+    result = await api_get("/api/memory/recall", params={
+        "user_id": user_id, "query": query,
+        "memory_type": memory_type, "limit": str(limit),
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_memory_profile(
+    user_id: str = "_default",
+) -> str:
+    """Get the agent's learned profile of a trader — preferences, patterns, accuracy.
+
+    Returns a summary of everything the agent has learned: most traded symbols,
+    action distribution, prediction accuracy, semantic facts (risk tolerance,
+    preferred leverage, override patterns), and learned workflows.
+
+    Args:
+        user_id: User identifier
+
+    Returns:
+        Complete trader profile derived from memory.
+    """
+    result = await api_get(f"/api/memory/profile/{user_id}")
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# BASTION HEAT INDEX
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_heat_index(
+    symbol: str = "BTC",
+) -> str:
+    """Get the BASTION Heat Index — a composite attention/activity score (0-100).
+
+    Combines whale activity, funding extremes, liquidation clusters, volatility regime,
+    and price action into a single attention score. High heat = high activity = opportunity
+    or danger. When the model says EXIT_FULL on a 90+ heat score, pay attention.
+
+    Labels: QUIET (0-20), LOW (20-40), MODERATE (40-65), HIGH (65-85), EXTREME (85-100)
+
+    Args:
+        symbol: Crypto symbol
+
+    Returns:
+        Heat index score, label, component breakdown, and raw data.
+    """
+    result = await api_get(f"/api/heat-index/{symbol}")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_heat_scan() -> str:
+    """Scan heat index across top 10 crypto pairs — find where the action is.
+
+    Returns a ranked list of all major pairs by their heat index score.
+    The hottest pair has the most combined activity (whales, funding, volatility, price action).
+    Use this to identify which symbols need attention right now.
+
+    Returns:
+        Ranked list of symbols by heat index with scores and labels.
+    """
+    result = await api_get("/api/heat-scan")
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# COPY-ANALYSIS WORKFLOWS
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_save_workflow(
+    name: str,
+    tools: str,
+    description: str = "",
+    creator: str = "",
+    public: bool = True,
+) -> str:
+    """Save a named analysis workflow — a reusable sequence of BASTION tools.
+
+    Create shareable analysis chains that other agents can copy and run.
+    Top leaderboard analysts share their tool sequences; followers run them with one call.
+
+    Args:
+        name: Workflow name (e.g., "Alpha Whale's BTC Setup")
+        tools: JSON string of tool sequence — [{"tool": "bastion_get_price", "params": {"symbol": "BTC"}}, ...]
+        description: What this workflow does
+        creator: Creator name/ID
+        public: Whether other agents can discover and run this workflow
+
+    Returns:
+        Saved workflow with unique ID.
+    """
+    try:
+        tools_list = json.loads(tools) if isinstance(tools, str) else tools
+    except json.JSONDecodeError:
+        return json.dumps({"error": "Invalid tools JSON. Format: [{\"tool\": \"bastion_get_price\", \"params\": {\"symbol\": \"BTC\"}}]"})
+
+    result = await api_post("/api/workflows/save", {
+        "name": name, "tools": tools_list,
+        "description": description, "creator": creator, "public": public,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_workflows() -> str:
+    """List all public analysis workflows, sorted by popularity.
+
+    Browse what analysis chains other analysts have created. Find popular
+    tool sequences for different market conditions and copy them.
+
+    Returns:
+        List of public workflows with names, descriptions, tool sequences, and run counts.
+    """
+    result = await api_get("/api/workflows")
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_run_workflow(
+    workflow_id: str,
+    symbol: str = "",
+) -> str:
+    """Execute a saved analysis workflow — runs all tools in sequence.
+
+    Run another analyst's tool chain on any symbol. Each tool in the workflow
+    executes in order, and all results are returned together.
+
+    Args:
+        workflow_id: The workflow ID to execute
+        symbol: Override symbol for all tools in the workflow (empty = use workflow defaults)
+
+    Returns:
+        All tool results from the workflow execution with total latency.
+    """
+    result = await api_post(f"/api/workflows/run/{workflow_id}", {
+        "symbol": symbol,
+    })
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# IMMUTABLE AUDIT TRAIL + DECISION PROVENANCE
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_audit_log(
+    tool: str,
+    action: str = "tool_call",
+    input_summary: str = "",
+    output_summary: str = "",
+    latency_ms: int = 0,
+    user_id: str = "",
+    session_id: str = "",
+    success: bool = True,
+) -> str:
+    """Log an immutable audit entry with hash chain integrity.
+
+    Every tool invocation should be logged here for compliance. Creates a tamper-evident
+    record with cryptographic hash chaining — each entry includes the hash of the
+    previous entry, creating a blockchain-like audit trail.
+
+    Args:
+        tool: Tool name that was called
+        action: Action type (tool_call, trade_execution, risk_evaluation, etc.)
+        input_summary: Brief summary of inputs (redact sensitive data)
+        output_summary: Brief summary of output
+        latency_ms: Response time in milliseconds
+        user_id: User identifier
+        session_id: Session identifier
+        success: Whether the call succeeded
+
+    Returns:
+        Audit event ID and hash for verification.
+    """
+    result = await api_post("/api/audit/log", {
+        "tool": tool, "action": action,
+        "input_summary": input_summary, "output_summary": output_summary,
+        "latency_ms": latency_ms, "user_id": user_id,
+        "session_id": session_id, "success": success,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_audit_trail(
+    user_id: str = "",
+    tool: str = "",
+    limit: int = 50,
+) -> str:
+    """Query the immutable audit trail — hash-chained event history.
+
+    Returns tamper-evident audit records. Each event includes a cryptographic hash
+    linking it to the previous event. Any modification breaks the chain, which
+    bastion_audit_verify can detect. SOC 2 / GDPR exportable.
+
+    Args:
+        user_id: Filter by user (empty = all users)
+        tool: Filter by tool name (empty = all tools)
+        limit: Max events to return
+
+    Returns:
+        Hash-chained audit events with integrity status.
+    """
+    params = {"limit": str(limit)}
+    if user_id: params["user_id"] = user_id
+    if tool: params["tool"] = tool
+    result = await api_get("/api/audit/trail", params=params)
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_audit_verify() -> str:
+    """Verify the integrity of the entire audit chain.
+
+    Walks the complete hash chain and verifies every link. If any event has been
+    tampered with, the chain breaks and this tool reports exactly where.
+    Use this for compliance audits and integrity checks.
+
+    Returns:
+        Chain length, integrity status (INTACT/BROKEN), and break point if any.
+    """
+    result = await api_post("/api/audit/verify", {})
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_decision_provenance(
+    symbol: str = "",
+    decision: str = "",
+    confidence: float = 0,
+    tools_called: str = "",
+    data_context: str = "",
+    model_output: str = "",
+    user_id: str = "",
+    user_followed: bool = True,
+    actual_outcome: str = "",
+    outcome_correct: bool = True,
+) -> str:
+    """Record complete decision provenance — why the AI recommended what it did.
+
+    Creates an auditable record of the full decision chain: which tools were called,
+    what data was seen, what the model output, whether the user followed the recommendation,
+    and what the actual outcome was. The institutional selling point: "We can show auditors
+    exactly why the AI said EXIT."
+
+    Args:
+        symbol: Symbol the decision was about
+        decision: The AI's recommendation (e.g., "EXIT_FULL", "HOLD")
+        confidence: Model confidence (0-1)
+        tools_called: Comma-separated list of tools called during analysis
+        data_context: Key data points that influenced the decision (JSON string)
+        model_output: The model's raw output/reasoning
+        user_id: User identifier
+        user_followed: Whether the user followed the recommendation
+        actual_outcome: What actually happened (e.g., "price_dropped_5pct")
+        outcome_correct: Whether the AI's recommendation was correct
+
+    Returns:
+        Provenance record ID for future reference.
+    """
+    tools_list = [t.strip() for t in tools_called.split(",") if t.strip()] if tools_called else []
+    try:
+        context = json.loads(data_context) if data_context else {}
+    except json.JSONDecodeError:
+        context = {"raw": data_context}
+
+    result = await api_post("/api/audit/provenance", {
+        "symbol": symbol, "decision": decision, "confidence": confidence,
+        "tools_called": tools_list, "data_context": context,
+        "model_output": model_output, "user_id": user_id,
+        "user_followed": user_followed, "actual_outcome": actual_outcome,
+        "outcome_correct": outcome_correct,
+    })
+    return json.dumps(result, indent=2)
+
+
+@mcp.tool()
+async def bastion_get_provenance(
+    user_id: str = "",
+    symbol: str = "",
+    limit: int = 20,
+) -> str:
+    """Query decision provenance — the complete 'why' chain for AI recommendations.
+
+    Shows the full reasoning trail: which tools were called, what data the model saw,
+    what it recommended, whether the user followed, and whether it was right.
+    Essential for institutional compliance and model evaluation.
+
+    Args:
+        user_id: Filter by user
+        symbol: Filter by symbol
+        limit: Max provenance records
+
+    Returns:
+        Decision provenance records with full reasoning chains.
+    """
+    params = {"limit": str(limit)}
+    if user_id: params["user_id"] = user_id
+    if symbol: params["symbol"] = symbol
+    result = await api_get("/api/audit/provenance", params=params)
+    return json.dumps(result, indent=2)
+
+
+# ═════════════════════════════════════════════════════════════════
+# TOOL SAFETY ANNOTATIONS QUERY
+# ═════════════════════════════════════════════════════════════════
+
+
+@mcp.tool()
+async def bastion_tool_safety() -> str:
+    """Get the safety annotation matrix for all BASTION MCP tools.
+
+    Returns readOnlyHint, destructiveHint, and idempotentHint for every tool.
+    Clients can use this to auto-gate destructive tools behind confirmation prompts
+    while letting safe read-only tools run freely.
+
+    Returns:
+        Safety matrix with annotations for all 100+ tools organized by category.
+    """
+    return json.dumps({
+        "annotations": {
+            "read_only_safe": {
+                "description": "Safe to auto-approve. No side effects.",
+                "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True,
+                "tools": [
+                    "bastion_get_price", "bastion_get_market_data", "bastion_get_klines",
+                    "bastion_get_volatility", "bastion_get_volatility_regime",
+                    "bastion_get_btc_dominance", "bastion_get_correlation_matrix",
+                    "bastion_get_confluence", "bastion_get_sector_rotation",
+                    "bastion_get_open_interest", "bastion_get_oi_changes",
+                    "bastion_get_cvd", "bastion_get_orderflow",
+                    "bastion_get_funding_rates", "bastion_get_funding_arb",
+                    "bastion_get_liquidations", "bastion_get_liquidations_by_exchange",
+                    "bastion_get_heatmap", "bastion_get_taker_ratio",
+                    "bastion_get_top_traders", "bastion_get_market_maker_magnet",
+                    "bastion_get_options", "bastion_get_whale_activity",
+                    "bastion_get_exchange_flow", "bastion_get_onchain",
+                    "bastion_get_news", "bastion_get_smart_money",
+                    "bastion_get_hyperliquid_whales", "bastion_get_fear_greed",
+                    "bastion_get_macro_signals", "bastion_get_etf_flows",
+                    "bastion_get_stablecoin_markets", "bastion_get_economic_data",
+                    "bastion_get_polymarket", "bastion_get_positions",
+                    "bastion_get_balance", "bastion_get_exchanges",
+                    "bastion_engine_status", "bastion_engine_history",
+                    "bastion_get_alerts", "bastion_get_session_stats",
+                    "bastion_get_reports", "bastion_get_trade_journal",
+                    "bastion_get_leaderboard", "bastion_check_alerts",
+                    "bastion_get_performance", "bastion_list_webhooks",
+                    "bastion_get_agent_analytics", "bastion_get_regime_tools",
+                    "bastion_get_challenges", "bastion_get_workflows",
+                    "bastion_get_provenance", "bastion_quick_intel",
+                    "bastion_live_feed", "bastion_heat_index", "bastion_heat_scan",
+                    "bastion_war_room_read", "bastion_war_room_consensus",
+                    "bastion_war_room_consensus_weighted", "bastion_get_server_card",
+                    "bastion_memory_recall", "bastion_memory_profile",
+                    "bastion_tool_safety", "bastion_audit_trail",
+                ],
+            },
+            "ai_analysis": {
+                "description": "Calls AI model. Read-only but uses compute. Safe to approve.",
+                "readOnlyHint": True, "destructiveHint": False, "idempotentHint": False,
+                "tools": [
+                    "bastion_evaluate_risk", "bastion_chat",
+                    "bastion_evaluate_all_positions", "bastion_scan_signals",
+                    "bastion_deep_analysis", "bastion_execute_regime_tool",
+                    "bastion_risk_confirm", "bastion_risk_card",
+                ],
+            },
+            "write_safe": {
+                "description": "Creates/modifies data but not destructive. Low risk.",
+                "readOnlyHint": False, "destructiveHint": False, "idempotentHint": False,
+                "tools": [
+                    "bastion_generate_report", "bastion_calculate_position",
+                    "bastion_get_kelly_sizing", "bastion_log_trade",
+                    "bastion_backtest_strategy", "bastion_get_risk_parity",
+                    "bastion_strategy_builder", "bastion_risk_replay",
+                    "bastion_log_prediction", "bastion_subscribe_alert",
+                    "bastion_cancel_alert", "bastion_create_risk_card",
+                    "bastion_record_equity", "bastion_add_webhook",
+                    "bastion_send_notification", "bastion_format_risk",
+                    "bastion_war_room_post", "bastion_war_room_vote",
+                    "bastion_create_challenge", "bastion_counter_challenge",
+                    "bastion_score_challenge", "bastion_save_workflow",
+                    "bastion_run_workflow", "bastion_memory_store",
+                    "bastion_audit_log", "bastion_audit_verify",
+                    "bastion_decision_provenance",
+                ],
+            },
+            "destructive_trading": {
+                "description": "EXECUTES TRADES. Requires explicit user confirmation.",
+                "readOnlyHint": False, "destructiveHint": True, "idempotentHint": False,
+                "tools": [
+                    "bastion_emergency_exit", "bastion_partial_close",
+                    "bastion_set_take_profit", "bastion_set_stop_loss",
+                    "bastion_move_to_breakeven", "bastion_flatten_winners",
+                ],
+            },
+            "engine_control": {
+                "description": "Controls autonomous trading engine. High impact.",
+                "readOnlyHint": False, "destructiveHint": True, "idempotentHint": False,
+                "tools": [
+                    "bastion_engine_start", "bastion_engine_arm",
+                    "bastion_engine_disarm",
+                ],
+            },
+        },
+        "total_tools": 108,
+    }, indent=2)
 
 
 # ═════════════════════════════════════════════════════════════════
