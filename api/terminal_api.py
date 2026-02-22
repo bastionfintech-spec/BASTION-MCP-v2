@@ -793,6 +793,17 @@ async def serve_agents():
         "BASTION Agents — Coming Soon</h1>"
     )
 
+@app.get("/features", response_class=HTMLResponse)
+async def serve_features():
+    """Serve the BASTION master features & capabilities document."""
+    features_path = bastion_path / "web" / "features.html"
+    if features_path.exists():
+        return FileResponse(features_path)
+    return HTMLResponse(
+        "<h1 style='color:#fff;background:#050505;font-family:monospace;padding:2em;'>"
+        "BASTION Features — Coming Soon</h1>"
+    )
+
 @app.get("/agents-v1", response_class=HTMLResponse)
 async def serve_agents_v1():
     """Serve the archived v1 agents page."""

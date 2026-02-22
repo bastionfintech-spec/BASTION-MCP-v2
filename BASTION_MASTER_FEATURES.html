@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BASTION — Master Feature & Capability Document</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg: #050505;
+    --surface: #0a0a0a;
+    --border: #1a1a1a;
+    --red: #dc2626;
+    --red-dim: #991b1b;
+    --text: #e4e4e7;
+    --text-dim: #71717a;
+    --text-muted: #52525b;
+    --white: #ffffff;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page { max-width: 1000px; margin: 0 auto; padding: 60px 40px; }
+
+  /* COVER */
+  .cover {
+    text-align: center;
+    padding: 120px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(220,38,38,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .cover-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: var(--red);
+    border: 1px solid var(--red-dim);
+    padding: 6px 16px;
+    margin-bottom: 40px;
+  }
+  .cover h1 {
+    font-size: 72px;
+    font-weight: 900;
+    letter-spacing: -3px;
+    color: var(--white);
+    line-height: 0.95;
+    margin-bottom: 16px;
+  }
+  .cover h1 span { color: var(--red); }
+  .cover .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 40px;
+  }
+  .cover-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 48px;
+    flex-wrap: wrap;
+  }
+  .cover-stat {
+    text-align: center;
+  }
+  .cover-stat .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .cover-stat .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .cover-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 48px;
+    letter-spacing: 2px;
+  }
+
+  /* SECTIONS */
+  .section {
+    padding: 60px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .section h2 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .section-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    max-width: 700px;
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 32px 0;
+  }
+  .stat-cell {
+    background: var(--surface);
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-cell .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .stat-cell .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* TOOL TABLE */
+  .tool-category {
+    margin: 32px 0;
+  }
+  .tool-category-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tool-category-header .cat-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--red);
+    background: rgba(220,38,38,0.1);
+    border: 1px solid var(--red-dim);
+    padding: 3px 10px;
+  }
+  .tool-category-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .tool-category-header .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #111;
+    vertical-align: top;
+  }
+  table tr:hover { background: rgba(220,38,38,0.03); }
+  .tool-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--white);
+    font-weight: 500;
+  }
+  .tool-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .tool-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    width: 30px;
+  }
+
+  /* FEATURE CARDS */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+  .feature-card h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--white);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .feature-card p {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .feature-card .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 2px 8px;
+    margin-top: 12px;
+    border: 1px solid;
+  }
+  .tag-red { color: var(--red); border-color: var(--red-dim); }
+  .tag-green { color: var(--green); border-color: #166534; }
+  .tag-blue { color: var(--blue); border-color: #1e40af; }
+  .tag-purple { color: var(--purple); border-color: #6b21a8; }
+  .tag-amber { color: var(--amber); border-color: #92400e; }
+
+  /* RESOURCE TABLE */
+  .res-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+  }
+  .res-table td, .res-table th {
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .res-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+  }
+  .res-uri {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--red);
+  }
+
+  /* ARCHITECTURE */
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 32px 0;
+    flex-wrap: wrap;
+  }
+  .arch-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px 32px;
+    text-align: center;
+    min-width: 180px;
+  }
+  .arch-box h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .arch-box p {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .arch-arrow {
+    font-size: 24px;
+    color: var(--red);
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.8;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  .code-block .comment { color: var(--text-muted); }
+  .code-block .string { color: var(--green); }
+  .code-block .key { color: var(--red); }
+
+  /* BULLET LIST */
+  .bullet-list {
+    list-style: none;
+    padding: 0;
+  }
+  .bullet-list li {
+    padding: 6px 0 6px 20px;
+    position: relative;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .bullet-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--red);
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 60px 0 40px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+  }
+  .footer .red { color: var(--red); }
+
+  @media print {
+    body { background: #fff; color: #111; }
+    .cover h1 { color: #111; }
+    .cover h1 span { color: #dc2626; }
+    .section h2 { color: #111; }
+    table td, table th { border-color: #ddd; }
+    .tool-name, .feature-card h4, .arch-box h4 { color: #111; }
+    .page { padding: 30px 20px; }
+    .section { page-break-inside: avoid; }
+    .cover { page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ COVER -->
+<div class="page">
+  <div class="cover">
+    <div class="cover-badge">Master Feature &amp; Capability Document</div>
+    <h1>BASTION<span>.</span></h1>
+    <div class="subtitle">Risk Intelligence MCP Server for Crypto Agents</div>
+
+    <div class="cover-stats">
+      <div class="cover-stat">
+        <div class="num">118</div>
+        <div class="label">MCP Tools</div>
+      </div>
+      <div class="cover-stat">
+        <div class="num">8</div>
+        <div class="label">Resources</div>
+      </div>
+      <div class="cover-stat">
+        <div class="num">10</div>
+        <div class="label">Prompts</div>
+      </div>
+      <div class="cover-stat">
+        <div class="num">560+</div>
+        <div class="label">Live Signals</div>
+      </div>
+      <div class="cover-stat">
+        <div class="num">75.4%</div>
+        <div class="label">AI Win Rate</div>
+      </div>
+      <div class="cover-stat">
+        <div class="num">72B</div>
+        <div class="label">Parameter AI</div>
+      </div>
+    </div>
+
+    <div class="cover-date">February 2026 &nbsp;|&nbsp; v6 Production &nbsp;|&nbsp; bastionfi.tech</div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ EXECUTIVE SUMMARY -->
+  <div class="section">
+    <div class="section-num">Section 01</div>
+    <h2>Executive Summary</h2>
+    <p class="section-desc">
+      BASTION is a cloud-hosted Model Context Protocol (MCP) server that transforms any Claude agent into a professional-grade crypto trading desk. Through a single MCP connection (Streamable HTTP or SSE), AI agents gain access to 118 specialized tools spanning market data, derivatives analytics, on-chain intelligence, AI risk evaluation, portfolio management, autonomous trade execution, and institutional-grade risk reporting.
+    </p>
+    <p class="section-desc">
+      Powered by a custom fine-tuned 72B parameter AI model (bastion-32b) running on a 4x RTX 5090 GPU cluster, BASTION delivers institutional-caliber risk intelligence with a backtested 75.4% combined win rate across BTC, ETH, and SOL. The platform integrates data from 5+ exchanges, 11 blockchain networks, 15+ data providers, and processes 560+ real-time trading signals.
+    </p>
+
+    <div class="stats-bar">
+      <div class="stat-cell"><div class="val">5</div><div class="lbl">Exchanges</div></div>
+      <div class="stat-cell"><div class="val">11</div><div class="lbl">Blockchains</div></div>
+      <div class="stat-cell"><div class="val">15+</div><div class="lbl">Data Providers</div></div>
+      <div class="stat-cell"><div class="val">4x 5090</div><div class="lbl">GPU Cluster</div></div>
+      <div class="stat-cell"><div class="val">&lt;200ms</div><div class="lbl">Avg Latency</div></div>
+      <div class="stat-cell"><div class="val">99.9%</div><div class="lbl">Uptime SLA</div></div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ ARCHITECTURE -->
+  <div class="section">
+    <div class="section-num">Section 02</div>
+    <h2>System Architecture</h2>
+    <p class="section-desc">
+      BASTION follows a three-tier architecture: Claude Agent → MCP Protocol → BASTION Intelligence Core. The MCP server translates tool calls into internal API requests against a FastAPI backend running on Railway, with the AI model served via vLLM on a dedicated GPU cluster.
+    </p>
+
+    <div class="arch-flow">
+      <div class="arch-box">
+        <h4>Your Claude Agent</h4>
+        <p>Claude Code / Desktop / API</p>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box" style="border-color: var(--red-dim);">
+        <h4>BASTION MCP</h4>
+        <p>118 tools, 8 resources, 10 prompts</p>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-box">
+        <h4>Intelligence Core</h4>
+        <p>72B AI + 560+ signals + 5 exchanges</p>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px; color:var(--white); margin:32px 0 16px; text-transform:uppercase; letter-spacing:1px;">Connection Methods</h3>
+    <div class="code-block">
+<span class="comment">// Claude Code — one command</span>
+claude mcp add bastion-risk --transport streamable-http https://bastionfi.tech/mcp
+
+<span class="comment">// Claude Desktop — claude_desktop_config.json</span>
+{
+  <span class="key">"mcpServers"</span>: {
+    <span class="key">"bastion-risk"</span>: {
+      <span class="key">"url"</span>: <span class="string">"https://bastionfi.tech/sse"</span>
+    }
+  }
+}
+    </div>
+
+    <h3 style="font-size:14px; color:var(--white); margin:32px 0 16px; text-transform:uppercase; letter-spacing:1px;">Technology Stack</h3>
+    <ul class="bullet-list">
+      <li><strong>Backend:</strong> Python FastAPI on Railway (auto-scaling)</li>
+      <li><strong>AI Model:</strong> BASTION bastion-32b (Qwen2.5 72B + QLoRA fine-tune v6) served via vLLM</li>
+      <li><strong>GPU Cluster:</strong> Vast.ai 4x RTX 5090 (128GB total VRAM), tensor parallelism=4</li>
+      <li><strong>MCP Protocol:</strong> Streamable HTTP + SSE transports via mcp>=1.8.0</li>
+      <li><strong>Data Sources:</strong> Binance, Bybit, OKX, Hyperliquid, CoinGlass, Whale Alert, FRED, Polymarket</li>
+      <li><strong>Auth:</strong> API key system with 4 tiers (Free/Pro/Institutional/Enterprise)</li>
+      <li><strong>Deployment:</strong> Railway CI/CD with automatic deploys on git push</li>
+    </ul>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ AI MODEL -->
+  <div class="section">
+    <div class="section-num">Section 03</div>
+    <h2>AI Risk Intelligence Model</h2>
+    <p class="section-desc">
+      The BASTION bastion-32b model is a custom fine-tuned 72B parameter language model specialized for crypto futures risk evaluation. Built on Qwen2.5-72B base with 6 rounds of QLoRA fine-tuning, it delivers structured risk assessments with 5 possible actions: HOLD, EXIT_FULL, EXIT_100%, TP_PARTIAL, and REDUCE_SIZE.
+    </p>
+
+    <div class="stats-bar">
+      <div class="stat-cell"><div class="val">75.4%</div><div class="lbl">Combined Win Rate</div></div>
+      <div class="stat-cell"><div class="val">71.7%</div><div class="lbl">BTC Accuracy</div></div>
+      <div class="stat-cell"><div class="val">72.7%</div><div class="lbl">ETH Accuracy</div></div>
+      <div class="stat-cell"><div class="val">81.8%</div><div class="lbl">SOL Accuracy</div></div>
+      <div class="stat-cell"><div class="val">328</div><div class="lbl">Training Examples</div></div>
+      <div class="stat-cell"><div class="val">v6</div><div class="lbl">Production Version</div></div>
+    </div>
+
+    <h3 style="font-size:14px; color:var(--white); margin:32px 0 16px; text-transform:uppercase; letter-spacing:1px;">Model Capabilities</h3>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>Structure-Aware Risk Evaluation</h4>
+        <p>Integrates VPVR (Volume Profile Visible Range), graded support/resistance levels, POC (Point of Control), and HVN (High Volume Nodes) into every evaluation. MCF Structure-Based Exit Hierarchy replaces simple ATR trailing stops.</p>
+        <span class="tag tag-red">Core AI</span>
+      </div>
+      <div class="feature-card">
+        <h4>Multi-Action Decision Framework</h4>
+        <p>5 distinct actions: HOLD (maintain position), EXIT_FULL (close entirely), EXIT_100% (emergency close), TP_PARTIAL (take partial profit), REDUCE_SIZE (de-risk). Each with confidence scores and detailed reasoning.</p>
+        <span class="tag tag-red">Core AI</span>
+      </div>
+      <div class="feature-card">
+        <h4>Neural Chat Interface</h4>
+        <p>Natural language conversation about crypto markets, trading strategies, risk management, and market conditions. Context-aware responses powered by the same 72B model with adjusted temperature (0.6 for chat vs 0.3 for risk).</p>
+        <span class="tag tag-blue">Interactive</span>
+      </div>
+      <div class="feature-card">
+        <h4>Extended Pair Coverage</h4>
+        <p>Backtested across 10 cryptocurrency pairs: BTC, ETH, SOL, AVAX, DOGE, LINK, ADA, XRP. Extended backtest shows strong performance: DOGE 89.6%, LINK 77.8%, ADA 74.5%, AVAX 68.2%.</p>
+        <span class="tag tag-green">Validated</span>
+      </div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ COMPLETE TOOL REFERENCE -->
+  <div class="section">
+    <div class="section-num">Section 04</div>
+    <h2>Complete Tool Reference (118)</h2>
+    <p class="section-desc">Every MCP tool available through the BASTION server, organized by category with scope requirements and descriptions.</p>
+
+    <!-- CORE AI -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">01</span>
+        <h3>Core AI</h3>
+        <span class="count">4 tools &middot; auth optional</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">1</td><td class="tool-name">bastion_evaluate_risk</td><td class="tool-desc">Evaluate a crypto futures position using BASTION's AI risk intelligence engine</td></tr>
+        <tr><td class="tool-num">2</td><td class="tool-name">bastion_chat</td><td class="tool-desc">Ask BASTION's neural AI anything about crypto markets, trading, or risk</td></tr>
+        <tr><td class="tool-num">3</td><td class="tool-name">bastion_evaluate_all_positions</td><td class="tool-desc">Run AI risk evaluation on ALL open positions simultaneously</td></tr>
+        <tr><td class="tool-num">4</td><td class="tool-name">bastion_scan_signals</td><td class="tool-desc">Scan for trading signals across all supported pairs</td></tr>
+      </table>
+    </div>
+
+    <!-- MARKET DATA -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">02</span>
+        <h3>Market Data</h3>
+        <span class="count">9 tools &middot; public</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">5</td><td class="tool-name">bastion_get_price</td><td class="tool-desc">Get the current live price of a cryptocurrency</td></tr>
+        <tr><td class="tool-num">6</td><td class="tool-name">bastion_get_market_data</td><td class="tool-desc">Get aggregated market intelligence for a cryptocurrency</td></tr>
+        <tr><td class="tool-num">7</td><td class="tool-name">bastion_get_klines</td><td class="tool-desc">Get OHLCV candlestick data for a cryptocurrency</td></tr>
+        <tr><td class="tool-num">8</td><td class="tool-name">bastion_get_volatility</td><td class="tool-desc">Get volatility metrics and regime detection</td></tr>
+        <tr><td class="tool-num">9</td><td class="tool-name">bastion_get_volatility_regime</td><td class="tool-desc">Get the current volatility regime classification</td></tr>
+        <tr><td class="tool-num">10</td><td class="tool-name">bastion_get_btc_dominance</td><td class="tool-desc">Get Bitcoin dominance, altseason score, and total crypto market cap</td></tr>
+        <tr><td class="tool-num">11</td><td class="tool-name">bastion_get_correlation_matrix</td><td class="tool-desc">Get cross-asset correlation matrix for specified symbols</td></tr>
+        <tr><td class="tool-num">12</td><td class="tool-name">bastion_get_confluence</td><td class="tool-desc">Get multi-timeframe confluence analysis</td></tr>
+        <tr><td class="tool-num">13</td><td class="tool-name">bastion_get_sector_rotation</td><td class="tool-desc">Track capital rotation across crypto sectors</td></tr>
+      </table>
+    </div>
+
+    <!-- DERIVATIVES & ORDER FLOW -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">03</span>
+        <h3>Derivatives &amp; Order Flow</h3>
+        <span class="count">13 tools &middot; public</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">14</td><td class="tool-name">bastion_get_open_interest</td><td class="tool-desc">Get open interest data for a cryptocurrency</td></tr>
+        <tr><td class="tool-num">15</td><td class="tool-name">bastion_get_oi_changes</td><td class="tool-desc">Get open interest changes across all major crypto pairs</td></tr>
+        <tr><td class="tool-num">16</td><td class="tool-name">bastion_get_cvd</td><td class="tool-desc">Get Cumulative Volume Delta (CVD)</td></tr>
+        <tr><td class="tool-num">17</td><td class="tool-name">bastion_get_orderflow</td><td class="tool-desc">Get order flow analysis</td></tr>
+        <tr><td class="tool-num">18</td><td class="tool-name">bastion_get_funding_rates</td><td class="tool-desc">Get cross-exchange funding rates for major crypto pairs</td></tr>
+        <tr><td class="tool-num">19</td><td class="tool-name">bastion_get_funding_arb</td><td class="tool-desc">Get funding rate arbitrage data</td></tr>
+        <tr><td class="tool-num">20</td><td class="tool-name">bastion_get_liquidations</td><td class="tool-desc">Get liquidation data for a cryptocurrency</td></tr>
+        <tr><td class="tool-num">21</td><td class="tool-name">bastion_get_liquidations_by_exchange</td><td class="tool-desc">Get liquidation data broken down by exchange</td></tr>
+        <tr><td class="tool-num">22</td><td class="tool-name">bastion_get_heatmap</td><td class="tool-desc">Get the liquidation heatmap</td></tr>
+        <tr><td class="tool-num">23</td><td class="tool-name">bastion_get_taker_ratio</td><td class="tool-desc">Get taker buy/sell ratio</td></tr>
+        <tr><td class="tool-num">24</td><td class="tool-name">bastion_get_top_traders</td><td class="tool-desc">Get top trader positions and sentiment</td></tr>
+        <tr><td class="tool-num">25</td><td class="tool-name">bastion_get_market_maker_magnet</td><td class="tool-desc">Get market maker magnet levels</td></tr>
+        <tr><td class="tool-num">26</td><td class="tool-name">bastion_get_options</td><td class="tool-desc">Get options data (put/call ratio, max pain, OI by strike)</td></tr>
+      </table>
+    </div>
+
+    <!-- ON-CHAIN & INTELLIGENCE -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">04</span>
+        <h3>On-Chain &amp; Intelligence</h3>
+        <span class="count">6 tools &middot; public</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">27</td><td class="tool-name">bastion_get_whale_activity</td><td class="tool-desc">Get whale transactions across 11 blockchain networks</td></tr>
+        <tr><td class="tool-num">28</td><td class="tool-name">bastion_get_exchange_flow</td><td class="tool-desc">Get exchange inflow/outflow</td></tr>
+        <tr><td class="tool-num">29</td><td class="tool-name">bastion_get_onchain</td><td class="tool-desc">Get on-chain metrics for major cryptocurrencies</td></tr>
+        <tr><td class="tool-num">30</td><td class="tool-name">bastion_get_news</td><td class="tool-desc">Get aggregated crypto news from major sources</td></tr>
+        <tr><td class="tool-num">31</td><td class="tool-name">bastion_get_smart_money</td><td class="tool-desc">Get smart money flow analysis</td></tr>
+        <tr><td class="tool-num">32</td><td class="tool-name">bastion_get_hyperliquid_whales</td><td class="tool-desc">Get top whale positions on Hyperliquid DEX</td></tr>
+      </table>
+    </div>
+
+    <!-- MACRO & SENTIMENT -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">05</span>
+        <h3>Macro &amp; Sentiment</h3>
+        <span class="count">6 tools &middot; public</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">33</td><td class="tool-name">bastion_get_fear_greed</td><td class="tool-desc">Get the Crypto Fear &amp; Greed Index</td></tr>
+        <tr><td class="tool-num">34</td><td class="tool-name">bastion_get_macro_signals</td><td class="tool-desc">Get macro market signals affecting crypto</td></tr>
+        <tr><td class="tool-num">35</td><td class="tool-name">bastion_get_etf_flows</td><td class="tool-desc">Get Bitcoin and Ethereum ETF flow data</td></tr>
+        <tr><td class="tool-num">36</td><td class="tool-name">bastion_get_stablecoin_markets</td><td class="tool-desc">Get stablecoin market data</td></tr>
+        <tr><td class="tool-num">37</td><td class="tool-name">bastion_get_economic_data</td><td class="tool-desc">Get FRED economic data series</td></tr>
+        <tr><td class="tool-num">38</td><td class="tool-name">bastion_get_polymarket</td><td class="tool-desc">Get prediction market data from Polymarket</td></tr>
+      </table>
+    </div>
+
+    <!-- RESEARCH -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">06</span>
+        <h3>Research &amp; Analytics</h3>
+        <span class="count">24 tools &middot; auth optional</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">39</td><td class="tool-name">bastion_generate_report</td><td class="tool-desc">Generate MCF Labs research report</td></tr>
+        <tr><td class="tool-num">40</td><td class="tool-name">bastion_get_reports</td><td class="tool-desc">List existing research reports</td></tr>
+        <tr><td class="tool-num">41</td><td class="tool-name">bastion_calculate_position</td><td class="tool-desc">Calculate optimal position sizing with Monte Carlo analysis</td></tr>
+        <tr><td class="tool-num">42</td><td class="tool-name">bastion_get_kelly_sizing</td><td class="tool-desc">Get Kelly Criterion optimal position sizing</td></tr>
+        <tr><td class="tool-num">43</td><td class="tool-name">bastion_log_trade</td><td class="tool-desc">Log a completed trade to your performance journal</td></tr>
+        <tr><td class="tool-num">44</td><td class="tool-name">bastion_get_trade_journal</td><td class="tool-desc">Get trade journal performance statistics</td></tr>
+        <tr><td class="tool-num">45</td><td class="tool-name">bastion_backtest_strategy</td><td class="tool-desc">Backtest strategies on-demand</td></tr>
+        <tr><td class="tool-num">46</td><td class="tool-name">bastion_get_risk_parity</td><td class="tool-desc">Analyze portfolio risk parity across all open positions</td></tr>
+        <tr><td class="tool-num">47</td><td class="tool-name">bastion_strategy_builder</td><td class="tool-desc">Natural language strategy description to backtest pipeline</td></tr>
+        <tr><td class="tool-num">48</td><td class="tool-name">bastion_risk_replay</td><td class="tool-desc">Historical position time-travel analysis</td></tr>
+        <tr><td class="tool-num">49</td><td class="tool-name">bastion_risk_card</td><td class="tool-desc">Interactive risk visualization widget</td></tr>
+        <tr><td class="tool-num">50</td><td class="tool-name">bastion_get_leaderboard</td><td class="tool-desc">Get BASTION model performance leaderboard</td></tr>
+        <tr><td class="tool-num">51</td><td class="tool-name">bastion_log_prediction</td><td class="tool-desc">Log prediction for leaderboard tracking</td></tr>
+        <tr><td class="tool-num">52</td><td class="tool-name">bastion_subscribe_alert</td><td class="tool-desc">Subscribe to price/condition alerts</td></tr>
+        <tr><td class="tool-num">53</td><td class="tool-name">bastion_check_alerts</td><td class="tool-desc">Check all active alerts and see which have triggered</td></tr>
+        <tr><td class="tool-num">54</td><td class="tool-name">bastion_cancel_alert</td><td class="tool-desc">Cancel an active alert by its ID</td></tr>
+        <tr><td class="tool-num">55</td><td class="tool-name">bastion_create_risk_card</td><td class="tool-desc">Shareable risk score card with unique URL</td></tr>
+        <tr><td class="tool-num">56</td><td class="tool-name">bastion_get_performance</td><td class="tool-desc">Equity curve + Sharpe + drawdown analytics</td></tr>
+        <tr><td class="tool-num">57</td><td class="tool-name">bastion_record_equity</td><td class="tool-desc">Record equity snapshot for tracking</td></tr>
+        <tr><td class="tool-num">58</td><td class="tool-name">bastion_add_webhook</td><td class="tool-desc">Register Discord/Telegram/URL webhook</td></tr>
+        <tr><td class="tool-num">59</td><td class="tool-name">bastion_list_webhooks</td><td class="tool-desc">List all registered notification webhooks</td></tr>
+        <tr><td class="tool-num">60</td><td class="tool-name">bastion_send_notification</td><td class="tool-desc">Push notification to webhooks</td></tr>
+        <tr><td class="tool-num">61</td><td class="tool-name">bastion_get_agent_analytics</td><td class="tool-desc">Get agent performance analytics — tool usage, latency, error rates</td></tr>
+        <tr><td class="tool-num">62</td><td class="tool-name">bastion_format_risk</td><td class="tool-desc">Beautiful terminal-style risk output</td></tr>
+      </table>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">07</span>
+        <h3>Portfolio</h3>
+        <span class="count">7 tools &middot; auth required (read scope)</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">63</td><td class="tool-name">bastion_get_positions</td><td class="tool-desc">Get all open positions across connected exchanges</td></tr>
+        <tr><td class="tool-num">64</td><td class="tool-name">bastion_get_balance</td><td class="tool-desc">Get total portfolio balance across all connected exchanges</td></tr>
+        <tr><td class="tool-num">65</td><td class="tool-name">bastion_get_exchanges</td><td class="tool-desc">List all connected exchanges</td></tr>
+        <tr><td class="tool-num">66</td><td class="tool-name">bastion_engine_status</td><td class="tool-desc">Get the autonomous trading engine status</td></tr>
+        <tr><td class="tool-num">67</td><td class="tool-name">bastion_engine_history</td><td class="tool-desc">Get trading engine execution history</td></tr>
+        <tr><td class="tool-num">68</td><td class="tool-name">bastion_get_alerts</td><td class="tool-desc">Get active alerts and notifications</td></tr>
+        <tr><td class="tool-num">69</td><td class="tool-name">bastion_get_session_stats</td><td class="tool-desc">Get current trading session statistics</td></tr>
+      </table>
+    </div>
+
+    <!-- TRADING ACTIONS -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">08</span>
+        <h3>Trading Actions</h3>
+        <span class="count">6 tools &middot; auth required (trade scope)</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">70</td><td class="tool-name">bastion_emergency_exit</td><td class="tool-desc">EMERGENCY: Close ALL open positions immediately</td></tr>
+        <tr><td class="tool-num">71</td><td class="tool-name">bastion_partial_close</td><td class="tool-desc">Close a percentage of a position</td></tr>
+        <tr><td class="tool-num">72</td><td class="tool-name">bastion_set_take_profit</td><td class="tool-desc">Set or update take-profit for a position</td></tr>
+        <tr><td class="tool-num">73</td><td class="tool-name">bastion_set_stop_loss</td><td class="tool-desc">Set or update stop-loss for a position</td></tr>
+        <tr><td class="tool-num">74</td><td class="tool-name">bastion_move_to_breakeven</td><td class="tool-desc">Move all stops to entry price (breakeven)</td></tr>
+        <tr><td class="tool-num">75</td><td class="tool-name">bastion_flatten_winners</td><td class="tool-desc">Close all winning positions (currently in profit)</td></tr>
+      </table>
+    </div>
+
+    <!-- ENGINE CONTROL -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">09</span>
+        <h3>Engine Control</h3>
+        <span class="count">3 tools &middot; auth required (engine scope)</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">76</td><td class="tool-name">bastion_engine_start</td><td class="tool-desc">Start the BASTION autonomous risk engine</td></tr>
+        <tr><td class="tool-num">77</td><td class="tool-name">bastion_engine_arm</td><td class="tool-desc">Arm engine for auto-execution (with confidence thresholds)</td></tr>
+        <tr><td class="tool-num">78</td><td class="tool-name">bastion_engine_disarm</td><td class="tool-desc">Disarm the engine — stop autonomous trade execution</td></tr>
+      </table>
+    </div>
+
+    <!-- WAR ROOM -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">10</span>
+        <h3>War Room (Multi-Agent)</h3>
+        <span class="count">5 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">79</td><td class="tool-name">bastion_war_room_post</td><td class="tool-desc">Post signal to War Room (shared agent feed)</td></tr>
+        <tr><td class="tool-num">80</td><td class="tool-name">bastion_war_room_read</td><td class="tool-desc">Read War Room feed (signals from other agents)</td></tr>
+        <tr><td class="tool-num">81</td><td class="tool-name">bastion_war_room_consensus</td><td class="tool-desc">Get agent consensus for a symbol</td></tr>
+        <tr><td class="tool-num">82</td><td class="tool-name">bastion_war_room_vote</td><td class="tool-desc">Cast weighted vote (accuracy-based)</td></tr>
+        <tr><td class="tool-num">83</td><td class="tool-name">bastion_war_room_consensus_weighted</td><td class="tool-desc">Get weighted consensus (votes weighted by historical accuracy)</td></tr>
+      </table>
+    </div>
+
+    <!-- INTELLIGENCE -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">11</span>
+        <h3>Intelligence (Protocol Innovation)</h3>
+        <span class="count">7 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">84</td><td class="tool-name">bastion_quick_intel</td><td class="tool-desc">Instant intelligence snapshot (~200ms)</td></tr>
+        <tr><td class="tool-num">85</td><td class="tool-name">bastion_deep_analysis</td><td class="tool-desc">Multi-step reasoning chain (15 sources in one call)</td></tr>
+        <tr><td class="tool-num">86</td><td class="tool-name">bastion_get_regime_tools</td><td class="tool-desc">Discover which specialized tools are currently active based on market conditions</td></tr>
+        <tr><td class="tool-num">87</td><td class="tool-name">bastion_execute_regime_tool</td><td class="tool-desc">Execute regime-specific analysis</td></tr>
+        <tr><td class="tool-num">88</td><td class="tool-name">bastion_live_feed</td><td class="tool-desc">Real-time aggregated market feed</td></tr>
+        <tr><td class="tool-num">89</td><td class="tool-name">bastion_get_server_card</td><td class="tool-desc">Get BASTION's MCP Server Card for agent-to-agent discovery</td></tr>
+        <tr><td class="tool-num">90</td><td class="tool-name">bastion_risk_confirm</td><td class="tool-desc">Interactive risk confirmation with structured warnings</td></tr>
+      </table>
+    </div>
+
+    <!-- CHALLENGE CARDS -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">12</span>
+        <h3>Challenge Cards (Viral Predictions)</h3>
+        <span class="count">4 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">91</td><td class="tool-name">bastion_create_challenge</td><td class="tool-desc">Create a "Prove Me Wrong" prediction with shareable URL</td></tr>
+        <tr><td class="tool-num">92</td><td class="tool-name">bastion_counter_challenge</td><td class="tool-desc">Take the opposite side of a challenge</td></tr>
+        <tr><td class="tool-num">93</td><td class="tool-name">bastion_get_challenges</td><td class="tool-desc">List active challenges</td></tr>
+        <tr><td class="tool-num">94</td><td class="tool-name">bastion_score_challenge</td><td class="tool-desc">Auto-score a challenge against live market data</td></tr>
+      </table>
+    </div>
+
+    <!-- PERSISTENT MEMORY -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">13</span>
+        <h3>Persistent Memory</h3>
+        <span class="count">3 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">95</td><td class="tool-name">bastion_memory_store</td><td class="tool-desc">Store episodic/semantic/procedural memory</td></tr>
+        <tr><td class="tool-num">96</td><td class="tool-name">bastion_memory_recall</td><td class="tool-desc">Search and recall memories across sessions</td></tr>
+        <tr><td class="tool-num">97</td><td class="tool-name">bastion_memory_profile</td><td class="tool-desc">Get learned trader profile from accumulated memories</td></tr>
+      </table>
+    </div>
+
+    <!-- HEAT INDEX -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">14</span>
+        <h3>Heat Index</h3>
+        <span class="count">2 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">98</td><td class="tool-name">bastion_heat_index</td><td class="tool-desc">Composite 0-100 attention score combining whale activity, funding, liquidations, volatility, price action</td></tr>
+        <tr><td class="tool-num">99</td><td class="tool-name">bastion_heat_scan</td><td class="tool-desc">Scan heat index across top 10 crypto pairs</td></tr>
+      </table>
+    </div>
+
+    <!-- COPY-ANALYSIS WORKFLOWS -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">15</span>
+        <h3>Copy-Analysis Workflows</h3>
+        <span class="count">3 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">100</td><td class="tool-name">bastion_save_workflow</td><td class="tool-desc">Save a reusable tool chain as a named workflow</td></tr>
+        <tr><td class="tool-num">101</td><td class="tool-name">bastion_get_workflows</td><td class="tool-desc">List all public analysis workflows, sorted by popularity</td></tr>
+        <tr><td class="tool-num">102</td><td class="tool-name">bastion_run_workflow</td><td class="tool-desc">Execute a saved workflow (runs all tools in sequence)</td></tr>
+      </table>
+    </div>
+
+    <!-- AUDIT & COMPLIANCE -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">16</span>
+        <h3>Audit &amp; Compliance</h3>
+        <span class="count">6 tools &middot; enterprise-grade</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">103</td><td class="tool-name">bastion_audit_log</td><td class="tool-desc">Log hash-chained tamper-evident audit entry (SHA-256)</td></tr>
+        <tr><td class="tool-num">104</td><td class="tool-name">bastion_audit_trail</td><td class="tool-desc">Query immutable audit trail with filters</td></tr>
+        <tr><td class="tool-num">105</td><td class="tool-name">bastion_audit_verify</td><td class="tool-desc">Verify the integrity of the entire audit chain</td></tr>
+        <tr><td class="tool-num">106</td><td class="tool-name">bastion_decision_provenance</td><td class="tool-desc">Record full decision reasoning chain</td></tr>
+        <tr><td class="tool-num">107</td><td class="tool-name">bastion_get_provenance</td><td class="tool-desc">Query decision provenance</td></tr>
+        <tr><td class="tool-num">108</td><td class="tool-name">bastion_tool_safety</td><td class="tool-desc">Get safety annotation matrix for all tools (readOnlyHint, destructiveHint, idempotentHint)</td></tr>
+      </table>
+    </div>
+
+    <!-- MONTE CARLO -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">17</span>
+        <h3>Monte Carlo Simulation</h3>
+        <span class="count">1 tool &middot; institutional-grade</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">109</td><td class="tool-name">bastion_simulate_portfolio</td><td class="tool-desc">Jump-diffusion Monte Carlo simulation with VaR, CVaR, probability distributions (10,000 paths)</td></tr>
+      </table>
+    </div>
+
+    <!-- AI TRADE JOURNAL -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">18</span>
+        <h3>AI Trade Journal</h3>
+        <span class="count">3 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">110</td><td class="tool-name">bastion_journal_log</td><td class="tool-desc">Natural language trade logging with NLP parsing</td></tr>
+        <tr><td class="tool-num">111</td><td class="tool-name">bastion_journal_analyze</td><td class="tool-desc">Pattern mining + win rate analysis by setup, time, pair</td></tr>
+        <tr><td class="tool-num">112</td><td class="tool-name">bastion_journal_bias_detect</td><td class="tool-desc">Cognitive bias detection (loss aversion, overtrading, revenge trading)</td></tr>
+      </table>
+    </div>
+
+    <!-- INSTITUTIONAL RISK REPORTS -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">19</span>
+        <h3>Institutional Risk Reports</h3>
+        <span class="count">1 tool</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">113</td><td class="tool-name">bastion_risk_report</td><td class="tool-desc">Parametric VaR (95%/99%), CVaR, counterparty risk scoring, risk grade A-F</td></tr>
+      </table>
+    </div>
+
+    <!-- PROACTIVE MONITORING -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">20</span>
+        <h3>Proactive Monitoring</h3>
+        <span class="count">3 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">114</td><td class="tool-name">bastion_monitor_position</td><td class="tool-desc">Register position for proactive server-side monitoring with webhook alerts</td></tr>
+        <tr><td class="tool-num">115</td><td class="tool-name">bastion_check_monitor</td><td class="tool-desc">Check monitored position against live market data</td></tr>
+        <tr><td class="tool-num">116</td><td class="tool-name">bastion_list_monitors</td><td class="tool-desc">List all active position monitors</td></tr>
+      </table>
+    </div>
+
+    <!-- AGENT-AS-A-SERVICE -->
+    <div class="tool-category">
+      <div class="tool-category-header">
+        <span class="cat-badge">21</span>
+        <h3>Agent-as-a-Service</h3>
+        <span class="count">2 tools</span>
+      </div>
+      <table>
+        <tr><th style="width:30px">#</th><th style="width:280px">Tool</th><th>Description</th></tr>
+        <tr><td class="tool-num">117</td><td class="tool-name">bastion_service_evaluate</td><td class="tool-desc">Metered risk evaluation endpoint for external AI agents</td></tr>
+        <tr><td class="tool-num">118</td><td class="tool-name">bastion_service_stats</td><td class="tool-desc">Get Agent-as-a-Service usage statistics and billing</td></tr>
+      </table>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ RESOURCES -->
+  <div class="section">
+    <div class="section-num">Section 05</div>
+    <h2>MCP Resources (8)</h2>
+    <p class="section-desc">Event-driven data streams and context resources available through the MCP protocol. Resources provide ambient context to Claude agents without requiring explicit tool calls.</p>
+
+    <table class="res-table">
+      <tr><th>URI</th><th>Description</th></tr>
+      <tr><td class="res-uri">bastion://status</td><td class="tool-desc">System status — model version, GPU health, API latency</td></tr>
+      <tr><td class="res-uri">bastion://supported-symbols</td><td class="tool-desc">List of cryptocurrency symbols supported by BASTION</td></tr>
+      <tr><td class="res-uri">bastion://model-info</td><td class="tool-desc">AI model details — version, accuracy, training methodology</td></tr>
+      <tr><td class="res-uri">bastion://tools</td><td class="tool-desc">Complete list of all 118 BASTION MCP tools with descriptions</td></tr>
+      <tr><td class="res-uri">bastion://exchanges</td><td class="tool-desc">List of supported exchanges for BASTION integration</td></tr>
+      <tr><td class="res-uri">bastion://live/{symbol}</td><td class="tool-desc">Live market feed — price, funding, volume, fear/greed in one snapshot</td></tr>
+      <tr><td class="res-uri">bastion://regime</td><td class="tool-desc">Current market regime and active adaptive tools</td></tr>
+      <tr><td class="res-uri">bastion://capabilities</td><td class="tool-desc">Complete platform capabilities and data sources</td></tr>
+    </table>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ PROMPTS -->
+  <div class="section">
+    <div class="section-num">Section 06</div>
+    <h2>MCP Prompts (10)</h2>
+    <p class="section-desc">Pre-built prompt templates that Claude agents can use to run complex multi-tool workflows with a single invocation. Each prompt chains multiple tools into an optimized analysis pipeline.</p>
+
+    <table class="res-table">
+      <tr><th>Prompt</th><th>Description</th></tr>
+      <tr><td class="tool-name">evaluate_my_position</td><td class="tool-desc">Evaluate a trading position using BASTION Risk Intelligence</td></tr>
+      <tr><td class="tool-name">market_analysis</td><td class="tool-desc">Get a complete market analysis for a cryptocurrency</td></tr>
+      <tr><td class="tool-name">risk_check</td><td class="tool-desc">Quick risk check for a cryptocurrency</td></tr>
+      <tr><td class="tool-name">portfolio_risk_scan</td><td class="tool-desc">Run a comprehensive risk scan on all open positions</td></tr>
+      <tr><td class="tool-name">whale_tracker</td><td class="tool-desc">Track whale activity and smart money flows</td></tr>
+      <tr><td class="tool-name">macro_briefing</td><td class="tool-desc">Get a complete macro + crypto market briefing</td></tr>
+      <tr><td class="tool-name">pre_trade_analysis</td><td class="tool-desc">Run complete pre-trade analysis before entering a position</td></tr>
+      <tr><td class="tool-name">strategy_lab</td><td class="tool-desc">Build and backtest a trading strategy from natural language</td></tr>
+      <tr><td class="tool-name">full_risk_dashboard</td><td class="tool-desc">Generate full risk intelligence dashboard with visualizations</td></tr>
+      <tr><td class="tool-name">deep_intelligence_brief</td><td class="tool-desc">BASTION's most comprehensive analysis — deep multi-step intelligence brief</td></tr>
+    </table>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ ADVANCED FEATURES -->
+  <div class="section">
+    <div class="section-num">Section 07</div>
+    <h2>Advanced Features</h2>
+    <p class="section-desc">Cutting-edge capabilities that push the boundaries of what MCP servers can do.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>Server-Side Reasoning Chains</h4>
+        <p>bastion_deep_analysis gathers 15 data sources in parallel via internal HTTP calls, synthesizes everything into one structured intelligence brief. The agent makes one tool call; BASTION runs 15 parallel analyses server-side.</p>
+        <span class="tag tag-red">MCP Sampling Pattern</span>
+      </div>
+      <div class="feature-card">
+        <h4>Dynamic Tool Discovery</h4>
+        <p>Tools appear and disappear based on market regime. During extreme fear, crisis_mode and capitulation_scanner become available. During euphoria, euphoria_detector activates. Tools adapt to conditions in real-time.</p>
+        <span class="tag tag-purple">Adaptive</span>
+      </div>
+      <div class="feature-card">
+        <h4>Multi-Agent War Room</h4>
+        <p>Multiple Claude agents can collaborate in a shared intelligence hub. Votes are weighted by historical accuracy from the leaderboard. Consensus decisions are more reliable than any single agent.</p>
+        <span class="tag tag-blue">Multi-Agent</span>
+      </div>
+      <div class="feature-card">
+        <h4>MCP Server Card</h4>
+        <p>/.well-known/mcp.json endpoint for agent-to-agent discovery. Other MCP servers can find BASTION and understand its capabilities automatically. Part of the emerging MCP ecosystem standard.</p>
+        <span class="tag tag-green">Interoperability</span>
+      </div>
+      <div class="feature-card">
+        <h4>Immutable Audit Trail</h4>
+        <p>SHA-256 hash-chained tamper-evident records. Each event includes prev_hash + event_id + tool + timestamp. Verification endpoint detects any chain breaks. Enterprise compliance ready.</p>
+        <span class="tag tag-amber">Enterprise</span>
+      </div>
+      <div class="feature-card">
+        <h4>Cognitive Bias Detection</h4>
+        <p>AI analyzes trade journal entries to detect psychological patterns: loss aversion, overtrading, revenge trading, recency bias, confirmation bias. Helps traders improve decision-making.</p>
+        <span class="tag tag-purple">AI-Powered</span>
+      </div>
+      <div class="feature-card">
+        <h4>Monte Carlo Jump-Diffusion</h4>
+        <p>10,000-path portfolio simulation with Merton jump-diffusion model accounting for crypto fat tails. Outputs VaR, CVaR, probability distributions, and worst-case scenarios at 95% and 99% confidence.</p>
+        <span class="tag tag-red">Institutional</span>
+      </div>
+      <div class="feature-card">
+        <h4>Agent-as-a-Service</h4>
+        <p>External AI agents can call BASTION through a metered API endpoint. Usage tracking, per-evaluation pricing, and billing statistics. Build agent-to-agent payment flows.</p>
+        <span class="tag tag-green">Monetization</span>
+      </div>
+      <div class="feature-card">
+        <h4>Challenge Cards</h4>
+        <p>"Prove Me Wrong" prediction market. Timestamped predictions with OG meta tags, shareable URLs, auto-scoring against live market data. Viral growth mechanism for the platform.</p>
+        <span class="tag tag-amber">Viral</span>
+      </div>
+      <div class="feature-card">
+        <h4>Persistent Cross-Session Memory</h4>
+        <p>Three-tier memory system: episodic (market events), semantic (user preferences/facts), procedural (learned workflows). Agents remember across conversations and build personalized trader profiles.</p>
+        <span class="tag tag-blue">Personalization</span>
+      </div>
+      <div class="feature-card">
+        <h4>Tool Safety Annotations</h4>
+        <p>Complete safety matrix for all 118 tools: readOnlyHint, destructiveHint, idempotentHint. Clients can auto-approve safe read-only tools while gating destructive operations behind confirmation prompts.</p>
+        <span class="tag tag-green">Safety</span>
+      </div>
+      <div class="feature-card">
+        <h4>Copy-Analysis Workflows</h4>
+        <p>Save multi-tool analysis chains as named workflows. Share with other users. Execute entire research pipelines with a single tool call. Popularity-sorted discovery.</p>
+        <span class="tag tag-blue">Productivity</span>
+      </div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ DATA SOURCES -->
+  <div class="section">
+    <div class="section-num">Section 08</div>
+    <h2>Data Sources &amp; Integrations</h2>
+    <p class="section-desc">BASTION aggregates data from 15+ providers across exchanges, on-chain analytics, derivatives data, and macroeconomic indicators.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>Exchanges (5)</h4>
+        <p>Binance, Bybit, OKX, Hyperliquid, BitMEX — real-time price, orderbook, trades, positions, balances via REST and WebSocket APIs.</p>
+        <span class="tag tag-red">Live</span>
+      </div>
+      <div class="feature-card">
+        <h4>Derivatives Data</h4>
+        <p>CoinGlass — funding rates, open interest, liquidations, heatmaps, taker ratios, top trader positions across all major exchanges.</p>
+        <span class="tag tag-red">Live</span>
+      </div>
+      <div class="feature-card">
+        <h4>On-Chain Intelligence</h4>
+        <p>Whale Alert (11 chains), exchange flow tracking, on-chain metrics, smart money flow analysis, stablecoin market data.</p>
+        <span class="tag tag-amber">Multi-Chain</span>
+      </div>
+      <div class="feature-card">
+        <h4>Macro &amp; Sentiment</h4>
+        <p>Fear &amp; Greed Index, FRED economic data, Bitcoin/Ethereum ETF flows, Polymarket predictions, aggregated crypto news.</p>
+        <span class="tag tag-blue">Multi-Source</span>
+      </div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ WEB PLATFORM -->
+  <div class="section">
+    <div class="section-num">Section 09</div>
+    <h2>Web Platform</h2>
+    <p class="section-desc">Full-featured web application at bastionfi.tech with 8+ pages for research, trading, and agent management.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>Terminal Dashboard</h4>
+        <p>Professional trading terminal with real-time market data, position management, risk evaluation, and autonomous engine controls.</p>
+        <span class="tag tag-red">Core</span>
+      </div>
+      <div class="feature-card">
+        <h4>Research Lab</h4>
+        <p>AI-powered research interface with multi-panel layout for market analysis, derivatives flow, on-chain intelligence, and macro signals.</p>
+        <span class="tag tag-blue">Research</span>
+      </div>
+      <div class="feature-card">
+        <h4>MCP Playground</h4>
+        <p>Browser-based tool testing — execute any of the 118 MCP tools with parameter forms, JSON response viewer, request history, and latency tracking.</p>
+        <span class="tag tag-green">Developer</span>
+      </div>
+      <div class="feature-card">
+        <h4>Agent Setup Page</h4>
+        <p>Quickstart guides for Claude Code, Claude Desktop, and custom API integration. Copy-paste config snippets, architecture diagrams, and workflow examples.</p>
+        <span class="tag tag-purple">Onboarding</span>
+      </div>
+      <div class="feature-card">
+        <h4>Developer Docs</h4>
+        <p>Complete API documentation, MCP protocol reference, authentication guides, and integration tutorials.</p>
+        <span class="tag tag-blue">Documentation</span>
+      </div>
+      <div class="feature-card">
+        <h4>Protocol Page</h4>
+        <p>Deep-dive into BASTION's protocol architecture, MCF risk framework, structure-based exits, and AI model methodology.</p>
+        <span class="tag tag-amber">Technical</span>
+      </div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ AUTH & SECURITY -->
+  <div class="section">
+    <div class="section-num">Section 10</div>
+    <h2>Authentication &amp; Security</h2>
+    <p class="section-desc">Four-tier API key system with granular scope-based access control.</p>
+
+    <div class="stats-bar">
+      <div class="stat-cell"><div class="val">Free</div><div class="lbl">All 118 tools, rate limited</div></div>
+      <div class="stat-cell"><div class="val">Pro</div><div class="lbl">Higher limits + trading</div></div>
+      <div class="stat-cell"><div class="val">Institutional</div><div class="lbl">Bulk access + audit</div></div>
+      <div class="stat-cell"><div class="val">Enterprise</div><div class="lbl">Custom SLA + support</div></div>
+    </div>
+
+    <h3 style="font-size:14px; color:var(--white); margin:32px 0 16px; text-transform:uppercase; letter-spacing:1px;">API Key Scopes</h3>
+    <ul class="bullet-list">
+      <li><strong>read:</strong> Portfolio data, positions, balances, exchange connections</li>
+      <li><strong>trade:</strong> Order execution, position management, stop/TP modifications</li>
+      <li><strong>engine:</strong> Autonomous engine control, arm/disarm, auto-execution</li>
+      <li><strong>public:</strong> Market data, derivatives, on-chain, sentiment (no auth needed)</li>
+    </ul>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ COMPETITIVE ADVANTAGES -->
+  <div class="section">
+    <div class="section-num">Section 11</div>
+    <h2>Competitive Advantages</h2>
+    <p class="section-desc">What makes BASTION unique in the MCP ecosystem.</p>
+
+    <ul class="bullet-list" style="font-size:14px; line-height:2;">
+      <li><strong>118 tools</strong> — largest tool count of any crypto MCP server in production</li>
+      <li><strong>Custom 72B AI model</strong> — only MCP server with its own fine-tuned risk intelligence model</li>
+      <li><strong>75.4% backtested win rate</strong> — quantified, reproducible performance metric</li>
+      <li><strong>Server-side reasoning chains</strong> — MCP sampling pattern (15 sources in one call)</li>
+      <li><strong>Dynamic tool discovery</strong> — tools adapt to market conditions in real-time</li>
+      <li><strong>Multi-agent War Room</strong> — accuracy-weighted consensus across multiple agents</li>
+      <li><strong>Immutable audit trail</strong> — SHA-256 hash-chained compliance records</li>
+      <li><strong>Monte Carlo jump-diffusion</strong> — institutional-grade portfolio simulation</li>
+      <li><strong>Agent-as-a-Service</strong> — metered API for agent-to-agent intelligence sharing</li>
+      <li><strong>Zero install</strong> — cloud-hosted, connect with one command, no dependencies</li>
+      <li><strong>Structure-aware exits</strong> — VPVR, graded S/R, POC/HVN integrated into AI decisions</li>
+      <li><strong>Persistent memory</strong> — agents learn and remember across sessions</li>
+    </ul>
+  </div>
+
+<!-- ═══════════════════════════════════════════════ FOOTER -->
+  <div class="footer">
+    <span class="red">BASTION</span> &nbsp;&bull;&nbsp; Risk Intelligence MCP Server &nbsp;&bull;&nbsp; bastionfi.tech<br><br>
+    118 Tools &nbsp;|&nbsp; 8 Resources &nbsp;|&nbsp; 10 Prompts &nbsp;|&nbsp; 560+ Signals &nbsp;|&nbsp; 72B AI Model<br><br>
+    February 2026 &nbsp;&bull;&nbsp; v6 Production &nbsp;&bull;&nbsp; Built with Claude
+  </div>
+</div>
+
+</body>
+</html>
